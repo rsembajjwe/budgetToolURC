@@ -1,0 +1,8 @@
+
+package com.methaltech.application.data;
+
+public enum ProcurementMethodList {
+Open_Bidding, Restricted_Bidding, Request_for_Quotations, Micro_Procurement, 
+Selection_Method_Threshold_in_UGX_Request_for_Proposals_with_Expression_of_Interest, 
+Selection_Method_Threshold_in_UGX_Request_for_Proposals_without_Expression_of_Interest;    
+}

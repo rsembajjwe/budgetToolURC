@@ -1,0 +1,54 @@
+server.port=${PORT:8081}
+logging.level.org.atmosphere = warn
+spring.mustache.check-template-location = false
+
+# Launch the default browser when starting the application in development mode
+vaadin.launch-browser=true
+# To improve the performance during development.
+# For more information https://vaadin.com/docs/flow/spring/tutorial-spring-configuration.html#special-configuration-parameters
+vaadin.whitelisted-packages = com.vaadin,org.vaadin,dev.hilla,com.example.application
+spring.jpa.defer-datasource-initialization = true
+spring.sql.init.mode = always
+
+
+#Email sending properties
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=urcbudgetapp@gmail.com
+spring.mail.password=ethftdnshnuisvjc
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+
+spring.jpa.database=sqlserver
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.SQLServerDialect
+#spring.jpa.hibernate.ddl-auto=update
+spring.jpa.generate-ddl=true
+spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.format_sql=true
+#spring.jpa.properties.hibernate.show_sql=true
+#spring.jpa.properties.hibernate.format_sql=true
+
+#Database Name List
+#spring.database-names.list=student,college
+
+#student database credentials
+spring.datasource.bgtool.url=jdbc:sqlserver://localhost:1433;databaseName=BGTOOLS;encrypt=true;trustServerCertificate=true;
+spring.datasource.bgtool.username=sa
+spring.datasource.bgtool.password=1234
+spring.datasource.bgtool.driver=com.microsoft.sqlserver.jdbc.SQLServerDriver
+spring.jpa.properties.hibernate.hbm2ddl.auto=create-drop
+
+#college database credentials
+spring.datasource.thesun.url=jdbc:sqlserver://localhost:1433;databaseName=THESUN;encrypt=true;trustServerCertificate=true;
+spring.datasource.thesun.username=sa
+spring.datasource.thesun.password=1234
+spring.datasource.thesun.driver=com.microsoft.sqlserver.jdbc.SQLServerDriver
+spring.jpa.properties.hibernate.hbm2ddl.auto=update
+
+spring.datasource.oldbgtool.url=jdbc:sqlserver://localhost:1433;databaseName=URCDBTASK;encrypt=true;trustServerCertificate=true;
+spring.datasource.oldbgtool.username=sa
+spring.datasource.oldbgtool.password=1234
+spring.datasource.oldbgtool.driver=com.microsoft.sqlserver.jdbc.SQLServerDriver
+spring.jpa.properties.hibernate.hbm2ddl.auto=update
+

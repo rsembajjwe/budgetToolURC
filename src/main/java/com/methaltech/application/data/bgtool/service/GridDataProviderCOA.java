@@ -1,0 +1,62 @@
+
+package com.methaltech.application.data.bgtool.service;
+
+
+import com.methaltech.application.data.entity.bgtool.COA;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Stream;
+
+import com.vaadin.flow.data.provider.AbstractBackEndDataProvider;
+import com.vaadin.flow.data.provider.QuerySortOrder;
+import com.vaadin.flow.data.provider.SortDirection;
+
+
+ public class GridDataProviderCOA  extends AbstractBackEndDataProvider<COA, GridFilter> {
+ final List<COA> DATABASE=null;// new ArrayList<>(DataService.getPeople());
+    @Override
+    protected Stream<COA> fetchFromBackEnd(com.vaadin.flow.data.provider.Query<COA, GridFilter> query) {
+        // A real app should use a real database or a service
+        // to fetch, filter and sort data.
+        Stream<COA> stream = DATABASE.stream();
+
+        // Filtering
+        if (query.getFilter().isPresent()) {
+            stream = stream.filter(person -> query.getFilter().get().testCoa(person));
+        }
+
+        // Sorting
+        if (query.getSortOrders().size() > 0) {
+            stream = stream.sorted(sortComparator(query.getSortOrders()));
+        }
+
+        // Pagination
+        return stream.skip(query.getOffset()).limit(query.getLimit());
+    }
+
+    @Override
+    protected int sizeInBackEnd(com.vaadin.flow.data.provider.Query<COA, GridFilter> query) {
+        return (int) fetchFromBackEnd(query).count();
+    }
+
+    private static Comparator<COA> sortComparator(List<QuerySortOrder> sortOrders) {
+        return sortOrders.stream().map(sortOrder -> {
+            Comparator<COA> comparator = personFieldComparator(sortOrder.getSorted());
+
+            if (sortOrder.getDirection() == SortDirection.DESCENDING) {
+                comparator = comparator.reversed();
+            }
+
+            return comparator;
+        }).reduce(Comparator::thenComparing).orElse((p1, p2) -> 0);
+    }
+
+    private static Comparator<COA> personFieldComparator(String sorted) {
+        if (sorted.equals("name")) {
+            return Comparator.comparing(person -> person.getName());
+        } else if (sorted.equals("profession")) {
+            return Comparator.comparing(person -> person.getCode());
+        }
+        return (p1, p2) -> 0;
+    }    
+}
