@@ -15,6 +15,9 @@ public class SALFLDGService {
     public SALFLDGService(SALFLDGRepository salfldgRepository) {
         this.salfldgRepository = salfldgRepository;
     }
+    public void getNothing(){
+        
+    }
 
 }
 
