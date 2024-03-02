@@ -1,10 +1,12 @@
-
 package com.methaltech.application.data.bgtool.service;
 
+import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.bgtool.repository.ProcurementPlanRepository;
 import com.methaltech.application.data.entity.bgtool.Budget;
-import com.methaltech.application.data.entity.bgtool.ProcurementMethod;
+import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.ProcurementPlan;
+import jakarta.transaction.Transactional;
+import java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -40,27 +42,39 @@ public class ProcurementPlanService {
         procurementPlanRepository.deleteById(id);
     }
 
+    // Delete a procurement plan by ID
+    public void deleteProcurementPlanByBudget(Budget budget) {
+        procurementPlanRepository.deleteByBudget(budget);
+    }
+
     // Delete a procurement plan by object
     public void deleteProcurementPlan(ProcurementPlan procurementPlan) {
         procurementPlanRepository.delete(procurementPlan);
     }
 
-    // Find procurement plans by budget
+// Find procurement plans by budget
     public List<ProcurementPlan> findProcurementPlansByBudget(Budget budget) {
+        if (budget == null) {
+            // Handle the case when the budget is null (e.g., throw an exception or return an empty list)
+            return Collections.emptyList();  // Return an empty list as an example
+        }
+
         // Assuming you have a 'Budget' entity associated with 'ProcurementPlan'
         return procurementPlanRepository.findByBudget(budget);
     }
 
-    /*   // Find procurement plans by procurement method
-    public List<ProcurementPlan> findProcurementPlansByProcurementMethod(ProcurementMethod procurementMethod) {
-    return procurementPlanRepository.findByProcurementmethod(procurementMethod);
+    public List<ProcurementPlan> findByBudgetAndProcClass(Budget budget, ProcClass procClass) {
+        if (budget == null || procClass == null) {
+            // Handle the case when the budget is null (e.g., throw an exception or return an empty list)
+            return Collections.emptyList();  // Return an empty list as an example
+        }
+
+        // Assuming you have a 'Budget' entity associated with 'ProcurementPlan'
+        return procurementPlanRepository.findByBudgetAndProcClass(budget, procClass);
     }
-    
-    // Find procurement plans by procurement type
-    public List<ProcurementPlan> findProcurementPlansByProcurementType(ProcurementType procurementType) {
-    return procurementPlanRepository.findByProcurementtype(procurementType);
-    }*/
 
-    // Add more methods as needed based on your requirements
+    @Transactional
+    public void deleteByBudget_COA(Budget budget, COA coa) {
+        procurementPlanRepository.deleteByBudgetAndCoa(budget, coa);
+    }
 }
-

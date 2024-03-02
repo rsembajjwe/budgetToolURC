@@ -16,7 +16,13 @@ public interface DeptSectionMergerRepository extends JpaRepository<DeptSectionMe
     /*
     @Query("SELECT d FROM DeptSectionMerger d WHERE d.Deptcode = :deptcode")
     List<DeptSectionMerger> findByDeptcodeCustom(@Param("deptcode") String deptcode);*/
-
     @Query("SELECT d FROM DeptSectionMerger d WHERE d.deptcode = :deptcode")
     Optional<DeptSectionMerger> findByDeptcodeCustom(@Param("deptcode") String deptcode);
+
+    /*    @Query("SELECT d.deptcode FROM DeptSectionMerger d WHERE EXISTS (SELECT 1 FROM d.sectioncodes s WHERE s = :sectioncode)")
+    String findDeptcodeBySectioncode(@Param("sectioncode") String sectioncode);*/
+    @Query(value = "SELECT deptcode FROM DeptSectionMerger WHERE ?1 IN sectioncodes", nativeQuery = true)
+    String findDeptcodeBySectioncode(String sectioncode);
+
+
 }

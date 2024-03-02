@@ -47,4 +47,8 @@ public class FundsourceService {
     public List<Fundsource> findFundsourcesByBudget(Budget budget) {
         return fundsourceRepository.findByBudget(budget);
     }
+
+    public Fundsource findByFundsourceAndBudget(String fundsource, Budget budget) {
+        return fundsourceRepository.findByFundsourceAndBudget(fundsource, budget);
+    }
 }

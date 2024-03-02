@@ -2,6 +2,7 @@
 @import url('./views/login-view.css');
 @import url('./views/card-list-view.css');
 @import url('./views/budget-form-view.css');
+@import url('./views/procurement-plan-view.css');
 @import url('./views/master-detail-view.css');    html {
       --lumo-font-size: 1rem;
       --lumo-font-size-xxxl: 1.75rem;

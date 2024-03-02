@@ -1,6 +1,7 @@
 package com.methaltech.application.data.bgtool.repository;
 
 import com.methaltech.application.data.Display;
+import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
@@ -92,4 +93,8 @@ public interface CoaRepository extends JpaRepository<COA, Long> {
     COA findByCodeAndBudget(@Param("code") String code, @Param("budget") Budget budget);
 
     List<COA> findByBudgetAndDisplayAndStateOpen(Budget budget, Display display, boolean stateOpen);
+    
+        // Custom method to find COA by Budget and List of ProcClass
+    List<COA> findByBudgetAndProcclassIn(Budget budget, List<ProcClass> procclasses);
+    List<COA> findByBudgetAndProcclass(Budget budget, ProcClass procclasses);
 }

@@ -4,7 +4,6 @@ import com.methaltech.application.data.Display;
 import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.bgtool.service.*;
 import com.methaltech.application.data.entity.bgtool.*;
-import com.methaltech.application.data.entity.oldbgtool.OldBudget;
 import com.methaltech.application.data.entity.livedata.UR5_ACNT;
 import com.methaltech.application.data.oldbgtool.service.OldBudgetService;
 import com.methaltech.application.data.livedata.service.UR5_ACNTService;
@@ -125,7 +124,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     private Grid<Urc_Activities> Urc_ActivitiesGrid = new Grid<>(Urc_Activities.class, false);
     private Grid<Organisation> gridOrganisation = new Grid<>(Organisation.class, false);
 
-    private Grid<ProcurementMethod> gridProcurementMethod = new Grid<>(ProcurementMethod.class, false);
+    //private Grid<ProcurementMethod> gridProcurementMethod = new Grid<>(ProcurementMethod.class, false);
 
     private Grid<ProcurementType> gridProcurementType = new Grid<>(ProcurementType.class, false);
     private Grid<Fundsource> gridFundsource = new Grid<>(Fundsource.class, false);
@@ -234,7 +233,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
     private Organisation sampleOrganisation;
 
-    private ProcurementMethod sampleProcurementMethod;
+   // private ProcurementMethod sampleProcurementMethod;
     private ProcurementType sampleProcurementType;
     private Fundsource sampleFundsource;
 
@@ -249,7 +248,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
     private Urc_Activities sampleUrc_Activities;
 
-    private final ProcurementMethodService sampleProcurementMethodService;
+   // private final ProcurementMethodService sampleProcurementMethodService;
     private final ProcurementTypeService sampleProcurementTypeService;
 
     private final CurrencyDataService sampleCurrencyDataService;
@@ -360,7 +359,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             National_Budget_Focus_AreasService sampleNational_Budget_Focus_AreasService,
             Urc_ActivitiesService sampleUrc_ActivitiesService, URC_Strategic_PlanService sampleURC_Strategic_PlanService,
             URC_Priority_AreasService sampleURC_Priority_AreasService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService,
-            OldBudgetService oldbudgetRepository, BudgetItemsService budgetItemsService, ProcurementMethodService sampleProcurementMethodService,
+            OldBudgetService oldbudgetRepository, BudgetItemsService budgetItemsService,
             ProcurementTypeService sampleProcurementTypeService, FundsourceService fundsourceService) {
         this.sampleBudgetService = sampleBudgetService;
         this.sampleCurrencyDataService = sampleCurrencyDataService;
@@ -386,7 +385,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         this.pageSize = 10;
         this.filter = "";
         this.budgetItemsService = budgetItemsService;
-        this.sampleProcurementMethodService = sampleProcurementMethodService;
+       // this.sampleProcurementMethodService = sampleProcurementMethodService;
         this.sampleProcurementTypeService = sampleProcurementTypeService;
         this.fundsourceService = fundsourceService;
         addClassNames("budget-view");
@@ -404,7 +403,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         createEditorLayout(splitLayout);
 
         add(splitLayout);
-        procclass.setItems(ProcClass.Works, ProcClass.Supplies, ProcClass.Consultancy, ProcClass.Non_Consultancy);
+        procclass.setItems(ProcClass.Works, ProcClass.Supplies, ProcClass.Consultancy, ProcClass.Non_Consultancy,ProcClass.Disposal,ProcClass.Other);
         Coalevel1Box1 = new ComboBox<>("Class 1");
         displayBox.setItems(Display.GENERAL, Display.FREIGHT, Display.SALARIES);
         COASearchField1.setClearButtonVisible(true);
@@ -633,24 +632,24 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
         });
 
-        createIconItem(procurementMethodsView, VaadinIcon.BRIEFCASE, "Procurement Methods", null, true).addClickListener(e -> {
-
-            Dialog dialog = new Dialog();
-            dialog.setWidth("450px");
-            dialog.setHeight(70, Unit.PERCENTAGE);
-            dialog.setHeaderTitle("Procurement Methods");
-            Button closeButton = new Button(new Icon("lumo", "cross"),
-                    (ex) -> dialog.close());
-            closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-            dialog.getHeader().add(closeButton);
-            dialog.setCloseOnOutsideClick(false);
-            dialog.setModal(true);
-            dialog.setDraggable(true);
-            dialog.setResizable(true);
-            dialog.add(createProcurementMethodsGridDialogLayout());
-            dialog.open();
-
-        });
+        /*        createIconItem(procurementMethodsView, VaadinIcon.BRIEFCASE, "Procurement Methods", null, true).addClickListener(e -> {
+        
+        Dialog dialog = new Dialog();
+        dialog.setWidth("450px");
+        dialog.setHeight(70, Unit.PERCENTAGE);
+        dialog.setHeaderTitle("Procurement Methods");
+        Button closeButton = new Button(new Icon("lumo", "cross"),
+        (ex) -> dialog.close());
+        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        dialog.getHeader().add(closeButton);
+        dialog.setCloseOnOutsideClick(false);
+        dialog.setModal(true);
+        dialog.setDraggable(true);
+        dialog.setResizable(true);
+        dialog.add(createProcurementMethodsGridDialogLayout());
+        dialog.open();
+        
+        });*/
         createIconItem(procurementMethodsView, VaadinIcon.BRIEFCASE, "Procurement Types", null, true).addClickListener(e -> {
 
             Dialog dialog = new Dialog();
@@ -1493,11 +1492,11 @@ public class BudgetView extends Div implements BeforeEnterObserver {
                 .stream());
     }
 
-    private void refreshGridProcurementMethod() {
-        gridProcurementMethod.select(null);
-        gridProcurementMethod.getDataProvider().refreshAll();
-        gridProcurementMethod.setItems(sampleProcurementMethodService.getAllProcurementMethods());
-    }
+    /*    private void refreshGridProcurementMethod() {
+    gridProcurementMethod.select(null);
+    gridProcurementMethod.getDataProvider().refreshAll();
+    gridProcurementMethod.setItems(sampleProcurementMethodService.getAllProcurementMethods());
+    }*/
 
     private void refreshGridProcurementType() {
         gridProcurementType.select(null);
@@ -1509,8 +1508,6 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         gridFundsource.select(null);
         gridFundsource.getDataProvider().refreshAll();
         gridFundsource.setItems(fundsourceService.findFundsourcesByBudget(sampleBudget));
-        System.out.println(sampleBudget);
-        System.out.println(fundsourceService.findFundsourcesByBudget(sampleBudget).size());
     }
 
     private void refreshGridDepartment() {
@@ -2222,102 +2219,102 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         return dialogLayout;
     }
 
-    private VerticalLayout createProcurementMethodsGridDialogLayout() {
-        ProcurementMethodNameField = new TextField("Procurement Method");
-        ProcurementMethodNameField.setPlaceholder("Procurement Method");
-
-        HorizontalLayout buttonLayout = new HorizontalLayout();
-        Button save = new Button("Save");
-        Button cancel = new Button("Delete");
-        buttonLayout.setClassName("button-layout");
-        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonLayout.add(ProcurementMethodNameField, save, cancel);
-        ProcurementMethodNameField.setWidthFull();
-        ProcurementMethodNameField.setClearButtonVisible(true);
-        buttonLayout.setWidthFull();
-        buttonLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
-
-        gridProcurementMethod = new Grid<>(ProcurementMethod.class, false);
-        gridProcurementMethod.setHeight(200, Unit.PIXELS);
-        gridProcurementMethod.setSelectionMode(Grid.SelectionMode.SINGLE);
-        // Configure Grid
-        gridProcurementMethod.addColumn("procuremntMethod").setAutoWidth(true);
-        gridProcurementMethod.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_WRAP_CELL_CONTENT);
-
-        gridProcurementMethod.asSingleSelect().addValueChangeListener(event -> {
-            if (event.getValue() != null) {
-                ProcurementMethodNameField.setValue(event.getValue().getProcuremntMethod());
-                sampleProcurementMethod = event.getValue();
-                UI.getCurrent().navigate(BudgetView.class);
-
-            } else {
-                sampleProcurementMethod = new ProcurementMethod();
-                ProcurementMethodNameField.clear();
-                UI.getCurrent().navigate(BudgetView.class);
-
-            }
-        });
-
-        save.addClickListener(e -> {
-            if (validEditorTextFieldsProcurementMethod().toString().length() > 0) {
-                NotificationDialogue(validEditorTextFieldsProcurementMethod().toString());
-            } else {
-                sampleProcurementMethod = gridProcurementMethod.asSingleSelect().getValue();
-                if (sampleProcurementMethod == null) {
-                    ProcurementMethod org = new ProcurementMethod();
-                    org.setProcuremntMethod(ProcurementMethodNameField.getValue());
-                    sampleProcurementMethod = sampleProcurementMethodService.save(org);  // Assign the created organisation to sampleOrganisation
-                } else {
-                    sampleProcurementMethod.setProcuremntMethod(ProcurementMethodNameField.getValue());
-                    sampleProcurementMethodService.save(sampleProcurementMethod);
-                }
-            }
-
-            ProcurementMethodNameField.clear();
-            refreshGridProcurementMethod();
-        });
-
-        cancel.addClickListener(e -> {
-            if (!gridProcurementMethod.asSingleSelect().isEmpty()) {
-                ConfirmDialog dialog = new ConfirmDialog();
-                dialog.setHeader("Delete Item");
-                dialog.setText(
-                        "An Item has been selected. Do you want to delete it?");
-
-                dialog.setCancelable(true);
-                dialog.addCancelListener(event -> setStatus("Canceled"));
-                dialog.setRejectable(true);
-                dialog.setRejectText("Discard");
-                dialog.addRejectListener(event -> setStatus("Discarded"));
-
-                dialog.setConfirmText("Delete");
-                dialog.addConfirmListener(event -> {
-                    sampleProcurementMethodService.deleteProcurementMethod(gridProcurementMethod.asSingleSelect().getValue());
-                    refreshGridProcurementMethod();
-                });
-
-                dialog.open();
-            } else {
-                NotificationDialogue("Select a Procurement Method");
-            }
-        });
-
-        refreshGridProcurementMethod();
-        // gridOrganisation.select(sampleOrganisationService.findById(Long.valueOf("1")));
-        //gridOrganisation.setEnabled(false);
-        //System.out.println(sampleOrganisationService.findById(Long.valueOf("1")).toString());
-        H1 title = new H1("BUDGETS");
-        title.getStyle().set("font-size", "var(--lumo-font-size-l)")
-                .set("margin", "0");
-        VerticalLayout dialogLayout = new VerticalLayout(buttonLayout, gridProcurementMethod);
-        dialogLayout.setPadding(true);
-        dialogLayout.setSpacing(false);
-        dialogLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
-        dialogLayout.setWidth("100%");
-        dialogLayout.setHeight("100%");
-        //dialogLayout.getStyle().set("width", "18rem").set("max-width", "100%");
-        return dialogLayout;
+    /*    private VerticalLayout createProcurementMethodsGridDialogLayout() {
+    ProcurementMethodNameField = new TextField("Procurement Method");
+    ProcurementMethodNameField.setPlaceholder("Procurement Method");
+    
+    HorizontalLayout buttonLayout = new HorizontalLayout();
+    Button save = new Button("Save");
+    Button cancel = new Button("Delete");
+    buttonLayout.setClassName("button-layout");
+    save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    buttonLayout.add(ProcurementMethodNameField, save, cancel);
+    ProcurementMethodNameField.setWidthFull();
+    ProcurementMethodNameField.setClearButtonVisible(true);
+    buttonLayout.setWidthFull();
+    buttonLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
+    
+    gridProcurementMethod = new Grid<>(ProcurementMethod.class, false);
+    gridProcurementMethod.setHeight(200, Unit.PIXELS);
+    gridProcurementMethod.setSelectionMode(Grid.SelectionMode.SINGLE);
+    // Configure Grid
+    gridProcurementMethod.addColumn("procuremntMethod").setAutoWidth(true);
+    gridProcurementMethod.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_WRAP_CELL_CONTENT);
+    
+    gridProcurementMethod.asSingleSelect().addValueChangeListener(event -> {
+    if (event.getValue() != null) {
+    ProcurementMethodNameField.setValue(event.getValue().getProcuremntMethod());
+    sampleProcurementMethod = event.getValue();
+    UI.getCurrent().navigate(BudgetView.class);
+    
+    } else {
+    sampleProcurementMethod = new ProcurementMethod();
+    ProcurementMethodNameField.clear();
+    UI.getCurrent().navigate(BudgetView.class);
+    
     }
+    });
+    
+    save.addClickListener(e -> {
+    if (validEditorTextFieldsProcurementMethod().toString().length() > 0) {
+    NotificationDialogue(validEditorTextFieldsProcurementMethod().toString());
+    } else {
+    sampleProcurementMethod = gridProcurementMethod.asSingleSelect().getValue();
+    if (sampleProcurementMethod == null) {
+    ProcurementMethod org = new ProcurementMethod();
+    org.setProcuremntMethod(ProcurementMethodNameField.getValue());
+    sampleProcurementMethod = sampleProcurementMethodService.save(org);  // Assign the created organisation to sampleOrganisation
+    } else {
+    sampleProcurementMethod.setProcuremntMethod(ProcurementMethodNameField.getValue());
+    sampleProcurementMethodService.save(sampleProcurementMethod);
+    }
+    }
+    
+    ProcurementMethodNameField.clear();
+    refreshGridProcurementMethod();
+    });
+    
+    cancel.addClickListener(e -> {
+    if (!gridProcurementMethod.asSingleSelect().isEmpty()) {
+    ConfirmDialog dialog = new ConfirmDialog();
+    dialog.setHeader("Delete Item");
+    dialog.setText(
+    "An Item has been selected. Do you want to delete it?");
+    
+    dialog.setCancelable(true);
+    dialog.addCancelListener(event -> setStatus("Canceled"));
+    dialog.setRejectable(true);
+    dialog.setRejectText("Discard");
+    dialog.addRejectListener(event -> setStatus("Discarded"));
+    
+    dialog.setConfirmText("Delete");
+    dialog.addConfirmListener(event -> {
+    sampleProcurementMethodService.deleteProcurementMethod(gridProcurementMethod.asSingleSelect().getValue());
+    refreshGridProcurementMethod();
+    });
+    
+    dialog.open();
+    } else {
+    NotificationDialogue("Select a Procurement Method");
+    }
+    });
+    
+    refreshGridProcurementMethod();
+    // gridOrganisation.select(sampleOrganisationService.findById(Long.valueOf("1")));
+    //gridOrganisation.setEnabled(false);
+    //System.out.println(sampleOrganisationService.findById(Long.valueOf("1")).toString());
+    H1 title = new H1("BUDGETS");
+    title.getStyle().set("font-size", "var(--lumo-font-size-l)")
+    .set("margin", "0");
+    VerticalLayout dialogLayout = new VerticalLayout(buttonLayout, gridProcurementMethod);
+    dialogLayout.setPadding(true);
+    dialogLayout.setSpacing(false);
+    dialogLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
+    dialogLayout.setWidth("100%");
+    dialogLayout.setHeight("100%");
+    //dialogLayout.getStyle().set("width", "18rem").set("max-width", "100%");
+    return dialogLayout;
+    }*/
 
     private VerticalLayout createProcurementTypeGridDialogLayout() {
         ProcurementTypeNameField = new TextField("Procurement Type");
@@ -2437,7 +2434,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         // Configure Grid
         gridFundsource.addColumn("fundsource").setAutoWidth(true);
         gridFundsource.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_WRAP_CELL_CONTENT);
-
+        refreshGridFundsource();
         gridFundsource.asSingleSelect().addValueChangeListener(event -> {
             if (event.getValue() != null) {
                 FundsourceNameField.setValue(event.getValue().getFundsource());
@@ -2453,15 +2450,18 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         });
 
         save.addClickListener(e -> {
+
             if (validEditorTextFieldsFundsource().toString().length() > 0) {
                 NotificationDialogue(validEditorTextFieldsFundsource().toString());
+
             } else {
+
                 sampleFundsource = gridFundsource.asSingleSelect().getValue();
                 if (sampleFundsource == null) {
                     Fundsource org = new Fundsource();
                     org.setFundsource(FundsourceNameField.getValue());
                     org.setBudget(sampleBudget);
-                    sampleFundsource = fundsourceService.save(org);  // Assign the created organisation to sampleOrganisation
+                    sampleFundsource = fundsourceService.save(org);
                 } else {
                     sampleFundsource.setFundsource(FundsourceNameField.getValue());
                     fundsourceService.save(sampleFundsource);
@@ -2504,7 +2504,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         H1 title = new H1("BUDGETS");
         title.getStyle().set("font-size", "var(--lumo-font-size-l)")
                 .set("margin", "0");
-        VerticalLayout dialogLayout = new VerticalLayout(buttonLayout, gridProcurementType);
+        VerticalLayout dialogLayout = new VerticalLayout(buttonLayout, gridFundsource);
         dialogLayout.setPadding(true);
         dialogLayout.setSpacing(false);
         dialogLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
@@ -3864,15 +3864,10 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     }
 
     public Notification Notificationwarning(String warning) {
-        // When creating a notification using the constructor,
-        // the duration is 0-sec by default which means that
-        // the notification does not close automatically.
         Notification notification = new Notification();
         notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
 
         Div text = new Div(
-                // new Text("Your session will expire in 5 minutes due to inactivity."),
-                // new HtmlComponent("br"),
                 new Text(warning)
         );
 

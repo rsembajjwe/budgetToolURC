@@ -1,0 +1,19 @@
+.procurement-plan-view {
+  display: block;
+  height: 100%;
+  background-color: #cccccc;
+}
+.procurement-plan-view [part~="cell"][column="subject"] {
+    /* Your styles for the 'subject' column in the procurement-plan-view class */
+}
+
+.procurement-plan-view #grid [part~="cell"][column="subject"] {
+    --vaadin-grid-cell-background: #cccccc; /* Replace #cccccc with the desired background color */
+}
+.procurement-plan-view .positive-value {
+    --vaadin-grid-cell-background: green;
+}
+
+.procurement-plan-view .negative-value {
+     --vaadin-grid-cell-background: red;
+}

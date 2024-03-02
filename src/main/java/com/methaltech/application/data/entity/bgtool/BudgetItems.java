@@ -34,6 +34,11 @@ class BudgetItems {
     @JoinColumn(name = "budget_id")
     @JsonIgnore
     private Budget budget;
+    
+    @ManyToOne
+    @JoinColumn(name = "fundsource_id")
+    @JsonIgnore
+    private Fundsource fundsource;    
 
     @ManyToOne
     @JoinColumn(name = "coalevel1_id")

@@ -108,7 +108,7 @@ public class Urc_ActivitiesService {
             nextActivityCode = anlCode.trim() + nextActivityCodeNumber;
         } else {
             nextActivityCode = anlCode.trim() + "1";
-            System.out.println(anlCode.trim() + "1");
+            //System.out.println(anlCode.trim() + "1");
         }
 
         activity.setActivityCode(nextActivityCode);

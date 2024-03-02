@@ -131,22 +131,22 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("deptUnit") UrcDeptSectionAnlDimbgt deptUnit
     );
 
+    @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + "
+            + "b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budgetType IN (:budgetTypes) "
+            + "AND b.budget = :budget "
+            + "AND b.activity IN (:activities) "
+            + "AND b.deptUnit IN (:deptUnits) "
+            + "AND b.coalevel1.code = :coalevel1Code")
+    BigDecimal sumProgrammeSummation(
+            @Param("budgetTypes") Set<Organisation> budgetTypes,
+            @Param("budget") Budget budget,
+            @Param("activities") List<Urc_Activities> activities,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            @Param("coalevel1Code") Integer coalevel1Code
+    );
 
-@Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + "
-        + "b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
-        + "FROM BudgetItems b "
-        + "WHERE b.budgetType IN (:budgetTypes) "
-        + "AND b.budget = :budget "
-        + "AND b.activity IN (:activities) "
-        + "AND b.deptUnit IN (:deptUnits) "
-        + "AND b.coalevel1.code = :coalevel1Code")
-BigDecimal sumProgrammeSummation(
-        @Param("budgetTypes") Set<Organisation> budgetTypes,
-        @Param("budget") Budget budget,
-        @Param("activities") List<Urc_Activities> activities,
-        @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
-        @Param("coalevel1Code") Integer coalevel1Code
-);
     default boolean isSumProgrammeGreaterThanZero(
             Set<Organisation> budgetTypes,
             Budget budget,
@@ -158,21 +158,22 @@ BigDecimal sumProgrammeSummation(
         return sum.compareTo(BigDecimal.ZERO) > 0;
     }
 
-@Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + "
-        + "b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
-        + "FROM BudgetItems b "
-        + "WHERE b.budgetType IN (:budgetTypes) "
-        + "AND b.budget = :budget "
-        + "AND b.activity = :activities "
-        + "AND b.deptUnit IN (:deptUnits) "
-        + "AND b.coalevel1.code = :coalevel1Code")
-BigDecimal sumActvitySummation(
-        @Param("budgetTypes") Set<Organisation> budgetTypes,
-        @Param("budget") Budget budget,
-        @Param("activities") Urc_Activities activities,
-        @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
-        @Param("coalevel1Code") Integer coalevel1Code
-);
+    @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + "
+            + "b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budgetType IN (:budgetTypes) "
+            + "AND b.budget = :budget "
+            + "AND b.activity = :activities "
+            + "AND b.deptUnit IN (:deptUnits) "
+            + "AND b.coalevel1.code = :coalevel1Code")
+    BigDecimal sumActvitySummation(
+            @Param("budgetTypes") Set<Organisation> budgetTypes,
+            @Param("budget") Budget budget,
+            @Param("activities") Urc_Activities activities,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            @Param("coalevel1Code") Integer coalevel1Code
+    );
+
     default boolean isSumActvityGreaterThanZero(
             Set<Organisation> budgetTypes,
             Budget budget,
@@ -184,7 +185,6 @@ BigDecimal sumActvitySummation(
         return sum.compareTo(BigDecimal.ZERO) > 0;
     }
 
-    
     @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + "
             + "b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
             + "FROM BudgetItems b "
@@ -198,8 +198,6 @@ BigDecimal sumActvitySummation(
             @Param("budget") Budget budget,
             @Param("deptUnit") UrcDeptSectionAnlDimbgt deptUnit
     );
-    
-    
 
     @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + "
             + "b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
@@ -440,7 +438,7 @@ BigDecimal sumActvitySummation(
             @Param("coalevel1") Coalevel1 coalevel1,
             @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits,
             @Param("budgetTypes") Set<Organisation> budgetTypes);
-    
+
     @Query("SELECT COALESCE(SUM(b.jul + b.aug + b.sep + b.oct + b.nov + b.dec + b.jan + b.feb + b.mar + b.apr + b.may + b.jun), 0) "
             + "FROM BudgetItems b "
             + "WHERE b.budget = :budget "
@@ -451,7 +449,15 @@ BigDecimal sumActvitySummation(
             @Param("budget") Budget budget,
             @Param("coalevel1") List<Coalevel1> coalevel1,
             @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits,
-            @Param("budgetTypes") Set<Organisation> budgetTypes);    
+            @Param("budgetTypes") Set<Organisation> budgetTypes);
+
+    @Query("SELECT COALESCE(SUM(b.jul + b.aug + b.sep + b.oct + b.nov + b.dec + b.jan + b.feb + b.mar + b.apr + b.may + b.jun), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.coacode = :coacode ")
+    BigDecimal findSumByBudgetCOA(
+            @Param("budget") Budget budget,
+            @Param("coacode") COA coacode);
 
     @Query("SELECT CASE WHEN COALESCE(SUM(b.jul + b.aug + b.sep + b.oct + b.nov + b.dec + b.jan + b.feb + b.mar + b.apr + b.may + b.jun), 0) > 0 "
             + "THEN true ELSE false END "
@@ -619,7 +625,7 @@ BigDecimal sumActvitySummation(
             @Param("coalevel1") Coalevel1 coalevel1,
             @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits,
             @Param("budgetTypes") Set<Organisation> budgetTypes);
-    
+
     @Query("SELECT SUM(b.jul) as julSum, "
             + "SUM(b.aug) as augSum, "
             + "SUM(b.sep) as sepSum, "
@@ -641,7 +647,7 @@ BigDecimal sumActvitySummation(
             @Param("budget") Budget budget,
             @Param("coalevel1") List<Coalevel1> coalevel1,
             @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits,
-            @Param("budgetTypes") Set<Organisation> budgetTypes);    
+            @Param("budgetTypes") Set<Organisation> budgetTypes);
 
     @Query("SELECT SUM(b.jul) as julSum, "
             + "SUM(b.aug) as augSum, "
@@ -707,44 +713,76 @@ BigDecimal sumActvitySummation(
             @Param("budgetTypes") Set<Organisation> budgetTypes);
 
     void deleteByAnalcode(Long analcode);
-    
-@Query("SELECT SUM(b.jul) as julSum, "
-        + "SUM(b.aug) as augSum, "
-        + "SUM(b.sep) as sepSum, "
-        + "SUM(b.oct) as octSum, "
-        + "SUM(b.nov) as novSum, "
-        + "SUM(b.dec) as decSum, "
-        + "SUM(b.jan) as janSum, "
-        + "SUM(b.feb) as febSum, "
-        + "SUM(b.mar) as marSum, "
-        + "SUM(b.apr) as aprSum, "
-        + "SUM(b.may) as maySum, "
-        + "SUM(b.jun) as junSum "
-        + "FROM BudgetItems b "
-        + "WHERE b.budget = :budget "
-        + "AND b.coalevel1.code = :coalevel1 "
-        + "AND b.deptUnit IN :deptUnits "
-        + "AND b.activity = :activity "
-        + "AND b.budgetType IN :budgetTypes")
-List<MonthlySumResult> findSumOfIndividualMonthsByBudgetCoalevel1Activity(
-        @Param("budget") Budget budget,
-        @Param("coalevel1") Integer coalevel1,
-        @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
-        @Param("activity") Urc_Activities activity,
-        @Param("budgetTypes") Set<Organisation> budgetTypes); 
 
-@Query("SELECT b FROM BudgetItems b "
-        + "WHERE b.budgetType IN (:budgetTypes) "
-        + "AND b.budget = :budget "
-        + "AND b.activity = :activities "
-        + "AND b.deptUnit IN (:deptUnits) "
-        + "AND b.coalevel1.code = :coalevel1Code")
-List<BudgetItems> findBudgetItemsByUrc_Activities(
-        @Param("budgetTypes") Set<Organisation> budgetTypes,
-        @Param("budget") Budget budget,
-        @Param("activities") Urc_Activities activities,
-        @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
-        @Param("coalevel1Code") Integer coalevel1Code
-);
-List<BudgetItems> findByBudgetAndCoacode(Budget budget, COA coacode);
+    @Query("SELECT SUM(b.jul) as julSum, "
+            + "SUM(b.aug) as augSum, "
+            + "SUM(b.sep) as sepSum, "
+            + "SUM(b.oct) as octSum, "
+            + "SUM(b.nov) as novSum, "
+            + "SUM(b.dec) as decSum, "
+            + "SUM(b.jan) as janSum, "
+            + "SUM(b.feb) as febSum, "
+            + "SUM(b.mar) as marSum, "
+            + "SUM(b.apr) as aprSum, "
+            + "SUM(b.may) as maySum, "
+            + "SUM(b.jun) as junSum "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.coalevel1.code = :coalevel1 "
+            + "AND b.deptUnit IN :deptUnits "
+            + "AND b.activity = :activity "
+            + "AND b.budgetType IN :budgetTypes")
+    List<MonthlySumResult> findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+            @Param("budget") Budget budget,
+            @Param("coalevel1") Integer coalevel1,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            @Param("activity") Urc_Activities activity,
+            @Param("budgetTypes") Set<Organisation> budgetTypes);
+
+    @Query("SELECT SUM(b.jul) as julSum, "
+            + "SUM(b.aug) as augSum, "
+            + "SUM(b.sep) as sepSum, "
+            + "SUM(b.oct) as octSum, "
+            + "SUM(b.nov) as novSum, "
+            + "SUM(b.dec) as decSum, "
+            + "SUM(b.jan) as janSum, "
+            + "SUM(b.feb) as febSum, "
+            + "SUM(b.mar) as marSum, "
+            + "SUM(b.apr) as aprSum, "
+            + "SUM(b.may) as maySum, "
+            + "SUM(b.jun) as junSum "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.coacode IN :coacode")
+    List<MonthlySumResult> findSumOfIndividualMonthsByBudgetCoa(
+            @Param("budget") Budget budget,
+            @Param("coacode") List<COA> coacode);
+
+    @Query("SELECT SUM(b.jul) + SUM(b.aug) + SUM(b.sep) + SUM(b.oct) + SUM(b.nov) + SUM(b.dec) + "
+            + "SUM(b.jan) + SUM(b.feb) + SUM(b.mar) + SUM(b.apr) + SUM(b.may) + SUM(b.jun) as totalSum "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.coacode IN :coacode")
+    BigDecimal findSumOfTotalMonthsByBudgetCoa(
+            @Param("budget") Budget budget,
+            @Param("coacode") List<COA> coacode);
+
+    @Query("SELECT b FROM BudgetItems b "
+            + "WHERE b.budgetType IN (:budgetTypes) "
+            + "AND b.budget = :budget "
+            + "AND b.activity = :activities "
+            + "AND b.deptUnit IN (:deptUnits) "
+            + "AND b.coalevel1.code = :coalevel1Code")
+    List<BudgetItems> findBudgetItemsByUrc_Activities(
+            @Param("budgetTypes") Set<Organisation> budgetTypes,
+            @Param("budget") Budget budget,
+            @Param("activities") Urc_Activities activities,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            @Param("coalevel1Code") Integer coalevel1Code
+    );
+
+    List<BudgetItems> findByBudgetAndCoacode(Budget budget, COA coacode);
+
+    // Custom method to find BudgetItems by Budget and Set of COA codes
+    List<BudgetItems> findByBudgetAndCoacodeIn(Budget budget, Set<COA> coacodes);
 }

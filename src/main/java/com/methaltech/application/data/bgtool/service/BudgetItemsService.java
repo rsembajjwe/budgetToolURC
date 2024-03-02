@@ -1,5 +1,6 @@
 package com.methaltech.application.data.bgtool.service;
 
+import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.entity.bgtool.BudgetItems;
 import com.methaltech.application.data.bgtool.repository.BudgetItemsRepository;
 import com.methaltech.application.data.bgtool.repository.CoaRepository;
@@ -258,10 +259,11 @@ public class BudgetItemsService {
     public BudgetItems findBudgetAndCode(Budget budget, COA coacode) {
         return repository.findBudgetAndCode(budget, coacode);
     }
-    
+
     public List<BudgetItems> findByBudgetAndCoacode(Budget budget, COA coacode) {
         return repository.findByBudgetAndCoacode(budget, coacode);
     }
+
     public BudgetItems sumIndividualMonthsBudgetAndCode(Budget budget, COA coacode) {
         List<Object[]> monthSums = repository.sumIndividualMonthsBudgetAndCode(budget, coacode);
         BudgetItems bdgt = new BudgetItems();
@@ -334,11 +336,17 @@ public class BudgetItemsService {
         BigDecimal sum = repository.findSumByBudgetCoalevel1AndDeptUnits(budget, coalevel1, deptUnits, budgetType);
         return sum;
     }
+
     public BigDecimal findSumByBudgetCoalevel1AndDeptUnitsTotal(Budget budget, List<Coalevel1> coalevel1, List<UrcDeptSectionAnlDimbgt> deptUnits, Set<Organisation> budgetType) {
         BigDecimal sum = repository.findSumByBudgetCoalevel1AndDeptUnitsTotal(budget, coalevel1, deptUnits, budgetType);
         return sum;
-    }    
+    }
 
+    public BigDecimal findSumByBudgetCOA(Budget budget, COA coa) {
+        BigDecimal sum = repository.findSumByBudgetCOA(budget, coa);
+        return sum;
+    }
+    
     public BigDecimal findSumByBudgetCoalevel1AndDeptUnitsAndActivity(Budget budget, Coalevel1 coalevel1, List<UrcDeptSectionAnlDimbgt> deptUnits, Urc_Activities activity, Set<Organisation> budgetType) {
         BigDecimal sum = repository.findSumByBudgetCoalevel1AndDeptUnitsAndActivity(budget, coalevel1, deptUnits, activity, budgetType);
         return sum;
@@ -491,7 +499,7 @@ public class BudgetItemsService {
         return sumOfMonth;
     }
 
-        public BigDecimal findSumOfMonthByBudgetCoalevel1AndDeptUnitsTotal(
+    public BigDecimal findSumOfMonthByBudgetCoalevel1AndDeptUnitsTotal(
             Budget budget,
             List<Coalevel1> coalevel1,
             List<UrcDeptSectionAnlDimbgt> deptUnits,
@@ -551,7 +559,7 @@ public class BudgetItemsService {
 
         return sumOfMonth;
     }
-        
+
     public BigDecimal findSumOfIndividualMonthsByBudgetCoacodeAndDeptUnits(
             Budget budget,
             COA coalevel1,
@@ -721,7 +729,82 @@ public class BudgetItemsService {
         return sumOfMonth;
     }
 
+    public BigDecimal findSumOfIndividualMonthsByBudgetCoa(
+            Budget budget,
+            List<COA> coa,
+            String month) {
+
+        List<BudgetItemsRepository.MonthlySumResult> monthlySumResults
+                = repository.findSumOfIndividualMonthsByBudgetCoa(
+                        budget, coa);
+
+        // Extract sum of the specified month from the first result (assuming there's only one result)
+        BigDecimal sumOfMonth = BigDecimal.ZERO;
+        if (!monthlySumResults.isEmpty()) {
+            switch (month.toLowerCase()) {
+                case "jul":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getJulSum());
+                    break;
+                case "aug":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getAugSum());
+                    break;
+                case "sep":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getSepSum());
+                    break;
+                case "oct":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getOctSum());
+                    break;
+                case "nov":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getNovSum());
+                    break;
+                case "dec":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getDecSum());
+                    break;
+                case "jan":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getJanSum());
+                    break;
+                case "feb":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getFebSum());
+                    break;
+                case "mar":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getMarSum());
+                    break;
+                case "apr":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getAprSum());
+                    break;
+                case "may":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getMaySum());
+                    break;
+                case "jun":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getJunSum());
+                    break;
+
+                // Default to zero if the specified month is not found
+                default:
+                    sumOfMonth = BigDecimal.ZERO;
+            }
+        }
+
+        return sumOfMonth;
+    }
+
+public BigDecimal totalMonthsByProcClass(Budget budget, ProcClass p) {
+    List<COA> coacode = caoRepository.findByBudgetAndProcclass(budget, p);
+    BigDecimal sumOfTotalMonths = repository.findSumOfTotalMonthsByBudgetCoa(budget, coacode);
+    return sumOfTotalMonths != null ? sumOfTotalMonths : BigDecimal.ZERO;
+}
+
+
     public List<BudgetItems> findBudgetItemsByUrc_Activities(Set<Organisation> budgetType, Budget budget, Urc_Activities activities, Set<UrcDeptSectionAnlDimbgt> deptUnits, Integer coalevel1Code) {
         return repository.findBudgetItemsByUrc_Activities(budgetType, budget, activities, deptUnits, coalevel1Code);
+    }
+    // Method to fetch BudgetItems by Budget and Set of COA codes
+
+    public List<BudgetItems> getBudgetItemsByBudgetAndCoacodes(Budget budget, Set<COA> coacodes) {
+        return repository.findByBudgetAndCoacodeIn(budget, coacodes);
+    }
+
+    public List<BudgetItems> getBudgetItemsByBudgetAndCoacode(Budget budget, COA coacode) {
+        return repository.findByBudgetAndCoacode(budget, coacode);
     }
 }

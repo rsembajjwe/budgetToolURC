@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public @Data
 class DeptSectionMerger {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

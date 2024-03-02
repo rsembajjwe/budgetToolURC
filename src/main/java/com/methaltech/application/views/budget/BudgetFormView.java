@@ -10,6 +10,7 @@ import com.methaltech.application.data.bgtool.service.CoaService;
 import com.methaltech.application.data.bgtool.service.Coalevel1Service;
 import com.methaltech.application.data.bgtool.service.CurrencyDataService;
 import com.methaltech.application.data.bgtool.service.CurrencyService;
+import com.methaltech.application.data.bgtool.service.FundsourceService;
 import com.methaltech.application.data.bgtool.service.OrganisationService;
 import com.methaltech.application.data.bgtool.service.SectionService;
 import com.methaltech.application.data.bgtool.service.StaffSalaryService;
@@ -163,6 +164,7 @@ public class BudgetFormView extends Div {
     private final CurrencyDataService sampleCurrencyDataService;
     private final StockUnitMeasureService sampleStockUnitMeasureService;
     private final UR5_ACNTService sampleUR5_ACNTService;
+    private final FundsourceService sampleFundsourceService;
 
     private TextField searchCoa;
 
@@ -171,6 +173,7 @@ public class BudgetFormView extends Div {
     private BigDecimalField cost = new BigDecimalField("Rate");
     private BigDecimalField qty = new BigDecimalField("Qty");
     private ComboBox<Currency> currency = new ComboBox<>("Currency");
+    private ComboBox<Fundsource> budgetItemfundSource = new ComboBox<>("Fund Source");
     private ComboBox<String> unitMeasure = new ComboBox<>("Unit Measure");
     private BigDecimalField total = new BigDecimalField("Total");
 
@@ -242,7 +245,7 @@ public class BudgetFormView extends Div {
             CurrencyService sampleCurrencyService, BudgetItemsService budgetItemsService, StockUnitMeasureService sampleStockUnitMeasureService,
             UR5_ACNTService sampleUR5_ACNTService, UrcDeptSectionAnlDimbgtService urcDeptSectionAnlDimbgtService,
             CurrencyDataService sampleCurrencyDataService, COAReconcileService coaReconcileService, StaffService staffService,
-            StaffSalaryService staffSalaryService) {
+            StaffSalaryService staffSalaryService, FundsourceService sampleFundsourceService) {
         this.chosenBudgetService = chosenBudgetService;
         this.sampleUrc_ActivitiesService = sampleUrc_ActivitiesService;
         this.userService = userService;
@@ -263,6 +266,7 @@ public class BudgetFormView extends Div {
         this.coaReconcileService = coaReconcileService;
         this.staffService = staffService;
         this.staffSalaryService = staffSalaryService;
+        this.sampleFundsourceService = sampleFundsourceService;
         this.setHeight("100%");
         gridUrc_Activities.setHeight("100%");
 
@@ -525,8 +529,8 @@ public class BudgetFormView extends Div {
                                         mes.add(m);
                                     }
 
-                                }else if (cel4 != null && cel4.getCellType() == CellType.NUMERIC) {
-                                    int unitmeasure2 = (int)cel4.getNumericCellValue();
+                                } else if (cel4 != null && cel4.getCellType() == CellType.NUMERIC) {
+                                    int unitmeasure2 = (int) cel4.getNumericCellValue();
                                     String unitmeasure = Integer.toString(unitmeasure2);
                                     List<StockUnitMeasure> getStockUnitMeasureByUnit = sampleStockUnitMeasureService.getStockUnitMeasureByUnit(unitmeasure);
 
@@ -562,7 +566,6 @@ public class BudgetFormView extends Div {
                                     m.setMessage("Invalid Value");
                                     mes.add(m);
                                 }
-
 
                                 if (row.getCell(0) == null || row.getCell(1) == null || row.getCell(2) == null || row.getCell(3) == null || row.getCell(4) == null || row.getCell(5) == null || row.getCell(6) == null) {
                                     m = new errorMessages();
@@ -1352,6 +1355,8 @@ warningNotification(mes);
         comboBoxD_Section = new ComboBox<>("Cost Centre");
         comboBoxD_Section.setItemLabelGenerator(UrcDeptSectionAnlDimbgt::getNAME);
 
+        budgetItemfundSource.setItemLabelGenerator(Fundsource::getFundsource);
+
         comboBoxD_Section.setWidthFull();
         comboBoxD_Section.setEnabled(false);
 
@@ -1439,7 +1444,7 @@ warningNotification(mes);
                 disabledBudget(false);
             }
             gridCOA.setItems(new ArrayList<>());
-
+            budgetItemfundSource.setItems(sampleFundsourceService.findFundsourcesByBudget(e.getValue()));
             chosenBudget = e.getValue();
             editEmployee.setText("Budget Details " + chosenBudget.getFinancialYear());
             comboBoxD_Section.setEnabled(true);
@@ -1571,11 +1576,12 @@ warningNotification(mes);
                 total.setValue(calculateTotal());
             }
         });
-        form.add(Item, cost, qty, unitMeasure, currency, total, notes);
+        form.add(Item, cost, qty, unitMeasure, currency, budgetItemfundSource, total, notes);
         binderbudgetItem.forField(Item).bind("item");
         binderbudgetItem.forField(cost).bind("cost");
         binderbudgetItem.forField(qty).bind("qty");
         binderbudgetItem.forField(currency).bind("currency");
+        binderbudgetItem.forField(budgetItemfundSource).bind("fundsource");
         binderbudgetItem.forField(jan).bind("jan");
         binderbudgetItem.forField(feb).bind("feb");
         binderbudgetItem.forField(mar).bind("mar");
@@ -1665,6 +1671,7 @@ warningNotification(mes);
                     budg.setCurrency(currency.getValue());
                     budg.setNotes(notes.getValue());
                     budg.setBudget(chosenBudget);
+                    budg.setFundsource(budgetItemfundSource.getValue());
 
                     budg.setBudgetType(chosenOrganisation);
                     budg.setCoacode(chosenCOA);
@@ -1874,10 +1881,12 @@ warningNotification(mes);
             }
 
         });
-
-        footer.add(saveBudgetItem, deleteBudgetItem, distrWorkplan, quarterWorkplan, clearWorkplan, templateDownload, uploadBudget, rectify);
+        button.addClickListener(e -> {
+            fixFundsource();
+        });
+        footer.add(saveBudgetItem, deleteBudgetItem, distrWorkplan, quarterWorkplan, clearWorkplan, templateDownload, uploadBudget);
         if (user.getRoles().contains(Role.ADMIN)) {
-            //footer.add(staff, rectify);
+            footer.add(rectify, button);
         }
         contain.add(scroller, footer);
 
@@ -1948,13 +1957,31 @@ warningNotification(mes);
         for (BudgetItems z : findByDeptUnitAndBudget) {
 
             z.setBcategory(z.getCoacode().getCode());
+            System.out.println(z.getBcategory());
+            
             int p = Integer.parseInt(z.getCoacode().getCode().substring(0, 1));
             z.setCoalevel1(coalevel1Service.findByCode(p));
 
             budgetItemsService.update(z);
-            if(z.getCost()==null || z.getCost()==BigDecimal.ZERO||z.getQty()==null || z.getQty()==BigDecimal.ZERO){
+            if (z.getCost() == null || z.getCost() == BigDecimal.ZERO || z.getQty() == null || z.getQty() == BigDecimal.ZERO) {
                 budgetItemsService.deleteBudgetItem(z);
             }
+        }
+    }
+
+    private void fixFundsource() {
+        List<BudgetItems> findByDeptUnitAndBudget = budgetItemsService.findByAll();
+        for (BudgetItems z : findByDeptUnitAndBudget) {
+
+            //z.setBcategory(z.getCoacode().getCode());
+            int p = Integer.parseInt(z.getCoacode().getCode().substring(0, 1));
+            //z.setCoalevel1(coalevel1Service.findByCode(p));
+            Fundsource source = sampleFundsourceService.findByFundsourceAndBudget("IGR", z.getBudget());
+            if (source != null && p != 1) {
+                z.setFundsource(source);
+                budgetItemsService.update(z);
+            }
+
         }
     }
 
@@ -2054,6 +2081,11 @@ warningNotification(mes);
         if (workplan_total_check() == false) {
             total.setErrorMessage("Total Should Match the work plan alignment");
             total.setInvalid(true);
+            result = false;
+        }
+        if (budgetItemfundSource.isEmpty() && (comboBoxCoalevel1.getValue().getCode() == 2 || comboBoxCoalevel1.getValue().getCode() == 3)) {
+            budgetItemfundSource.setErrorMessage("Set the Fund Source");
+            budgetItemfundSource.setInvalid(true);
             result = false;
         }
         return result;
@@ -2247,7 +2279,7 @@ warningNotification(mes);
         qty.clear();
         currency.clear();
         unitMeasure.clear();
-        notes.clear();
+        notes.clear();budgetItemfundSource.clear();
     }
 
     private void disabledBudget(boolean status) {
@@ -2319,11 +2351,7 @@ warningNotification(mes);
         HorizontalLayout lay1 = new HorizontalLayout();
         lay1.setHeight("40px");
         lay1.add(comboBoxCoalevel1, searchCoa);
-        /*        lay1.setResponsiveSteps(
-        // Use one column by default
-        new ResponsiveStep("0", 1),
-        // Use two columns, if the layout's width exceeds 320px
-        new ResponsiveStep("200px", 2));*/
+
         comboBoxCoalevel1.setPlaceholder("Select COA Category");
         comboBoxCoalevel1.setItemLabelGenerator(Coalevel1::getName);
 
@@ -2332,13 +2360,15 @@ warningNotification(mes);
             //comboBoxCoalevel1Two.setValue(chosenCoalevel1);
             setBudgetDetails();
             refreshcomboCoalevel1Two();
-            comboBoxCoalevel1Two.setValue(chosenCoalevel1);
+            comboBoxCoalevel1Two.setValue(ev.getValue());
             if (comboBoxD_Section.isEmpty()) {
                 Notificationwarning("No Section attached");
 
             } else {
-                if (!comboBoxCoalevel1.isEmpty() && !comboBoxBudget.isEmpty()) {
-                    gridCOA.setItems(coaService.findByDeptSectionAndCodeStartingWith(comboBoxD_Section.getValue(), Coalevel1String(chosenCoalevel1), comboBoxBudget.getValue()));
+             
+                if (!comboBoxBudget.isEmpty()) {
+                    gridCOA.setItems(coaService.findByDeptSectionAndCodeStartingWith(comboBoxD_Section.getValue(), Coalevel1String(ev.getValue()), comboBoxBudget.getValue()));
+                    searchCoa.setValue(Coalevel1String(ev.getValue()));
                 }
 
             }
@@ -2350,6 +2380,14 @@ warningNotification(mes);
                 refreshgridBudgetItemCOA2();
             }
             refreshActivitiesSetingGrid2("");
+
+            if (ev.getValue() != null) {
+                if (ev.getValue().getCode() == 1) {
+                    budgetItemfundSource.setEnabled(false);
+                } else {
+                    budgetItemfundSource.setEnabled(true);
+                }
+            }
         });
         gridCOA = new Grid<>(COA.class, false);
         // Configure Grid
@@ -2585,6 +2623,13 @@ warningNotification(mes);
         });
         comboBoxCoalevel1Two.addValueChangeListener(e -> {
             refreshgridBudgetItemCOA2();
+            if (e.getValue() != null) {
+                if (e.getValue().getCode() == 1) {
+                    budgetItemfundSource.setEnabled(false);
+                } else {
+                    budgetItemfundSource.setEnabled(true);
+                }
+            }
 
         });
         gridBudgetCoa.asSingleSelect().addValueChangeListener(e -> {
@@ -2957,6 +3002,7 @@ warningNotification(mes);
     }
 
     private void refreshActivitiesSetingGrid2(String search) {
+ 
         if (!comboBoxBudget.isEmpty()) {
 
             gridUrc_Activities.setItems(sampleUrc_ActivitiesService.findByDeptSectionAndBudgetAndSearch(comboBoxD_Section.getValue(), chosenBudget, search));
@@ -3209,37 +3255,55 @@ warningNotification(mes);
 
             //add(new Hr());
             //GridMenuItem<BudgetItems> emailItem = 
-            addItem("Change Budget Item Department Unit",
+            addItem("Change Budget Item Section",
                     e -> e.getItem().ifPresent(person -> {
                         Dialog dialog = new Dialog();
-                        dialog.setHeaderTitle("Change Budget Item Department Unit");
+                        dialog.setHeaderTitle("Change Budget Item Section");
                         Span span = new Span();
-                        span.setText("Change Budget Item Department Unit " + person.getDeptUnit().getNAME() + " To:");
+                        span.setText("Change Budget Item Section " + person.getDeptUnit().getNAME() + " To:");
                         span.getElement().getThemeList().add("badge success");
                         VerticalLayout dialogLayout = new VerticalLayout();
-                        Grid<D_Unit> gridD_Unit = new Grid<>(D_Unit.class, false);
+                        Grid<UrcDeptSectionAnlDimbgt> gridD_Unit = new Grid<>(UrcDeptSectionAnlDimbgt.class, false);
 
-                        Grid.Column<D_Unit> name = gridD_Unit.addColumn("unit").setHeader("Department Unit").setAutoWidth(true);
+                        Grid.Column<UrcDeptSectionAnlDimbgt> name = gridD_Unit.addColumn("NAME").setHeader("Section").setAutoWidth(true);
 
                         gridD_Unit.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
 
-                        gridD_Unit.asSingleSelect().addValueChangeListener(vl -> {
-                            span.setText("Change Budget Item Department Unit " + person.getDeptUnit().getNAME() + " To: " + vl.getValue().getUnit());
-                        });
-                        gridD_Unit.setItems(user.getUnits());
-                        FormLayout formLayout = new FormLayout();
+                        gridD_Unit.setItems(user.getDeptsection());
 
-                        formLayout.add(span);
-                        dialogLayout.add(formLayout, gridD_Unit);
-                        Button saveButton = new Button("Change Department Unit");
-                        saveButton.addClickListener(ev -> {
+                        Grid<Urc_Activities> gridUrc_ActivitiesForChangeSection = new Grid<>(Urc_Activities.class, false);
+
+                        Grid.Column<Urc_Activities> name2 = gridUrc_ActivitiesForChangeSection.addColumn("name").setHeader("URC Activities").setAutoWidth(true);
+
+                        gridUrc_ActivitiesForChangeSection.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
+
+                        gridUrc_ActivitiesForChangeSection.asSingleSelect().addValueChangeListener(vl -> {
+                            // span.setText("Change Actvity " + person.getActivity().getName() + " To: " + vl.getValue().getName());
+
+                        });
+                        gridD_Unit.asSingleSelect().addValueChangeListener(vl -> {
+                            span.setText("Change Budget Item Section " + person.getDeptUnit().getNAME() + " To: " + vl.getValue().getNAME());
+
                             if (!gridD_Unit.asSingleSelect().isEmpty()) {
-                                //person.setDeptUnit(gridD_Unit.asSingleSelect().getValue());
+                                //Notification.show("Changed: " + sampleUrc_ActivitiesService.findByDeptSectionAndBudgetAndSearch(gridD_Unit.asSingleSelect().getValue(), chosenBudget, "").size());
+                                gridUrc_ActivitiesForChangeSection.setItems(sampleUrc_ActivitiesService.findByDeptSectionAndBudgetAndSearch(gridD_Unit.asSingleSelect().getValue(), chosenBudget, ""));
+                            }
+                        });
+                        // gridUrc_Activities2.setItems(sampleUrc_ActivitiesService.findByDeptSectionAndBudgetAndSearch(gridD_Unit.asSingleSelect().getValue(), chosenBudget, ""));
+                        FormLayout formLayout = new FormLayout();
+                        // SplitLayout lay = new SplitLayout(gridD_Unit, null);
+                        formLayout.add(span);
+                        dialogLayout.add(formLayout, gridD_Unit, gridUrc_ActivitiesForChangeSection);
+                        Button saveButton = new Button("Change Section");
+                        saveButton.addClickListener(ev -> {
+                            if (!gridD_Unit.asSingleSelect().isEmpty() && !gridUrc_ActivitiesForChangeSection.asSingleSelect().isEmpty()) {
+                                person.setDeptUnit(gridD_Unit.asSingleSelect().getValue());
+                                person.setActivity(gridUrc_ActivitiesForChangeSection.asSingleSelect().getValue());
                                 budgetItemsService.update(person);
                                 refreshgridBudgetItems();
                                 dialog.close();
                             } else {
-                                Notificationwarning("Select an Account");
+                                Notificationwarning("Select a Section and An Activity");
                             }
                         });
                         Button cancelButton = new Button("Cancel", ev -> dialog.close());
@@ -3902,6 +3966,7 @@ warningNotification(mes);
             e.printStackTrace();
         }
     }
+
     //this form has the entire budget parameters
     private void exportAndDownloadUploadBudgetFileExcel2() {
         try (Workbook workbook = new XSSFWorkbook()) {
@@ -3969,6 +4034,7 @@ warningNotification(mes);
             e.printStackTrace();
         }
     }
+
     public Notification warningNotification(List<errorMessages> messages) {
         Notification notification = new Notification();
         notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
@@ -4030,8 +4096,8 @@ warningNotification(mes);
                     budget.setBudgetType(comboBoxOrganisation.getValue());
                     if (i > 1) {
                         // Skip the first row
-                                BigDecimal cost = BigDecimal.ZERO;
-                                BigDecimal qty = BigDecimal.ZERO;
+                        BigDecimal cost = BigDecimal.ZERO;
+                        BigDecimal qty = BigDecimal.ZERO;
                         if (row != null) {
 
                             Currency cur = null;

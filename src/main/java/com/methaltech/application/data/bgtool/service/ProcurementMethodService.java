@@ -1,6 +1,4 @@
-
 package com.methaltech.application.data.bgtool.service;
-
 
 import com.methaltech.application.data.bgtool.repository.ProcurementMethodRepository;
 import com.methaltech.application.data.entity.bgtool.ProcurementMethod;
@@ -19,28 +17,23 @@ public class ProcurementMethodService {
         this.procurementMethodRepository = procurementMethodRepository;
     }
 
-    // Save a new procurement method
-    public ProcurementMethod save(ProcurementMethod procurementMethod) {
-        return procurementMethodRepository.save(procurementMethod);
-    }
-
-    // Get all procurement methods
     public List<ProcurementMethod> getAllProcurementMethods() {
         return procurementMethodRepository.findAll();
     }
 
-    // Get a procurement method by ID
     public Optional<ProcurementMethod> getProcurementMethodById(Long id) {
         return procurementMethodRepository.findById(id);
     }
 
-    // Delete a procurement method by ID
+    public ProcurementMethod saveProcurementMethod(ProcurementMethod procurementMethod) {
+        return procurementMethodRepository.save(procurementMethod);
+    }
+
     public void deleteProcurementMethod(Long id) {
         procurementMethodRepository.deleteById(id);
     }
-    // Delete a procurement method by object
-    public void deleteProcurementMethod(ProcurementMethod procurementMethod) {
-        procurementMethodRepository.delete(procurementMethod);
+
+    public ProcurementMethod findByNum(Integer num) {
+        return procurementMethodRepository.findByNum(num);
     }
 }
-

@@ -1,6 +1,7 @@
 package com.methaltech.application.data.bgtool.service;
 
 import com.methaltech.application.data.Display;
+import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.bgtool.repository.CoaRepository;
 import com.methaltech.application.data.bgtool.repository.Coalevel11Repository;
 import com.methaltech.application.data.bgtool.repository.Coalevel12Repository;
@@ -67,17 +68,23 @@ public class CoaService {
         return coaRepository.findByCodeAndBudgetWithDSections(code, budget);
     }
 
-    @Transactional
-    public COA save(COA coa) {
-        /*        if (coa.getDsections() == null) {
-        System.out.println("Section is null.....................................................");
-        } else {
-        System.out.println("Section is not null.....................................................");
-        }*/
+@Transactional
+public COA save(COA coa) {
+    try {
         for (Section section : coa.getDsections()) {
             entityManager.merge(section);
         }
         return coaRepository.save(coa);
+    } catch (Exception e) {
+        // Log detailed information about the exception, including the data causing the conflict.
+        e.printStackTrace();
+        throw e; // Rethrow the exception to propagate it.
+    }
+}
+
+    
+    public COA saveCOA(COA coa){
+       return coaRepository.save(coa); 
     }
 
     public boolean existsByCode(String code) {
@@ -240,4 +247,10 @@ public class CoaService {
     public List<COA> findByBudgetAndCoalevel11(Budget budget, Coalevel11 coalevel11) {
         return coaRepository.findByBudgetAndCoalevel11(budget, coalevel11);
     }
+    public List<COA> findByBudgetAndProcclassIn(Budget budget, List<ProcClass> procclasses){
+        return coaRepository.findByBudgetAndProcclassIn(budget, procclasses);
+    }
+    public List<COA> findByBudgetAndProcclass(Budget budget, ProcClass procclasses){
+        return coaRepository.findByBudgetAndProcclass(budget, procclasses);
+    }    
 }

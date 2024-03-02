@@ -19,6 +19,7 @@ import com.methaltech.application.views.emailsender.EmailSenderView;
 import com.methaltech.application.views.freight.freightVolumeView;
 import com.methaltech.application.views.helloworld.HelloWorldView;
 import com.methaltech.application.views.masterdetail.MasterDetailView;
+import com.methaltech.application.views.procurementplan.ProcurementCOASettingView;
 import com.methaltech.application.views.procurementplan.ProcurementPlanView;
 import com.methaltech.application.views.salary.staffSalaryView;
 import com.methaltech.application.views.structure.structureView;
@@ -189,6 +190,10 @@ public class MainLayout extends AppLayout {
             nav.addItem(new SideNavItem("Budget Reports", BudgetReportsView.class, LineAwesomeIcon.ACCESSIBLE_ICON.create()));
 
         }
+        if (accessChecker.hasAccess(ProcurementCOASettingView.class)) {
+            nav.addItem(new SideNavItem("Procurement Plan Chart of Accounts Settings", ProcurementCOASettingView.class, LineAwesomeIcon.PIED_PIPER_HAT.create()));
+
+        }        
         if (accessChecker.hasAccess(ProcurementPlanView.class)) {
             nav.addItem(new SideNavItem("Procurement Plan", ProcurementPlanView.class, LineAwesomeIcon.PIED_PIPER_HAT.create()));
 
@@ -424,7 +429,7 @@ public class MainLayout extends AppLayout {
                     Notification not = Notification.show("Enter Current Password");
                     not.addThemeVariants(NotificationVariant.LUMO_ERROR);
                 } else if (!BCrypt.hashpw(pass1.getValue(), GlobalConstants.SALT).equals(use.getHashedPassword())) {
-                    System.out.println(BCrypt.hashpw(pass1.getValue(), GlobalConstants.SALT) + " ----" + use.getHashedPassword());
+                    //System.out.println(BCrypt.hashpw(pass1.getValue(), GlobalConstants.SALT) + " ----" + use.getHashedPassword());
                     Notification not = Notification.show("Wrong Password");
                     Notification not2 = Notification.show(BCrypt.hashpw(pass1.getValue(), GlobalConstants.SALT) + " ----" + use.getHashedPassword());
                     not.addThemeVariants(NotificationVariant.LUMO_ERROR);

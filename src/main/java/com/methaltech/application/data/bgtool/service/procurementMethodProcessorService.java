@@ -8,11 +8,9 @@ import java.util.List;
 
 public class procurementMethodProcessorService {
 
-    private final ProcurementMethodService sampleProcurementMethodService;
     private final ProcurementTypeService sampleProcurementTypeService;
 
-    public procurementMethodProcessorService(ProcurementMethodService sampleProcurementMethodService, ProcurementTypeService sampleProcurementTypeService) {
-        this.sampleProcurementMethodService = sampleProcurementMethodService;
+    public procurementMethodProcessorService( ProcurementTypeService sampleProcurementTypeService) {
         this.sampleProcurementTypeService = sampleProcurementTypeService;
     }
 

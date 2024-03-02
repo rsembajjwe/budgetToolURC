@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Bean;
 public class Application implements AppShellConfigurator {
 
     public static void main(String[] args) {
+        System.setProperty("javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD", "");
         SpringApplication.run(Application.class, args);
     }
 

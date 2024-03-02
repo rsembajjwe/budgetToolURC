@@ -383,7 +383,7 @@ public class UserView extends Div implements BeforeEnterObserver {
         roles.setErrorMessage("Required");
 
         // Populate combo with roles
-        roles.setItems(Role.ADMIN, Role.USER, Role.BLO, Role.HR, Role.FREIGHT, Role.HOD);
+        roles.setItems(Role.ADMIN, Role.USER, Role.BLO, Role.HR, Role.FREIGHT, Role.HOD,Role.PROCUREMENT);
         formLayout.add(fname, lname, username, tel, roles, sections);
 
         editorDiv.add(formLayout);

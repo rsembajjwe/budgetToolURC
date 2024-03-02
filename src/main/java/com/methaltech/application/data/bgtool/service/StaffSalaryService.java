@@ -46,10 +46,10 @@ public class StaffSalaryService {
 public StaffSalary saveStaffSalary(StaffSalary staffSalary) {
     try {
         StaffSalary savedSalary = staffSalaryRepository.save(staffSalary);
-        System.out.println("Salary Saved");
+        //System.out.println("Salary Saved");
         return savedSalary;
     } catch (Exception e) {
-        System.out.println("Error saving salary: " + e.getMessage());
+        //System.out.println("Error saving salary: " + e.getMessage());
         // You might want to log the exception or rethrow it depending on your use case
         throw new RuntimeException("Error saving salary", e);
     }

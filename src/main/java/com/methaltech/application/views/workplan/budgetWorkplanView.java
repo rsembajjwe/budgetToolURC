@@ -413,6 +413,7 @@ public class budgetWorkplanView extends Div {
         cellq.setCellValue("WORKPLAN");
         rowBoldcount.add((int) 0);
         tr++;
+        
         Row row = sheet.createRow(tr);
         Cell cell = row.createCell((short) 0);
         row.getCell(0).setCellStyle(styleq31);

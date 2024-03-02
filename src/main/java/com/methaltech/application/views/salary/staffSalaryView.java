@@ -8,6 +8,7 @@ import com.methaltech.application.data.bgtool.service.CoaService;
 import com.methaltech.application.data.bgtool.service.Coalevel1Service;
 import com.methaltech.application.data.bgtool.service.CurrencyService;
 import com.methaltech.application.data.bgtool.service.FreightVolumesService;
+import com.methaltech.application.data.bgtool.service.FundsourceService;
 import com.methaltech.application.data.bgtool.service.OrganisationService;
 import com.methaltech.application.data.bgtool.service.StaffSalaryService;
 import com.methaltech.application.data.bgtool.service.StockUnitMeasureService;
@@ -19,6 +20,7 @@ import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.Currency;
 import com.methaltech.application.data.entity.bgtool.FreightVolumes;
+import com.methaltech.application.data.entity.bgtool.Fundsource;
 import com.methaltech.application.data.entity.bgtool.Organisation;
 import com.methaltech.application.data.entity.bgtool.StaffSalary;
 import com.methaltech.application.data.entity.bgtool.StockUnitMeasure;
@@ -149,11 +151,14 @@ public class staffSalaryView extends Div {
     private final OldStaffPojoService oldStaffPojoService;
     private final Coalevel1Service coalevel1Service;
 
+    private ComboBox<Fundsource> budgetItemfundSource = new ComboBox<>("Fund Source");
+    private final FundsourceService sampleFundsourceService;
+
     public staffSalaryView(AuthenticatedUser authenticatedUser, FreightVolumesService sampleFreightVolumesService, BudgetService sampleBudgetService, CoaService sampleCoaService,
             CurrencyService sampleCurrencyService, BudgetItemsService budgetItemsService, StockUnitMeasureService sampleStockUnitMeasureService,
             OrganisationService sampleOrganisationService, UserService userService, BudgetItemsService sampleBudgetItemsService,
             Urc_ActivitiesService sampleUrc_ActivitiesService, StaffSalaryService sampleStaffSalaryService, OldStaffPojoService oldStaffPojoService,
-            Coalevel1Service coalevel1Service) {
+            Coalevel1Service coalevel1Service, FundsourceService sampleFundsourceService) {
         this.sampleFreightVolumesService = sampleFreightVolumesService;
         this.sampleBudgetService = sampleBudgetService;
         this.sampleCoaService = sampleCoaService;
@@ -167,6 +172,7 @@ public class staffSalaryView extends Div {
         this.sampleStaffSalaryService = sampleStaffSalaryService;
         this.oldStaffPojoService = oldStaffPojoService;
         this.coalevel1Service = coalevel1Service;
+        this.sampleFundsourceService = sampleFundsourceService;
         setHeight("100%");
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
         image2.setWidthFull();
@@ -178,6 +184,8 @@ public class staffSalaryView extends Div {
         if (authenticatedUser.get().isPresent()) {
             user = authenticatedUser.get().get();
         }
+
+        budgetItemfundSource.setItemLabelGenerator(Fundsource::getFundsource);
 
         comboBoxD_Section.setItemLabelGenerator(UrcDeptSectionAnlDimbgt::getNAME);
         comboBoxD_Section.setItems(user.getDeptsection());
@@ -226,6 +234,7 @@ public class staffSalaryView extends Div {
                 .stream());
         comboBoxBudget.setItemLabelGenerator(Budget::getFinancialYear);
         comboBoxBudget.addValueChangeListener(e -> {
+            budgetItemfundSource.setItems(sampleFundsourceService.findFundsourcesByBudget(e.getValue()));
             setSalaryGrid2();
             if (!comboBoxD_Section.isEmpty() && !comboBoxBudget.isEmpty()) {
                 comboBoxUrc_Activities.setItems(sampleUrc_ActivitiesService.findByDeptSectionAndBudget(comboBoxD_Section.getValue(), comboBoxBudget.getValue()));
@@ -382,6 +391,7 @@ public class staffSalaryView extends Div {
                 code.setValue(selectedSalary.getCode() != null ? selectedSalary.getCode() : "");
                 email.setValue(selectedSalary.getEmail() != null ? selectedSalary.getEmail() : "");
                 nextofkin.setValue(selectedSalary.getNextofkin() != null ? selectedSalary.getNextofkin() : "");
+               // budgetItemfundSource.setValue(selectedSalary. != null ? selectedSalary.getNextofkin() : "");
 
             } else {
                 fname.clear();
@@ -396,6 +406,7 @@ public class staffSalaryView extends Div {
                 salaryz.clear();
                 email.clear();
                 nextofkin.clear();
+                
             }
         });
 
@@ -407,7 +418,7 @@ public class staffSalaryView extends Div {
         ho.add(save, delete, cancel);
         form.add(code, fname, lname, email, tel, mob, position, grade, Address,
                 Address2, nextofkin,
-                salaryz, ho
+                salaryz,ho
         );
 
         // binder.bindInstanceFields(this);
@@ -440,6 +451,7 @@ public class staffSalaryView extends Div {
             item.setActivity(comboBoxUrc_Activities.getValue());
             item.setBudgetType(comboBoxOrganisation.getValue());
             item.setBcategory(salary_wages.getCode());
+            item.setFundsource(budgetItemfundSource.getValue());
             item.setCoalevel1(coa);
             item.setJan(salarywage.getSalary());
             item.setFeb(salarywage.getSalary());
@@ -466,6 +478,7 @@ public class staffSalaryView extends Div {
             item.setBudgetType(org);
             item.setCoacode(salary_wages);
             item.setDeptUnit(comboBoxD_Section.getValue());
+            item.setFundsource(budgetItemfundSource.getValue());
             item.setAnalcode(salarywage.getId());
             item.setActivity(comboBoxUrc_Activities.getValue());
             item.setBudgetType(comboBoxOrganisation.getValue());
@@ -502,6 +515,7 @@ public class staffSalaryView extends Div {
                 //nssfB.setAnalcode(salarywage.getId());
                 nssfB.setActivity(comboBoxUrc_Activities.getValue());
                 nssfB.setBudgetType(comboBoxOrganisation.getValue());
+                nssfB.setFundsource(budgetItemfundSource.getValue());
                 nssfB.setBcategory(nssf.getCode());
                 nssfB.setCoalevel1(coa);
                 nssfB.setJan(nssfs.getJan().multiply(new BigDecimal("0.1")));
@@ -529,6 +543,7 @@ public class staffSalaryView extends Div {
                 nssfB.setUnitMeasure("MONTH");
                 //nssfB.setAnalcode(salarywage.getId());
                 nssfB.setActivity(comboBoxUrc_Activities.getValue());
+                nssfB.setFundsource(budgetItemfundSource.getValue());
                 nssfB.setBudgetType(comboBoxOrganisation.getValue());
                 nssfB.setBcategory(nssf.getCode());
                 nssfB.setCoalevel1(coa);
@@ -563,6 +578,7 @@ public class staffSalaryView extends Div {
                 //nssfG.setAnalcode(salarywage.getId());
                 nssfG.setActivity(comboBoxUrc_Activities.getValue());
                 nssfG.setBudgetType(comboBoxOrganisation.getValue());
+                nssfG.setFundsource(budgetItemfundSource.getValue());
                 nssfG.setBcategory(gratuity.getCode());
                 nssfG.setCoalevel1(coa);
                 nssfG.setJan(grauityAmount.getJan().multiply(new BigDecimal("0.25")));
@@ -592,6 +608,7 @@ public class staffSalaryView extends Div {
                 // nssfG.setAnalcode(salarywage.getId());
                 nssfG.setActivity(comboBoxUrc_Activities.getValue());
                 nssfG.setBudgetType(comboBoxOrganisation.getValue());
+                nssfG.setFundsource(budgetItemfundSource.getValue());
                 nssfG.setBcategory(gratuity.getCode());
                 nssfG.setCoalevel1(coa);
                 nssfG.setJan(salarywage.getSalary().multiply(new BigDecimal("0.25")));
@@ -626,6 +643,7 @@ public class staffSalaryView extends Div {
                 // nssfW.setAnalcode(salarywage.getId());
                 nssfW.setActivity(comboBoxUrc_Activities.getValue());
                 nssfW.setBudgetType(comboBoxOrganisation.getValue());
+                nssfW.setFundsource(budgetItemfundSource.getValue());
                 nssfW.setBcategory(workmancompesation.getCode());
                 nssfW.setJan(grauityAmount.getJan().multiply(new BigDecimal("0.03")));
                 nssfW.setFeb(grauityAmount.getFeb().multiply(new BigDecimal("0.03")));
@@ -655,6 +673,7 @@ public class staffSalaryView extends Div {
                 // nssfW.setAnalcode(salarywage.getId());
                 nssfW.setActivity(comboBoxUrc_Activities.getValue());
                 nssfW.setBudgetType(comboBoxOrganisation.getValue());
+                nssfW.setFundsource(budgetItemfundSource.getValue());
                 nssfW.setBcategory(workmancompesation.getCode());
                 nssfW.setJan(salarywage.getSalary().multiply(new BigDecimal("0.03")));
                 nssfW.setFeb(salarywage.getSalary().multiply(new BigDecimal("0.03")));
@@ -858,7 +877,7 @@ public class staffSalaryView extends Div {
 
         });
         FormLayout formLayout = new FormLayout();
-        formLayout.add(comboBoxBudget, comboBoxD_Section, comboBoxOrganisation, comboBoxUrc_Activities, upload);
+        formLayout.add(comboBoxBudget, comboBoxD_Section, comboBoxOrganisation, comboBoxUrc_Activities,budgetItemfundSource, upload);
         formLayout.setResponsiveSteps(
                 // Use one column by default
                 new ResponsiveStep("0", 1),

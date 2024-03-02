@@ -101,7 +101,7 @@ public class OldBudgetSubItemService {
                             List<SectionDeptUnitMerger> list = sectionDeptUnitMergerRepository.findAll();
                             for (SectionDeptUnitMerger e : list) {
                                 for (String f : e.getDeptUnitcodes()) {
-                                    System.out.println(f + "    " + b);
+                                    //System.out.println(f + "    " + b);
                                     if (f.trim().equals(b.trim())) {
 
                                         sectioncodes.add(e.getSectioncode());
