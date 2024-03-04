@@ -10,7 +10,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "URC_A_SALFLDG")
+@Table(name = "URC_A_SALFLDG_View")
 public @Data class SALFLDG {
     @Id
     @Column(name = "ACCNT_CODE")

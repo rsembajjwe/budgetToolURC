@@ -66,6 +66,9 @@ class ProcurementPlan {
 
     @Column(name = "cost", precision = 25, scale = 6)
     private BigDecimal cost;
+    
+    @Column(name = "totalPerProc", precision = 25, scale = 6)
+    private BigDecimal total;    
 
     @ManyToOne
     @JoinColumn(name = "fundsource_id")
