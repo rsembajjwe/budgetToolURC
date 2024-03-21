@@ -1,6 +1,7 @@
 package com.methaltech.application.views.budget;
 
 import com.methaltech.application.data.Display;
+import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.Role;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
 import com.methaltech.application.data.bgtool.service.UserService;
@@ -12,6 +13,7 @@ import com.methaltech.application.data.bgtool.service.CurrencyDataService;
 import com.methaltech.application.data.bgtool.service.CurrencyService;
 import com.methaltech.application.data.bgtool.service.FundsourceService;
 import com.methaltech.application.data.bgtool.service.OrganisationService;
+import com.methaltech.application.data.bgtool.service.ProcurementPlanService;
 import com.methaltech.application.data.bgtool.service.SectionService;
 import com.methaltech.application.data.bgtool.service.StaffSalaryService;
 import com.methaltech.application.data.bgtool.service.StockUnitMeasureService;
@@ -84,6 +86,7 @@ import jakarta.annotation.security.PermitAll;
 import java.util.ArrayList;
 import java.util.List;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.persistence.EntityNotFoundException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
@@ -165,6 +168,7 @@ public class BudgetFormView extends Div {
     private final StockUnitMeasureService sampleStockUnitMeasureService;
     private final UR5_ACNTService sampleUR5_ACNTService;
     private final FundsourceService sampleFundsourceService;
+    private final ProcurementPlanService sampleProcurementPlanService;
 
     private TextField searchCoa;
 
@@ -237,6 +241,7 @@ public class BudgetFormView extends Div {
     private final COAReconcileService coaReconcileService;
     private final StaffService staffService;
     private final StaffSalaryService staffSalaryService;
+    private ComboBox<ProcClass> procClassCombo = new ComboBox("Procurement Class");
 
     public BudgetFormView(AuthenticatedUser authenticatedUser, BudgetService chosenBudgetService, Urc_ActivitiesService sampleUrc_ActivitiesService,
             UserService userService, UnitService unitService, UnitsBudgetService unitsbudgetService,
@@ -245,7 +250,7 @@ public class BudgetFormView extends Div {
             CurrencyService sampleCurrencyService, BudgetItemsService budgetItemsService, StockUnitMeasureService sampleStockUnitMeasureService,
             UR5_ACNTService sampleUR5_ACNTService, UrcDeptSectionAnlDimbgtService urcDeptSectionAnlDimbgtService,
             CurrencyDataService sampleCurrencyDataService, COAReconcileService coaReconcileService, StaffService staffService,
-            StaffSalaryService staffSalaryService, FundsourceService sampleFundsourceService) {
+            StaffSalaryService staffSalaryService, FundsourceService sampleFundsourceService, ProcurementPlanService sampleProcurementPlanService) {
         this.chosenBudgetService = chosenBudgetService;
         this.sampleUrc_ActivitiesService = sampleUrc_ActivitiesService;
         this.userService = userService;
@@ -267,11 +272,13 @@ public class BudgetFormView extends Div {
         this.staffService = staffService;
         this.staffSalaryService = staffSalaryService;
         this.sampleFundsourceService = sampleFundsourceService;
+        this.sampleProcurementPlanService = sampleProcurementPlanService;
         this.setHeight("100%");
         gridUrc_Activities.setHeight("100%");
 
         addClassName("budget-form-view");
         decimalFormat.setGroupingUsed(true);
+        procClassCombo.setItems(ProcClass.Supplies, ProcClass.Works, ProcClass.Consultancy, ProcClass.Non_Consultancy);
 
         //add(settingView(), new Hr(), masterSplitPane());
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -1576,7 +1583,7 @@ warningNotification(mes);
                 total.setValue(calculateTotal());
             }
         });
-        form.add(Item, cost, qty, unitMeasure, currency, budgetItemfundSource, total, notes);
+        form.add(Item, cost, qty, unitMeasure, currency, budgetItemfundSource, procClassCombo, total, notes);
         binderbudgetItem.forField(Item).bind("item");
         binderbudgetItem.forField(cost).bind("cost");
         binderbudgetItem.forField(qty).bind("qty");
@@ -1637,6 +1644,7 @@ warningNotification(mes);
 
                     dialog.setConfirmText("Delete");
                     dialog.addConfirmListener(event -> {
+
                         budgetItemsService.deleteBudgetItem(budg);
                         clearWorkplan();
                         clearBudget();
@@ -1671,10 +1679,22 @@ warningNotification(mes);
                     budg.setCurrency(currency.getValue());
                     budg.setNotes(notes.getValue());
                     budg.setBudget(chosenBudget);
-                    budg.setFundsource(budgetItemfundSource.getValue());
+                    // budg.setFundsource(budgetItemfundSource.getValue());
+                    Fundsource selectedFundsource = budgetItemfundSource.getValue();
+
+                    if (selectedFundsource != null && selectedFundsource.getId() != null) {
+                        // Fetch managed Fundsource from the database
+                        System.out.println("Right here 1");
+                        selectedFundsource = sampleFundsourceService.findById(selectedFundsource.getId());
+                        System.out.println("Right here 2");
+                        budg.setFundsource(selectedFundsource);
+                    } else {
+                        throw new IllegalArgumentException("No Fundsource selected");
+                    }
 
                     budg.setBudgetType(chosenOrganisation);
                     budg.setCoacode(chosenCOA);
+                    budg.setProcClass(procClassCombo.getValue());
                     if (budg.getCoacode().getCoalevel1().getCode() != 1) {
                         budg.setActivity(chosenUrc_Activities);
                     }
@@ -1694,8 +1714,31 @@ warningNotification(mes);
                     budg.setOct(getNonNullValue(oct).stripTrailingZeros());
                     budg.setNov(getNonNullValue(nov).stripTrailingZeros());
                     budg.setDec(getNonNullValue(dec).stripTrailingZeros());
+                    System.out.println("Right here 3");
                     budgetItemsService.update(budg);
+                    System.out.println("Right here");
+                    ProcurementPlan getAllProcurementPlans = sampleProcurementPlanService.findFirstByBudgetAndProcClassAndCoa(budg.getBudget(), budg.getProcClass(), budg.getCoacode());
+                    if (getAllProcurementPlans!=null) {
+                       // pp.setCost(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(budg.getBudget(), budg.getProcClass(), budg.getCoacode()));
+                       BigDecimal tDecimal = budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(getAllProcurementPlans.getBudget(), getAllProcurementPlans.getProcClass(), getAllProcurementPlans.getCoa());
+                        getAllProcurementPlans.setProcurementMethod(sampleProcurementPlanService.getProcurementMethodList2(budg.getProcClass(), tDecimal));
+                        sampleProcurementPlanService.save(getAllProcurementPlans);
+                    } else {
+                        System.out.println("Right here 5");
+                        ProcurementPlan pr = new ProcurementPlan();
+                        pr.setSubject(budg.getCoacode().getName());
+                        pr.setBudget(budg.getBudget()); // Assuming all selected plans have the same budget
+                        pr.setCoa(budg.getCoacode());
+                        Set<Fundsource> fundsourceSet = new HashSet<>();
+                        fundsourceSet.add(budg.getFundsource());
+                        //pr.setFundsource(fundsourceSet); // Assuming all selected plans have the same fund source
+                        pr.setCost(calculateMonthSum(budg));
+                        pr.setProcClass(procClassCombo.getValue());
+                        pr.setProcurementMethod(sampleProcurementPlanService.getProcurementMethodList2(budg.getProcClass(), pr.getCost()));
 
+                        sampleProcurementPlanService.save(pr);
+                    }
+                    System.out.println("Right here 6");
                     refreshgridBudgetItems();
                     refreshgridBudgetItemCOA2();
                     clearWorkplan();
@@ -1704,6 +1747,7 @@ warningNotification(mes);
                 } catch (Exception validationException) {
                     NotificationError(" An exception happened while trying to saving. " + validationException.getMessage());
                     System.out.println(validationException.getMessage());
+
                 }
             } else {
                 Notification note = Notification.show("Check your settings");
@@ -1795,6 +1839,7 @@ warningNotification(mes);
                     BudgetItems nssfBudget = new BudgetItems();
                     nssfBudget.setActivity(bug.getActivity());
                     nssfBudget.setCoacode(nssf);
+                    nssfBudget.setProcClass(nssf.getProcclass());
                     nssfBudget.setItem(nssf.getName());
                     nssfBudget.setBudget(bgt);
                     nssfBudget.setBudgetType(bug.getBudgetType());
@@ -1823,6 +1868,7 @@ warningNotification(mes);
                     BudgetItems gratuityBudget = new BudgetItems();
                     gratuityBudget.setActivity(bug.getActivity());
                     gratuityBudget.setCoacode(gratuity);
+                    gratuityBudget.setProcClass(gratuity.getProcclass());
                     gratuityBudget.setItem(gratuity.getName());
                     gratuityBudget.setBudget(bgt);
                     gratuityBudget.setBudgetType(bug.getBudgetType());
@@ -1852,6 +1898,7 @@ warningNotification(mes);
                     BudgetItems workmanscompensationBudget = new BudgetItems();
                     workmanscompensationBudget.setActivity(bug.getActivity());
                     workmanscompensationBudget.setCoacode(workmanscompensation);
+                    workmanscompensationBudget.setProcClass(workmanscompensation.getProcclass());
                     workmanscompensationBudget.setItem(workmanscompensation.getName());
                     workmanscompensationBudget.setBudget(bgt);
                     workmanscompensationBudget.setBudgetType(bug.getBudgetType());
@@ -1882,7 +1929,12 @@ warningNotification(mes);
 
         });
         button.addClickListener(e -> {
-            fixFundsource();
+            //fixFundsource();
+            List<BudgetItems> findByDeptUnitAndBudget = budgetItemsService.findByCoacodeCodeStartingWith2Or3();
+            for (BudgetItems y : findByDeptUnitAndBudget) {
+                y.setProcClass(y.getCoacode().getProcclass());
+                budgetItemsService.update(y);
+            }
         });
         footer.add(saveBudgetItem, deleteBudgetItem, distrWorkplan, quarterWorkplan, clearWorkplan, templateDownload, uploadBudget);
         if (user.getRoles().contains(Role.ADMIN)) {
@@ -1958,7 +2010,7 @@ warningNotification(mes);
 
             z.setBcategory(z.getCoacode().getCode());
             System.out.println(z.getBcategory());
-            
+
             int p = Integer.parseInt(z.getCoacode().getCode().substring(0, 1));
             z.setCoalevel1(coalevel1Service.findByCode(p));
 
@@ -1967,6 +2019,7 @@ warningNotification(mes);
                 budgetItemsService.deleteBudgetItem(z);
             }
         }
+        fixFundsource();
     }
 
     private void fixFundsource() {
@@ -1977,7 +2030,7 @@ warningNotification(mes);
             int p = Integer.parseInt(z.getCoacode().getCode().substring(0, 1));
             //z.setCoalevel1(coalevel1Service.findByCode(p));
             Fundsource source = sampleFundsourceService.findByFundsourceAndBudget("IGR", z.getBudget());
-            if (source != null && p != 1) {
+            if (source != null && p != 1&&z.getFundsource()==null) {
                 z.setFundsource(source);
                 budgetItemsService.update(z);
             }
@@ -2279,7 +2332,8 @@ warningNotification(mes);
         qty.clear();
         currency.clear();
         unitMeasure.clear();
-        notes.clear();budgetItemfundSource.clear();
+        notes.clear();
+        budgetItemfundSource.clear();
     }
 
     private void disabledBudget(boolean status) {
@@ -2306,6 +2360,7 @@ warningNotification(mes);
         distrWorkplan.setEnabled(status);
         quarterWorkplan.setEnabled(status);
         clearWorkplan.setEnabled(status);
+        procClassCombo.setEnabled(status);
     }
 
     private VerticalLayout coaView() {
@@ -2365,7 +2420,7 @@ warningNotification(mes);
                 Notificationwarning("No Section attached");
 
             } else {
-             
+
                 if (!comboBoxBudget.isEmpty()) {
                     gridCOA.setItems(coaService.findByDeptSectionAndCodeStartingWith(comboBoxD_Section.getValue(), Coalevel1String(ev.getValue()), comboBoxBudget.getValue()));
                     searchCoa.setValue(Coalevel1String(ev.getValue()));
@@ -2396,6 +2451,14 @@ warningNotification(mes);
         gridCOA.setHeightFull();
         gridCOA.getStyle().set("flex-grow", "1");
         gridCOA.asSingleSelect().addValueChangeListener(vl -> {
+            if (vl.getValue() != null) {
+                if (vl.getValue().getCode().trim().startsWith("2") || vl.getValue().getCode().trim().startsWith("3")) {
+                    procClassCombo.setValue(vl.getValue().getProcclass());
+                } else {
+                    procClassCombo.setValue(ProcClass.Other);
+                }
+            }
+
             if (vl.getValue() != null) {
                 if (vl.getValue().getDisplay() == Display.FREIGHT || vl.getValue().getDisplay() == Display.SALARIES) {
                     disabledBudget(false);
@@ -3002,7 +3065,7 @@ warningNotification(mes);
     }
 
     private void refreshActivitiesSetingGrid2(String search) {
- 
+
         if (!comboBoxBudget.isEmpty()) {
 
             gridUrc_Activities.setItems(sampleUrc_ActivitiesService.findByDeptSectionAndBudgetAndSearch(comboBoxD_Section.getValue(), chosenBudget, search));
@@ -3455,7 +3518,7 @@ warningNotification(mes);
 // Create a cell for the title
             Cell titleCell = titleRow.createCell(1);
             //titleCell.setCellValue(new XSSFRichTextString("UGANDA RAILWAYS COOPERATION")); // Set your title text
-            titleCell.setCellValue(new XSSFRichTextString("UGANDA RAILWAYS COOPERATION"));
+            titleCell.setCellValue("UGANDA RAILWAYS COOPERATION");
             titleCell.setCellStyle(headerStyle); // Apply the header style to the title cell
 
 // Create a title row with a title cell
@@ -3465,7 +3528,7 @@ warningNotification(mes);
             //titleCell.setCellValue(new XSSFRichTextString("UGANDA RAILWAYS COOPERATION")); // Set your title text
 
             //titleRow2.createCell(0).setCellValue(new XSSFRichTextString("UGANDA RAILWAYS COOPERATION"));
-            titleRow2.createCell(0).setCellValue(new XSSFRichTextString(titleSetup(fy.getText(), deptUnit.getText(), activity.getText(), fyType.getText())));
+            titleRow2.createCell(0).setCellValue(titleSetup(fy.getText(), deptUnit.getText(), activity.getText(), fyType.getText()));
             titleCell2.setCellStyle(headerStyle); // Apply the header style to the title cell 
             titleCell2.setCellStyle(wrapTextStyle);
 
@@ -3646,7 +3709,7 @@ warningNotification(mes);
             Row titleRow = sheet.createRow(rowNum++);
             titleRow.setHeightInPoints(40);
             Cell titleCell = titleRow.createCell(1);
-            titleCell.setCellValue(new XSSFRichTextString("UGANDA RAILWAYS COOPERATION"));
+            titleCell.setCellValue("UGANDA RAILWAYS COOPERATION");
             titleCell.setCellStyle(headerStyle);
             // Create the header text row
             Row headerTextRow = sheet.createRow(rowNum++);
@@ -4859,40 +4922,4 @@ warningNotification(mes);
         }
     }
 
-    /*private static class PersonContextMenu extends GridContextMenu<Person> {
-    public PersonContextMenu(Grid<Person> target) {
-    super(target);
-    
-    addItem("Edit", e -> e.getItem().ifPresent(person -> {
-    // System.out.printf("Edit: %s%n", person.getFullName());
-    }));
-    addItem("Delete", e -> e.getItem().ifPresent(person -> {
-    // System.out.printf("Delete: %s%n", person.getFullName());
-    }));
-    
-    add(new Hr());
-    
-    GridMenuItem<Person> emailItem = addItem("Email",
-    e -> e.getItem().ifPresent(person -> {
-    // System.out.printf("Email: %s%n",
-    // person.getFullName());
-    }));
-    GridMenuItem<Person> phoneItem = addItem("Call",
-    e -> e.getItem().ifPresent(person -> {
-    // System.out.printf("Phone: %s%n",
-    // person.getFullName());
-    }));
-    
-    setDynamicContentHandler(person -> {
-    // Do not show context menu when header is clicked
-    if (person == null)
-    return false;
-    emailItem
-    .setText(String.format("Email: %s", person.getEmail()));
-    phoneItem.setText(String.format("Call: %s",
-    person.getAddress().getPhone()));
-    return true;
-    });
-    }
-    } */
 }

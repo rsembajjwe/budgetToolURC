@@ -2,8 +2,6 @@ package com.methaltech.application.data.entity.bgtool;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.methaltech.application.data.ProcClass;
-import com.methaltech.application.data.ProcurementMethodList;
-import com.methaltech.application.data.ProcurementTypeList;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,9 +16,9 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Date;
 import java.util.Set;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -37,9 +35,11 @@ class ProcurementPlan {
 
     private String subject;
 
-    @ManyToMany(cascade = CascadeType.MERGE, fetch = FetchType.EAGER)
-    @JoinTable(name = "procPlanBudgetItems")
-    private Set<BudgetItems> procPlanBudgetItems;
+    /*    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER)
+    @JoinTable(name = "proc_plan_budget_items",
+    joinColumns = @JoinColumn(name = "procurement_plan_id"),
+    inverseJoinColumns = @JoinColumn(name = "budget_item_id"))
+    private Set<BudgetItems> procPlanBudgetItems;*/
 
     @ManyToOne
     @JoinColumn(name = "budget_id")
@@ -52,6 +52,7 @@ class ProcurementPlan {
     private ProcurementMethod procurementMethod;
 
     @ManyToOne
+    //@JoinColumn(name = "coa_id", unique = true) // Set unique to true
     @JoinColumn(name = "coa_id")
     @JsonIgnore
     private COA coa;
@@ -70,9 +71,8 @@ class ProcurementPlan {
     @Column(name = "totalPerProc", precision = 25, scale = 6)
     private BigDecimal total;    
 
-    @ManyToOne
-    @JoinColumn(name = "fundsource_id")
-    private Fundsource fundsource;
+    //@ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER)
+   // private Set<Fundsource> fundsource;
 
     @ManyToOne
     @JoinColumn(name = "contracttype_id")

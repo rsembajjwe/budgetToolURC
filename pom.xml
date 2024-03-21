@@ -11,7 +11,7 @@
 
     <properties>
         <java.version>17</java.version>
-        <vaadin.version>24.1.3</vaadin.version>
+        <vaadin.version>24.3.7</vaadin.version>
         <selenium.version>4.10.0</selenium.version>
     </properties>
 
@@ -119,13 +119,12 @@
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-            <version>5.1.0</version>
-            <type>jar</type>
+            <version>5.2.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
-            <version>5.1.0</version>
+            <version>5.2.5</version>
         </dependency>
 
         <dependency>

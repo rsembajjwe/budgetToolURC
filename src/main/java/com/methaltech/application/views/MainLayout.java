@@ -9,6 +9,7 @@ import com.methaltech.application.data.bgtool.service.UserService;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.UnitMeasures.UnitsMeasureView;
 import com.methaltech.application.views.about.AboutView;
+import com.methaltech.application.views.actual.ActualView;
 import com.methaltech.application.views.budget.BudgetFormView;
 import com.methaltech.application.views.budget.BudgetView;
 import com.methaltech.application.views.budget.transferView;
@@ -196,6 +197,10 @@ public class MainLayout extends AppLayout {
         }        
         if (accessChecker.hasAccess(ProcurementPlanView.class)) {
             nav.addItem(new SideNavItem("Procurement Plan", ProcurementPlanView.class, LineAwesomeIcon.PIED_PIPER_HAT.create()));
+
+        }
+        if (accessChecker.hasAccess(ActualView.class)) {
+            nav.addItem(new SideNavItem("Actuals", ActualView.class, LineAwesomeIcon.ALGOLIA.create()));
 
         }        
                 if (accessChecker.hasAccess(EmailSenderView.class)) {

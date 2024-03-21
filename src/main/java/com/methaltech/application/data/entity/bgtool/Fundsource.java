@@ -6,8 +6,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.util.Set;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -22,5 +25,8 @@ public @Data class Fundsource {
     @ManyToOne
     @JoinColumn(name = "budget_id")
     @JsonIgnore
-    private Budget budget;    
+    private Budget budget; 
+    /*    @ManyToMany
+    @JoinTable(name = "procPlanFundsource", joinColumns = @JoinColumn(name = "fundsource_id"), inverseJoinColumns = @JoinColumn(name = "procurementPlan_id"))
+    private Set<ProcurementPlan> procurementPlan; */   
 }

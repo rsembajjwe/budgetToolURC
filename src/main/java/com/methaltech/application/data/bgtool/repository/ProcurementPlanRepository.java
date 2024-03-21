@@ -7,6 +7,7 @@ import com.methaltech.application.data.entity.bgtool.ProcurementPlan;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +25,10 @@ public interface ProcurementPlanRepository extends JpaRepository<ProcurementPlan
 
     void deleteByBudgetAndCoa(Budget budget, COA coa);
 
-    List<ProcurementPlan> findByBudgetAndProcClassAndProcPlanBudgetItemsDeptUnitIn(
-            Budget budget, ProcClass procClass, Collection<UrcDeptSectionAnlDimbgt> deptUnits);
-    
+    //List<ProcurementPlan> findByBudgetAndProcClassAndProcPlanBudgetItemsDeptUnitIn( Budget budget, ProcClass procClass, Collection<UrcDeptSectionAnlDimbgt> deptUnits);
+    //Optional<ProcurementPlan> findByBudgetAndProcClassAndCoa(Budget budget, ProcClass procClass, COA coa);
+    List<ProcurementPlan> findByBudgetAndProcClassAndCoa(Budget budget, ProcClass procClass, COA coa);
+
+    ProcurementPlan findFirstByBudgetAndProcClassAndCoa(Budget budget, ProcClass procClass, COA coa);
+
 }

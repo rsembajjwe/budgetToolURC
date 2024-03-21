@@ -1,10 +1,12 @@
 package com.methaltech.application.data.bgtool.repository;
 
+import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.BudgetItems;
 import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.D_Unit;
+import com.methaltech.application.data.entity.bgtool.Fundsource;
 import com.methaltech.application.data.entity.bgtool.Organisation;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
@@ -785,4 +787,128 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
 
     // Custom method to find BudgetItems by Budget and Set of COA codes
     List<BudgetItems> findByBudgetAndCoacodeIn(Budget budget, Set<COA> coacodes);
+
+    @Query("SELECT bi FROM BudgetItems bi WHERE bi.coacode.code LIKE '2%' OR bi.coacode.code LIKE '3%'")
+    List<BudgetItems> findByCoacodeCodeStartingWith2Or3();
+
+    @Query("SELECT COALESCE(SUM(b.jan), 0) + COALESCE(SUM(b.feb), 0) + COALESCE(SUM(b.mar), 0) + "
+            + "COALESCE(SUM(b.apr), 0) + COALESCE(SUM(b.may), 0) + COALESCE(SUM(b.jun), 0) + "
+            + "COALESCE(SUM(b.jul), 0) + COALESCE(SUM(b.aug), 0) + COALESCE(SUM(b.sep), 0) + "
+            + "COALESCE(SUM(b.oct), 0) + COALESCE(SUM(b.nov), 0) + COALESCE(SUM(b.dec), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget AND b.procClass = :procClass AND b.coacode = :coacode")
+    BigDecimal sumOfAllMonthsByBudgetAndProcClassAndCoa(@Param("budget") Budget budget,
+            @Param("procClass") ProcClass procClass,
+            @Param("coacode") COA coacode);
+
+    @Query("SELECT COALESCE(SUM(b.jan), 0) + COALESCE(SUM(b.feb), 0) + COALESCE(SUM(b.mar), 0) + "
+            + "COALESCE(SUM(b.apr), 0) + COALESCE(SUM(b.may), 0) + COALESCE(SUM(b.jun), 0) + "
+            + "COALESCE(SUM(b.jul), 0) + COALESCE(SUM(b.aug), 0) + COALESCE(SUM(b.sep), 0) + "
+            + "COALESCE(SUM(b.oct), 0) + COALESCE(SUM(b.nov), 0) + COALESCE(SUM(b.dec), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget AND b.procClass = :procClass AND b.coacode = :coacode "
+            + "AND b.deptUnit IN :deptUnits")
+    BigDecimal sumOfAllMonthsByBudgetAndProcClassAndCoa(@Param("budget") Budget budget,
+            @Param("procClass") ProcClass procClass,
+            @Param("coacode") COA coacode,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits);
+
+    @Query("SELECT COALESCE(SUM(b.jan), 0) + COALESCE(SUM(b.feb), 0) + COALESCE(SUM(b.mar), 0) + "
+            + "COALESCE(SUM(b.apr), 0) + COALESCE(SUM(b.may), 0) + COALESCE(SUM(b.jun), 0) + "
+            + "COALESCE(SUM(b.jul), 0) + COALESCE(SUM(b.aug), 0) + COALESCE(SUM(b.sep), 0) + "
+            + "COALESCE(SUM(b.oct), 0) + COALESCE(SUM(b.nov), 0) + COALESCE(SUM(b.dec), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget AND b.coacode = :coacode "
+            + "AND b.deptUnit IN :deptUnits")
+    BigDecimal sumOfAllMonthsByBudgetAndCoa(@Param("budget") Budget budget,
+            @Param("coacode") COA coacode,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits);
+
+    @Query("SELECT COALESCE(SUM(b.jan), 0) + COALESCE(SUM(b.feb), 0) + COALESCE(SUM(b.mar), 0) + "
+            + "COALESCE(SUM(b.apr), 0) + COALESCE(SUM(b.may), 0) + COALESCE(SUM(b.jun), 0) + "
+            + "COALESCE(SUM(b.jul), 0) + COALESCE(SUM(b.aug), 0) + COALESCE(SUM(b.sep), 0) + "
+            + "COALESCE(SUM(b.oct), 0) + COALESCE(SUM(b.nov), 0) + COALESCE(SUM(b.dec), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget AND b.coacode = :coacode ")
+    BigDecimal sumOfAllMonthsByBudgetAndCoa(@Param("budget") Budget budget, @Param("coacode") COA coacode);
+
+    @Query("SELECT b FROM BudgetItems b "
+            + "WHERE b.budget = :budget AND b.procClass = :procClass AND b.coacode = :coacode")
+    List<BudgetItems> findByBudgetAndProcClassAndCoa(@Param("budget") Budget budget,
+            @Param("procClass") ProcClass procClass,
+            @Param("coacode") COA coacode);
+
+    @Query("SELECT b FROM BudgetItems b "
+            + "WHERE b.budget = :budget AND b.procClass = :procClass AND b.coacode = :coacode AND b.deptUnit IN :deptUnits")
+    List<BudgetItems> findByBudgetAndProcClassAndCoaAndDeptUnitIn(@Param("budget") Budget budget,
+            @Param("procClass") ProcClass procClass,
+            @Param("coacode") COA coacode,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits);
+
+    @Query("SELECT b FROM BudgetItems b "
+            + "WHERE b.budget = :budget AND b.procClass = :procClass AND b.coacode IN :coacode AND b.deptUnit IN :deptUnits")
+    List<BudgetItems> findByBudgetAndProcClassAndCoaAndDeptUnitIn(@Param("budget") Budget budget,
+            @Param("procClass") ProcClass procClass,
+            @Param("coacode") Set<COA> coacode,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits);
+
+    @Query("SELECT DISTINCT f.fundsource FROM BudgetItems bi "
+            + "JOIN bi.fundsource f "
+            + "WHERE bi.budget = :budget "
+            + "AND bi.procClass = :procClass "
+            + "AND bi.coacode = :coacode")
+    Set<String> findDistinctFundSourcesByBudgetAndProcClassAndCoacode(Budget budget, ProcClass procClass, COA coacode);
+
+    @Query("SELECT DISTINCT f FROM BudgetItems bi "
+            + "JOIN bi.fundsource f "
+            + "WHERE bi.budget = :budget "
+            + "AND bi.procClass = :procClass "
+            + "AND bi.coacode = :coacode")
+    Set<Fundsource> findDistinctFundSources2ByBudgetAndProcClassAndCoacode(Budget budget, ProcClass procClass, COA coacode);
+
+    @Query("SELECT bi FROM BudgetItems bi "
+            + "JOIN bi.fundsource fs "
+            + "WHERE bi.budget = :budget "
+            + "AND bi.procClass = :procClass "
+            + "AND bi.coacode = :coacode "
+            + "AND fs IN :fundsource")
+    List<BudgetItems> findByBudgetAndProcClassAndCoaAndFundsourceIn(@Param("budget") Budget budget,
+            @Param("procClass") ProcClass procClass,
+            @Param("coacode") COA coacode,
+            @Param("fundsource") Set<Fundsource> fundsource);
+
+    @Query("SELECT b FROM BudgetItems b "
+            + "WHERE b.budget = :budget AND b.procClass = :procClass AND b.coacode = :coacode AND b.deptUnit IN :deptUnits AND b.fundsource IN :fundsource")
+    List<BudgetItems> findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(
+            @Param("budget") Budget budget,
+            @Param("procClass") ProcClass procClass,
+            @Param("coacode") COA coacode,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            @Param("fundsource") Set<Fundsource> fundsource);
+
+    @Query("SELECT DISTINCT b.coacode FROM BudgetItems b WHERE b.budget = :budget")
+    List<COA> findDistinctCoacodeByBudget(@Param("budget") Budget budget);
+
+    @Query("SELECT DISTINCT b.coacode FROM BudgetItems b WHERE b.budget = :budget AND b.deptUnit IN :deptUnits")
+    List<COA> findDistinctCoacodeByBudgetAndDeptUnitIn(@Param("budget") Budget budget, @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits);
+
+    @Query("SELECT COALESCE(SUM(b.jul), 0) as julSum, "
+            + "COALESCE(SUM(b.aug), 0) as augSum, "
+            + "COALESCE(SUM(b.sep), 0) as sepSum, "
+            + "COALESCE(SUM(b.oct), 0) as octSum, "
+            + "COALESCE(SUM(b.nov), 0) as novSum, "
+            + "COALESCE(SUM(b.dec), 0) as decSum, "
+            + "COALESCE(SUM(b.jan), 0) as janSum, "
+            + "COALESCE(SUM(b.feb), 0) as febSum, "
+            + "COALESCE(SUM(b.mar), 0) as marSum, "
+            + "COALESCE(SUM(b.apr), 0) as aprSum, "
+            + "COALESCE(SUM(b.may), 0) as maySum, "
+            + "COALESCE(SUM(b.jun), 0) as junSum "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget AND b.coacode = :coacode "
+            + "AND b.deptUnit IN :deptUnits")
+    List<MonthlySumResult> findSumOfIndividualMonthsByBudgetCoaDept(@Param("budget") Budget budget,
+            @Param("coacode") COA coacode,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits);
+
 }

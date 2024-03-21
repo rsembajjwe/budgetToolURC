@@ -51,4 +51,9 @@ public class FundsourceService {
     public Fundsource findByFundsourceAndBudget(String fundsource, Budget budget) {
         return fundsourceRepository.findByFundsourceAndBudget(fundsource, budget);
     }
+    
+    public Fundsource findById(Long id) {
+        Optional<Fundsource> optionalFundsource = fundsourceRepository.findById(id);
+        return optionalFundsource.orElseThrow(() -> new IllegalArgumentException("Fundsource not found"));
+    }    
 }

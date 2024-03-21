@@ -1,10 +1,13 @@
 package com.methaltech.application.data.entity.bgtool;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.methaltech.application.data.ProcClass;
 import jakarta.persistence.Column;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,11 +37,11 @@ class BudgetItems {
     @JoinColumn(name = "budget_id")
     @JsonIgnore
     private Budget budget;
-    
+
     @ManyToOne
     @JoinColumn(name = "fundsource_id")
     @JsonIgnore
-    private Fundsource fundsource;    
+    private Fundsource fundsource;
 
     @ManyToOne
     @JoinColumn(name = "coalevel1_id")
@@ -92,13 +95,7 @@ class BudgetItems {
     @Column(length = 255)
     private String notes;
     private String bcategory;
-    /*    @ManyToOne
-    @JsonIgnore
-    @JoinColumn(name = "activity_id")
-    private Urc_Activities progactivity;*/
 
- /*    @ManyToOne
-    @JoinColumn(name = "unitMeasure_id")*/
     private String unitMeasure;
     private String target_group;
     private String expected_trainer;
@@ -117,4 +114,7 @@ class BudgetItems {
     @ManyToOne
     @JoinColumn(name = "Organisation_id")
     private Organisation budgetType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "procureClass_id")
+    private ProcClass procClass;
 }
