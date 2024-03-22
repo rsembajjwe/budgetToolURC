@@ -843,7 +843,14 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
     List<BudgetItems> findByBudgetAndProcClassAndCoaAndDeptUnitIn(@Param("budget") Budget budget,
             @Param("procClass") ProcClass procClass,
             @Param("coacode") COA coacode,
-            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits);
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits); 
+    
+    @Query("SELECT b FROM BudgetItems b "
+            + "WHERE b.budget = :budget AND b.procClass = :procClass AND b.coacode = :coacode AND b.deptUnit IN :deptUnits")
+    List<BudgetItems> findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsource(@Param("budget") Budget budget,
+            @Param("procClass") ProcClass procClass,
+            @Param("coacode") COA coacode,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits);     
 
     @Query("SELECT b FROM BudgetItems b "
             + "WHERE b.budget = :budget AND b.procClass = :procClass AND b.coacode IN :coacode AND b.deptUnit IN :deptUnits")

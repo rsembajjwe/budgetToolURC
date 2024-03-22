@@ -210,6 +210,25 @@ public class ProcurementPlanService {
         System.out.println("Used this");
         return filteredProcurementPlans;
     }
+    
+    @Transactional
+    public List<ProcurementPlan> findByBudgetAndProcClassAndSectsAndFundsource(Budget budget, ProcClass procClass, List<ProcurementPlan> procurementPlans, Set<Fundsource> fundsource, Set<UrcDeptSectionAnlDimbgt> deptUnits) {
+
+        List<ProcurementPlan> procurementPlanss = new ArrayList<>();
+        for (ProcurementPlan procurementPlan : procurementPlans) {
+            List<BudgetItems> items = repository.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(procurementPlan.getBudget(), procurementPlan.getProcClass(), procurementPlan.getCoa(), deptUnits,fundsource);
+            //procurementPlan.setProcPlanBudgetItems(new HashSet<>(items));
+            procurementPlan.setCost(generatesumofMonthsFromList(items));
+
+            procurementPlanss.add(procurementPlan);
+
+        }
+        List<ProcurementPlan> filteredProcurementPlans = procurementPlanss.stream()
+                .filter(plan -> plan.getCost() != null && plan.getCost().compareTo(BigDecimal.ZERO) != 0)
+                .collect(Collectors.toList());
+        System.out.println("Used this");
+        return filteredProcurementPlans;
+    }    
 
     @Transactional
     public BigDecimal findByBudgetAndProcClassAndSectionIn(Budget budget, ProcClass procClass, List<ProcurementPlan> procurementPlans, Set<UrcDeptSectionAnlDimbgt> deptUnits) {
