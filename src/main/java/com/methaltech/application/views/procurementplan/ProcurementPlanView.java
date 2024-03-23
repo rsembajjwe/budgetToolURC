@@ -367,24 +367,82 @@ public class ProcurementPlanView extends Div {
             return span;
         })).setHeader("Currency").setFlexGrow(0).setWidth("100px");
         grid.getElement().getStyle().set("--vaadin-grid-cell-background", "#cccccc");
+
         grid.addColumn(new ComponentRenderer<>(urcActivity -> {
             Span span = new Span("");
-            // Span span = new Span(decimalFormat.format(urcActivity.getCost()));
-            if (comboBoxD_Section.isEmpty()) {
-                span = new Span(decimalFormat.format(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa())));
-            } else {
-                span = new Span(decimalFormat.format(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa(), comboBoxD_Section.getValue())));
-            }
 
+            if (budget != null && !budget.isEmpty() && !procClassCombo.isEmpty() && comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+
+                if (funds.isEmpty()) {
+                    span = new Span(decimalFormat.format(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(urcActivity.getBudget(), procClassCombo.getValue(), urcActivity.getCoa())) + "");
+                } else {
+                    span = new Span(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndFundsourceIn(urcActivity.getBudget(), procClassCombo.getValue(), urcActivity.getCoa(), funds.getSelectedItems()))) + "");
+                }
+
+            } else if (budget != null && !budget.isEmpty() && !procClassCombo.isEmpty() && comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+
+                if (funds.isEmpty()) {
+                    span = new Span(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(urcActivity.getBudget(), procClassCombo.getValue(), urcActivity.getCoa(), user.getDeptsection()))) + "");
+                } else {
+                    span = new Span(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(urcActivity.getBudget(), procClassCombo.getValue(), urcActivity.getCoa(), user.getDeptsection(), funds.getSelectedItems()))) + "");
+                }
+            } else if (budget != null && !budget.isEmpty() && !procClassCombo.isEmpty() && !comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+                if (funds.isEmpty()) {
+                    span = new Span(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(urcActivity.getBudget(), procClassCombo.getValue(), urcActivity.getCoa(), comboBoxD_Section.getSelectedItems()))) + "");
+                } else {
+                    span = new Span(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(urcActivity.getBudget(), procClassCombo.getValue(), urcActivity.getCoa(), comboBoxD_Section.getSelectedItems(), funds.getSelectedItems()))) + "");
+                }
+            } else if (budget != null && !budget.isEmpty() && !procClassCombo.isEmpty() && !comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+                if (funds.isEmpty()) {
+                    span = new Span(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(urcActivity.getBudget(), procClassCombo.getValue(), urcActivity.getCoa(), comboBoxD_Section.getSelectedItems()))) + "");
+                } else {
+                    span = new Span(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(urcActivity.getBudget(), procClassCombo.getValue(), urcActivity.getCoa(), comboBoxD_Section.getSelectedItems(), funds.getSelectedItems()))) + "");
+                }
+
+            }
             return span;
         })).setHeader("Estimate Cost").setFrozen(true).setWidth("150px").setFooter(span11);
 
         // grid.addColumn("fundsource").setAutoWidth(true);
         grid.addColumn(new ComponentRenderer<>(urcActivity -> {
             Span span = new Span("");
-            Set<String> funds = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
-            if (!funds.isEmpty()) {
-                span = new Span(getCommaSeparatedFundsourceList(funds));
+            if (budget != null && !budget.isEmpty() && !procClassCombo.isEmpty() && comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
+                if (funds.isEmpty()) {
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacodeF(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa(), funds.getSelectedItems());
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                }
+
+            } else if (budget != null && !budget.isEmpty() && !procClassCombo.isEmpty() && comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa(), user.getDeptsection());
+                if (funds.isEmpty()) {
+                    //fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa(), user.getDeptsection(), funds.getSelectedItems());
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                }
+            } else if (budget != null && !budget.isEmpty() && !procClassCombo.isEmpty() && !comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa(), comboBoxD_Section.getSelectedItems());
+                if (funds.isEmpty()) {
+                    //fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa(), comboBoxD_Section.getSelectedItems(), funds.getSelectedItems());
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                }
+            } else if (budget != null && !budget.isEmpty() && !procClassCombo.isEmpty() && !comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa(), comboBoxD_Section.getSelectedItems());
+                if (funds.isEmpty()) {
+                    // fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa(), comboBoxD_Section.getSelectedItems(), funds.getSelectedItems());
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                }
+
             }
 
             return span;
@@ -502,17 +560,80 @@ public class ProcurementPlanView extends Div {
 
         grid2.getElement().getStyle().set("--vaadin-grid-cell-background", "#cccccc");
         grid2.addColumn(new ComponentRenderer<>(urcActivity -> {
-            //Span span = new Span(decimalFormat.format(urcActivity.getCost()));
-            Span span = new Span(decimalFormat.format(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa())));
+            Span span = new Span("");
+
+            if (budget2 != null && !budget2.isEmpty() && !procClassCombo2.isEmpty() && comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+
+                if (funds2.isEmpty()) {
+                    span = new Span(decimalFormat.format(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(urcActivity.getBudget(), procClassCombo2.getValue(), urcActivity.getCoa())) + "");
+                } else {
+                    span = new Span(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndFundsourceIn(urcActivity.getBudget(), procClassCombo2.getValue(), urcActivity.getCoa(), funds2.getSelectedItems()))) + "");
+                }
+
+            } else if (budget2 != null && !budget2.isEmpty() && !procClassCombo2.isEmpty() && comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+
+                if (funds2.isEmpty()) {
+                    span = new Span(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(urcActivity.getBudget(), procClassCombo2.getValue(), urcActivity.getCoa(), user.getDeptsection()))) + "");
+                } else {
+                    span = new Span(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(urcActivity.getBudget(), procClassCombo2.getValue(), urcActivity.getCoa(), user.getDeptsection(), funds2.getSelectedItems()))) + "");
+                }
+            } else if (budget2 != null && !budget2.isEmpty() && !procClassCombo2.isEmpty() && !comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+                if (funds2.isEmpty()) {
+                    span = new Span(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(urcActivity.getBudget(), procClassCombo2.getValue(), urcActivity.getCoa(), comboBoxD_Section2.getSelectedItems()))) + "");
+                } else {
+                    span = new Span(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(urcActivity.getBudget(), procClassCombo2.getValue(), urcActivity.getCoa(), comboBoxD_Section2.getSelectedItems(), funds2.getSelectedItems()))) + "");
+                }
+            } else if (budget2 != null && !budget2.isEmpty() && !procClassCombo2.isEmpty() && !comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+                if (funds2.isEmpty()) {
+                    span = new Span(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(urcActivity.getBudget(), procClassCombo2.getValue(), urcActivity.getCoa(), comboBoxD_Section2.getSelectedItems()))) + "");
+                } else {
+                    span = new Span(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(urcActivity.getBudget(), procClassCombo2.getValue(), urcActivity.getCoa(), comboBoxD_Section2.getSelectedItems(), funds2.getSelectedItems()))) + "");
+                }
+
+            }
             return span;
         })).setHeader("Estimate Cost").setFrozen(true).setWidth("150px").setFooter(span2);
 
         // grid.addColumn("fundsource").setAutoWidth(true);
         grid2.addColumn(new ComponentRenderer<>(urcActivity -> {
             Span span = new Span("");
-            Set<String> funds = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
-            if (!funds.isEmpty()) {
-                span = new Span(getCommaSeparatedFundsourceList(funds));
+            if (budget2 != null && !budget2.isEmpty() && !procClassCombo2.isEmpty() && comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
+                if (funds2.isEmpty()) {
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacodeF(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa(), funds2.getSelectedItems());
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                }
+
+            } else if (budget2 != null && !budget2.isEmpty() && !procClassCombo2.isEmpty() && comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa(), user.getDeptsection());
+                if (funds2.isEmpty()) {
+                    //fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa(), user.getDeptsection(), funds2.getSelectedItems());
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                }
+            } else if (budget2 != null && !budget2.isEmpty() && !procClassCombo2.isEmpty() && !comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa(), comboBoxD_Section2.getSelectedItems());
+                if (funds2.isEmpty()) {
+                    //fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa(), comboBoxD_Section2.getSelectedItems(), funds2.getSelectedItems());
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                }
+            } else if (budget2 != null && !budget2.isEmpty() && !procClassCombo2.isEmpty() && !comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa(), comboBoxD_Section2.getSelectedItems());
+                if (funds2.isEmpty()) {
+                    // fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa(), comboBoxD_Section2.getSelectedItems(), funds2.getSelectedItems());
+                    span = new Span(getCommaSeparatedFundsourceList(fundString));
+                }
+
             }
 
             return span;
@@ -601,9 +722,7 @@ public class ProcurementPlanView extends Div {
         });
 
         funds.addValueChangeListener(y -> {
-            procClassCombo.setValue(null);
-            gridBudgetItems.setItems(new ArrayList<>());
-            grid.setItems(new ArrayList<>());
+            refreshgridProcurementPlan(procClassCombo.getValue(), comboBoxD_Section.getSelectedItems());
 
         });
         Button refresh = new Button("Refresh");
@@ -623,22 +742,27 @@ public class ProcurementPlanView extends Div {
         downloadProcurementReportButtonSheets.setEnabled(true);
 
         Div div = new Div();
-        div.add(budget, procClassCombo, comboBoxD_Section, funds, refresh, updateButton, downloadProcurementReportButton, downloadProcurementReportButtonSheets);
+        div.add(budget, procClassCombo, comboBoxD_Section, funds, downloadProcurementReportButton, downloadProcurementReportButtonSheets);
         // Set margin-right style to create space between components
         budget.getStyle().set("marginRight", "10px");
         procClassCombo.getStyle().set("marginRight", "10px");
         comboBoxD_Section.getStyle().set("marginRight", "10px");
         funds.getStyle().set("marginRight", "10px");
         downloadProcurementReportButton.addClickListener(e -> {
-            exportAndDownloadExcelWorkplan(procClassCombo.getValue());
+            if(!budget.isEmpty()&&!procClassCombo.isEmpty()){
+               exportAndDownloadExcelWorkplan(procClassCombo.getValue()); 
+            }else{
+                Notificationwarning("Select a Financial Year && procurement Class");
+            }
+            
         });
         downloadProcurementReportButtonSheets.addClickListener(e -> {
-            if (!budget.isEmpty()) {
+            if (!budget.isEmpty()&&!procClassCombo.isEmpty()) {
                 budget2.setValue(budget.getValue());
 
                 exportAndDownloadExcelProcurementPlanSheets();
             } else {
-                Notificationwarning("Select a Financial Year");
+                Notificationwarning("Select a Financial Year && procurement Class");
             }
 
         });
@@ -692,13 +816,10 @@ public class ProcurementPlanView extends Div {
                         pnew.setCoa(p);
 
                         pnew.setProcurementMethod(ProcurementPlanService.getProcurementMethodList2(pnew.getProcClass(), tDecimal));
-                        System.out.println("Waiting to save");
-                        System.out.println(tDecimal.doubleValue() + "");
-                        System.out.println(p.getBudget().getFinancialYear() + " " + p.getProcclass().name() + " " + p.getCode());
+
                         if (tDecimal.doubleValue() > 0) {
 
                             ProcurementPlanService.save(pnew);
-                            System.out.println("saved");
                         }
 
                     }
@@ -738,9 +859,7 @@ public class ProcurementPlanView extends Div {
 
         funds2.addValueChangeListener(y -> {
 
-            procClassCombo2.setValue(null);
-            gridBudgetItems2.setItems(new ArrayList<>());
-            grid2.setItems(new ArrayList<>());
+            refreshgridProcurementPlan2(procClassCombo2.getValue(), comboBoxD_Section2.getSelectedItems());
 
         });
 
@@ -766,7 +885,7 @@ public class ProcurementPlanView extends Div {
         budget2.setItems(query -> sampleBudgetService.list(PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query))).stream());
         budget2.addValueChangeListener(ev -> {
 
-            refreshgridProcurementPlan2(procClassCombo2.getValue(),  comboBoxD_Section2.getSelectedItems());
+            refreshgridProcurementPlan2(procClassCombo2.getValue(), comboBoxD_Section2.getSelectedItems());
             sampleBudget2 = ev.getValue();
         });
 
@@ -864,8 +983,7 @@ public class ProcurementPlanView extends Div {
 
     private void refreshgridProcurementPlan2(ProcClass p, Set<UrcDeptSectionAnlDimbgt> depts) {
 
-        grid2.deselectAll();
-
+        // grid2.deselectAll();
         if (budget2 != null && !budget2.isEmpty() && !procClassCombo2.isEmpty() && comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
             List<ProcurementPlan> plan = new ArrayList<>();
             List<ProcurementPlan> plan1 = new ArrayList<>();
@@ -880,7 +998,6 @@ public class ProcurementPlanView extends Div {
                 span2.setText(decimalFormat.format(generatesumofProc(plan)) + "/= ");
             }
 
-            Notification.show("!procClassCombo2.isEmpty() && comboBoxD_Section2.isEmpty()");
         } else if (budget2 != null && !budget2.isEmpty() && !procClassCombo2.isEmpty() && comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
             List<ProcurementPlan> plan = ProcurementPlanService.findByBudgetAndProcClassAndDeptUnits(budget2.getValue(), p, user.getDeptsection());
             if (!funds.isEmpty()) {
@@ -921,9 +1038,6 @@ public class ProcurementPlanView extends Div {
                 span2.setText(decimalFormat.format(generatesumofProc(avGridplan)) + "/= ");
             }
 
-            Notification.show("yah");
-
-            // Notification.show(budget.getValue()+" Refreshed "+ProcurementPlanService.findByBudgetAndProcClass(budget.getValue(), ProcClass.Supplies));
         } else if (budget2 != null && !budget2.isEmpty() && !procClassCombo2.isEmpty() && !comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
             //List<ProcurementPlan> plan = ProcurementPlanService.findByBudgetAndProcClassAndDeptUnits(budget.getValue(), p, comboBoxD_Section.getValue());
             List<ProcurementPlan> plan = ProcurementPlanService.findByBudgetAndProcClassAndDeptUnits(budget2.getValue(), p, user.getDeptsection());
@@ -946,7 +1060,6 @@ public class ProcurementPlanView extends Div {
                 span2.setText(decimalFormat.format(generatesumofProc(avGridplan)) + "/= ");
             }
 
-            // Notification.show(budget.getValue()+" Refreshed "+ProcurementPlanService.findByBudgetAndProcClass(budget.getValue(), ProcClass.Supplies));
         }
 
     }
@@ -2050,7 +2163,6 @@ public class ProcurementPlanView extends Div {
                     Notificationwarning("You should select a Procurement Plan Item to Edit");
                 }
 
-                // System.out.printf("Edit: %s%n", person.getFullName());
             }));
             add(new Hr());
             addItem("Combine Items", e -> e.getItem().ifPresent(person -> {
@@ -2595,7 +2707,6 @@ public class ProcurementPlanView extends Div {
                     Notificationwarning("You should select a Procurement Plan Item to Edit");
                 }
 
-                // System.out.printf("Edit: %s%n", person.getFullName());
             }));
             add(new Hr());
             addItem("Combine Items", e -> e.getItem().ifPresent(person -> {
@@ -3186,7 +3297,7 @@ public class ProcurementPlanView extends Div {
                             // pr.setFundsource(plan.getFundsource()); // Assuming all selected plans have the same fund source
                             pr.setProcClass(ProcClass.Non_Consultancy);
                             pr.setProcurementMethod(ProcurementPlanService.getProcurementMethodList2(ProcClass.Non_Consultancy, tDecimal));
-                            System.out.println("" + tDecimal + "/=  " + ProcurementPlanService.getProcurementMethodList2(ProcClass.Non_Consultancy, tDecimal).getProcuremntMethod());
+
                             ProcurementPlanService.save(pr);
                         }
 
@@ -3241,7 +3352,7 @@ public class ProcurementPlanView extends Div {
                             // pr.setFundsource(plan.getFundsource()); // Assuming all selected plans have the same fund source
                             pr.setProcClass(ProcClass.Supplies);
                             pr.setProcurementMethod(ProcurementPlanService.getProcurementMethodList2(ProcClass.Supplies, tDecimal));
-                            System.out.println("" + tDecimal + "/=  " + ProcurementPlanService.getProcurementMethodList2(ProcClass.Supplies, tDecimal).getProcuremntMethod());
+
                             ProcurementPlanService.save(pr);
                         }
 
@@ -3295,7 +3406,7 @@ public class ProcurementPlanView extends Div {
                             // pr.setFundsource(plan.getFundsource()); // Assuming all selected plans have the same fund source
                             pr.setProcClass(ProcClass.Works);
                             pr.setProcurementMethod(ProcurementPlanService.getProcurementMethodList2(ProcClass.Works, tDecimal));
-                            System.out.println("" + tDecimal + "/=  " + ProcurementPlanService.getProcurementMethodList2(ProcClass.Works, tDecimal).getProcuremntMethod());
+
                             ProcurementPlanService.save(pr);
                         }
 
@@ -3809,7 +3920,7 @@ public class ProcurementPlanView extends Div {
                             // pr.setFundsource(plan.getFundsource()); // Assuming all selected plans have the same fund source
                             pr.setProcClass(ProcClass.Consultancy);
                             pr.setProcurementMethod(ProcurementPlanService.getProcurementMethodList2(ProcClass.Consultancy, tDecimal));
-                            System.out.println("" + tDecimal + "/=  " + ProcurementPlanService.getProcurementMethodList2(ProcClass.Consultancy, tDecimal).getProcuremntMethod());
+
                             ProcurementPlanService.save(pr);
                         }
 
@@ -3864,7 +3975,7 @@ public class ProcurementPlanView extends Div {
                             // pr.setFundsource(plan.getFundsource()); // Assuming all selected plans have the same fund source
                             pr.setProcClass(ProcClass.Non_Consultancy);
                             pr.setProcurementMethod(ProcurementPlanService.getProcurementMethodList2(ProcClass.Non_Consultancy, tDecimal));
-                            System.out.println("" + tDecimal + "/=  " + ProcurementPlanService.getProcurementMethodList2(ProcClass.Non_Consultancy, tDecimal).getProcuremntMethod());
+
                             ProcurementPlanService.save(pr);
                         }
 
@@ -3918,7 +4029,7 @@ public class ProcurementPlanView extends Div {
                             // pr.setFundsource(plan.getFundsource()); // Assuming all selected plans have the same fund source
                             pr.setProcClass(ProcClass.Supplies);
                             pr.setProcurementMethod(ProcurementPlanService.getProcurementMethodList2(ProcClass.Supplies, tDecimal));
-                            System.out.println("" + tDecimal + "/=  " + ProcurementPlanService.getProcurementMethodList2(ProcClass.Supplies, tDecimal).getProcuremntMethod());
+
                             ProcurementPlanService.save(pr);
                         }
 
@@ -3972,7 +4083,7 @@ public class ProcurementPlanView extends Div {
                             // pr.setFundsource(plan.getFundsource()); // Assuming all selected plans have the same fund source
                             pr.setProcClass(ProcClass.Works);
                             pr.setProcurementMethod(ProcurementPlanService.getProcurementMethodList2(ProcClass.Works, tDecimal));
-                            System.out.println("" + tDecimal + "/=  " + ProcurementPlanService.getProcurementMethodList2(ProcClass.Works, tDecimal).getProcuremntMethod());
+
                             ProcurementPlanService.save(pr);
                         }
 
@@ -4441,17 +4552,83 @@ public class ProcurementPlanView extends Div {
 
     private BigDecimal generatesumofProc(List<ProcurementPlan> budgetList) {
         BigDecimal sumofMonths = BigDecimal.ZERO;
-        if (comboBoxD_Section.isEmpty()) {
-            for (ProcurementPlan bList : budgetList) {
-                List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoa(bList.getBudget(), bList.getProcClass(), bList.getCoa());
-                sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
-
-            }
+        /*        if (comboBoxD_Section.isEmpty()) {
+        for (ProcurementPlan bList : budgetList) {
+        List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoa(bList.getBudget(), bList.getProcClass(), bList.getCoa());
+        sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+        
+        }
         } else {
-            for (ProcurementPlan bList : budgetList) {
-                List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), comboBoxD_Section.getValue());
-                sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+        for (ProcurementPlan bList : budgetList) {
+        List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), comboBoxD_Section.getValue());
+        sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+        
+        }
+        }*/
 
+        if (budget != null && !budget.isEmpty() && !procClassCombo.isEmpty() && comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+            List<ProcurementPlan> plan = new ArrayList<>();
+            List<ProcurementPlan> plan1 = new ArrayList<>();
+            if (funds.isEmpty()) {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoa(bList.getBudget(), bList.getProcClass(), bList.getCoa());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
+            } else {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndFundsourceIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), funds.getSelectedItems());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
+            }
+
+            // Notification.show(budget.getValue()+" Refreshed "+ProcurementPlanService.findByBudgetAndProcClass(budget.getValue(), ProcClass.Supplies));
+        } else if (budget != null && !budget.isEmpty() && !procClassCombo.isEmpty() && comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+            //List<ProcurementPlan> plan = ProcurementPlanService.findByBudgetAndProcClassAndDeptUnits(budget2.getValue(), urcActivity.getProcClass(), user.getDeptsection());
+            if (funds.isEmpty()) {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), user.getDeptsection());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
+            } else {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), user.getDeptsection(), funds.getSelectedItems());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
+            }
+
+            // Notification.show(budget.getValue()+" Refreshed "+ProcurementPlanService.findByBudgetAndProcClass(budget.getValue(), ProcClass.Supplies));
+        } else if (budget != null && !budget.isEmpty() && !procClassCombo.isEmpty() && !comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+            if (funds.isEmpty()) {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), comboBoxD_Section.getSelectedItems());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
+            } else {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), comboBoxD_Section.getSelectedItems(), funds.getSelectedItems());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
+            }
+            // Notification.show(budget.getValue()+" Refreshed "+ProcurementPlanService.findByBudgetAndProcClass(budget.getValue(), ProcClass.Supplies));
+        } else if (budget != null && !budget.isEmpty() && !procClassCombo.isEmpty() && !comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+            if (funds.isEmpty()) {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), comboBoxD_Section.getSelectedItems());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
+            } else {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), comboBoxD_Section.getSelectedItems(), funds.getSelectedItems());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
             }
         }
 
@@ -4460,17 +4637,81 @@ public class ProcurementPlanView extends Div {
 
     private BigDecimal generatesumofProc2(List<ProcurementPlan> budgetList) {
         BigDecimal sumofMonths = BigDecimal.ZERO;
-        if (comboBoxD_Section2.isEmpty()) {
-            for (ProcurementPlan bList : budgetList) {
-                List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoa(bList.getBudget(), bList.getProcClass(), bList.getCoa());
-                sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
-
-            }
+        /*        if (comboBoxD_Section2.isEmpty()) {
+        for (ProcurementPlan bList : budgetList) {
+        List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoa(bList.getBudget(), bList.getProcClass(), bList.getCoa());
+        sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+        
+        }
         } else {
-            for (ProcurementPlan bList : budgetList) {
-                List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), comboBoxD_Section.getValue());
-                sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+        for (ProcurementPlan bList : budgetList) {
+        List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), comboBoxD_Section.getValue());
+        sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+        
+        }
+        }*/
 
+        if (budget2 != null && !budget2.isEmpty() && !procClassCombo2.isEmpty() && comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+            List<ProcurementPlan> plan = new ArrayList<>();
+            List<ProcurementPlan> plan1 = new ArrayList<>();
+            if (funds2.isEmpty()) {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoa(bList.getBudget(), bList.getProcClass(), bList.getCoa());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
+            } else {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndFundsourceIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), funds2.getSelectedItems());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
+            }
+
+        } else if (budget2 != null && !budget2.isEmpty() && !procClassCombo2.isEmpty() && comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+            //List<ProcurementPlan> plan = ProcurementPlanService.findByBudgetAndProcClassAndDeptUnits(budget2.getValue(), urcActivity.getProcClass(), user.getDeptsection());
+            if (funds2.isEmpty()) {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), user.getDeptsection());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
+            } else {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), user.getDeptsection(), funds2.getSelectedItems());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
+            }
+
+        } else if (budget2 != null && !budget2.isEmpty() && !procClassCombo2.isEmpty() && !comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+            if (funds2.isEmpty()) {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), comboBoxD_Section2.getSelectedItems());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
+            } else {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), comboBoxD_Section2.getSelectedItems(), funds2.getSelectedItems());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
+            }
+
+        } else if (budget2 != null && !budget2.isEmpty() && !procClassCombo2.isEmpty() && !comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+            if (funds2.isEmpty()) {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), comboBoxD_Section2.getSelectedItems());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
+            } else {
+                for (ProcurementPlan bList : budgetList) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(bList.getBudget(), bList.getProcClass(), bList.getCoa(), comboBoxD_Section2.getSelectedItems(), funds2.getSelectedItems());
+                    sumofMonths = sumofMonths.add(generatesumofMonthsFromList(listBudgetItems));
+
+                }
             }
         }
 
@@ -5250,13 +5491,75 @@ public class ProcurementPlanView extends Div {
         Cell celld6 = row1.createCell((short) 17);
         //row.getCell(20).setCellStyle(styleq31);
         celld6.setCellValue("Completion date");
+        List<ProcurementPlan> listProcurementPlan = new ArrayList<>();
+        List<ProcurementPlan> plan1 = new ArrayList<>();
+        plan1 = ProcurementPlanService.findByBudgetAndProcClass(budget.getValue(), ProcClass.Consultancy);
+        if (budget != null && !budget.isEmpty() && comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+            List<ProcurementPlan> plan = new ArrayList<>();
+            
+            if (!funds.isEmpty()) {
+                
+                listProcurementPlan = ProcurementPlanService.findByBudgetAndProcClassAndFundsource(budget.getValue(), ProcClass.Consultancy, plan1, funds.getValue());
+            } else {
+                listProcurementPlan = ProcurementPlanService.findByBudgetAndProcClass(budget.getValue(), ProcClass.Consultancy);
+            }
 
-        List<ProcurementPlan> listProcurementPlan = ProcurementPlanService.findByBudgetAndProcClass(budget.getValue(), procClassCombo.getValue());
-        listProcurementPlan = grid.getListDataView().getItems().toList();
+        } else if (budget != null && !budget.isEmpty() && comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+            listProcurementPlan = ProcurementPlanService.findByBudgetAndProcClassAndDeptUnits(budget.getValue(), ProcClass.Consultancy, user.getDeptsection());
+            if (!funds.isEmpty()) {
+                listProcurementPlan = ProcurementPlanService.findByBudgetAndProcClassAndSectsAndFundsource(budget.getValue(), ProcClass.Consultancy, plan1, funds.getValue(), user.getDeptsection());
+            } else {
+                listProcurementPlan = ProcurementPlanService.findByBudgetAndProcClassAndDeptUnits(budget.getValue(), ProcClass.Consultancy, user.getDeptsection());
+            }
+
+        } else if (budget != null && !budget.isEmpty() && !comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+            //List<ProcurementPlan> plan = ProcurementPlanService.findByBudgetAndProcClassAndDeptUnits(budget.getValue(), p, comboBoxD_Section.getValue());
+            List<ProcurementPlan> plan = ProcurementPlanService.findByBudgetAndProcClass(budget.getValue(), ProcClass.Consultancy);
+            List<ProcurementPlan> currentGridplan = new ArrayList<>();
+            List<ProcurementPlan> avGridplan = new ArrayList<>();
+
+            if (plan != null) {
+                currentGridplan = grid.getGenericDataView().getItems().toList();
+                for (ProcurementPlan k : plan) {
+
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(k.getBudget(), k.getProcClass(), k.getCoa(), comboBoxD_Section.getSelectedItems());
+                    if (funds.isEmpty()) {
+
+                    } else {
+
+                        listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(k.getBudget(), k.getProcClass(), k.getCoa(), comboBoxD_Section.getSelectedItems(), funds.getValue());
+                    }
+                    if (!listBudgetItems.isEmpty()) {
+                        avGridplan.add(k);
+                    }
+                }
+
+            }
+            listProcurementPlan = avGridplan;
+
+        } else if (budget != null && !budget.isEmpty() && !comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+            //List<ProcurementPlan> plan = ProcurementPlanService.findByBudgetAndProcClassAndDeptUnits(budget.getValue(), p, comboBoxD_Section.getValue());
+            List<ProcurementPlan> plan = ProcurementPlanService.findByBudgetAndProcClassAndDeptUnits(budget.getValue(), ProcClass.Consultancy, user.getDeptsection());
+            List<ProcurementPlan> currentGridplan = new ArrayList<>();
+            List<ProcurementPlan> avGridplan = new ArrayList<>();
+            if (plan != null) {
+                currentGridplan = grid.getGenericDataView().getItems().toList();
+                for (ProcurementPlan k : plan) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(k.getBudget(), k.getProcClass(), k.getCoa(), comboBoxD_Section.getSelectedItems());
+
+                    if (!listBudgetItems.isEmpty()) {
+                        avGridplan.add(k);
+                    }
+                }
+
+            }
+            listProcurementPlan = avGridplan;
+        }
+
         int count = 0;
         BigDecimal totBigDecimal = BigDecimal.ZERO;
         for (ProcurementPlan r : listProcurementPlan) {
-            System.out.println(r.getSubject() + "");
+
             count++;
             tr++;
             unbold.add((int) tr);
@@ -5273,21 +5576,60 @@ public class ProcurementPlanView extends Div {
             cell3m.setCellValue(r.getCurrency().getData().getCurrencyShort());
             Cell cell4m = rowm.createCell((short) 3);
             //row.getCell(3).setCellStyle(styleq31);
-            if (comboBoxD_Section.isEmpty() & funds.isEmpty()) {
-
-                cell4m.setCellValue(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(r.getBudget(), r.getProcClass(), r.getCoa()).doubleValue());
-                totBigDecimal = totBigDecimal.add(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(r.getBudget(), r.getProcClass(), r.getCoa()));
+         
+            /*            if (comboBoxD_Section.isEmpty() & funds.isEmpty()) {
+            
+            cell4m.setCellValue(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(r.getBudget(), r.getProcClass(), r.getCoa()).doubleValue());
+            totBigDecimal = totBigDecimal.add(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(r.getBudget(), r.getProcClass(), r.getCoa()));
             } else if (!comboBoxD_Section.isEmpty() & funds.isEmpty()) {
-
-                cell4m.setCellValue(ProcurementPlanService.findByBudgetAndProcClassAndSectionIn(r.getBudget(), r.getProcClass(), r, comboBoxD_Section.getSelectedItems()).doubleValue());
-                totBigDecimal = totBigDecimal.add(ProcurementPlanService.findByBudgetAndProcClassAndSectionIn(r.getBudget(), r.getProcClass(), r, comboBoxD_Section.getSelectedItems()));
+            
+            cell4m.setCellValue(ProcurementPlanService.findByBudgetAndProcClassAndSectionIn(r.getBudget(), r.getProcClass(), r, comboBoxD_Section.getSelectedItems()).doubleValue());
+            totBigDecimal = totBigDecimal.add(ProcurementPlanService.findByBudgetAndProcClassAndSectionIn(r.getBudget(), r.getProcClass(), r, comboBoxD_Section.getSelectedItems()));
             } else if (comboBoxD_Section.isEmpty() & !funds.isEmpty()) {
-                cell4m.setCellValue(ProcurementPlanService.findByBudgetAndProcClassAndFundsIn(r.getBudget(), r.getProcClass(), r, funds.getSelectedItems()).doubleValue());
-                totBigDecimal = totBigDecimal.add(ProcurementPlanService.findByBudgetAndProcClassAndFundsIn(r.getBudget(), r.getProcClass(), r, funds.getSelectedItems()));
+            cell4m.setCellValue(ProcurementPlanService.findByBudgetAndProcClassAndFundsIn(r.getBudget(), r.getProcClass(), r, funds.getSelectedItems()).doubleValue());
+            totBigDecimal = totBigDecimal.add(ProcurementPlanService.findByBudgetAndProcClassAndFundsIn(r.getBudget(), r.getProcClass(), r, funds.getSelectedItems()));
             } else if (!comboBoxD_Section.isEmpty() & !funds.isEmpty()) {
-                cell4m.setCellValue(ProcurementPlanService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), r.getProcClass(), r, comboBoxD_Section.getSelectedItems(), funds.getSelectedItems()).doubleValue());
-                totBigDecimal = totBigDecimal.add(ProcurementPlanService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), r.getProcClass(), r, comboBoxD_Section.getSelectedItems(), funds.getSelectedItems()));
-            }
+            cell4m.setCellValue(ProcurementPlanService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), r.getProcClass(), r, comboBoxD_Section.getSelectedItems(), funds.getSelectedItems()).doubleValue());
+            totBigDecimal = totBigDecimal.add(ProcurementPlanService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), r.getProcClass(), r, comboBoxD_Section.getSelectedItems(), funds.getSelectedItems()));
+            }*/
+            
+            if (budget != null && !budget.isEmpty() && comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+
+                if (funds.isEmpty()) {
+                    cell4m.setCellValue(decimalFormat.format(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(r.getBudget(), ProcClass.Consultancy, r.getCoa())) + "");
+                    totBigDecimal = totBigDecimal.add(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(r.getBudget(), ProcClass.Consultancy, r.getCoa()));
+                } else {
+                    cell4m.setCellValue(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndFundsourceIn(r.getBudget(), ProcClass.Consultancy, r.getCoa(), funds.getSelectedItems()))) + "");
+                    totBigDecimal = totBigDecimal.add(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndFundsourceIn(r.getBudget(), ProcClass.Consultancy, r.getCoa(), funds.getSelectedItems())));
+                }
+
+            } else if (budget != null && !budget.isEmpty() && comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+
+                if (funds.isEmpty()) {
+                    cell4m.setCellValue(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(r.getBudget(), ProcClass.Consultancy, r.getCoa(), user.getDeptsection()))) + "");
+                    totBigDecimal = totBigDecimal.add(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(r.getBudget(), ProcClass.Consultancy, r.getCoa(), user.getDeptsection())));
+                } else {
+                    cell4m.setCellValue(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), ProcClass.Consultancy, r.getCoa(), user.getDeptsection(), funds.getSelectedItems()))) + "");
+                    totBigDecimal = totBigDecimal.add(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), ProcClass.Consultancy, r.getCoa(), user.getDeptsection(), funds.getSelectedItems())));
+                }
+            } else if (budget != null && !budget.isEmpty() && !comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+                if (funds.isEmpty()) {
+                    cell4m.setCellValue(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(r.getBudget(), ProcClass.Consultancy, r.getCoa(), comboBoxD_Section.getSelectedItems()))) + "");
+                    totBigDecimal = totBigDecimal.add(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(r.getBudget(), ProcClass.Consultancy, r.getCoa(), comboBoxD_Section.getSelectedItems())));
+                } else {
+                    cell4m.setCellValue(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), ProcClass.Consultancy, r.getCoa(), comboBoxD_Section.getSelectedItems(), funds.getSelectedItems()))) + "");
+                    totBigDecimal = totBigDecimal.add(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), ProcClass.Consultancy, r.getCoa(), comboBoxD_Section.getSelectedItems(), funds.getSelectedItems())));
+                }
+            } else if (budget != null && !budget.isEmpty() && !comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+                if (funds.isEmpty()) {
+                    cell4m.setCellValue(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(r.getBudget(), ProcClass.Consultancy, r.getCoa(), comboBoxD_Section.getSelectedItems()))) + "");
+                    totBigDecimal = totBigDecimal.add(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(r.getBudget(), ProcClass.Consultancy, r.getCoa(), comboBoxD_Section.getSelectedItems())));
+                } else {
+                    cell4m.setCellValue(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), ProcClass.Consultancy, r.getCoa(), comboBoxD_Section.getSelectedItems(), funds.getSelectedItems()))) + "");
+                    totBigDecimal = totBigDecimal.add(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), ProcClass.Consultancy, r.getCoa(), comboBoxD_Section.getSelectedItems(), funds.getSelectedItems())));
+                }
+
+            }            
 
             Cell cell5m = rowm.createCell((short) 4);
             //row.getCell(4).setCellStyle(styleq31);
@@ -5295,11 +5637,49 @@ public class ProcurementPlanView extends Div {
             cell5m.setCellValue(getCommaSeparatedFundsourceList(r.getFundsource()));
             }*/
             cell5m.setCellValue("");
-            Set<String> funds = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa());
+            /*            Set<String> funds = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa());
             if (!funds.isEmpty()) {
-                cell5m.setCellValue(getCommaSeparatedFundsourceList(funds));
+            cell5m.setCellValue(getCommaSeparatedFundsourceList(funds));
             }
+            Span span = new Span("");*/
+            if (budget != null && !budget.isEmpty()  && comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa());
+                if (funds.isEmpty()) {
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacodeF(r.getBudget(), r.getProcClass(), r.getCoa(), funds.getSelectedItems());
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                }
 
+            } else if (budget != null && !budget.isEmpty() && comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa(), user.getDeptsection());
+                if (funds.isEmpty()) {
+                    //fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa(), user.getDeptsection(), funds.getSelectedItems());
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                }
+            } else if (budget != null && !budget.isEmpty() && !comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa(), comboBoxD_Section.getSelectedItems());
+                if (funds.isEmpty()) {
+                    //fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa(), comboBoxD_Section.getSelectedItems(), funds.getSelectedItems());
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                }
+            } else if (budget != null && !budget.isEmpty() && !comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa(), comboBoxD_Section.getSelectedItems());
+                if (funds.isEmpty()) {
+                    // fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa(), comboBoxD_Section.getSelectedItems(), funds.getSelectedItems());
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                }
+
+            }
             Cell cell6m = rowm.createCell((short) 5);
             //row.getCell(16).setCellStyle(styleq31);
             String procurementMethodName = (r.getProcurementMethod() != null) ? r.getProcurementMethod().getProcuremntMethod() : "";
@@ -5626,8 +6006,13 @@ public class ProcurementPlanView extends Div {
     }
 
     private void createHeaderRowWorkplanConsultancyelse(Workbook workbook, Sheet sheet) {
-        funds2.select(funds.getSelectedItems());
-        comboBoxD_Section2.select(comboBoxD_Section.getSelectedItems());
+        if(!funds.isEmpty()){
+            funds2.select(funds.getSelectedItems());
+        }
+        if(!comboBoxD_Section.isEmpty()){
+            comboBoxD_Section2.select(comboBoxD_Section.getSelectedItems());
+        }        
+        
         short rowHeight = 500;
         short tr = 0;
         Font fontBold2 = workbook.createFont();
@@ -5854,9 +6239,70 @@ public class ProcurementPlanView extends Div {
 
         Cell celld = row1.createCell((short) 12);
         celld.setCellValue("Award notification date");
+        List<ProcurementPlan> listProcurementPlan = new ArrayList<>();
+        List<ProcurementPlan> plan1 = new ArrayList<>();
+        plan1 = ProcurementPlanService.findByBudgetAndProcClass(budget.getValue(), procClassCombo2.getValue());
+        if (budget != null && !budget.isEmpty() && comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+            List<ProcurementPlan> plan = new ArrayList<>();
+            
+            if (!funds2.isEmpty()) {
+                
+                listProcurementPlan = ProcurementPlanService.findByBudgetAndProcClassAndFundsource(budget.getValue(), procClassCombo2.getValue(), plan1, funds2.getValue());
+            } else {
+                listProcurementPlan = ProcurementPlanService.findByBudgetAndProcClass(budget.getValue(), procClassCombo2.getValue());
+            }
 
-        List<ProcurementPlan> listProcurementPlan = ProcurementPlanService.findByBudgetAndProcClass(budget2.getValue(), procClassCombo2.getValue());
-        listProcurementPlan = grid2.getListDataView().getItems().toList();
+        } else if (budget != null && !budget.isEmpty() && comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+            listProcurementPlan = ProcurementPlanService.findByBudgetAndProcClassAndDeptUnits(budget.getValue(), procClassCombo2.getValue(), user.getDeptsection());
+            if (!funds2.isEmpty()) {
+                listProcurementPlan = ProcurementPlanService.findByBudgetAndProcClassAndSectsAndFundsource(budget.getValue(), procClassCombo2.getValue(), plan1, funds2.getValue(), user.getDeptsection());
+            } else {
+                listProcurementPlan = ProcurementPlanService.findByBudgetAndProcClassAndDeptUnits(budget.getValue(), procClassCombo2.getValue(), user.getDeptsection());
+            }
+
+        } else if (budget != null && !budget.isEmpty() && !comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+            //List<ProcurementPlan> plan = ProcurementPlanService.findByBudgetAndProcClassAndDeptUnits(budget.getValue(), p, comboBoxD_Section.getValue());
+            List<ProcurementPlan> plan = ProcurementPlanService.findByBudgetAndProcClass(budget.getValue(), procClassCombo2.getValue());
+            List<ProcurementPlan> currentGridplan = new ArrayList<>();
+            List<ProcurementPlan> avGridplan = new ArrayList<>();
+
+            if (plan != null) {
+               
+                for (ProcurementPlan k : plan) {
+
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(k.getBudget(), k.getProcClass(), k.getCoa(), comboBoxD_Section2.getSelectedItems());
+                    if (funds2.isEmpty()) {
+
+                    } else {
+
+                        listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(k.getBudget(), k.getProcClass(), k.getCoa(), comboBoxD_Section2.getSelectedItems(), funds2.getValue());
+                    }
+                    if (!listBudgetItems.isEmpty()) {
+                        avGridplan.add(k);
+                    }
+                }
+
+            }
+            listProcurementPlan = avGridplan;
+
+        } else if (budget != null && !budget.isEmpty() && !comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+            //List<ProcurementPlan> plan = ProcurementPlanService.findByBudgetAndProcClassAndDeptUnits(budget.getValue(), p, comboBoxD_Section.getValue());
+            List<ProcurementPlan> plan = ProcurementPlanService.findByBudgetAndProcClassAndDeptUnits(budget.getValue(), procClassCombo2.getValue(), user.getDeptsection());
+            List<ProcurementPlan> currentGridplan = new ArrayList<>();
+            List<ProcurementPlan> avGridplan = new ArrayList<>();
+            if (plan != null) {
+                
+                for (ProcurementPlan k : plan) {
+                    List<BudgetItems> listBudgetItems = budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(k.getBudget(), k.getProcClass(), k.getCoa(), comboBoxD_Section2.getSelectedItems());
+
+                    if (!listBudgetItems.isEmpty()) {
+                        avGridplan.add(k);
+                    }
+                }
+
+            }
+            listProcurementPlan = avGridplan;
+        }
         int count = 0;
         BigDecimal totBigDecimal = BigDecimal.ZERO;
         for (ProcurementPlan r : listProcurementPlan) {
@@ -5877,20 +6323,42 @@ public class ProcurementPlanView extends Div {
             }
 
             Cell cell4m = rowm.createCell((short) 3);
-            if (comboBoxD_Section2.isEmpty() & funds2.isEmpty()) {
+            if (budget != null && !budget.isEmpty() && comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
 
-                cell4m.setCellValue(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(r.getBudget(), r.getProcClass(), r.getCoa()).doubleValue());
-                totBigDecimal = totBigDecimal.add(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(r.getBudget(), r.getProcClass(), r.getCoa()));
-            } else if (!comboBoxD_Section2.isEmpty() & funds2.isEmpty()) {
+                if (funds.isEmpty()) {
+                    cell4m.setCellValue(decimalFormat.format(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(r.getBudget(), procClassCombo2.getValue(), r.getCoa())) + "");
+                    totBigDecimal = totBigDecimal.add(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(r.getBudget(), procClassCombo2.getValue(), r.getCoa()));
+                } else {
+                    cell4m.setCellValue(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndFundsourceIn(r.getBudget(), procClassCombo2.getValue(), r.getCoa(), funds2.getSelectedItems()))) + "");
+                    totBigDecimal = totBigDecimal.add(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndFundsourceIn(r.getBudget(), procClassCombo2.getValue(), r.getCoa(), funds2.getSelectedItems())));
+                }
 
-                cell4m.setCellValue(ProcurementPlanService.findByBudgetAndProcClassAndSectionIn(r.getBudget(), r.getProcClass(), r, comboBoxD_Section2.getSelectedItems()).doubleValue());
-                totBigDecimal = totBigDecimal.add(ProcurementPlanService.findByBudgetAndProcClassAndSectionIn(r.getBudget(), r.getProcClass(), r, comboBoxD_Section2.getSelectedItems()));
-            } else if (comboBoxD_Section2.isEmpty() & !funds2.isEmpty()) {
-                cell4m.setCellValue(ProcurementPlanService.findByBudgetAndProcClassAndFundsIn(r.getBudget(), r.getProcClass(), r, funds2.getSelectedItems()).doubleValue());
-                totBigDecimal = totBigDecimal.add(ProcurementPlanService.findByBudgetAndProcClassAndFundsIn(r.getBudget(), r.getProcClass(), r, funds2.getSelectedItems()));
-            } else if (!comboBoxD_Section2.isEmpty() & !funds2.isEmpty()) {
-                cell4m.setCellValue(ProcurementPlanService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), r.getProcClass(), r, comboBoxD_Section2.getSelectedItems(), funds2.getSelectedItems()).doubleValue());
-                totBigDecimal = totBigDecimal.add(ProcurementPlanService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), r.getProcClass(), r, comboBoxD_Section2.getSelectedItems(), funds2.getSelectedItems()));
+            } else if (budget != null && !budget.isEmpty() && comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+
+                if (funds2.isEmpty()) {
+                    cell4m.setCellValue(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(r.getBudget(), procClassCombo2.getValue(), r.getCoa(), user.getDeptsection()))) + "");
+                    totBigDecimal = totBigDecimal.add(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(r.getBudget(), procClassCombo2.getValue(), r.getCoa(), user.getDeptsection())));
+                } else {
+                    cell4m.setCellValue(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), procClassCombo2.getValue(), r.getCoa(), user.getDeptsection(), funds.getSelectedItems()))) + "");
+                    totBigDecimal = totBigDecimal.add(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), procClassCombo2.getValue(), r.getCoa(), user.getDeptsection(), funds.getSelectedItems())));
+                }
+            } else if (budget != null && !budget.isEmpty() && !comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+                if (funds2.isEmpty()) {
+                    cell4m.setCellValue(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(r.getBudget(), procClassCombo2.getValue(), r.getCoa(), comboBoxD_Section2.getSelectedItems()))) + "");
+                    totBigDecimal = totBigDecimal.add(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(r.getBudget(), procClassCombo2.getValue(), r.getCoa(), comboBoxD_Section2.getSelectedItems())));
+                } else {
+                    cell4m.setCellValue(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), procClassCombo2.getValue(), r.getCoa(), comboBoxD_Section2.getSelectedItems(), funds2.getSelectedItems()))) + "");
+                    totBigDecimal = totBigDecimal.add(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), procClassCombo2.getValue(), r.getCoa(), comboBoxD_Section2.getSelectedItems(), funds2.getSelectedItems())));
+                }
+            } else if (budget != null && !budget.isEmpty() && !comboBoxD_Section2.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+                if (funds2.isEmpty()) {
+                    cell4m.setCellValue(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(r.getBudget(), procClassCombo2.getValue(), r.getCoa(), comboBoxD_Section2.getSelectedItems()))) + "");
+                    totBigDecimal = totBigDecimal.add(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitIn(r.getBudget(), procClassCombo2.getValue(), r.getCoa(), comboBoxD_Section2.getSelectedItems())));
+                } else {
+                    cell4m.setCellValue(decimalFormat.format(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), procClassCombo2.getValue(), r.getCoa(), comboBoxD_Section2.getSelectedItems(), funds2.getSelectedItems()))) + "");
+                    totBigDecimal = totBigDecimal.add(generatesumofMonthsFromList(budgetItemsService.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(r.getBudget(), procClassCombo2.getValue(), r.getCoa(), comboBoxD_Section2.getSelectedItems(), funds2.getSelectedItems())));
+                }
+
             }
             Cell cell5m = rowm.createCell((short) 4);
             //row.getCell(4).setCellStyle(styleq31);
@@ -5898,9 +6366,43 @@ public class ProcurementPlanView extends Div {
             cell5m.setCellValue(getCommaSeparatedFundsourceList(r.getFundsource()));
             }*/
             cell5m.setCellValue("");
-            Set<String> funds = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa());
-            if (!funds.isEmpty()) {
-                cell5m.setCellValue(getCommaSeparatedFundsourceList(funds));
+            if (budget != null && !budget.isEmpty()  && comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa());
+                if (funds.isEmpty()) {
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacodeF(r.getBudget(), r.getProcClass(), r.getCoa(), funds.getSelectedItems());
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                }
+
+            } else if (budget != null && !budget.isEmpty() && comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa(), user.getDeptsection());
+                if (funds.isEmpty()) {
+                    //fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa(), user.getDeptsection(), funds.getSelectedItems());
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                }
+            } else if (budget != null && !budget.isEmpty() && !comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa(), comboBoxD_Section.getSelectedItems());
+                if (funds.isEmpty()) {
+                    //fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa(), comboBoxD_Section.getSelectedItems(), funds.getSelectedItems());
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                }
+            } else if (budget != null && !budget.isEmpty() && !comboBoxD_Section.isEmpty() && (user.getRoles().contains(Role.BLO) || user.getRoles().contains(Role.HOD))) {
+                Set<String> fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa(), comboBoxD_Section.getSelectedItems());
+                if (funds.isEmpty()) {
+                    // fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(urcActivity.getBudget(), urcActivity.getProcClass(), urcActivity.getCoa());
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                } else {
+                    fundString = budgetItemsService.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(r.getBudget(), r.getProcClass(), r.getCoa(), comboBoxD_Section.getSelectedItems(), funds.getSelectedItems());
+                    cell5m.setCellValue(getCommaSeparatedFundsourceList(fundString));
+                }
+
             }
             Cell cell6m = rowm.createCell((short) 5);
             //row.getCell(16).setCellStyle(styleq31);
@@ -6146,6 +6648,7 @@ public class ProcurementPlanView extends Div {
             } else if (proc.equals(ProcClass.Disposal)) {
                 //createHeaderRowWorkplanConsultancyelse(workbook, sheet);
             } else {
+                procClassCombo2.setValue(proc);
                 createHeaderRowWorkplanConsultancyelse(workbook, sheet);
             }
 
@@ -6270,9 +6773,9 @@ public class ProcurementPlanView extends Div {
                     plan.getBudget(), plan.getProcClass(), plan.getCoa(), depts);
             if (!listBudgetItems.isEmpty()) {
                 count++;
-                System.out.println(count + " " + plan.getSubject() + " Added");
+
             } else {
-                System.out.println(count + " " + plan.getSubject() + " Not Added");
+
             }
         }
 

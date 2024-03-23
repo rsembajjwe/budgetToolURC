@@ -145,25 +145,9 @@ public class ProcurementPlanService {
             // Handle the case when the budget is null (e.g., throw an exception or return an empty list)
             return Collections.emptyList();  // Return an empty list as an example
         }
-        /*        for(ProcurementPlan j:procurementPlanRepository.findByBudgetAndProcClass(budget, procClass)){
-        System.out.println(j.getSubject()+" --- "+j.getCost()+"/=");
-        }*/
-
-        // Assuming you have a 'Budget' entity associated with 'ProcurementPlan'
-        System.out.println("Used that");
         return procurementPlanRepository.findByBudgetAndProcClass(budget, procClass);
     }
 
-    /*    @Transactional
-    public List<ProcurementPlan> findByBudgetAndProcClass2(Budget budget, ProcClass procClass, Set<UrcDeptSectionAnlDimbgt> deptUnits) {
-    if (budget == null || procClass == null || deptUnits == null) {
-    // Handle the case when the budget is null (e.g., throw an exception or return an empty list)
-    return Collections.emptyList();  // Return an empty list as an example
-    }
-    
-    // Assuming you have a 'Budget' entity associated with 'ProcurementPlan'
-    return procurementPlanRepository.findByBudgetAndProcClassAndDeptUnitIn(budget, procClass, deptUnits);
-    }*/
     @Transactional
     public List<ProcurementPlan> findByBudgetAndProcClassAndDeptUnits(Budget budget, ProcClass procClass, Collection<UrcDeptSectionAnlDimbgt> deptUnits) {
         if (budget == null || procClass == null || deptUnits == null) {

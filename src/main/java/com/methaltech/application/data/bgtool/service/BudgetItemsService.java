@@ -21,6 +21,7 @@ import com.methaltech.application.data.livedata.repository.SALFLDGRepository;
 import com.methaltech.application.data.livedata.repository.UrcDeptSectionAnlDimRepository;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -825,16 +826,19 @@ public class BudgetItemsService {
     }
 
     public List<BudgetItems> findBudgetItemsByUrc_Activities(Set<Organisation> budgetType, Budget budget, Urc_Activities activities, Set<UrcDeptSectionAnlDimbgt> deptUnits, Integer coalevel1Code) {
-        return repository.findBudgetItemsByUrc_Activities(budgetType, budget, activities, deptUnits, coalevel1Code);
+        List<BudgetItems> result = repository.findBudgetItemsByUrc_Activities(budgetType, budget, activities, deptUnits, coalevel1Code);
+        return result != null ? result : Collections.emptyList();
     }
     // Method to fetch BudgetItems by Budget and Set of COA codes
 
     public List<BudgetItems> getBudgetItemsByBudgetAndCoacodes(Budget budget, Set<COA> coacodes) {
-        return repository.findByBudgetAndCoacodeIn(budget, coacodes);
+        List<BudgetItems> result = repository.findByBudgetAndCoacodeIn(budget, coacodes);
+        return result != null ? result : Collections.emptyList();
     }
 
     public List<BudgetItems> getBudgetItemsByBudgetAndCoacode(Budget budget, COA coacode) {
-        return repository.findByBudgetAndCoacode(budget, coacode);
+        List<BudgetItems> result = repository.findByBudgetAndCoacode(budget, coacode);
+        return result != null ? result : Collections.emptyList();
     }
 
     public List<BudgetItems> findByCoacodeCodeStartingWith2Or3() {
@@ -858,31 +862,49 @@ public class BudgetItemsService {
     }
 
     public List<BudgetItems> findByBudgetAndProcClassAndCoa(Budget budget, ProcClass p, COA coacode) {
-        return repository.findByBudgetAndProcClassAndCoa(budget, p, coacode);
+        List<BudgetItems> result = repository.findByBudgetAndProcClassAndCoa(budget, p, coacode);
+        System.out.println(result.size()+"");
+        return result != null ? result : Collections.emptyList();
     }
 
     public List<BudgetItems> findByBudgetAndProcClassAndCoaAndDeptUnitIn(Budget budget, ProcClass p, COA coacode, Set<UrcDeptSectionAnlDimbgt> deptUnits) {
-        return repository.findByBudgetAndProcClassAndCoaAndDeptUnitIn(budget, p, coacode, deptUnits);
+        List<BudgetItems> result = repository.findByBudgetAndProcClassAndCoaAndDeptUnitIn(budget, p, coacode, deptUnits);
+        System.out.println(result.size()+"");
+        return result != null ? result : Collections.emptyList();
     }
 
     public List<BudgetItems> findByBudgetAndProcClassAndCoaAndDeptUnitIn(Budget budget, ProcClass p, Set<COA> coacode, Set<UrcDeptSectionAnlDimbgt> deptUnits) {
-        return repository.findByBudgetAndProcClassAndCoaAndDeptUnitIn(budget, p, coacode, deptUnits);
+        List<BudgetItems> result = repository.findByBudgetAndProcClassAndCoaAndDeptUnitIn(budget, p, coacode, deptUnits);
+        System.out.println(result.size()+"");
+        return  result != null ? result : Collections.emptyList();
     }
 
     public Set<String> findDistinctFundSourcesByBudgetAndProcClassAndCoacode(Budget budget, ProcClass p, COA coacode) {
         return repository.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(budget, p, coacode);
     }
-
+    public Set<String> findDistinctFundSourcesByBudgetAndProcClassAndCoacodeF(Budget budget, ProcClass p, COA coacode, Set<Fundsource> fundsource) {
+        return repository.findDistinctFundSourcesByBudgetAndProcClassAndCoacodeAndFundsourceIn(budget, p, coacode,fundsource);
+    }    
+    public Set<String> findDistinctFundSourcesByBudgetAndProcClassAndCoacode(Budget budget, ProcClass p, COA coacode,Set<UrcDeptSectionAnlDimbgt> deptUnits) {
+        return repository.findDistinctFundSourcesByBudgetAndProcClassAndCoacodeAndDeptIn(budget, p, coacode,deptUnits);
+    }
+        public Set<String> findDistinctFundSourcesByBudgetAndProcClassAndCoacode(Budget budget, ProcClass p, COA coacode,Set<UrcDeptSectionAnlDimbgt> deptUnits, Set<Fundsource> fundsource) {
+        return repository.findDistinctFundSourcesByBudgetAndProcClassAndCoacodeAndDeptInAndFundsourceIn(budget, p, coacode,deptUnits,fundsource);
+    }
     public Set<Fundsource> findDistinctFundSources2ByBudgetAndProcClassAndCoacode(Budget budget, ProcClass p, COA coacode) {
         return repository.findDistinctFundSources2ByBudgetAndProcClassAndCoacode(budget, p, coacode);
     }
 
     public List<BudgetItems> findByBudgetAndProcClassAndCoaAndFundsourceIn(Budget budget, ProcClass p, COA coacode, Set<Fundsource> fundsource) {
-        return repository.findByBudgetAndProcClassAndCoaAndFundsourceIn(budget, p, coacode, fundsource);
+        List<BudgetItems> result = repository.findByBudgetAndProcClassAndCoaAndFundsourceIn(budget, p, coacode, fundsource);
+        System.out.println(result.size()+"");
+        return result != null ? result : Collections.emptyList();
     }
 
     public List<BudgetItems> findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(Budget budget, ProcClass p, COA coacode, Set<UrcDeptSectionAnlDimbgt> deptUnits, Set<Fundsource> fundsource) {
-        return repository.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(budget, p, coacode, deptUnits, fundsource);
+        List<BudgetItems> result = repository.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(budget, p, coacode, deptUnits, fundsource);
+        System.out.println(result.size()+"");
+        return result != null ? result : Collections.emptyList(); 
     }
 
     public List<BudgetItemsActuals> findDistinctBudgetItemses(Budget budget, Set<UrcDeptSectionAnlDimbgt> deptUnits, String fy) {
@@ -902,7 +924,7 @@ public class BudgetItemsService {
             b.setItem(c.getName());
             b.setCoacode(c);
 
-            if (deptUnits.contains(freightAnlDimbgt) &&(c.getDisplay() == Display.FREIGHT||c.getCode().contains("111109")||c.getCode().contains("111110")) ) {
+            if (deptUnits.contains(freightAnlDimbgt) && (c.getDisplay() == Display.FREIGHT || c.getCode().contains("111109") || c.getCode().contains("111110"))) {
                 b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCode2(fy, "Jul")));
                 b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCode2(fy, "Aug")));
                 b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCode2(fy, "Sep")));
@@ -929,7 +951,7 @@ public class BudgetItemsService {
                 b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.generateCode2(fy, "May"), sctions));
                 b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.generateCode2(fy, "Jun"), sctions));
             }
-                       b.setTotal(repository.sumOfAllMonthsByBudgetAndCoa(budget, c, deptUnits));
+            b.setTotal(repository.sumOfAllMonthsByBudgetAndCoa(budget, c, deptUnits));
             b.setJul(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "jul"));
             b.setAug(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "aug"));
             b.setSep(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "sep"));

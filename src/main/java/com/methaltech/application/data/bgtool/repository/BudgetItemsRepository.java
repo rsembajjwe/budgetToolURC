@@ -865,6 +865,37 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             + "AND bi.procClass = :procClass "
             + "AND bi.coacode = :coacode")
     Set<String> findDistinctFundSourcesByBudgetAndProcClassAndCoacode(Budget budget, ProcClass procClass, COA coacode);
+    
+    @Query("SELECT DISTINCT f.fundsource FROM BudgetItems bi "
+            + "JOIN bi.fundsource f "
+            + "WHERE bi.budget = :budget "
+            + "AND bi.procClass = :procClass "
+            + "AND bi.coacode = :coacode  AND bi.deptUnit IN :deptUnits")
+    Set<String> findDistinctFundSourcesByBudgetAndProcClassAndCoacodeAndDeptIn(@Param("budget")Budget budget,
+            @Param("procClass") ProcClass procClass, 
+            @Param("coacode")COA coacode,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits); 
+    
+    @Query("SELECT DISTINCT f.fundsource FROM BudgetItems bi "
+            + "JOIN bi.fundsource f "
+            + "WHERE bi.budget = :budget "
+            + "AND bi.procClass = :procClass "
+            + "AND bi.coacode = :coacode  AND bi.deptUnit IN :deptUnits AND f IN :fundsource")
+    Set<String> findDistinctFundSourcesByBudgetAndProcClassAndCoacodeAndDeptInAndFundsourceIn(@Param("budget")Budget budget,
+            @Param("procClass") ProcClass procClass, 
+            @Param("coacode")COA coacode,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            @Param("fundsource") Set<Fundsource> fundsource);   
+    
+        @Query("SELECT DISTINCT f.fundsource FROM BudgetItems bi "
+            + "JOIN bi.fundsource f "
+            + "WHERE bi.budget = :budget "
+            + "AND bi.procClass = :procClass "
+            + "AND bi.coacode = :coacode AND f IN :fundsource")
+    Set<String> findDistinctFundSourcesByBudgetAndProcClassAndCoacodeAndFundsourceIn(@Param("budget")Budget budget,
+            @Param("procClass") ProcClass procClass, 
+            @Param("coacode")COA coacode,
+            @Param("fundsource") Set<Fundsource> fundsource);
 
     @Query("SELECT DISTINCT f FROM BudgetItems bi "
             + "JOIN bi.fundsource f "
