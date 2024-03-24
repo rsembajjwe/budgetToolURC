@@ -24,11 +24,13 @@ import com.methaltech.application.data.entity.bgtool.URC_Priority_Areas;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import com.methaltech.application.data.entity.bgtool.User;
+import com.methaltech.application.data.entity.livedata.URC_ACNT;
 import com.methaltech.application.data.entity.oldbgtool.BudgetSubItem;
 import com.methaltech.application.data.entity.oldbgtool.DepartmentSection;
 import com.methaltech.application.data.entity.oldbgtool.DepartmentUnit;
 import com.methaltech.application.data.entity.oldbgtool.ProgramActivity;
 import com.methaltech.application.data.entity.oldbgtool.Programme;
+import com.methaltech.application.data.livedata.service.UrcAcntService;
 import com.methaltech.application.data.oldbgtool.service.BudgetSubItemService;
 import com.methaltech.application.data.oldbgtool.service.DepartmentSectionService;
 import com.methaltech.application.data.oldbgtool.service.DepartmentUnitService;
@@ -75,6 +77,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -111,6 +114,7 @@ public class BudgetReportsView extends Div {
     private final ComboBox<Budget> comboBox = new ComboBox<>("Select Budget");
     private final ComboBox<Budget> comboBox2 = new ComboBox<>("Select Budget");
     private final UserService userService;
+    private final UrcAcntService urcAcntService;
     private final Coalevel1Service sampleCoalevel1Service;
     private final BudgetItemsService sampleBudgetItemsService;
     private final CustomDetailedBudgetReportImpService sampleCustomDetailedBudgetReportImpService;
@@ -156,7 +160,7 @@ public class BudgetReportsView extends Div {
             ItemService2 itemService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, OrganisationService sampleOrganisationService,
             BudgetItemsService sampleBudgetItemsService, Coalevel1Service sampleCoalevel1Service, URC_Priority_AreasService sampleURC_Priority_AreasService,
             Urc_ActivitiesService sampleUrc_ActivitiesService, CustomDetailedBudgetReportImpService sampleCustomDetailedBudgetReportImpService,
-            CustomDetailedBudgetReportService sampleCustomDetailedBudgetReportService) {
+            CustomDetailedBudgetReportService sampleCustomDetailedBudgetReportService, UrcAcntService urcAcntService) {
         this.userService = userService;
         this.budgetService = budgetService;
         this.departmentsectionService = departmentsectionService;
@@ -174,7 +178,8 @@ public class BudgetReportsView extends Div {
         this.sampleUrc_ActivitiesService = sampleUrc_ActivitiesService;
         this.sampleCustomDetailedBudgetReportImpService = sampleCustomDetailedBudgetReportImpService;
         this.sampleCustomDetailedBudgetReportService = sampleCustomDetailedBudgetReportService;
-        
+        this.urcAcntService = urcAcntService;
+
         //setSpacing(false);
         reportColumns.add(Report.BASIC);
         reportColumns.add(Report.QTR1);
@@ -233,6 +238,7 @@ public class BudgetReportsView extends Div {
         AccordionPanel panel3 = new AccordionPanel("Income Budget");
         AccordionPanel panel4 = new AccordionPanel("Revenue Expenditure Budget");
         AccordionPanel panel5 = new AccordionPanel("Capital Expenditure Budget");
+        AccordionPanel panel6 = new AccordionPanel("Summary Budget");
         // Add content to the panels
         panel0.addContent(new Button("Budget Activities in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel0.addContent(new Button("Budget Activities in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
@@ -255,6 +261,9 @@ public class BudgetReportsView extends Div {
         panel5.addContent(new Button("Capital Expenditure Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel5.addContent(new Button("Capital Expenditure Budget By Account Code in Detail By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel5.addContent(new Button("Capital Expenditure Budget By Account Code in Summary  By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
+
+        panel6.addContent(new Button("Summary Budget", new Icon(VaadinIcon.DOWNLOAD), e -> handleSummaryBudgetClick()));
+        panel6.addContent(new Button("Summary Analysis Budget", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         // Add the panels to the Accordion
         accordion.add(panel0);
         accordion.add(panel1);
@@ -262,6 +271,7 @@ public class BudgetReportsView extends Div {
         accordion.add(panel3);
         accordion.add(panel4);
         accordion.add(panel5);
+        accordion.add(panel6);
 
         Accordion accordion2 = new Accordion();
         accordion2.setWidthFull();
@@ -472,6 +482,15 @@ public class BudgetReportsView extends Div {
         gridCustomDetailedBudgetReport.setItems(sampleCustomDetailedBudgetReportService.findByBudgetreport(budgetreport));
     }
 
+    private void handleSummaryBudgetClick() {
+        // Handle the click event here, e.g., show a notification or navigate to another view
+        if (sections.isEmpty() || comboBox.isEmpty() || budgetType.isEmpty()) {
+            warningNotification("Make sure that Neither Section nor Budget nor Budget Type is empty");
+        } else {
+            exportAndDownloadSummaryBudget(comboBox.getValue());
+        }
+    }
+
     private void handleActivityDetailClick() {
         // Handle the click event here, e.g., show a notification or navigate to another view
         if (sections.isEmpty() || comboBox.isEmpty() || budgetType.isEmpty()) {
@@ -607,7 +626,7 @@ public class BudgetReportsView extends Div {
         Q2.createCell((short) 23).setCellValue("Notes");
         Q2.createCell((short) 24).setCellValue("Unit");
         Coalevel1 coal = sampleCoalevel1Service.findByCode(1);
-        
+
         List<UrcDeptSectionAnlDimbgt> selectedSections = sections.getSelectedItems().stream().toList();
         if (isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero(comboBox.getValue(), coal, selectedSections) == true) {
             tr++;
@@ -912,8 +931,9 @@ public class BudgetReportsView extends Div {
             incometotal2.createCell(23).setCellValue("");
             incometotal2.createCell(24).setCellValue("");
             totalrowIndex.add((int) tr);
-            
-            tr++;tr++;
+
+            tr++;
+            tr++;
             Row incometotal21 = sheet.createRow((short) tr);
             incometotal21.createCell(0).setCellValue("TOTAL EXPENDITURE");
             CellRangeAddress cellRangeT1 = new CellRangeAddress(tr, tr, 0, 6);
@@ -937,7 +957,7 @@ public class BudgetReportsView extends Div {
             incometotal21.createCell(22).setCellValue("");
             incometotal21.createCell(23).setCellValue("");
             incometotal21.createCell(24).setCellValue("");
-            totalrowIndex.add((int) tr);            
+            totalrowIndex.add((int) tr);
         }
         for (Row row : sheet) {
             int i = 0;
@@ -1906,8 +1926,9 @@ public class BudgetReportsView extends Div {
             incometotal2.createCell(23).setCellValue("");
             incometotal2.createCell(24).setCellValue("");
             totalrowIndex.add((int) tr);
-            
-            tr++;tr++;
+
+            tr++;
+            tr++;
             Row incometotal21 = sheet.createRow((short) tr);
             incometotal21.setHeight(rowHeight);
             incometotal21.createCell(0).setCellValue("TOTAL EXPENDITURE");
@@ -1986,7 +2007,7 @@ public class BudgetReportsView extends Div {
             incometotal21.createCell(22).setCellValue("");
             incometotal21.createCell(23).setCellValue("");
             incometotal21.createCell(24).setCellValue("");
-            totalrowIndex.add((int) tr);            
+            totalrowIndex.add((int) tr);
         }
         for (Row row : sheet) {
             int i = 0;
@@ -2973,8 +2994,9 @@ public class BudgetReportsView extends Div {
             incometotal2.createCell(23).setCellValue("");
             incometotal2.createCell(24).setCellValue("");
             totalrowIndex.add((int) tr);
-            
-            tr++;tr++;
+
+            tr++;
+            tr++;
             Row incometotal21 = sheet.createRow((short) tr);
             incometotal21.setHeight(rowHeight);
             incometotal21.createCell(0).setCellValue("TOTAL EXPENDITURE");
@@ -3053,7 +3075,7 @@ public class BudgetReportsView extends Div {
             incometotal21.createCell(22).setCellValue("");
             incometotal21.createCell(23).setCellValue("");
             incometotal21.createCell(24).setCellValue("");
-            totalrowIndex.add((int) tr);             
+            totalrowIndex.add((int) tr);
         }
         for (Row row : sheet) {
             int i = 0;
@@ -3155,6 +3177,34 @@ public class BudgetReportsView extends Div {
             sheet.getPrintSetup().setPaperSize(PrintSetup.A3_PAPERSIZE);
             sheet.getPrintSetup().setLandscape(true);
             createHeaderAndBodyActivitiesByBudgetRow(workbook, sheet);
+            //createDataRows(sheet, people);
+
+            // Write the workbook to a byte array
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+
+            // Create a StreamResource with the Excel data
+            StreamResource resource = new StreamResource("Budget Download " + budget.getFinancialYear() + ".xlsx", ()
+                    -> new ByteArrayInputStream(outputStream.toByteArray()));
+
+            // Create an Anchor component with the StreamResource
+            Anchor downloadLink2 = new Anchor(resource, "");
+            downloadLink2.getElement().setAttribute("download", true);
+            add(downloadLink2);
+            // Programmatically click the download link to initiate the download
+            downloadLink2.getElement().callJsFunction("click");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void exportAndDownloadSummaryBudget(Budget budget) {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Budget " + budget.getFinancialYear());
+            // Set the paper size to A3 Landscape
+            sheet.getPrintSetup().setPaperSize(PrintSetup.A3_PAPERSIZE);
+            sheet.getPrintSetup().setLandscape(true);
+            createHeaderAndBodySummaryBudget(workbook, sheet);
             //createDataRows(sheet, people);
 
             // Write the workbook to a byte array
@@ -3293,6 +3343,29 @@ public class BudgetReportsView extends Div {
         return selectedsections2.toString();
     }
 
+    private String HeaderExcel3() {
+        StringBuilder selectedsections2 = new StringBuilder();
+        for (UrcDeptSectionAnlDimbgt a : sections.getSelectedItems()) {
+            selectedsections2.append(a.getNAME()).append(" ,");
+        }
+        // Check if the StringBuilder is not empty before deleting the last character
+        if (!selectedsections2.isEmpty()) {
+            selectedsections2.deleteCharAt(selectedsections2.length() - 1);
+        }
+        if (countCommas(selectedsections2.toString()) > 0) {
+            selectedsections2.append("Section(s) | ");
+        } else {
+            selectedsections2.append("Section | ");
+        }
+        for (Organisation b : budgetType.getSelectedItems()) {
+            selectedsections2.append(b.getName()).append(",");
+        }
+        if (!selectedsections2.isEmpty()) {
+            selectedsections2.deleteCharAt(selectedsections2.length() - 1).append(" |Summary Budget ").append(comboBox.getValue().getFinancialYear());
+        }
+        return selectedsections2.toString();
+    }
+
     private String HeaderExcel2(String action) {
         StringBuilder selectedsections2 = new StringBuilder();
 
@@ -3364,5 +3437,1278 @@ public class BudgetReportsView extends Div {
 
         notification.open();
         return notification;
+    }
+
+    private void createHeaderAndBodySummaryBudget(Workbook workbook, Sheet sheet) {
+        List<Coalevel1> coaList = new ArrayList();
+        List<Integer> activityrowIndex = new ArrayList();
+        List<Integer> catrowIndex = new ArrayList();
+        List<Integer> totalrowIndex = new ArrayList();
+        List<Integer> totalCoarowIndex = new ArrayList();
+        sheet.getPrintSetup().setPaperSize(PrintSetup.A3_PAPERSIZE);
+
+        //sheet.setFitToPage(true);
+        //sheet.setHorizontallyCenter(true);
+        short rowHeight = 500; // Adjust the height as needed
+        Font font = workbook.createFont();
+        font.setFontName("Arial");
+        font.setFontHeightInPoints((short) 10);
+
+        // Create a cell style with the specified font
+        CellStyle cellStyle = workbook.createCellStyle();
+        cellStyle.setFont(font);
+        cellStyle.setWrapText(true);
+        cellStyle.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
+
+// Create a bold and centered style with a bottom border
+        CellStyle boldCenteredStyle = workbook.createCellStyle();
+        boldCenteredStyle.cloneStyleFrom(cellStyle);
+        boldCenteredStyle.setAlignment(HorizontalAlignment.CENTER);
+        Font boldFont = workbook.createFont();
+        boldFont.setBold(true);
+        boldCenteredStyle.setFont(boldFont);
+        boldCenteredStyle.setBorderBottom(BorderStyle.THIN);
+        Row headerRow = sheet.createRow(0);
+        //int columnWidth = 10000; // Adjust the width as needed
+        //sheet.setColumnWidth(0, columnWidth);
+        short tr = 2;
+
+        try {
+            // Add an image to the header
+            // short rowHeight = (short) (getImageHeight("/META-INF/resources/images/urclogo.png") + 50); // Add some padding
+            //System.out.println(rowHeight);
+            headerRow.setHeight(rowHeight);
+
+            addImageToHeader(sheet, "/META-INF/resources/images/urclogo.png");
+
+        } catch (IOException ex) {
+            Logger.getLogger(BudgetReportsView.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        // Create a cell for the header
+        // Row headerRow = sheet.createRow(0);
+        Cell headerCell = headerRow.createCell(1);
+        headerCell.setCellValue("UGANDA RAILWAYS CORPORATION");
+        CellRangeAddress cellRange3 = new CellRangeAddress(0, 0, 1, 15);
+        sheet.addMergedRegion(cellRange3);
+        setBottomBorderForRegion(sheet, cellRange3);
+        Row header2 = sheet.createRow(1);
+        Cell header2Cell = header2.createCell(0);
+        header2Cell.setCellValue(HeaderExcel3().toUpperCase());
+        CellRangeAddress cellRange2 = new CellRangeAddress(1, 1, 0, 15);
+        sheet.addMergedRegion(cellRange2);
+        setBottomBorderForRegion(sheet, cellRange2);
+
+        Row Q2 = sheet.createRow((short) tr);
+        Q2.createCell((short) 0).setCellValue("COA CODE");
+        Q2.createCell((short) 1).setCellValue("");
+        Q2.createCell((short) 2).setCellValue("DETAILS");
+        Q2.createCell((short) 3).setCellValue("BUDGET (TOTAL)");
+        Q2.createCell((short) 4).setCellValue("JUL");
+        Q2.createCell((short) 5).setCellValue("AUG");
+        Q2.createCell((short) 6).setCellValue("SEP");
+        Q2.createCell((short) 7).setCellValue("OCT");
+        Q2.createCell((short) 8).setCellValue("NOV");
+        Q2.createCell((short) 9).setCellValue("DEC");
+        Q2.createCell((short) 10).setCellValue("JAN");
+        Q2.createCell((short) 11).setCellValue("FEB");
+        Q2.createCell((short) 12).setCellValue("MAR");
+        Q2.createCell((short) 13).setCellValue("APR");
+        Q2.createCell((short) 14).setCellValue("MAY");
+        Q2.createCell((short) 15).setCellValue("JUN");
+
+        tr++;
+
+        Row Q3 = sheet.createRow((short) tr);
+        Q3.createCell((short) 0).setCellValue("");
+        Q3.createCell((short) 1).setCellValue("");
+        Q3.createCell((short) 2).setCellValue(" VOLUMES /STATS");
+        Q3.createCell((short) 3).setCellValue("");
+        Q3.createCell((short) 4).setCellValue("");
+        Q3.createCell((short) 5).setCellValue("");
+        Q3.createCell((short) 6).setCellValue("");
+        Q3.createCell((short) 7).setCellValue("");
+        Q3.createCell((short) 8).setCellValue("");
+        Q3.createCell((short) 9).setCellValue("");
+        Q3.createCell((short) 10).setCellValue("");
+        Q3.createCell((short) 11).setCellValue("");
+        Q3.createCell((short) 12).setCellValue("");
+        Q3.createCell((short) 13).setCellValue("");
+        Q3.createCell((short) 14).setCellValue("");
+        Q3.createCell((short) 15).setCellValue("");
+
+        tr++;
+
+        Row Q4 = sheet.createRow((short) tr);
+        Q4.createCell((short) 0).setCellValue("");
+        Q4.createCell((short) 1).setCellValue("");
+        Q4.createCell((short) 2).setCellValue("Northern route ");
+        Q4.createCell((short) 3).setCellValue("");
+        Q4.createCell((short) 4).setCellValue("");
+        Q4.createCell((short) 5).setCellValue("");
+        Q4.createCell((short) 6).setCellValue("");
+        Q4.createCell((short) 7).setCellValue("");
+        Q4.createCell((short) 8).setCellValue("");
+        Q4.createCell((short) 9).setCellValue("");
+        Q4.createCell((short) 10).setCellValue("");
+        Q4.createCell((short) 11).setCellValue("");
+        Q4.createCell((short) 12).setCellValue("");
+        Q4.createCell((short) 13).setCellValue("");
+        Q4.createCell((short) 14).setCellValue("");
+        Q4.createCell((short) 15).setCellValue("");
+
+        tr++;
+
+        Row Q5 = sheet.createRow((short) tr);
+        Q5.createCell((short) 0).setCellValue("ZFVNR -EXP");
+        Q5.createCell((short) 1).setCellValue("");
+        Q5.createCell((short) 2).setCellValue("Net Tons- Exports");
+        Q5.createCell((short) 3).setCellValue("");
+        Q5.createCell((short) 4).setCellValue("");
+        Q5.createCell((short) 5).setCellValue("");
+        Q5.createCell((short) 6).setCellValue("");
+        Q5.createCell((short) 7).setCellValue("");
+        Q5.createCell((short) 8).setCellValue("");
+        Q5.createCell((short) 9).setCellValue("");
+        Q5.createCell((short) 10).setCellValue("");
+        Q5.createCell((short) 11).setCellValue("");
+        Q5.createCell((short) 12).setCellValue("");
+        Q5.createCell((short) 13).setCellValue("");
+        Q5.createCell((short) 14).setCellValue("");
+        Q5.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q6 = sheet.createRow((short) tr);
+        Q6.createCell((short) 0).setCellValue("ZFVNR-IMP");
+        Q6.createCell((short) 1).setCellValue("");
+        Q6.createCell((short) 2).setCellValue("Net Tons -Imports ");
+        Q6.createCell((short) 3).setCellValue("");
+        Q6.createCell((short) 4).setCellValue("");
+        Q6.createCell((short) 5).setCellValue("");
+        Q6.createCell((short) 6).setCellValue("");
+        Q6.createCell((short) 7).setCellValue("");
+        Q6.createCell((short) 8).setCellValue("");
+        Q6.createCell((short) 9).setCellValue("");
+        Q6.createCell((short) 10).setCellValue("");
+        Q6.createCell((short) 11).setCellValue("");
+        Q6.createCell((short) 12).setCellValue("");
+        Q6.createCell((short) 13).setCellValue("");
+        Q6.createCell((short) 14).setCellValue("");
+        Q6.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q7 = sheet.createRow((short) tr);
+        Q7.createCell((short) 0).setCellValue("ZFVTN-LC");
+        Q7.createCell((short) 1).setCellValue("");
+        Q7.createCell((short) 2).setCellValue("Local Net Tons");
+        Q7.createCell((short) 3).setCellValue("");
+        Q7.createCell((short) 4).setCellValue("");
+        Q7.createCell((short) 5).setCellValue("");
+        Q7.createCell((short) 6).setCellValue("");
+        Q7.createCell((short) 7).setCellValue("");
+        Q7.createCell((short) 8).setCellValue("");
+        Q7.createCell((short) 9).setCellValue("");
+        Q7.createCell((short) 10).setCellValue("");
+        Q7.createCell((short) 11).setCellValue("");
+        Q7.createCell((short) 12).setCellValue("");
+        Q7.createCell((short) 13).setCellValue("");
+        Q7.createCell((short) 14).setCellValue("");
+        Q7.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q8 = sheet.createRow((short) tr);
+        Q8.createCell((short) 0).setCellValue("");
+        Q8.createCell((short) 1).setCellValue("");
+        Q8.createCell((short) 2).setCellValue("Total Tons-Northern");
+        Q8.createCell((short) 3).setCellValue("");
+        Q8.createCell((short) 4).setCellValue("");
+        Q8.createCell((short) 5).setCellValue("");
+        Q8.createCell((short) 6).setCellValue("");
+        Q8.createCell((short) 7).setCellValue("");
+        Q8.createCell((short) 8).setCellValue("");
+        Q8.createCell((short) 9).setCellValue("");
+        Q8.createCell((short) 10).setCellValue("");
+        Q8.createCell((short) 11).setCellValue("");
+        Q8.createCell((short) 12).setCellValue("");
+        Q8.createCell((short) 13).setCellValue("");
+        Q8.createCell((short) 14).setCellValue("");
+        Q8.createCell((short) 15).setCellValue("");
+        tr++;
+
+        Row Q9 = sheet.createRow((short) tr);
+        Q9.createCell((short) 0).setCellValue("");
+        Q9.createCell((short) 1).setCellValue("");
+        Q9.createCell((short) 2).setCellValue("Southern Route");
+        Q9.createCell((short) 3).setCellValue("");
+        Q9.createCell((short) 4).setCellValue("");
+        Q9.createCell((short) 5).setCellValue("");
+        Q9.createCell((short) 6).setCellValue("");
+        Q9.createCell((short) 7).setCellValue("");
+        Q9.createCell((short) 8).setCellValue("");
+        Q9.createCell((short) 9).setCellValue("");
+        Q9.createCell((short) 10).setCellValue("");
+        Q9.createCell((short) 11).setCellValue("");
+        Q9.createCell((short) 12).setCellValue("");
+        Q9.createCell((short) 13).setCellValue("");
+        Q9.createCell((short) 14).setCellValue("");
+        Q9.createCell((short) 15).setCellValue("");
+
+        tr++;
+
+        Row Q10 = sheet.createRow((short) tr);
+        Q10.createCell((short) 0).setCellValue("ZFVSR -EXP");
+        Q10.createCell((short) 1).setCellValue("");
+        Q10.createCell((short) 2).setCellValue("Net Tons -Exports");
+        Q10.createCell((short) 3).setCellValue("");
+        Q10.createCell((short) 4).setCellValue("");
+        Q10.createCell((short) 5).setCellValue("");
+        Q10.createCell((short) 6).setCellValue("");
+        Q10.createCell((short) 7).setCellValue("");
+        Q10.createCell((short) 8).setCellValue("");
+        Q10.createCell((short) 9).setCellValue("");
+        Q10.createCell((short) 10).setCellValue("");
+        Q10.createCell((short) 11).setCellValue("");
+        Q10.createCell((short) 12).setCellValue("");
+        Q10.createCell((short) 13).setCellValue("");
+        Q10.createCell((short) 14).setCellValue("");
+        Q10.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q11 = sheet.createRow((short) tr);
+        Q11.createCell((short) 0).setCellValue("ZFVSR-IMP");
+        Q11.createCell((short) 1).setCellValue("");
+        Q11.createCell((short) 2).setCellValue(" Net Tons -Imports");
+        Q11.createCell((short) 3).setCellValue("");
+        Q11.createCell((short) 4).setCellValue("");
+        Q11.createCell((short) 5).setCellValue("");
+        Q11.createCell((short) 6).setCellValue("");
+        Q11.createCell((short) 7).setCellValue("");
+        Q11.createCell((short) 8).setCellValue("");
+        Q11.createCell((short) 9).setCellValue("");
+        Q11.createCell((short) 10).setCellValue("");
+        Q11.createCell((short) 11).setCellValue("");
+        Q11.createCell((short) 12).setCellValue("");
+        Q11.createCell((short) 13).setCellValue("");
+        Q11.createCell((short) 14).setCellValue("");
+        Q11.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q12 = sheet.createRow((short) tr);
+        Q12.createCell((short) 0).setCellValue("ZFVTSR-LC");
+        Q12.createCell((short) 1).setCellValue("");
+        Q12.createCell((short) 2).setCellValue("Local Net Tons");
+        Q12.createCell((short) 3).setCellValue("");
+        Q12.createCell((short) 4).setCellValue("");
+        Q12.createCell((short) 5).setCellValue("");
+        Q12.createCell((short) 6).setCellValue("");
+        Q12.createCell((short) 7).setCellValue("");
+        Q12.createCell((short) 8).setCellValue("");
+        Q12.createCell((short) 9).setCellValue("");
+        Q12.createCell((short) 10).setCellValue("");
+        Q12.createCell((short) 11).setCellValue("");
+        Q12.createCell((short) 12).setCellValue("");
+        Q12.createCell((short) 13).setCellValue("");
+        Q12.createCell((short) 14).setCellValue("");
+        Q12.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q13 = sheet.createRow((short) tr);
+        Q13.createCell((short) 0).setCellValue("");
+        Q13.createCell((short) 1).setCellValue("");
+        Q13.createCell((short) 2).setCellValue("Total Tons-Southern");
+        Q13.createCell((short) 3).setCellValue("");
+        Q13.createCell((short) 4).setCellValue("");
+        Q13.createCell((short) 5).setCellValue("");
+        Q13.createCell((short) 6).setCellValue("");
+        Q13.createCell((short) 7).setCellValue("");
+        Q13.createCell((short) 8).setCellValue("");
+        Q13.createCell((short) 9).setCellValue("");
+        Q13.createCell((short) 10).setCellValue("");
+        Q13.createCell((short) 11).setCellValue("");
+        Q13.createCell((short) 12).setCellValue("");
+        Q13.createCell((short) 13).setCellValue("");
+        Q13.createCell((short) 14).setCellValue("");
+        Q13.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q14 = sheet.createRow((short) tr);
+        Q14.createCell((short) 0).setCellValue("");
+        Q14.createCell((short) 1).setCellValue("");
+        Q14.createCell((short) 2).setCellValue("Total");
+        Q14.createCell((short) 3).setCellValue("");
+        Q14.createCell((short) 4).setCellValue("");
+        Q14.createCell((short) 5).setCellValue("");
+        Q14.createCell((short) 6).setCellValue("");
+        Q14.createCell((short) 7).setCellValue("");
+        Q14.createCell((short) 8).setCellValue("");
+        Q14.createCell((short) 9).setCellValue("");
+        Q14.createCell((short) 10).setCellValue("");
+        Q14.createCell((short) 11).setCellValue("");
+        Q14.createCell((short) 12).setCellValue("");
+        Q14.createCell((short) 13).setCellValue("");
+        Q14.createCell((short) 14).setCellValue("");
+        Q14.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q15 = sheet.createRow((short) tr);
+        Q15.createCell((short) 0).setCellValue("");
+        Q15.createCell((short) 1).setCellValue("");
+        Q15.createCell((short) 2).setCellValue("Passengers");
+        Q15.createCell((short) 3).setCellValue("");
+        Q15.createCell((short) 4).setCellValue("");
+        Q15.createCell((short) 5).setCellValue("");
+        Q15.createCell((short) 6).setCellValue("");
+        Q15.createCell((short) 7).setCellValue("");
+        Q15.createCell((short) 8).setCellValue("");
+        Q15.createCell((short) 9).setCellValue("");
+        Q15.createCell((short) 10).setCellValue("");
+        Q15.createCell((short) 11).setCellValue("");
+        Q15.createCell((short) 12).setCellValue("");
+        Q15.createCell((short) 13).setCellValue("");
+        Q15.createCell((short) 14).setCellValue("");
+        Q15.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q16 = sheet.createRow((short) tr);
+        Q16.createCell((short) 0).setCellValue("ZPAS-KNR");
+        Q16.createCell((short) 1).setCellValue("");
+        Q16.createCell((short) 2).setCellValue("Passengers - Kampala-Namanve route ");
+        Q16.createCell((short) 3).setCellValue("");
+        Q16.createCell((short) 4).setCellValue("");
+        Q16.createCell((short) 5).setCellValue("");
+        Q16.createCell((short) 6).setCellValue("");
+        Q16.createCell((short) 7).setCellValue("");
+        Q16.createCell((short) 8).setCellValue("");
+        Q16.createCell((short) 9).setCellValue("");
+        Q16.createCell((short) 10).setCellValue("");
+        Q16.createCell((short) 11).setCellValue("");
+        Q16.createCell((short) 12).setCellValue("");
+        Q16.createCell((short) 13).setCellValue("");
+        Q16.createCell((short) 14).setCellValue("");
+        Q16.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q17 = sheet.createRow((short) tr);
+        Q17.createCell((short) 0).setCellValue("ZPAS-KOR");
+        Q17.createCell((short) 1).setCellValue("");
+        Q17.createCell((short) 2).setCellValue("Passengers - Kampala-Other route ");
+        Q17.createCell((short) 3).setCellValue("");
+        Q17.createCell((short) 4).setCellValue("");
+        Q17.createCell((short) 5).setCellValue("");
+        Q17.createCell((short) 6).setCellValue("");
+        Q17.createCell((short) 7).setCellValue("");
+        Q17.createCell((short) 8).setCellValue("");
+        Q17.createCell((short) 9).setCellValue("");
+        Q17.createCell((short) 10).setCellValue("");
+        Q17.createCell((short) 11).setCellValue("");
+        Q17.createCell((short) 12).setCellValue("");
+        Q17.createCell((short) 13).setCellValue("");
+        Q17.createCell((short) 14).setCellValue("");
+        Q17.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q18 = sheet.createRow((short) tr);
+        Q18.createCell((short) 0).setCellValue("");
+        Q18.createCell((short) 1).setCellValue("");
+        Q18.createCell((short) 2).setCellValue("Total Passengers");
+        Q18.createCell((short) 3).setCellValue("");
+        Q18.createCell((short) 4).setCellValue("");
+        Q18.createCell((short) 5).setCellValue("");
+        Q18.createCell((short) 6).setCellValue("");
+        Q18.createCell((short) 7).setCellValue("");
+        Q18.createCell((short) 8).setCellValue("");
+        Q18.createCell((short) 9).setCellValue("");
+        Q18.createCell((short) 10).setCellValue("");
+        Q18.createCell((short) 11).setCellValue("");
+        Q18.createCell((short) 12).setCellValue("");
+        Q18.createCell((short) 13).setCellValue("");
+        Q18.createCell((short) 14).setCellValue("");
+        Q18.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q19 = sheet.createRow((short) tr);
+        Q19.createCell((short) 0).setCellValue("ZTPR-KNV");
+        Q19.createCell((short) 1).setCellValue("");
+        Q19.createCell((short) 2).setCellValue("Ticket price-Kampala-Namanve");
+        Q19.createCell((short) 3).setCellValue("");
+        Q19.createCell((short) 4).setCellValue("");
+        Q19.createCell((short) 5).setCellValue("");
+        Q19.createCell((short) 6).setCellValue("");
+        Q19.createCell((short) 7).setCellValue("");
+        Q19.createCell((short) 8).setCellValue("");
+        Q19.createCell((short) 9).setCellValue("");
+        Q19.createCell((short) 10).setCellValue("");
+        Q19.createCell((short) 11).setCellValue("");
+        Q19.createCell((short) 12).setCellValue("");
+        Q19.createCell((short) 13).setCellValue("");
+        Q19.createCell((short) 14).setCellValue("");
+        Q19.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q20 = sheet.createRow((short) tr);
+        Q20.createCell((short) 0).setCellValue("ZTPR-KPB");
+        Q20.createCell((short) 1).setCellValue("");
+        Q20.createCell((short) 2).setCellValue("Ticket price-Kampalal-PortBell");
+        Q20.createCell((short) 3).setCellValue("");
+        Q20.createCell((short) 4).setCellValue("");
+        Q20.createCell((short) 5).setCellValue("");
+        Q20.createCell((short) 6).setCellValue("");
+        Q20.createCell((short) 7).setCellValue("");
+        Q20.createCell((short) 8).setCellValue("");
+        Q20.createCell((short) 9).setCellValue("");
+        Q20.createCell((short) 10).setCellValue("");
+        Q20.createCell((short) 11).setCellValue("");
+        Q20.createCell((short) 12).setCellValue("");
+        Q20.createCell((short) 13).setCellValue("");
+        Q20.createCell((short) 14).setCellValue("");
+        Q20.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q21 = sheet.createRow((short) tr);
+        Q21.createCell((short) 0).setCellValue("");
+        Q21.createCell((short) 1).setCellValue("");
+        Q21.createCell((short) 2).setCellValue("Southern route Voyages:");
+        Q21.createCell((short) 3).setCellValue("");
+        Q21.createCell((short) 4).setCellValue("");
+        Q21.createCell((short) 5).setCellValue("");
+        Q21.createCell((short) 6).setCellValue("");
+        Q21.createCell((short) 7).setCellValue("");
+        Q21.createCell((short) 8).setCellValue("");
+        Q21.createCell((short) 9).setCellValue("");
+        Q21.createCell((short) 10).setCellValue("");
+        Q21.createCell((short) 11).setCellValue("");
+        Q21.createCell((short) 12).setCellValue("");
+        Q21.createCell((short) 13).setCellValue("");
+        Q21.createCell((short) 14).setCellValue("");
+        Q21.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q22 = sheet.createRow((short) tr);
+        Q22.createCell((short) 0).setCellValue("ZSRVO-MVK");
+        Q22.createCell((short) 1).setCellValue("");
+        Q22.createCell((short) 2).setCellValue("MV-Kaawa");
+        Q22.createCell((short) 3).setCellValue("");
+        Q22.createCell((short) 4).setCellValue("");
+        Q22.createCell((short) 5).setCellValue("");
+        Q22.createCell((short) 6).setCellValue("");
+        Q22.createCell((short) 7).setCellValue("");
+        Q22.createCell((short) 8).setCellValue("");
+        Q22.createCell((short) 9).setCellValue("");
+        Q22.createCell((short) 10).setCellValue("");
+        Q22.createCell((short) 11).setCellValue("");
+        Q22.createCell((short) 12).setCellValue("");
+        Q22.createCell((short) 13).setCellValue("");
+        Q22.createCell((short) 14).setCellValue("");
+        Q22.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q23 = sheet.createRow((short) tr);
+        Q23.createCell((short) 0).setCellValue("ZSRVO-MVP");
+        Q23.createCell((short) 1).setCellValue("");
+        Q23.createCell((short) 2).setCellValue("MV-Pamba ");
+        Q23.createCell((short) 3).setCellValue("");
+        Q23.createCell((short) 4).setCellValue("");
+        Q23.createCell((short) 5).setCellValue("");
+        Q23.createCell((short) 6).setCellValue("");
+        Q23.createCell((short) 7).setCellValue("");
+        Q23.createCell((short) 8).setCellValue("");
+        Q23.createCell((short) 9).setCellValue("");
+        Q23.createCell((short) 10).setCellValue("");
+        Q23.createCell((short) 11).setCellValue("");
+        Q23.createCell((short) 12).setCellValue("");
+        Q23.createCell((short) 13).setCellValue("");
+        Q23.createCell((short) 14).setCellValue("");
+        Q23.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q24 = sheet.createRow((short) tr);
+        Q24.createCell((short) 0).setCellValue("");
+        Q24.createCell((short) 1).setCellValue("");
+        Q24.createCell((short) 2).setCellValue("Total voyages-URC");
+        Q24.createCell((short) 3).setCellValue("");
+        Q24.createCell((short) 4).setCellValue("");
+        Q24.createCell((short) 5).setCellValue("");
+        Q24.createCell((short) 6).setCellValue("");
+        Q24.createCell((short) 7).setCellValue("");
+        Q24.createCell((short) 8).setCellValue("");
+        Q24.createCell((short) 9).setCellValue("");
+        Q24.createCell((short) 10).setCellValue("");
+        Q24.createCell((short) 11).setCellValue("");
+        Q24.createCell((short) 12).setCellValue("");
+        Q24.createCell((short) 13).setCellValue("");
+        Q24.createCell((short) 14).setCellValue("");
+        Q24.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q25 = sheet.createRow((short) tr);
+        Q25.createCell((short) 0).setCellValue("ZSRVO-MVU");
+        Q25.createCell((short) 1).setCellValue("");
+        Q25.createCell((short) 2).setCellValue(" MV,Umoja ");
+        Q25.createCell((short) 3).setCellValue("");
+        Q25.createCell((short) 4).setCellValue("");
+        Q25.createCell((short) 5).setCellValue("");
+        Q25.createCell((short) 6).setCellValue("");
+        Q25.createCell((short) 7).setCellValue("");
+        Q25.createCell((short) 8).setCellValue("");
+        Q25.createCell((short) 9).setCellValue("");
+        Q25.createCell((short) 10).setCellValue("");
+        Q25.createCell((short) 11).setCellValue("");
+        Q25.createCell((short) 12).setCellValue("");
+        Q25.createCell((short) 13).setCellValue("");
+        Q25.createCell((short) 14).setCellValue("");
+        Q25.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q26 = sheet.createRow((short) tr);
+        Q26.createCell((short) 0).setCellValue("ZSRVO-MVH");
+        Q26.createCell((short) 1).setCellValue("");
+        Q26.createCell((short) 2).setCellValue("MV-Uhuru");
+        Q26.createCell((short) 3).setCellValue("");
+        Q26.createCell((short) 4).setCellValue("");
+        Q26.createCell((short) 5).setCellValue("");
+        Q26.createCell((short) 6).setCellValue("");
+        Q26.createCell((short) 7).setCellValue("");
+        Q26.createCell((short) 8).setCellValue("");
+        Q26.createCell((short) 9).setCellValue("");
+        Q26.createCell((short) 10).setCellValue("");
+        Q26.createCell((short) 11).setCellValue("");
+        Q26.createCell((short) 12).setCellValue("");
+        Q26.createCell((short) 13).setCellValue("");
+        Q26.createCell((short) 14).setCellValue("");
+        Q26.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q27 = sheet.createRow((short) tr);
+        Q27.createCell((short) 0).setCellValue("");
+        Q27.createCell((short) 1).setCellValue("");
+        Q27.createCell((short) 2).setCellValue("Total voyages-other");
+        Q27.createCell((short) 3).setCellValue("");
+        Q27.createCell((short) 4).setCellValue("");
+        Q27.createCell((short) 5).setCellValue("");
+        Q27.createCell((short) 6).setCellValue("");
+        Q27.createCell((short) 7).setCellValue("");
+        Q27.createCell((short) 8).setCellValue("");
+        Q27.createCell((short) 9).setCellValue("");
+        Q27.createCell((short) 10).setCellValue("");
+        Q27.createCell((short) 11).setCellValue("");
+        Q27.createCell((short) 12).setCellValue("");
+        Q27.createCell((short) 13).setCellValue("");
+        Q27.createCell((short) 14).setCellValue("");
+        Q27.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q28 = sheet.createRow((short) tr);
+        Q28.createCell((short) 0).setCellValue("");
+        Q28.createCell((short) 1).setCellValue("");
+        Q28.createCell((short) 2).setCellValue("Gross Total voyages");
+        Q28.createCell((short) 3).setCellValue("");
+        Q28.createCell((short) 4).setCellValue("");
+        Q28.createCell((short) 5).setCellValue("");
+        Q28.createCell((short) 6).setCellValue("");
+        Q28.createCell((short) 7).setCellValue("");
+        Q28.createCell((short) 8).setCellValue("");
+        Q28.createCell((short) 9).setCellValue("");
+        Q28.createCell((short) 10).setCellValue("");
+        Q28.createCell((short) 11).setCellValue("");
+        Q28.createCell((short) 12).setCellValue("");
+        Q28.createCell((short) 13).setCellValue("");
+        Q28.createCell((short) 14).setCellValue("");
+        Q28.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q29 = sheet.createRow((short) tr);
+        Q29.createCell((short) 0).setCellValue("");
+        Q29.createCell((short) 1).setCellValue("");
+        Q29.createCell((short) 2).setCellValue("Number of trains");
+        Q29.createCell((short) 3).setCellValue("");
+        Q29.createCell((short) 4).setCellValue("");
+        Q29.createCell((short) 5).setCellValue("");
+        Q29.createCell((short) 6).setCellValue("");
+        Q29.createCell((short) 7).setCellValue("");
+        Q29.createCell((short) 8).setCellValue("");
+        Q29.createCell((short) 9).setCellValue("");
+        Q29.createCell((short) 10).setCellValue("");
+        Q29.createCell((short) 11).setCellValue("");
+        Q29.createCell((short) 12).setCellValue("");
+        Q29.createCell((short) 13).setCellValue("");
+        Q29.createCell((short) 14).setCellValue("");
+        Q29.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q30 = sheet.createRow((short) tr);
+        Q30.createCell((short) 0).setCellValue("ZNOTR");
+        Q30.createCell((short) 1).setCellValue("");
+        Q30.createCell((short) 2).setCellValue(" NTK ('000)");
+        Q30.createCell((short) 3).setCellValue("");
+        Q30.createCell((short) 4).setCellValue("");
+        Q30.createCell((short) 5).setCellValue("");
+        Q30.createCell((short) 6).setCellValue("");
+        Q30.createCell((short) 7).setCellValue("");
+        Q30.createCell((short) 8).setCellValue("");
+        Q30.createCell((short) 9).setCellValue("");
+        Q30.createCell((short) 10).setCellValue("");
+        Q30.createCell((short) 11).setCellValue("");
+        Q30.createCell((short) 12).setCellValue("");
+        Q30.createCell((short) 13).setCellValue("");
+        Q30.createCell((short) 14).setCellValue("");
+        Q30.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q31 = sheet.createRow((short) tr);
+        Q31.createCell((short) 0).setCellValue("ZNOTR-GTK");
+        Q31.createCell((short) 1).setCellValue("");
+        Q31.createCell((short) 2).setCellValue(" GTK(000) ");
+        Q31.createCell((short) 3).setCellValue("");
+        Q31.createCell((short) 4).setCellValue("");
+        Q31.createCell((short) 5).setCellValue("");
+        Q31.createCell((short) 6).setCellValue("");
+        Q31.createCell((short) 7).setCellValue("");
+        Q31.createCell((short) 8).setCellValue("");
+        Q31.createCell((short) 9).setCellValue("");
+        Q31.createCell((short) 10).setCellValue("");
+        Q31.createCell((short) 11).setCellValue("");
+        Q31.createCell((short) 12).setCellValue("");
+        Q31.createCell((short) 13).setCellValue("");
+        Q31.createCell((short) 14).setCellValue("");
+        Q31.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q32 = sheet.createRow((short) tr);
+        Q32.createCell((short) 0).setCellValue("");
+        Q32.createCell((short) 1).setCellValue("");
+        Q32.createCell((short) 2).setCellValue(" Fuel (Litres)");
+        Q32.createCell((short) 3).setCellValue("");
+        Q32.createCell((short) 4).setCellValue("");
+        Q32.createCell((short) 5).setCellValue("");
+        Q32.createCell((short) 6).setCellValue("");
+        Q32.createCell((short) 7).setCellValue("");
+        Q32.createCell((short) 8).setCellValue("");
+        Q32.createCell((short) 9).setCellValue("");
+        Q32.createCell((short) 10).setCellValue("");
+        Q32.createCell((short) 11).setCellValue("");
+        Q32.createCell((short) 12).setCellValue("");
+        Q32.createCell((short) 13).setCellValue("");
+        Q32.createCell((short) 14).setCellValue("");
+        Q32.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q33 = sheet.createRow((short) tr);
+        Q33.createCell((short) 0).setCellValue("ZFUEL-PSER");
+        Q33.createCell((short) 1).setCellValue("");
+        Q33.createCell((short) 2).setCellValue("Fuel-Passenger services ");
+        Q33.createCell((short) 3).setCellValue("");
+        Q33.createCell((short) 4).setCellValue("");
+        Q33.createCell((short) 5).setCellValue("");
+        Q33.createCell((short) 6).setCellValue("");
+        Q33.createCell((short) 7).setCellValue("");
+        Q33.createCell((short) 8).setCellValue("");
+        Q33.createCell((short) 9).setCellValue("");
+        Q33.createCell((short) 10).setCellValue("");
+        Q33.createCell((short) 11).setCellValue("");
+        Q33.createCell((short) 12).setCellValue("");
+        Q33.createCell((short) 13).setCellValue("");
+        Q33.createCell((short) 14).setCellValue("");
+        Q33.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q34 = sheet.createRow((short) tr);
+        Q34.createCell((short) 0).setCellValue("ZFUEL-NR");
+        Q34.createCell((short) 1).setCellValue("");
+        Q34.createCell((short) 2).setCellValue("Fuel  -Northern route");
+        Q34.createCell((short) 3).setCellValue("");
+        Q34.createCell((short) 4).setCellValue("");
+        Q34.createCell((short) 5).setCellValue("");
+        Q34.createCell((short) 6).setCellValue("");
+        Q34.createCell((short) 7).setCellValue("");
+        Q34.createCell((short) 8).setCellValue("");
+        Q34.createCell((short) 9).setCellValue("");
+        Q34.createCell((short) 10).setCellValue("");
+        Q34.createCell((short) 11).setCellValue("");
+        Q34.createCell((short) 12).setCellValue("");
+        Q34.createCell((short) 13).setCellValue("");
+        Q34.createCell((short) 14).setCellValue("");
+        Q34.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q35 = sheet.createRow((short) tr);
+        Q35.createCell((short) 0).setCellValue("ZFUEL-CR");
+        Q35.createCell((short) 1).setCellValue("");
+        Q35.createCell((short) 2).setCellValue("Fuel -Central route(Marine)");
+        Q35.createCell((short) 3).setCellValue("");
+        Q35.createCell((short) 4).setCellValue("");
+        Q35.createCell((short) 5).setCellValue("");
+        Q35.createCell((short) 6).setCellValue("");
+        Q35.createCell((short) 7).setCellValue("");
+        Q35.createCell((short) 8).setCellValue("");
+        Q35.createCell((short) 9).setCellValue("");
+        Q35.createCell((short) 10).setCellValue("");
+        Q35.createCell((short) 11).setCellValue("");
+        Q35.createCell((short) 12).setCellValue("");
+        Q35.createCell((short) 13).setCellValue("");
+        Q35.createCell((short) 14).setCellValue("");
+        Q35.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q36 = sheet.createRow((short) tr);
+        Q36.createCell((short) 0).setCellValue("ZNOTR-CRN");
+        Q36.createCell((short) 1).setCellValue("");
+        Q36.createCell((short) 2).setCellValue(" Crane ");
+        Q36.createCell((short) 3).setCellValue("");
+        Q36.createCell((short) 4).setCellValue("");
+        Q36.createCell((short) 5).setCellValue("");
+        Q36.createCell((short) 6).setCellValue("");
+        Q36.createCell((short) 7).setCellValue("");
+        Q36.createCell((short) 8).setCellValue("");
+        Q36.createCell((short) 9).setCellValue("");
+        Q36.createCell((short) 10).setCellValue("");
+        Q36.createCell((short) 11).setCellValue("");
+        Q36.createCell((short) 12).setCellValue("");
+        Q36.createCell((short) 13).setCellValue("");
+        Q36.createCell((short) 14).setCellValue("");
+        Q36.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q37 = sheet.createRow((short) tr);
+        Q37.createCell((short) 0).setCellValue("");
+        Q37.createCell((short) 1).setCellValue("");
+        Q37.createCell((short) 2).setCellValue("Total  freight Fuel-(Ltrs) ");
+        Q37.createCell((short) 3).setCellValue("");
+        Q37.createCell((short) 4).setCellValue("");
+        Q37.createCell((short) 5).setCellValue("");
+        Q37.createCell((short) 6).setCellValue("");
+        Q37.createCell((short) 7).setCellValue("");
+        Q37.createCell((short) 8).setCellValue("");
+        Q37.createCell((short) 9).setCellValue("");
+        Q37.createCell((short) 10).setCellValue("");
+        Q37.createCell((short) 11).setCellValue("");
+        Q37.createCell((short) 12).setCellValue("");
+        Q37.createCell((short) 13).setCellValue("");
+        Q37.createCell((short) 14).setCellValue("");
+        Q37.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q38 = sheet.createRow((short) tr);
+        Q38.createCell((short) 0).setCellValue("ZPRPL-DIS");
+        Q38.createCell((short) 1).setCellValue("");
+        Q38.createCell((short) 2).setCellValue(" Price per litre-Diesel ");
+        Q38.createCell((short) 3).setCellValue("");
+        Q38.createCell((short) 4).setCellValue("");
+        Q38.createCell((short) 5).setCellValue("");
+        Q38.createCell((short) 6).setCellValue("");
+        Q38.createCell((short) 7).setCellValue("");
+        Q38.createCell((short) 8).setCellValue("");
+        Q38.createCell((short) 9).setCellValue("");
+        Q38.createCell((short) 10).setCellValue("");
+        Q38.createCell((short) 11).setCellValue("");
+        Q38.createCell((short) 12).setCellValue("");
+        Q38.createCell((short) 13).setCellValue("");
+        Q38.createCell((short) 14).setCellValue("");
+        Q38.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q39 = sheet.createRow((short) tr);
+        Q39.createCell((short) 0).setCellValue("ZAVPR-PPS");
+        Q39.createCell((short) 1).setCellValue("");
+        Q39.createCell((short) 2).setCellValue(" Average price per passenger train tkt");
+        Q39.createCell((short) 3).setCellValue("");
+        Q39.createCell((short) 4).setCellValue("");
+        Q39.createCell((short) 5).setCellValue("");
+        Q39.createCell((short) 6).setCellValue("");
+        Q39.createCell((short) 7).setCellValue("");
+        Q39.createCell((short) 8).setCellValue("");
+        Q39.createCell((short) 9).setCellValue("");
+        Q39.createCell((short) 10).setCellValue("");
+        Q39.createCell((short) 11).setCellValue("");
+        Q39.createCell((short) 12).setCellValue("");
+        Q39.createCell((short) 13).setCellValue("");
+        Q39.createCell((short) 14).setCellValue("");
+        Q39.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q40 = sheet.createRow((short) tr);
+        Q40.createCell((short) 0).setCellValue("");
+        Q40.createCell((short) 1).setCellValue("");
+        Q40.createCell((short) 2).setCellValue(" Efficiency ");
+        Q40.createCell((short) 3).setCellValue("");
+        Q40.createCell((short) 4).setCellValue("");
+        Q40.createCell((short) 5).setCellValue("");
+        Q40.createCell((short) 6).setCellValue("");
+        Q40.createCell((short) 7).setCellValue("");
+        Q40.createCell((short) 8).setCellValue("");
+        Q40.createCell((short) 9).setCellValue("");
+        Q40.createCell((short) 10).setCellValue("");
+        Q40.createCell((short) 11).setCellValue("");
+        Q40.createCell((short) 12).setCellValue("");
+        Q40.createCell((short) 13).setCellValue("");
+        Q40.createCell((short) 14).setCellValue("");
+        Q40.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q42 = sheet.createRow((short) tr);
+        Q42.createCell((short) 0).setCellValue("ZEFFI-NTK");
+        Q42.createCell((short) 1).setCellValue("");
+        Q42.createCell((short) 2).setCellValue("  Fuel efficiency-NTK ('M)");
+        Q42.createCell((short) 3).setCellValue("");
+        Q42.createCell((short) 4).setCellValue("");
+        Q42.createCell((short) 5).setCellValue("");
+        Q42.createCell((short) 6).setCellValue("");
+        Q42.createCell((short) 7).setCellValue("");
+        Q42.createCell((short) 8).setCellValue("");
+        Q42.createCell((short) 9).setCellValue("");
+        Q42.createCell((short) 10).setCellValue("");
+        Q42.createCell((short) 11).setCellValue("");
+        Q42.createCell((short) 12).setCellValue("");
+        Q42.createCell((short) 13).setCellValue("");
+        Q42.createCell((short) 14).setCellValue("");
+        Q42.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q43 = sheet.createRow((short) tr);
+        Q43.createCell((short) 0).setCellValue("ZEFFI-GTK");
+        Q43.createCell((short) 1).setCellValue("");
+        Q43.createCell((short) 2).setCellValue("Fuel efficiency-GTK'(M) ");
+        Q43.createCell((short) 3).setCellValue("");
+        Q43.createCell((short) 4).setCellValue("");
+        Q43.createCell((short) 5).setCellValue("");
+        Q43.createCell((short) 6).setCellValue("");
+        Q43.createCell((short) 7).setCellValue("");
+        Q43.createCell((short) 8).setCellValue("");
+        Q43.createCell((short) 9).setCellValue("");
+        Q43.createCell((short) 10).setCellValue("");
+        Q43.createCell((short) 11).setCellValue("");
+        Q43.createCell((short) 12).setCellValue("");
+        Q43.createCell((short) 13).setCellValue("");
+        Q43.createCell((short) 14).setCellValue("");
+        Q43.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q44 = sheet.createRow((short) tr);
+        Q44.createCell((short) 0).setCellValue("ZEFFI-WTA");
+        Q44.createCell((short) 1).setCellValue("");
+        Q44.createCell((short) 2).setCellValue(" WTA (days) ");
+        Q44.createCell((short) 3).setCellValue("");
+        Q44.createCell((short) 4).setCellValue("");
+        Q44.createCell((short) 5).setCellValue("");
+        Q44.createCell((short) 6).setCellValue("");
+        Q44.createCell((short) 7).setCellValue("");
+        Q44.createCell((short) 8).setCellValue("");
+        Q44.createCell((short) 9).setCellValue("");
+        Q44.createCell((short) 10).setCellValue("");
+        Q44.createCell((short) 11).setCellValue("");
+        Q44.createCell((short) 12).setCellValue("");
+        Q44.createCell((short) 13).setCellValue("");
+        Q44.createCell((short) 14).setCellValue("");
+        Q44.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q45 = sheet.createRow((short) tr);
+        Q45.createCell((short) 0).setCellValue("ZEFFI-TRA");
+        Q45.createCell((short) 1).setCellValue("");
+        Q45.createCell((short) 2).setCellValue(" Transit days ");
+        Q45.createCell((short) 3).setCellValue("");
+        Q45.createCell((short) 4).setCellValue("");
+        Q45.createCell((short) 5).setCellValue("");
+        Q45.createCell((short) 6).setCellValue("");
+        Q45.createCell((short) 7).setCellValue("");
+        Q45.createCell((short) 8).setCellValue("");
+        Q45.createCell((short) 9).setCellValue("");
+        Q45.createCell((short) 10).setCellValue("");
+        Q45.createCell((short) 11).setCellValue("");
+        Q45.createCell((short) 12).setCellValue("");
+        Q45.createCell((short) 13).setCellValue("");
+        Q45.createCell((short) 14).setCellValue("");
+        Q45.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q46 = sheet.createRow((short) tr);
+        Q46.createCell((short) 0).setCellValue("ZEFFI-LOC");
+        Q46.createCell((short) 1).setCellValue("");
+        Q46.createCell((short) 2).setCellValue("Locomotive Efficiency (Kms per hr) ");
+        Q46.createCell((short) 3).setCellValue("");
+        Q46.createCell((short) 4).setCellValue("");
+        Q46.createCell((short) 5).setCellValue("");
+        Q46.createCell((short) 6).setCellValue("");
+        Q46.createCell((short) 7).setCellValue("");
+        Q46.createCell((short) 8).setCellValue("");
+        Q46.createCell((short) 9).setCellValue("");
+        Q46.createCell((short) 10).setCellValue("");
+        Q46.createCell((short) 11).setCellValue("");
+        Q46.createCell((short) 12).setCellValue("");
+        Q46.createCell((short) 13).setCellValue("");
+        Q46.createCell((short) 14).setCellValue("");
+        Q46.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q47 = sheet.createRow((short) tr);
+        Q47.createCell((short) 0).setCellValue("ZEFFI-NOE");
+        Q47.createCell((short) 1).setCellValue("");
+        Q47.createCell((short) 2).setCellValue("No. of employees");
+        Q47.createCell((short) 3).setCellValue("");
+        Q47.createCell((short) 4).setCellValue("");
+        Q47.createCell((short) 5).setCellValue("");
+        Q47.createCell((short) 6).setCellValue("");
+        Q47.createCell((short) 7).setCellValue("");
+        Q47.createCell((short) 8).setCellValue("");
+        Q47.createCell((short) 9).setCellValue("");
+        Q47.createCell((short) 10).setCellValue("");
+        Q47.createCell((short) 11).setCellValue("");
+        Q47.createCell((short) 12).setCellValue("");
+        Q47.createCell((short) 13).setCellValue("");
+        Q47.createCell((short) 14).setCellValue("");
+        Q47.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q48 = sheet.createRow((short) tr);
+        Q48.createCell((short) 0).setCellValue("");
+        Q48.createCell((short) 1).setCellValue("");
+        Q48.createCell((short) 2).setCellValue(" Employee productivity(Revenue)");
+        Q48.createCell((short) 3).setCellValue("");
+        Q48.createCell((short) 4).setCellValue("");
+        Q48.createCell((short) 5).setCellValue("");
+        Q48.createCell((short) 6).setCellValue("");
+        Q48.createCell((short) 7).setCellValue("");
+        Q48.createCell((short) 8).setCellValue("");
+        Q48.createCell((short) 9).setCellValue("");
+        Q48.createCell((short) 10).setCellValue("");
+        Q48.createCell((short) 11).setCellValue("");
+        Q48.createCell((short) 12).setCellValue("");
+        Q48.createCell((short) 13).setCellValue("");
+        Q48.createCell((short) 14).setCellValue("");
+        Q48.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q49 = sheet.createRow((short) tr);
+        Q49.createCell((short) 0).setCellValue("");
+        Q49.createCell((short) 1).setCellValue("");
+        Q49.createCell((short) 2).setCellValue("");
+        Q49.createCell((short) 3).setCellValue("Ugx'000");
+        Q49.createCell((short) 4).setCellValue("Ugx'000");
+        Q49.createCell((short) 5).setCellValue("Ugx'000");
+        Q49.createCell((short) 6).setCellValue("Ugx'000");
+        Q49.createCell((short) 7).setCellValue("Ugx'000");
+        Q49.createCell((short) 8).setCellValue("Ugx'000");
+        Q49.createCell((short) 9).setCellValue("Ugx'000");
+        Q49.createCell((short) 10).setCellValue("Ugx'000");
+        Q49.createCell((short) 11).setCellValue("Ugx'000");
+        Q49.createCell((short) 12).setCellValue("Ugx'000");
+        Q49.createCell((short) 13).setCellValue("Ugx'000");
+        Q49.createCell((short) 14).setCellValue("Ugx'000");
+        Q49.createCell((short) 15).setCellValue("Ugx'000");
+
+        tr++;
+        Row Q50 = sheet.createRow((short) tr);
+        Q50.createCell((short) 0).setCellValue("");
+        Q50.createCell((short) 1).setCellValue("");
+        Q50.createCell((short) 2).setCellValue("INCOME");
+        Q50.createCell((short) 3).setCellValue("");
+        Q50.createCell((short) 4).setCellValue("");
+        Q50.createCell((short) 5).setCellValue("");
+        Q50.createCell((short) 6).setCellValue("");
+        Q50.createCell((short) 7).setCellValue("");
+        Q50.createCell((short) 8).setCellValue("");
+        Q50.createCell((short) 9).setCellValue("");
+        Q50.createCell((short) 10).setCellValue("");
+        Q50.createCell((short) 11).setCellValue("");
+        Q50.createCell((short) 12).setCellValue("");
+        Q50.createCell((short) 13).setCellValue("");
+        Q50.createCell((short) 14).setCellValue("");
+        Q50.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q51 = sheet.createRow((short) tr);
+        Q51.createCell((short) 0).setCellValue("");
+        Q51.createCell((short) 1).setCellValue("");
+        Q51.createCell((short) 2).setCellValue("Re-current Income");
+        Q51.createCell((short) 3).setCellValue("");
+        Q51.createCell((short) 4).setCellValue("");
+        Q51.createCell((short) 5).setCellValue("");
+        Q51.createCell((short) 6).setCellValue("");
+        Q51.createCell((short) 7).setCellValue("");
+        Q51.createCell((short) 8).setCellValue("");
+        Q51.createCell((short) 9).setCellValue("");
+        Q51.createCell((short) 10).setCellValue("");
+        Q51.createCell((short) 11).setCellValue("");
+        Q51.createCell((short) 12).setCellValue("");
+        Q51.createCell((short) 13).setCellValue("");
+        Q51.createCell((short) 14).setCellValue("");
+        Q51.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q52 = sheet.createRow((short) tr);
+        Q52.createCell((short) 0).setCellValue("");
+        Q52.createCell((short) 1).setCellValue("");
+        Q52.createCell((short) 2).setCellValue("Assets Hire");
+        Q52.createCell((short) 3).setCellValue("");
+        Q52.createCell((short) 4).setCellValue("");
+        Q52.createCell((short) 5).setCellValue("");
+        Q52.createCell((short) 6).setCellValue("");
+        Q52.createCell((short) 7).setCellValue("");
+        Q52.createCell((short) 8).setCellValue("");
+        Q52.createCell((short) 9).setCellValue("");
+        Q52.createCell((short) 10).setCellValue("");
+        Q52.createCell((short) 11).setCellValue("");
+        Q52.createCell((short) 12).setCellValue("");
+        Q52.createCell((short) 13).setCellValue("");
+        Q52.createCell((short) 14).setCellValue("");
+        Q52.createCell((short) 15).setCellValue("");
+        List<URC_ACNT> findByAcntCodeStartingWith = urcAcntService.findByAcntCodeStartingWith("1112");
+        for (URC_ACNT k : findByAcntCodeStartingWith) {
+            tr++;
+            Row Q53 = sheet.createRow((short) tr);
+            Q53.createCell((short) 0).setCellValue(k.getAcntCode().trim());
+            Q53.createCell((short) 1).setCellValue("");
+            Q53.createCell((short) 2).setCellValue(k.getDescr());
+            Q53.createCell((short) 3).setCellValue("");
+            Q53.createCell((short) 4).setCellValue("");
+            Q53.createCell((short) 5).setCellValue("");
+            Q53.createCell((short) 6).setCellValue("");
+            Q53.createCell((short) 7).setCellValue("");
+            Q53.createCell((short) 8).setCellValue("");
+            Q53.createCell((short) 9).setCellValue("");
+            Q53.createCell((short) 10).setCellValue("");
+            Q53.createCell((short) 11).setCellValue("");
+            Q53.createCell((short) 12).setCellValue("");
+            Q53.createCell((short) 13).setCellValue("");
+            Q53.createCell((short) 14).setCellValue("");
+            Q53.createCell((short) 15).setCellValue("");
+        }
+
+        tr++;
+        Row Q54 = sheet.createRow((short) tr);
+        Q54.createCell((short) 0).setCellValue("");
+        Q54.createCell((short) 1).setCellValue("");
+        Q54.createCell((short) 2).setCellValue("Total Assets hire income");
+        Q54.createCell((short) 3).setCellValue("");
+        Q54.createCell((short) 4).setCellValue("");
+        Q54.createCell((short) 5).setCellValue("");
+        Q54.createCell((short) 6).setCellValue("");
+        Q54.createCell((short) 7).setCellValue("");
+        Q54.createCell((short) 8).setCellValue("");
+        Q54.createCell((short) 9).setCellValue("");
+        Q54.createCell((short) 10).setCellValue("");
+        Q54.createCell((short) 11).setCellValue("");
+        Q54.createCell((short) 12).setCellValue("");
+        Q54.createCell((short) 13).setCellValue("");
+        Q54.createCell((short) 14).setCellValue("");
+        Q54.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q55 = sheet.createRow((short) tr);
+        Q55.createCell((short) 0).setCellValue("");
+        Q55.createCell((short) 1).setCellValue("");
+        Q55.createCell((short) 2).setCellValue("Freight Services");
+        Q55.createCell((short) 3).setCellValue("");
+        Q55.createCell((short) 4).setCellValue("");
+        Q55.createCell((short) 5).setCellValue("");
+        Q55.createCell((short) 6).setCellValue("");
+        Q55.createCell((short) 7).setCellValue("");
+        Q55.createCell((short) 8).setCellValue("");
+        Q55.createCell((short) 9).setCellValue("");
+        Q55.createCell((short) 10).setCellValue("");
+        Q55.createCell((short) 11).setCellValue("");
+        Q55.createCell((short) 12).setCellValue("");
+        Q55.createCell((short) 13).setCellValue("");
+        Q55.createCell((short) 14).setCellValue("");
+        Q55.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q56 = sheet.createRow((short) tr);
+        Q56.createCell((short) 0).setCellValue("");
+        Q56.createCell((short) 1).setCellValue("");
+        Q56.createCell((short) 2).setCellValue("Northern Route");
+        Q56.createCell((short) 3).setCellValue("");
+        Q56.createCell((short) 4).setCellValue("");
+        Q56.createCell((short) 5).setCellValue("");
+        Q56.createCell((short) 6).setCellValue("");
+        Q56.createCell((short) 7).setCellValue("");
+        Q56.createCell((short) 8).setCellValue("");
+        Q56.createCell((short) 9).setCellValue("");
+        Q56.createCell((short) 10).setCellValue("");
+        Q56.createCell((short) 11).setCellValue("");
+        Q56.createCell((short) 12).setCellValue("");
+        Q56.createCell((short) 13).setCellValue("");
+        Q56.createCell((short) 14).setCellValue("");
+        Q56.createCell((short) 15).setCellValue("");
+
+        List<String> ss = new ArrayList<>();
+        ss.addAll(Arrays.asList("1", "2", "3"));
+        findByAcntCodeStartingWith = urcAcntService.findByAcntCodeStartingWith11110AndNextDigitIn123("11110", ss);
+        for (URC_ACNT k : findByAcntCodeStartingWith) {
+            tr++;
+            Row Q53 = sheet.createRow((short) tr);
+            Q53.createCell((short) 0).setCellValue(k.getAcntCode().trim());
+            Q53.createCell((short) 1).setCellValue("");
+            Q53.createCell((short) 2).setCellValue(k.getDescr());
+            Q53.createCell((short) 3).setCellValue("");
+            Q53.createCell((short) 4).setCellValue("");
+            Q53.createCell((short) 5).setCellValue("");
+            Q53.createCell((short) 6).setCellValue("");
+            Q53.createCell((short) 7).setCellValue("");
+            Q53.createCell((short) 8).setCellValue("");
+            Q53.createCell((short) 9).setCellValue("");
+            Q53.createCell((short) 10).setCellValue("");
+            Q53.createCell((short) 11).setCellValue("");
+            Q53.createCell((short) 12).setCellValue("");
+            Q53.createCell((short) 13).setCellValue("");
+            Q53.createCell((short) 14).setCellValue("");
+            Q53.createCell((short) 15).setCellValue("");
+        }
+        ss.clear();
+
+        tr++;
+        Row Q57 = sheet.createRow((short) tr);
+        Q57.createCell((short) 0).setCellValue("");
+        Q57.createCell((short) 1).setCellValue("");
+        Q57.createCell((short) 2).setCellValue("Total freight-Northern Route");
+        Q57.createCell((short) 3).setCellValue("");
+        Q57.createCell((short) 4).setCellValue("");
+        Q57.createCell((short) 5).setCellValue("");
+        Q57.createCell((short) 6).setCellValue("");
+        Q57.createCell((short) 7).setCellValue("");
+        Q57.createCell((short) 8).setCellValue("");
+        Q57.createCell((short) 9).setCellValue("");
+        Q57.createCell((short) 10).setCellValue("");
+        Q57.createCell((short) 11).setCellValue("");
+        Q57.createCell((short) 12).setCellValue("");
+        Q57.createCell((short) 13).setCellValue("");
+        Q57.createCell((short) 14).setCellValue("");
+        Q57.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q58 = sheet.createRow((short) tr);
+        Q58.createCell((short) 0).setCellValue("");
+        Q58.createCell((short) 1).setCellValue("");
+        Q58.createCell((short) 2).setCellValue("Southern Route");
+        Q58.createCell((short) 3).setCellValue("");
+        Q58.createCell((short) 4).setCellValue("");
+        Q58.createCell((short) 5).setCellValue("");
+        Q58.createCell((short) 6).setCellValue("");
+        Q58.createCell((short) 7).setCellValue("");
+        Q58.createCell((short) 8).setCellValue("");
+        Q58.createCell((short) 9).setCellValue("");
+        Q58.createCell((short) 10).setCellValue("");
+        Q58.createCell((short) 11).setCellValue("");
+        Q58.createCell((short) 12).setCellValue("");
+        Q58.createCell((short) 13).setCellValue("");
+        Q58.createCell((short) 14).setCellValue("");
+        Q58.createCell((short) 15).setCellValue("");
+        ss.addAll(Arrays.asList("4", "5", "6"));
+        findByAcntCodeStartingWith = urcAcntService.findByAcntCodeStartingWith11110AndNextDigitIn123("11110", ss);
+        for (URC_ACNT k : findByAcntCodeStartingWith) {
+            tr++;
+            Row Q53 = sheet.createRow((short) tr);
+            Q53.createCell((short) 0).setCellValue(k.getAcntCode().trim());
+            Q53.createCell((short) 1).setCellValue("");
+            Q53.createCell((short) 2).setCellValue(k.getDescr());
+            Q53.createCell((short) 3).setCellValue("");
+            Q53.createCell((short) 4).setCellValue("");
+            Q53.createCell((short) 5).setCellValue("");
+            Q53.createCell((short) 6).setCellValue("");
+            Q53.createCell((short) 7).setCellValue("");
+            Q53.createCell((short) 8).setCellValue("");
+            Q53.createCell((short) 9).setCellValue("");
+            Q53.createCell((short) 10).setCellValue("");
+            Q53.createCell((short) 11).setCellValue("");
+            Q53.createCell((short) 12).setCellValue("");
+            Q53.createCell((short) 13).setCellValue("");
+            Q53.createCell((short) 14).setCellValue("");
+            Q53.createCell((short) 15).setCellValue("");
+        }
+
+        tr++;
+        Row Q59 = sheet.createRow((short) tr);
+        Q59.createCell((short) 0).setCellValue("");
+        Q59.createCell((short) 1).setCellValue("");
+        Q59.createCell((short) 2).setCellValue("Total freight-Southern Route");
+        Q59.createCell((short) 3).setCellValue("");
+        Q59.createCell((short) 4).setCellValue("");
+        Q59.createCell((short) 5).setCellValue("");
+        Q59.createCell((short) 6).setCellValue("");
+        Q59.createCell((short) 7).setCellValue("");
+        Q59.createCell((short) 8).setCellValue("");
+        Q59.createCell((short) 9).setCellValue("");
+        Q59.createCell((short) 10).setCellValue("");
+        Q59.createCell((short) 11).setCellValue("");
+        Q59.createCell((short) 12).setCellValue("");
+        Q59.createCell((short) 13).setCellValue("");
+        Q59.createCell((short) 14).setCellValue("");
+        Q59.createCell((short) 15).setCellValue("");
+
+        tr++;
+        Row Q60 = sheet.createRow((short) tr);
+        Q60.createCell((short) 0).setCellValue("");
+        Q60.createCell((short) 1).setCellValue("");
+        Q60.createCell((short) 2).setCellValue("Total freight Services");
+        Q60.createCell((short) 3).setCellValue("");
+        Q60.createCell((short) 4).setCellValue("");
+        Q60.createCell((short) 5).setCellValue("");
+        Q60.createCell((short) 6).setCellValue("");
+        Q60.createCell((short) 7).setCellValue("");
+        Q60.createCell((short) 8).setCellValue("");
+        Q60.createCell((short) 9).setCellValue("");
+        Q60.createCell((short) 10).setCellValue("");
+        Q60.createCell((short) 11).setCellValue("");
+        Q60.createCell((short) 12).setCellValue("");
+        Q60.createCell((short) 13).setCellValue("");
+        Q60.createCell((short) 14).setCellValue("");
+        Q60.createCell((short) 15).setCellValue("");
+        ss.clear();
+        /*        ss.addAll(Arrays.asList("10", "09", "11"));
+        findByAcntCodeStartingWith = urcAcntService.findByAcntCodeStartingWith11110AndNextDigitIn123("1111", ss);*/
+        ss.addAll(Arrays.asList("0", "1"));
+        findByAcntCodeStartingWith = urcAcntService.findByAcntCodeStartingWith11110AndNextDigitIn123("11111", ss);
+        ss.clear();
+
+               ss.addAll(Arrays.asList("9"));
+        List<URC_ACNT> findByAcntCodeStartingWith3  = urcAcntService.findByAcntCodeStartingWith11110AndNextDigitIn123("11110", ss);
+        ss.clear();
+        findByAcntCodeStartingWith.addAll(findByAcntCodeStartingWith3);
+
+        ss.addAll(Arrays.asList("1", "2", "3", "4"));
+        List<URC_ACNT> findByAcntCodeStartingWith2 = urcAcntService.findByAcntCodeStartingWith11110AndNextDigitIn123("11130", ss);
+        ss.clear();
+        findByAcntCodeStartingWith.addAll(findByAcntCodeStartingWith2);
+        System.out.println(findByAcntCodeStartingWith.size());
+        for (URC_ACNT k : findByAcntCodeStartingWith) {
+            System.out.println(k.getAcntCode());
+            tr++;
+            Row Q53 = sheet.createRow((short) tr);
+            Q53.createCell((short) 0).setCellValue(k.getAcntCode().trim());
+            Q53.createCell((short) 1).setCellValue("");
+            Q53.createCell((short) 2).setCellValue(k.getDescr());
+            Q53.createCell((short) 3).setCellValue("");
+            Q53.createCell((short) 4).setCellValue("");
+            Q53.createCell((short) 5).setCellValue("");
+            Q53.createCell((short) 6).setCellValue("");
+            Q53.createCell((short) 7).setCellValue("");
+            Q53.createCell((short) 8).setCellValue("");
+            Q53.createCell((short) 9).setCellValue("");
+            Q53.createCell((short) 10).setCellValue("");
+            Q53.createCell((short) 11).setCellValue("");
+            Q53.createCell((short) 12).setCellValue("");
+            Q53.createCell((short) 13).setCellValue("");
+            Q53.createCell((short) 14).setCellValue("");
+            Q53.createCell((short) 15).setCellValue("");
+        }
+        
+        tr++;
+        Row Q61 = sheet.createRow((short) tr);
+        Q61.createCell((short) 0).setCellValue("");
+        Q61.createCell((short) 1).setCellValue("");
+        Q61.createCell((short) 2).setCellValue("Total Other fees");
+        Q61.createCell((short) 3).setCellValue("");
+        Q61.createCell((short) 4).setCellValue("");
+        Q61.createCell((short) 5).setCellValue("");
+        Q61.createCell((short) 6).setCellValue("");
+        Q61.createCell((short) 7).setCellValue("");
+        Q61.createCell((short) 8).setCellValue("");
+        Q61.createCell((short) 9).setCellValue("");
+        Q61.createCell((short) 10).setCellValue("");
+        Q61.createCell((short) 11).setCellValue("");
+        Q61.createCell((short) 12).setCellValue("");
+        Q61.createCell((short) 13).setCellValue("");
+        Q61.createCell((short) 14).setCellValue("");
+        Q61.createCell((short) 15).setCellValue("");        
+
     }
 }
