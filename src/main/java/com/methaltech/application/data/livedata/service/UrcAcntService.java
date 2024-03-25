@@ -28,6 +28,10 @@ public class UrcAcntService {
     public List<URC_ACNT> findByAcntCodeStartingWith(String startsWith) {
         return urcAcntRepository.findByAcntCodeStartingWith(startsWith);
     }
+    
+        public List<URC_ACNT> findByAcntCode(String startsWith) {
+        return urcAcntRepository.findByAcntCode(startsWith);
+    }
 
     public List<URC_ACNT> findByAcntCodeStartingWith11110AndNextDigitIn123(String startsWith, List<String> string) {
 

@@ -5,6 +5,7 @@ import com.methaltech.application.data.entity.livedata.UrcAcnt;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -14,5 +15,8 @@ public interface UrcAcntRepository extends JpaRepository<UrcAcnt, Long> {
     List<URC_ACNT> findByAcntCodeStartingWith(String startsWith);
     
     @Query("SELECT u FROM URC_ACNT u WHERE TRIM(u.acntCode) LIKE CONCAT(:startsWith, '%') AND SUBSTRING(u.acntCode, 6, 1) IN (:nextDigits)")
-    List<URC_ACNT> findByAcntCodeStartingWith11110AndNextDigitIn(String startsWith, List<String> nextDigits);    
+    List<URC_ACNT> findByAcntCodeStartingWith11110AndNextDigitIn(String startsWith, List<String> nextDigits);   
+
+    @Query("SELECT acnt FROM URC_ACNT acnt WHERE acnt.acntCode = :acntCode")
+    List<URC_ACNT> findByAcntCode(@Param("acntCode") String acntCode);
 }
