@@ -1,6 +1,7 @@
 package com.methaltech.application.data.bgtool.service;
 
 import com.methaltech.application.data.Display;
+import com.methaltech.application.data.MonthlySumResponseFreight;
 import com.methaltech.application.data.PeriodExtractor;
 import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.entity.bgtool.BudgetItems;
@@ -1046,5 +1047,13 @@ public class BudgetItemsService {
         }
 
         return sumOfMonth;
+    }
+    
+    public MonthlySumResponseFreight getTotals(Budget budget,COA coacode){
+        return repository.getMonthlySumsByBudgetAndCoacode(budget, coacode);
+    } 
+    
+    public MonthlySumResponseFreight getTotals(Budget budget,List<COA> coacode){
+        return repository.getMonthlySumsByBudgetAndCoacodes(budget, coacode); 
     }
 }

@@ -1,5 +1,6 @@
 package com.methaltech.application.data.bgtool.repository;
 
+import com.methaltech.application.data.MonthlySumResponseFreight;
 import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.BudgetItems;
@@ -948,5 +949,25 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
     List<MonthlySumResult> findSumOfIndividualMonthsByBudgetCoaDept(@Param("budget") Budget budget,
             @Param("coacode") COA coacode,
             @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits);
+    
+    @Query("SELECT NEW com.methaltech.application.data.MonthlySumResponseFreight(" +
+            "COALESCE(SUM(fv.jul), 0), COALESCE(SUM(fv.aug), 0), COALESCE(SUM(fv.sep), 0), " +
+            "COALESCE(SUM(fv.oct), 0), COALESCE(SUM(fv.nov), 0), COALESCE(SUM(fv.dec), 0), " +
+            "COALESCE(SUM(fv.jan), 0), COALESCE(SUM(fv.feb), 0), COALESCE(SUM(fv.mar), 0), " +
+            "COALESCE(SUM(fv.apr), 0), COALESCE(SUM(fv.may), 0), COALESCE(SUM(fv.jun), 0), " +
+            "COALESCE((SUM(fv.jul)+SUM(fv.aug)+SUM(fv.sep)+SUM(fv.oct)+SUM(fv.nov)+SUM(fv.dec)+SUM(fv.jan)+SUM(fv.feb)+SUM(fv.mar)+SUM(fv.apr)+SUM(fv.may)+SUM(fv.jun)), 0)) " +
+            "FROM BudgetItems fv " +
+            "WHERE fv.budget = :budget AND fv.coacode = :coacode")
+    MonthlySumResponseFreight getMonthlySumsByBudgetAndCoacode(@Param("budget") Budget budget, @Param("coacode") COA coacode);   
+    
+        @Query("SELECT NEW com.methaltech.application.data.MonthlySumResponseFreight(" +
+            "COALESCE(SUM(fv.jul), 0), COALESCE(SUM(fv.aug), 0), COALESCE(SUM(fv.sep), 0), " +
+            "COALESCE(SUM(fv.oct), 0), COALESCE(SUM(fv.nov), 0), COALESCE(SUM(fv.dec), 0), " +
+            "COALESCE(SUM(fv.jan), 0), COALESCE(SUM(fv.feb), 0), COALESCE(SUM(fv.mar), 0), " +
+            "COALESCE(SUM(fv.apr), 0), COALESCE(SUM(fv.may), 0), COALESCE(SUM(fv.jun), 0), " +
+            "COALESCE((SUM(fv.jul)+SUM(fv.aug)+SUM(fv.sep)+SUM(fv.oct)+SUM(fv.nov)+SUM(fv.dec)+SUM(fv.jan)+SUM(fv.feb)+SUM(fv.mar)+SUM(fv.apr)+SUM(fv.may)+SUM(fv.jun)), 0)) " +
+            "FROM BudgetItems fv " +
+            "WHERE fv.budget = :budget AND fv.coacode IN :coacodes")
+    MonthlySumResponseFreight getMonthlySumsByBudgetAndCoacodes(@Param("budget") Budget budget, @Param("coacodes") List<COA> coacodes);  
 
 }

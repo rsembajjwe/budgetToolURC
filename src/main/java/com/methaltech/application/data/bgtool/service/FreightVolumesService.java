@@ -47,11 +47,22 @@ public class FreightVolumesService {
         return freightVolumesRepository.sumMonthsByBudgetAndCoacode(budget, coa);
     } 
     
+    public BigDecimal calculateSumOfAllMonthsByBudgetAndCoacodes(
+            Budget budget,
+            List<COA> coa
+    ) {
+        return freightVolumesRepository.sumMonthsByBudgetAndCoacodes(budget, coa);
+    }    
+    
     public long countByBudget(Budget budget){
         return freightVolumesRepository.countByBudget(budget);
     }
     public MonthlySumResponseFreight getTotals(Budget budget,COA coacode){
         return freightVolumesRepository.getMonthlySumsByBudgetAndCoacode(budget, coacode);
     }
+    
+    public MonthlySumResponseFreight getTotals(Budget budget,List<COA> coacode){
+        return freightVolumesRepository.getMonthlySumsByBudgetAndCoacodes(budget, coacode);
+    }    
 }
 
