@@ -470,6 +470,98 @@ public class BudgetItemsService {
         return sumOfMonth;
     }
 
+    public BigDecimal findSumOfIndividualMonthsByBudgetAndCoacodeFreight(
+            Budget budget,
+            Display display,
+            String month) {
+
+        List<BudgetItemsRepository.MonthlySumResult> monthlySumResults
+                = repository.findSumOfIndividualMonthsByBudgetAndCoacodeFreight(
+                        budget, display);
+
+        // Extract sum of the specified month from the first result (assuming there's only one result)
+        BigDecimal sumOfMonth = BigDecimal.ZERO;
+        if (!monthlySumResults.isEmpty()) {
+            switch (month.toLowerCase()) {
+                case "jul":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getJulSum());
+                    break;
+                case "aug":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getAugSum());
+                    break;
+                case "sep":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getSepSum());
+                    break;
+                case "oct":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getOctSum());
+                    break;
+                case "nov":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getNovSum());
+                    break;
+                case "dec":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getDecSum());
+                    break;
+                case "jan":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getJanSum());
+                    break;
+                case "feb":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getFebSum());
+                    break;
+                case "mar":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getMarSum());
+                    break;
+                case "apr":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getAprSum());
+                    break;
+                case "may":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getMaySum());
+                    break;
+                case "jun":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getJunSum());
+                    break;
+                case "qtr1":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getJulSum())
+                            .add(getSafeValue(monthlySumResults.get(0).getAugSum()))
+                            .add(getSafeValue(monthlySumResults.get(0).getSepSum()));
+                    break;
+                case "qtr2":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getOctSum())
+                            .add(getSafeValue(monthlySumResults.get(0).getNovSum()))
+                            .add(getSafeValue(monthlySumResults.get(0).getDecSum()));
+                    break;
+                case "qtr3":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getJanSum())
+                            .add(getSafeValue(monthlySumResults.get(0).getFebSum()))
+                            .add(getSafeValue(monthlySumResults.get(0).getMarSum()));
+                    break;
+                case "qtr4":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getAprSum())
+                            .add(getSafeValue(monthlySumResults.get(0).getMaySum()))
+                            .add(getSafeValue(monthlySumResults.get(0).getJunSum()));
+                    break;
+                case "total":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getJulSum())
+                            .add(getSafeValue(monthlySumResults.get(0).getAugSum()))
+                            .add(getSafeValue(monthlySumResults.get(0).getSepSum()))
+                            .add(getSafeValue(monthlySumResults.get(0).getOctSum()))
+                            .add(getSafeValue(monthlySumResults.get(0).getNovSum()))
+                            .add(getSafeValue(monthlySumResults.get(0).getDecSum()))
+                            .add(getSafeValue(monthlySumResults.get(0).getJanSum()))
+                            .add(getSafeValue(monthlySumResults.get(0).getFebSum()))
+                            .add(getSafeValue(monthlySumResults.get(0).getMarSum()))
+                            .add(getSafeValue(monthlySumResults.get(0).getAprSum()))
+                            .add(getSafeValue(monthlySumResults.get(0).getMaySum()))
+                            .add(getSafeValue(monthlySumResults.get(0).getJunSum()));
+                    break;
+                // Default to zero if the specified month is not found
+                default:
+                    sumOfMonth = BigDecimal.ZERO;
+            }
+        }
+
+        return sumOfMonth;
+    }
+
     public BigDecimal findSumOfMonthByBudgetCoalevel1AndDeptUnits(
             Budget budget,
             Coalevel1 coalevel1,
@@ -864,48 +956,52 @@ public class BudgetItemsService {
 
     public List<BudgetItems> findByBudgetAndProcClassAndCoa(Budget budget, ProcClass p, COA coacode) {
         List<BudgetItems> result = repository.findByBudgetAndProcClassAndCoa(budget, p, coacode);
-        System.out.println(result.size()+"");
+        System.out.println(result.size() + "");
         return result != null ? result : Collections.emptyList();
     }
 
     public List<BudgetItems> findByBudgetAndProcClassAndCoaAndDeptUnitIn(Budget budget, ProcClass p, COA coacode, Set<UrcDeptSectionAnlDimbgt> deptUnits) {
         List<BudgetItems> result = repository.findByBudgetAndProcClassAndCoaAndDeptUnitIn(budget, p, coacode, deptUnits);
-        System.out.println(result.size()+"");
+        System.out.println(result.size() + "");
         return result != null ? result : Collections.emptyList();
     }
 
     public List<BudgetItems> findByBudgetAndProcClassAndCoaAndDeptUnitIn(Budget budget, ProcClass p, Set<COA> coacode, Set<UrcDeptSectionAnlDimbgt> deptUnits) {
         List<BudgetItems> result = repository.findByBudgetAndProcClassAndCoaAndDeptUnitIn(budget, p, coacode, deptUnits);
-        System.out.println(result.size()+"");
-        return  result != null ? result : Collections.emptyList();
+        System.out.println(result.size() + "");
+        return result != null ? result : Collections.emptyList();
     }
 
     public Set<String> findDistinctFundSourcesByBudgetAndProcClassAndCoacode(Budget budget, ProcClass p, COA coacode) {
         return repository.findDistinctFundSourcesByBudgetAndProcClassAndCoacode(budget, p, coacode);
     }
+
     public Set<String> findDistinctFundSourcesByBudgetAndProcClassAndCoacodeF(Budget budget, ProcClass p, COA coacode, Set<Fundsource> fundsource) {
-        return repository.findDistinctFundSourcesByBudgetAndProcClassAndCoacodeAndFundsourceIn(budget, p, coacode,fundsource);
-    }    
-    public Set<String> findDistinctFundSourcesByBudgetAndProcClassAndCoacode(Budget budget, ProcClass p, COA coacode,Set<UrcDeptSectionAnlDimbgt> deptUnits) {
-        return repository.findDistinctFundSourcesByBudgetAndProcClassAndCoacodeAndDeptIn(budget, p, coacode,deptUnits);
+        return repository.findDistinctFundSourcesByBudgetAndProcClassAndCoacodeAndFundsourceIn(budget, p, coacode, fundsource);
     }
-        public Set<String> findDistinctFundSourcesByBudgetAndProcClassAndCoacode(Budget budget, ProcClass p, COA coacode,Set<UrcDeptSectionAnlDimbgt> deptUnits, Set<Fundsource> fundsource) {
-        return repository.findDistinctFundSourcesByBudgetAndProcClassAndCoacodeAndDeptInAndFundsourceIn(budget, p, coacode,deptUnits,fundsource);
+
+    public Set<String> findDistinctFundSourcesByBudgetAndProcClassAndCoacode(Budget budget, ProcClass p, COA coacode, Set<UrcDeptSectionAnlDimbgt> deptUnits) {
+        return repository.findDistinctFundSourcesByBudgetAndProcClassAndCoacodeAndDeptIn(budget, p, coacode, deptUnits);
     }
+
+    public Set<String> findDistinctFundSourcesByBudgetAndProcClassAndCoacode(Budget budget, ProcClass p, COA coacode, Set<UrcDeptSectionAnlDimbgt> deptUnits, Set<Fundsource> fundsource) {
+        return repository.findDistinctFundSourcesByBudgetAndProcClassAndCoacodeAndDeptInAndFundsourceIn(budget, p, coacode, deptUnits, fundsource);
+    }
+
     public Set<Fundsource> findDistinctFundSources2ByBudgetAndProcClassAndCoacode(Budget budget, ProcClass p, COA coacode) {
         return repository.findDistinctFundSources2ByBudgetAndProcClassAndCoacode(budget, p, coacode);
     }
 
     public List<BudgetItems> findByBudgetAndProcClassAndCoaAndFundsourceIn(Budget budget, ProcClass p, COA coacode, Set<Fundsource> fundsource) {
         List<BudgetItems> result = repository.findByBudgetAndProcClassAndCoaAndFundsourceIn(budget, p, coacode, fundsource);
-        System.out.println(result.size()+"");
+        System.out.println(result.size() + "");
         return result != null ? result : Collections.emptyList();
     }
 
     public List<BudgetItems> findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(Budget budget, ProcClass p, COA coacode, Set<UrcDeptSectionAnlDimbgt> deptUnits, Set<Fundsource> fundsource) {
         List<BudgetItems> result = repository.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(budget, p, coacode, deptUnits, fundsource);
-        System.out.println(result.size()+"");
-        return result != null ? result : Collections.emptyList(); 
+        System.out.println(result.size() + "");
+        return result != null ? result : Collections.emptyList();
     }
 
     public List<BudgetItemsActuals> findDistinctBudgetItemses(Budget budget, Set<UrcDeptSectionAnlDimbgt> deptUnits, String fy) {
@@ -1048,12 +1144,12 @@ public class BudgetItemsService {
 
         return sumOfMonth;
     }
-    
-    public MonthlySumResponseFreight getTotals(Budget budget,COA coacode){
+
+    public MonthlySumResponseFreight getTotals(Budget budget, COA coacode) {
         return repository.getMonthlySumsByBudgetAndCoacode(budget, coacode);
-    } 
-    
-    public MonthlySumResponseFreight getTotals(Budget budget,List<COA> coacode){
-        return repository.getMonthlySumsByBudgetAndCoacodes(budget, coacode); 
+    }
+
+    public MonthlySumResponseFreight getTotals(Budget budget, List<COA> coacode) {
+        return repository.getMonthlySumsByBudgetAndCoacodes(budget, coacode);
     }
 }

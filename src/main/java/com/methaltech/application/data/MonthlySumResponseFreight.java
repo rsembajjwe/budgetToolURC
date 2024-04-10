@@ -18,6 +18,10 @@ public @Data class MonthlySumResponseFreight {
     private BigDecimal may;
     private BigDecimal jun;
     private BigDecimal total;
+    private BigDecimal qtr1;
+    private BigDecimal qtr2;
+    private BigDecimal qtr3;
+    private BigDecimal qtr4;
 
     // Constructor
     public MonthlySumResponseFreight(BigDecimal jul, BigDecimal aug, BigDecimal sep, BigDecimal oct, BigDecimal nov,
@@ -36,5 +40,10 @@ public @Data class MonthlySumResponseFreight {
         this.may = may;
         this.jun = jun;
         this.total = total;
+        this.qtr1 = jul.add(aug).add(sep);
+        this.qtr2 = oct.add(nov).add(dec);
+        this.qtr3 = jan.add(feb).add(mar);
+        this.qtr4 = apr.add(may).add(jun);
     }
+    
 }

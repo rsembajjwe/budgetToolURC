@@ -4,6 +4,8 @@
  */
 package com.methaltech.application;
 
+import com.methaltech.application.data.GenerateQtrFromFy;
+import com.methaltech.application.data.Quarters;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
 import com.methaltech.application.data.livedata.service.SALFLDGService;
 import java.util.ArrayList;
@@ -22,8 +24,9 @@ public class test {
     private static List<Integer> years = new ArrayList<>();
     BudgetItemsService samplBudgetItemsService;
     SALFLDGService sALFLDGService;
-    public test(){
-        
+
+    public test() {
+
     }
 
     public static void main(String[] args) {
@@ -38,8 +41,9 @@ public class test {
 
         System.out.println("Result: " + getYears().get(0));
         System.out.println("Result: " + getYears().get(1));
-        
-       // System.out.println(sALFLDGService.findSumOfAmountByAccntCodeAndPeriod("312119", 2023001));
+
+        //System.out.println("Result: " + sALFLDGService.findSumOfAmountByAccntCodeAndPeriods("", aeList));
+
     }
 
     private static int extractYear(String input) {
@@ -146,6 +150,7 @@ public class test {
     }
 
     public static List<Integer> getYears() {
+
         return years;
     }
 }
