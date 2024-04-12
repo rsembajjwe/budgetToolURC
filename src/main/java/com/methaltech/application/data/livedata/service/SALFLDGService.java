@@ -14,12 +14,12 @@ import java.util.stream.Collectors;
 public class SALFLDGService {
 
     private final SALFLDGRepository salfldgRepository;
-     private final GenerateQtrFromFy generateQtrFromFy;
+    private final GenerateQtrFromFy generateQtrFromFy;
 
     @Autowired
-    public SALFLDGService(SALFLDGRepository salfldgRepository,GenerateQtrFromFy generateQtrFromFy) {
+    public SALFLDGService(SALFLDGRepository salfldgRepository, GenerateQtrFromFy generateQtrFromFy) {
         this.salfldgRepository = salfldgRepository;
-        this.generateQtrFromFy=generateQtrFromFy;
+        this.generateQtrFromFy = generateQtrFromFy;
     }
 
     public BigDecimal findSumOfAmountByAccntCodeAndPeriod(String accntCode, int period) {
@@ -31,11 +31,19 @@ public class SALFLDGService {
     }
 
     public BigDecimal findSumOfAmountByAccntCodeAndPeriods(String accntCode, Quarters qtrFromFy, String fy) {
-int i=0;
+        int i = 0;
         List<String> per = generateQtrFromFy.periods(fy, qtrFromFy);
         // Convert the list of String periods to a list of Integer periods
         List<Integer> intPer = per.stream().map(Integer::parseInt).collect(Collectors.toList());
-        System.out.println(i+++" | "+intPer+" | "+qtrFromFy+" | "+fy);
+
         return salfldgRepository.findSumOfAmountByAccntCodeAndPeriods(accntCode, intPer);
     }
+    public BigDecimal findSumOfAmountByAccntCodeAndPeriods(List<String> accntCode, Quarters qtrFromFy, String fy) {
+        int i = 0;
+        List<String> per = generateQtrFromFy.periods(fy, qtrFromFy);
+        // Convert the list of String periods to a list of Integer periods
+        List<Integer> intPer = per.stream().map(Integer::parseInt).collect(Collectors.toList());
+
+        return salfldgRepository.findSumOfAmountByAccntCodeAndPeriods(accntCode, intPer);
+    }    
 }

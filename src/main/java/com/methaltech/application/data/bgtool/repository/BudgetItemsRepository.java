@@ -960,6 +960,16 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             + "FROM BudgetItems fv "
             + "WHERE fv.budget = :budget AND fv.coacode = :coacode")
     MonthlySumResponseFreight getMonthlySumsByBudgetAndCoacode(@Param("budget") Budget budget, @Param("coacode") COA coacode);
+    
+    @Query("SELECT NEW com.methaltech.application.data.MonthlySumResponseFreight("
+            + "COALESCE(SUM(fv.jul), 0), COALESCE(SUM(fv.aug), 0), COALESCE(SUM(fv.sep), 0), "
+            + "COALESCE(SUM(fv.oct), 0), COALESCE(SUM(fv.nov), 0), COALESCE(SUM(fv.dec), 0), "
+            + "COALESCE(SUM(fv.jan), 0), COALESCE(SUM(fv.feb), 0), COALESCE(SUM(fv.mar), 0), "
+            + "COALESCE(SUM(fv.apr), 0), COALESCE(SUM(fv.may), 0), COALESCE(SUM(fv.jun), 0), "
+            + "COALESCE((SUM(fv.jul)+SUM(fv.aug)+SUM(fv.sep)+SUM(fv.oct)+SUM(fv.nov)+SUM(fv.dec)+SUM(fv.jan)+SUM(fv.feb)+SUM(fv.mar)+SUM(fv.apr)+SUM(fv.may)+SUM(fv.jun)), 0)) "
+            + "FROM BudgetItems fv "
+            + "WHERE fv.budget = :budget AND fv.coacode IN :coacode")
+    MonthlySumResponseFreight getMonthlySumsByBudgetAndCoacode(@Param("budget") Budget budget, @Param("coacode") List<COA> coacode);    
 
     @Query("SELECT NEW com.methaltech.application.data.MonthlySumResponseFreight("
             + "COALESCE(SUM(fv.jul), 0), COALESCE(SUM(fv.aug), 0), COALESCE(SUM(fv.sep), 0), "

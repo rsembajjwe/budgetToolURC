@@ -22,7 +22,9 @@ public @Data class MonthlySumResponseFreight {
     private BigDecimal qtr2;
     private BigDecimal qtr3;
     private BigDecimal qtr4;
-
+public MonthlySumResponseFreight(){
+    
+}
     // Constructor
     public MonthlySumResponseFreight(BigDecimal jul, BigDecimal aug, BigDecimal sep, BigDecimal oct, BigDecimal nov,
             BigDecimal dec, BigDecimal jan, BigDecimal feb, BigDecimal mar, BigDecimal apr,
