@@ -956,19 +956,16 @@ public class BudgetItemsService {
 
     public List<BudgetItems> findByBudgetAndProcClassAndCoa(Budget budget, ProcClass p, COA coacode) {
         List<BudgetItems> result = repository.findByBudgetAndProcClassAndCoa(budget, p, coacode);
-        System.out.println(result.size() + "");
         return result != null ? result : Collections.emptyList();
     }
 
     public List<BudgetItems> findByBudgetAndProcClassAndCoaAndDeptUnitIn(Budget budget, ProcClass p, COA coacode, Set<UrcDeptSectionAnlDimbgt> deptUnits) {
         List<BudgetItems> result = repository.findByBudgetAndProcClassAndCoaAndDeptUnitIn(budget, p, coacode, deptUnits);
-        System.out.println(result.size() + "");
         return result != null ? result : Collections.emptyList();
     }
 
     public List<BudgetItems> findByBudgetAndProcClassAndCoaAndDeptUnitIn(Budget budget, ProcClass p, Set<COA> coacode, Set<UrcDeptSectionAnlDimbgt> deptUnits) {
         List<BudgetItems> result = repository.findByBudgetAndProcClassAndCoaAndDeptUnitIn(budget, p, coacode, deptUnits);
-        System.out.println(result.size() + "");
         return result != null ? result : Collections.emptyList();
     }
 
@@ -994,13 +991,12 @@ public class BudgetItemsService {
 
     public List<BudgetItems> findByBudgetAndProcClassAndCoaAndFundsourceIn(Budget budget, ProcClass p, COA coacode, Set<Fundsource> fundsource) {
         List<BudgetItems> result = repository.findByBudgetAndProcClassAndCoaAndFundsourceIn(budget, p, coacode, fundsource);
-        System.out.println(result.size() + "");
         return result != null ? result : Collections.emptyList();
     }
 
     public List<BudgetItems> findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(Budget budget, ProcClass p, COA coacode, Set<UrcDeptSectionAnlDimbgt> deptUnits, Set<Fundsource> fundsource) {
         List<BudgetItems> result = repository.findByBudgetAndProcClassAndCoaAndDeptUnitInAndFundsSourceIn(budget, p, coacode, deptUnits, fundsource);
-        System.out.println(result.size() + "");
+        
         return result != null ? result : Collections.emptyList();
     }
 
@@ -1062,24 +1058,7 @@ public class BudgetItemsService {
             b.setMay(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "may"));
             b.setJun(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "jun"));
 
-            /*            */
 
- /*            b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), 2023001));
-            b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), 2023002));
-            b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), 2023003));
-            b.setOctA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), 2023004));
-            b.setNovA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), 2023005));
-            b.setDecA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), 2023006));
-            b.setJanA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), 2023007));
-            b.setFebA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), 2023008));
-            b.setMarA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), 2023009));
-            b.setAprA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(),2023010));
-            b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), 2023011));
-            b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), 2023012)); */
-            System.out.println(c.getCode() + " " + extActuals.generateCode2(fy, "Jul") + ", " + extActuals.generateCode2(fy, "Aug") + ", " + extActuals.generateCode2(fy, "Sep")
-                    + ", " + extActuals.generateCode2(fy, "Oct") + ", " + extActuals.generateCode2(fy, "Nov") + ", " + extActuals.generateCode2(fy, "Dec") + ", " + extActuals.generateCode2(fy, "Jan")
-                    + ", " + extActuals.generateCode2(fy, "Feb") + ", " + extActuals.generateCode2(fy, "Mar") + ", " + extActuals.generateCode2(fy, "Apr") + ", " + extActuals.generateCode2(fy, "May")
-                    + ", " + extActuals.generateCode2(fy, "Jun"));
             budgetItemses.add(b);
         }
         return budgetItemses;

@@ -47,5 +47,26 @@ public MonthlySumResponseFreight(){
         this.qtr3 = jan.add(feb).add(mar);
         this.qtr4 = apr.add(may).add(jun);
     }
-    
+    public MonthlySumResponseFreight(BigDecimal jul, BigDecimal aug, BigDecimal sep, BigDecimal oct, BigDecimal nov,
+            BigDecimal dec, BigDecimal jan, BigDecimal feb, BigDecimal mar, BigDecimal apr,
+            BigDecimal may, BigDecimal jun, BigDecimal total, BigDecimal qtr1, BigDecimal qtr2, BigDecimal qtr3, BigDecimal qtr4) {
+        this.jul = jul;
+        this.aug = aug;
+        this.sep = sep;
+        this.oct = oct;
+        this.nov = nov;
+        this.dec = dec;
+        this.jan = jan;
+        this.feb = feb;
+        this.mar = mar;
+        this.apr = apr;
+        this.may = may;
+        this.jun = jun;
+        this.total = total;
+        this.qtr1 = jul.add(aug).add(sep);
+        this.qtr2 = oct.add(nov).add(dec);
+        this.qtr3 = jan.add(feb).add(mar);
+        this.qtr4 = apr.add(may).add(jun);
+        System.out.println(qtr1+" Its ran this one");
+    }    
 }

@@ -139,7 +139,6 @@ public COA save(COA coa) {
             coa.setBudget(budget);
             coa.setCode(acountcode.getAcntCode());
             coa.setName(acountcode.getDescr());
-            //System.out.println(coa.toString());
             coaRepository.save(coa);
 
         }

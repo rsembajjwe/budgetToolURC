@@ -3,6 +3,7 @@ package com.methaltech.application.views.budgetReport;
 import com.methaltech.application.data.Display;
 import com.methaltech.application.data.GenerateQtrFromFy;
 import com.methaltech.application.data.MonthlySumResponseFreight;
+import com.methaltech.application.data.Qtr;
 import com.methaltech.application.data.Quarters;
 import com.methaltech.application.data.Report;
 import com.methaltech.application.data.bgtool.repository.SamplePersonService;
@@ -1139,7 +1140,6 @@ public class BudgetReportsView extends Div {
             setBottomBorderForRegion(sheet, cellRange);
             List<COA> findDistinctCoacodeByBudgetCoalevel1AndDeptUnits = sampleBudgetItemsService.findDistinctCoacodeByBudgetCoalevel1AndDeptUnits(comboBox.getValue(), coal, selectedSections, budgetType.getSelectedItems());
             for (COA cao : findDistinctCoacodeByBudgetCoalevel1AndDeptUnits) {
-                System.out.println(cao.getCode() + " 1");
                 tr++;
                 totalCoarowIndex.add((int) tr);
                 Row incometotal2 = sheet.createRow((short) tr);
@@ -1227,7 +1227,7 @@ public class BudgetReportsView extends Div {
                 budgetList = sampleBudgetItemsService.findByBudgetCoacodeAndDeptUnits(comboBox.getValue(), cao, selectedSections, budgetType.getSelectedItems());
 
                 for (BudgetItems tt : budgetList) {
-                    System.out.println("    " + tt.getCoacode().getCode());
+
                     tr++;
                     Row mm = sheet.createRow((short) tr);
                     CellStyle style22 = incometotal2.getSheet().getWorkbook().createCellStyle();
@@ -1419,7 +1419,6 @@ public class BudgetReportsView extends Div {
 
             List<COA> findDistinctCoacodeByBudgetCoalevel1AndDeptUnits = sampleBudgetItemsService.findDistinctCoacodeByBudgetCoalevel1AndDeptUnits(comboBox.getValue(), coal, selectedSections, budgetType.getSelectedItems());
             for (COA cao : findDistinctCoacodeByBudgetCoalevel1AndDeptUnits) {
-                System.out.println(cao.getCode() + " 2");
                 tr++;
                 totalCoarowIndex.add((int) tr);
                 Row incometotal2 = sheet.createRow((short) tr);
@@ -1504,7 +1503,6 @@ public class BudgetReportsView extends Div {
                 budgetList = sampleBudgetItemsService.findByBudgetCoacodeAndDeptUnits(comboBox.getValue(), cao, selectedSections, budgetType.getSelectedItems());
 
                 for (BudgetItems tt : budgetList) {
-                    System.out.println("    " + tt.getCoacode().getCode());
                     tr++;
                     Row mm = sheet.createRow((short) tr);
                     CellStyle style21 = incometotal2.getSheet().getWorkbook().createCellStyle();
@@ -1691,7 +1689,6 @@ public class BudgetReportsView extends Div {
             setBottomBorderForRegion(sheet, cellRange);
             List<COA> findDistinctCoacodeByBudgetCoalevel1AndDeptUnits = sampleBudgetItemsService.findDistinctCoacodeByBudgetCoalevel1AndDeptUnits(comboBox.getValue(), coal, selectedSections, budgetType.getSelectedItems());
             for (COA cao : findDistinctCoacodeByBudgetCoalevel1AndDeptUnits) {
-                System.out.println(cao.getCode() + " 3");
                 tr++;
 
                 totalCoarowIndex.add((int) tr);
@@ -1783,7 +1780,6 @@ public class BudgetReportsView extends Div {
                 budgetList = sampleBudgetItemsService.findByBudgetCoacodeAndDeptUnits(comboBox.getValue(), cao, selectedSections, budgetType.getSelectedItems());
 
                 for (BudgetItems tt : budgetList) {
-                    System.out.println("    " + tt.getCoacode().getCode());
                     tr++;
                     Row mm = sheet.createRow((short) tr);
                     CellStyle style2 = incometotal2.getSheet().getWorkbook().createCellStyle();
@@ -2204,7 +2200,6 @@ public class BudgetReportsView extends Div {
             setBottomBorderForRegion(sheet, cellRange);
             List<COA> findDistinctCoacodeByBudgetCoalevel1AndDeptUnits = sampleBudgetItemsService.findDistinctCoacodeByBudgetCoalevel1AndDeptUnits(comboBox2.getValue(), coal, selectedSections, budgetType2.getSelectedItems());
             for (COA cao : findDistinctCoacodeByBudgetCoalevel1AndDeptUnits) {
-                System.out.println(cao.getCode() + " 1");
                 tr++;
                 totalCoarowIndex.add((int) tr);
                 Row incometotal2 = sheet.createRow((short) tr);
@@ -2292,7 +2287,6 @@ public class BudgetReportsView extends Div {
                 budgetList = sampleBudgetItemsService.findByBudgetCoacodeAndDeptUnits(comboBox2.getValue(), cao, selectedSections, budgetType2.getSelectedItems());
 
                 for (BudgetItems tt : budgetList) {
-                    System.out.println("    " + tt.getCoacode().getCode());
                     tr++;
                     Row mm = sheet.createRow((short) tr);
                     CellStyle style22 = incometotal2.getSheet().getWorkbook().createCellStyle();
@@ -2471,10 +2465,8 @@ public class BudgetReportsView extends Div {
         tr++;
         coal = sampleCoalevel1Service.findByCode(2);
         coaList.add(coal);
-        System.out.println(isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero(comboBox2.getValue(), coal, selectedSections));
-        System.out.println(comboBox2.getValue().getFinancialYear() + " " + coal.getName() + " " + selectedSections.size());
         if (isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero2(comboBox2.getValue(), coal, selectedSections) == true) {
-            System.out.println("Revenue Exp exists");
+
             tr++;
             Row income = sheet.createRow((short) tr);
             income.createCell(0).setCellValue("REVENUE EXPENDITURE");
@@ -2487,7 +2479,7 @@ public class BudgetReportsView extends Div {
 
             List<COA> findDistinctCoacodeByBudgetCoalevel1AndDeptUnits = sampleBudgetItemsService.findDistinctCoacodeByBudgetCoalevel1AndDeptUnits(comboBox2.getValue(), coal, selectedSections, budgetType2.getSelectedItems());
             for (COA cao : findDistinctCoacodeByBudgetCoalevel1AndDeptUnits) {
-                System.out.println(cao.getCode() + " 2");
+
                 tr++;
                 totalCoarowIndex.add((int) tr);
                 Row incometotal2 = sheet.createRow((short) tr);
@@ -2572,7 +2564,7 @@ public class BudgetReportsView extends Div {
                 budgetList = sampleBudgetItemsService.findByBudgetCoacodeAndDeptUnits(comboBox2.getValue(), cao, selectedSections, budgetType2.getSelectedItems());
 
                 for (BudgetItems tt : budgetList) {
-                    System.out.println("    " + tt.getCoacode().getCode());
+
                     tr++;
                     Row mm = sheet.createRow((short) tr);
                     CellStyle style21 = incometotal2.getSheet().getWorkbook().createCellStyle();
@@ -2759,7 +2751,7 @@ public class BudgetReportsView extends Div {
             setBottomBorderForRegion(sheet, cellRange);
             List<COA> findDistinctCoacodeByBudgetCoalevel1AndDeptUnits = sampleBudgetItemsService.findDistinctCoacodeByBudgetCoalevel1AndDeptUnits(comboBox2.getValue(), coal, selectedSections, budgetType2.getSelectedItems());
             for (COA cao : findDistinctCoacodeByBudgetCoalevel1AndDeptUnits) {
-                System.out.println(cao.getCode() + " 3");
+
                 tr++;
 
                 totalCoarowIndex.add((int) tr);
@@ -2851,7 +2843,7 @@ public class BudgetReportsView extends Div {
                 budgetList = sampleBudgetItemsService.findByBudgetCoacodeAndDeptUnits(comboBox2.getValue(), cao, selectedSections, budgetType2.getSelectedItems());
 
                 for (BudgetItems tt : budgetList) {
-                    System.out.println("    " + tt.getCoacode().getCode());
+
                     tr++;
                     Row mm = sheet.createRow((short) tr);
                     CellStyle style2 = incometotal2.getSheet().getWorkbook().createCellStyle();
@@ -3381,7 +3373,7 @@ public class BudgetReportsView extends Div {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("hello3: " + e.getMessage());
+
         }
     }
 
@@ -9200,19 +9192,32 @@ public class BudgetReportsView extends Div {
         titleBoldTotal.add((int) tr);
         MonthlySumResponseFreight mon101T11W = calculateTotal(listIncomeTotals4);
         MonthlySumResponseFreight varcosts = calculateTotal(listVariableCosts);
+        List<Qtr> listqtr = new ArrayList<>();
+        for (MonthlySumResponseFreight b : listVariableCosts) {
+            Qtr aa = new Qtr(null, null, null, null);
+            aa.setQtr1(b.getQtr1());
+            aa.setQtr2(b.getQtr2());
+            aa.setQtr3(b.getQtr3());
+            aa.setQtr4(b.getQtr4());
+            listqtr.add(aa);
+            System.out.println(b.toString() + " QQ2");
+        }
+        Qtr thisQtr = sumQuarterTotals(listqtr);
         Row Q92 = createHeaderRow(sheet, tr, "", "Total variable costs",
                 BigDecimal.ZERO.doubleValue(),
-                varcosts.getQtr1().doubleValue(),
-                varcosts.getQtr2().doubleValue(),
-                varcosts.getQtr3().doubleValue(),
-                varcosts.getQtr4().doubleValue(),
+                thisQtr.getQtr1().doubleValue(),
+                thisQtr.getQtr2().doubleValue(),
+                thisQtr.getQtr3().doubleValue(),
+                thisQtr.getQtr4().doubleValue(),
                 mon101T11W.getTotal().doubleValue(), mon101T11W.getQtr1().doubleValue(), mon101T11W.getQtr2().doubleValue(),
                 mon101T11W.getQtr3().doubleValue(), mon101T11W.getQtr4().doubleValue());
-        System.out.print(varcosts.getQtr1() + " |1 ");
-        System.out.print(varcosts.getQtr2() + " |2 ");
-        System.out.print(varcosts.getQtr3() + " |3 ");
-        System.out.print(varcosts.getQtr4() + " |4 ");
-        System.out.println(listVariableCosts.size());
+        //System.out.print(varcosts.getQtr1() + " |1 ");
+        //System.out.print(varcosts.getQtr2() + " |2 ");
+        //System.out.print(varcosts.getQtr3() + " |3 ");
+        //System.out.print(varcosts.getQtr4() + " |4 ");
+        //System.out.println(listVariableCosts.size());
+
+        System.out.println(thisQtr.getQtr1() + " QQ");
 
         tr++;
         titleBoldRed.add((int) tr);
@@ -9406,7 +9411,6 @@ public class BudgetReportsView extends Div {
         listCoas.clear();
         for (URC_ACNT k : findByAcntCodeStartingWith) {
             if (k.getAcntCode().trim().length() > 5) {
-                System.out.println(k.getAcntCode());
                 tr++;
 
                 BigDecimal ptot = BigDecimal.ZERO;
@@ -9456,7 +9460,6 @@ public class BudgetReportsView extends Div {
         listCoas.clear();
         for (URC_ACNT k : findByAcntCodeStartingWith) {
             if (k.getAcntCode().trim().length() > 5) {
-                System.out.println(k.getAcntCode());
                 tr++;
 
                 BigDecimal ptot = BigDecimal.ZERO;
@@ -9505,7 +9508,6 @@ public class BudgetReportsView extends Div {
         listCoas.clear();
         for (URC_ACNT k : findByAcntCodeStartingWith) {
             if (k.getAcntCode().trim().length() > 5) {
-                System.out.println(k.getAcntCode());
                 tr++;
 
                 BigDecimal ptot = BigDecimal.ZERO;
@@ -9555,7 +9557,6 @@ public class BudgetReportsView extends Div {
         listCoas.clear();
         for (URC_ACNT k : findByAcntCodeStartingWith) {
             if (k.getAcntCode().trim().length() > 5) {
-                System.out.println(k.getAcntCode());
                 tr++;
 
                 BigDecimal ptot = BigDecimal.ZERO;
@@ -9602,7 +9603,6 @@ public class BudgetReportsView extends Div {
         listCoas.clear();
         for (URC_ACNT k : findByAcntCodeStartingWith) {
             if (k.getAcntCode().trim().length() > 5) {
-                System.out.println(k.getAcntCode());
                 tr++;
 
                 BigDecimal ptot = BigDecimal.ZERO;
@@ -9652,7 +9652,6 @@ public class BudgetReportsView extends Div {
         listCoas.clear();
         for (URC_ACNT k : findByAcntCodeStartingWith) {
             if (k.getAcntCode().trim().length() > 5) {
-                System.out.println(k.getAcntCode());
                 tr++;
 
                 BigDecimal ptot = BigDecimal.ZERO;
@@ -9702,7 +9701,6 @@ public class BudgetReportsView extends Div {
         listCoas.clear();
         for (URC_ACNT k : findByAcntCodeStartingWith) {
             if (k.getAcntCode().trim().length() > 5) {
-                System.out.println(k.getAcntCode());
                 tr++;
 
                 BigDecimal ptot = BigDecimal.ZERO;
@@ -9876,7 +9874,6 @@ public class BudgetReportsView extends Div {
         listCoas.clear();
         for (URC_ACNT k : findByAcntCodeStartingWith) {
             if (k.getAcntCode().trim().length() > 5) {
-                System.out.println(k.getAcntCode());
                 tr++;
 
                 BigDecimal ptot = BigDecimal.ZERO;
@@ -10009,7 +10006,6 @@ public class BudgetReportsView extends Div {
         listIncomeTotals5.clear();
         for (URC_ACNT k : findByAcntCodeStartingWith) {
             if (k.getAcntCode().trim().length() > 5) {
-                System.out.println(k.getAcntCode());
                 tr++;
 
                 BigDecimal ptot = BigDecimal.ZERO;
@@ -10212,7 +10208,6 @@ public class BudgetReportsView extends Div {
         listIncomeTotals5.clear();
         for (URC_ACNT k : findByAcntCodeStartingWith) {
             if (k.getAcntCode().trim().length() > 5) {
-                System.out.println(k.getAcntCode());
                 tr++;
 
                 BigDecimal ptot = BigDecimal.ZERO;
@@ -11110,59 +11105,48 @@ public class BudgetReportsView extends Div {
             aprTotal = addIfNotNull(aprTotal, freight.getApr());
             mayTotal = addIfNotNull(mayTotal, freight.getMay());
             junTotal = addIfNotNull(junTotal, freight.getJun());
-// Update qtr1
-            if (freight.getJul() != null) {
-                qtr1 = qtr1.add(freight.getJul());
-            }
-            if (freight.getAug() != null) {
-                qtr1 = qtr1.add(freight.getAug());
-            }
-            if (freight.getSep() != null) {
-                qtr1 = qtr1.add(freight.getSep());
-            }
-
-// Update qtr2
-            if (freight.getOct() != null) {
-                qtr2 = qtr2.add(freight.getOct());
-            }
-            if (freight.getNov() != null) {
-                qtr2 = qtr2.add(freight.getNov());
-            }
-            if (freight.getDec() != null) {
-                qtr2 = qtr2.add(freight.getDec());
-            }
-
-// Update qtr3
-            if (freight.getJan() != null) {
-                qtr3 = qtr3.add(freight.getJan());
-            }
-            if (freight.getFeb() != null) {
-                qtr3 = qtr3.add(freight.getFeb());
-            }
-            if (freight.getMar() != null) {
-                qtr3 = qtr3.add(freight.getMar());
-            }
-
-// Update qtr4
-            if (freight.getApr() != null) {
-                qtr4 = qtr4.add(freight.getApr());
-            }
-            if (freight.getMay() != null) {
-                qtr4 = qtr4.add(freight.getMay());
-            }
-            if (freight.getJun() != null) {
-                qtr4 = qtr4.add(freight.getJun());
-            }
 
             total = addIfNotNull(total, freight.getTotal());
         }
-
+// Calculate quarterly totals, handling potential null values
+        qtr1 = addIfNotNull2(addIfNotNull(julTotal, augTotal), sepTotal);
+        qtr2 = addIfNotNull2(addIfNotNull(octTotal, novTotal), decTotal);
+        qtr3 = addIfNotNull2(addIfNotNull(janTotal, febTotal), marTotal);
+        qtr4 = addIfNotNull2(addIfNotNull(aprTotal, mayTotal), junTotal);
         return new MonthlySumResponseFreight(julTotal, augTotal, sepTotal, octTotal, novTotal, decTotal, janTotal,
-                febTotal, marTotal, aprTotal, mayTotal, junTotal, total);
+                febTotal, marTotal, aprTotal, mayTotal, junTotal, total, qtr1, qtr2, qtr3, qtr4);
     }
 
     private BigDecimal addIfNotNull(BigDecimal sum, BigDecimal value) {
         return (value != null) ? sum.add(value) : sum;
+    }
+
+    private BigDecimal addIfNotNull2(BigDecimal a, BigDecimal b) {
+        if (a != null && b != null) {
+            return a.add(b);
+        } else if (a != null) {
+            return a;
+        } else if (b != null) {
+            return b;
+        } else {
+            return BigDecimal.ZERO;
+        }
+    }
+
+    public Qtr sumQuarterTotals(List<Qtr> qtrList) {
+        BigDecimal qtr1Total = BigDecimal.ZERO;
+        BigDecimal qtr2Total = BigDecimal.ZERO;
+        BigDecimal qtr3Total = BigDecimal.ZERO;
+        BigDecimal qtr4Total = BigDecimal.ZERO;
+
+        for (Qtr qtr : qtrList) {
+            qtr1Total = addIfNotNull(qtr1Total, qtr.getQtr1());
+            qtr2Total = addIfNotNull(qtr2Total, qtr.getQtr2());
+            qtr3Total = addIfNotNull(qtr3Total, qtr.getQtr3());
+            qtr4Total = addIfNotNull(qtr4Total, qtr.getQtr4());
+        }
+
+        return new Qtr(qtr1Total, qtr2Total, qtr3Total, qtr4Total);
     }
 
     public void createDefaultStyle(Workbook workbook, Sheet sheet, int startrow100) {
