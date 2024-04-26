@@ -10,6 +10,7 @@ import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.UnitMeasures.UnitsMeasureView;
 import com.methaltech.application.views.about.AboutView;
 import com.methaltech.application.views.actual.ActualView;
+import com.methaltech.application.views.actual.PerformanceView;
 import com.methaltech.application.views.budget.BudgetFormView;
 import com.methaltech.application.views.budget.BudgetView;
 import com.methaltech.application.views.budget.transferView;
@@ -183,7 +184,7 @@ public class MainLayout extends AppLayout {
 
         }
         if (accessChecker.hasAccess(budgetWorkplanView.class)) {
-            nav.addItem(new SideNavItem("Work plans Main", budgetWorkplanView.class, LineAwesomeIcon.BACON_SOLID.create()));
+            nav.addItem(new SideNavItem("Work plans", budgetWorkplanView.class, LineAwesomeIcon.BACON_SOLID.create()));
 
         }        
 
@@ -200,13 +201,18 @@ public class MainLayout extends AppLayout {
 
         }
         if (accessChecker.hasAccess(ActualView.class)) {
-            nav.addItem(new SideNavItem("Actuals", ActualView.class, LineAwesomeIcon.ALGOLIA.create()));
+            nav.addItem(new SideNavItem("Budget Actuals", ActualView.class, LineAwesomeIcon.ALGOLIA.create()));
+
+        } 
+        if (accessChecker.hasAccess(PerformanceView.class)) {
+            nav.addItem(new SideNavItem("Budget Performance", PerformanceView.class, LineAwesomeIcon.ALGOLIA.create()));
 
         }        
-                if (accessChecker.hasAccess(EmailSenderView.class)) {
+        
+        /*                if (accessChecker.hasAccess(EmailSenderView.class)) {
         nav.addItem(new SideNavItem("Send Email", EmailSenderView.class, LineAwesomeIcon.ENVELOPE_OPEN.create()));
         
-        }
+        }*/
 
         return nav;
     }

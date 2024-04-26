@@ -23,6 +23,7 @@ public class SALFLDGService {
     }
 
     public BigDecimal findSumOfAmountByAccntCodeAndPeriod(String accntCode, int period) {
+        System.out.println(accntCode+" | "+period);
         return salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(accntCode, period);
     }
 

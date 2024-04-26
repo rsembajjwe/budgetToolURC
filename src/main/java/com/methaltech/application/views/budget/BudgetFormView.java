@@ -1682,14 +1682,15 @@ warningNotification(mes);
                     // budg.setFundsource(budgetItemfundSource.getValue());
                     Fundsource selectedFundsource = budgetItemfundSource.getValue();
 
-                    if (selectedFundsource != null && selectedFundsource.getId() != null) {
-                        // Fetch managed Fundsource from the database
-                        System.out.println("Right here 1");
+                    if ((chosenCOA.getCoalevel1().getCode() == 2 || chosenCOA.getCoalevel1().getCode() == 3) && selectedFundsource != null && selectedFundsource.getId() != null) {
                         selectedFundsource = sampleFundsourceService.findById(selectedFundsource.getId());
-                        System.out.println("Right here 2");
+
                         budg.setFundsource(selectedFundsource);
+                    }else if ((chosenCOA.getCoalevel1().getCode() == 1 ) && selectedFundsource != null && selectedFundsource.getId() != null) {
+
                     } else {
-                        throw new IllegalArgumentException("No Fundsource selected");
+                        //System.out.println("Not An Expenditure proper");
+                        //throw new IllegalArgumentException("No Fundsource selected nnn");
                     }
 
                     budg.setBudgetType(chosenOrganisation);
@@ -1714,17 +1715,14 @@ warningNotification(mes);
                     budg.setOct(getNonNullValue(oct).stripTrailingZeros());
                     budg.setNov(getNonNullValue(nov).stripTrailingZeros());
                     budg.setDec(getNonNullValue(dec).stripTrailingZeros());
-                    System.out.println("Right here 3");
                     budgetItemsService.update(budg);
-                    System.out.println("Right here");
                     ProcurementPlan getAllProcurementPlans = sampleProcurementPlanService.findFirstByBudgetAndProcClassAndCoa(budg.getBudget(), budg.getProcClass(), budg.getCoacode());
-                    if (getAllProcurementPlans!=null) {
-                       // pp.setCost(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(budg.getBudget(), budg.getProcClass(), budg.getCoacode()));
-                       BigDecimal tDecimal = budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(getAllProcurementPlans.getBudget(), getAllProcurementPlans.getProcClass(), getAllProcurementPlans.getCoa());
+                    if (getAllProcurementPlans != null) {
+                        // pp.setCost(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(budg.getBudget(), budg.getProcClass(), budg.getCoacode()));
+                        BigDecimal tDecimal = budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(getAllProcurementPlans.getBudget(), getAllProcurementPlans.getProcClass(), getAllProcurementPlans.getCoa());
                         getAllProcurementPlans.setProcurementMethod(sampleProcurementPlanService.getProcurementMethodList2(budg.getProcClass(), tDecimal));
                         sampleProcurementPlanService.save(getAllProcurementPlans);
                     } else {
-                        System.out.println("Right here 5");
                         ProcurementPlan pr = new ProcurementPlan();
                         pr.setSubject(budg.getCoacode().getName());
                         pr.setBudget(budg.getBudget()); // Assuming all selected plans have the same budget
@@ -1738,7 +1736,7 @@ warningNotification(mes);
 
                         sampleProcurementPlanService.save(pr);
                     }
-                    System.out.println("Right here 6");
+                 
                     refreshgridBudgetItems();
                     refreshgridBudgetItemCOA2();
                     clearWorkplan();
@@ -2030,7 +2028,7 @@ warningNotification(mes);
             int p = Integer.parseInt(z.getCoacode().getCode().substring(0, 1));
             //z.setCoalevel1(coalevel1Service.findByCode(p));
             Fundsource source = sampleFundsourceService.findByFundsourceAndBudget("IGR", z.getBudget());
-            if (source != null && p != 1&&z.getFundsource()==null) {
+            if (source != null && p != 1 && z.getFundsource() == null) {
                 z.setFundsource(source);
                 budgetItemsService.update(z);
             }
@@ -2136,11 +2134,16 @@ warningNotification(mes);
             total.setInvalid(true);
             result = false;
         }
-        if (budgetItemfundSource.isEmpty() && (comboBoxCoalevel1.getValue().getCode() == 2 || comboBoxCoalevel1.getValue().getCode() == 3)) {
+        if (budgetItemfundSource.isEmpty() && (chosenCOA.getCoalevel1().getCode() == 2 || chosenCOA.getCoalevel1().getCode() == 3)) {
             budgetItemfundSource.setErrorMessage("Set the Fund Source");
             budgetItemfundSource.setInvalid(true);
             result = false;
         }
+        if (procClassCombo.isEmpty() && (chosenCOA.getCoalevel1().getCode() == 2 || chosenCOA.getCoalevel1().getCode() == 3)) {
+            procClassCombo.setErrorMessage("Set the Procurement class");
+            procClassCombo.setInvalid(true);
+            result = false;
+        }        
         return result;
     }
 

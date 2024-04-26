@@ -127,6 +127,7 @@ public class budgetWorkplanView extends Div {
     private final OldStaffPojoService oldStaffPojoService;
     private final Coalevel1Service coalevel1Service;
     Button downloadWorkplan = new Button(new Icon(VaadinIcon.DOWNLOAD));
+    Button downloadWorkplan2 = new Button("Download Qtr");
     private List<URC_Priority_Areas> programmes = new ArrayList<>();
     private List<Urc_Activities> programmesActivities = new ArrayList<>();
 
@@ -186,27 +187,37 @@ public class budgetWorkplanView extends Div {
             comboBoxOrganisation.setItems(sampleOrganisationService.findByBudgetList(comboBoxBudget.getValue()));
             if (!comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxBudget.isEmpty()) {
                 downloadWorkplan.setEnabled(true);
+                downloadWorkplan2.setEnabled(true);
             } else {
                 downloadWorkplan.setEnabled(false);
+                downloadWorkplan2.setEnabled(true);
             }
         });
         comboBoxD_Section.addValueChangeListener(e -> {
             if (!comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxBudget.isEmpty()) {
                 downloadWorkplan.setEnabled(true);
+                downloadWorkplan2.setEnabled(true);
             } else {
                 downloadWorkplan.setEnabled(false);
+                downloadWorkplan2.setEnabled(true);
             }
         });
         comboBoxOrganisation.addValueChangeListener(e -> {
             if (!comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxBudget.isEmpty()) {
                 downloadWorkplan.setEnabled(true);
+                downloadWorkplan2.setEnabled(true);
             } else {
                 downloadWorkplan.setEnabled(false);
+                downloadWorkplan2.setEnabled(true);
             }
         });
         downloadWorkplan.addThemeVariants(ButtonVariant.LUMO_ICON);
         downloadWorkplan.setAriaLabel("Download");
         downloadWorkplan.setEnabled(false);
+
+        downloadWorkplan2.addThemeVariants(ButtonVariant.LUMO_ICON);
+        downloadWorkplan2.setAriaLabel("Download");
+        downloadWorkplan2.setEnabled(false);
 
         downloadWorkplan.addClickListener(e -> {
             if (comboBoxD_Section.isEmpty() || comboBoxOrganisation.isEmpty() || comboBoxBudget.isEmpty()) {
@@ -216,7 +227,16 @@ public class budgetWorkplanView extends Div {
             }
 
         });
-        hmainLay.add(comboBoxBudget, comboBoxOrganisation, comboBoxD_Section, downloadWorkplan);
+
+        downloadWorkplan2.addClickListener(e -> {
+            if (comboBoxD_Section.isEmpty() || comboBoxOrganisation.isEmpty() || comboBoxBudget.isEmpty()) {
+                warningNotification("Ensure that You have filled the form well");
+            } else {
+                exportAndDownloadExcelWorkplanQtr();
+            }
+
+        });
+        hmainLay.add(comboBoxBudget, comboBoxOrganisation, comboBoxD_Section, downloadWorkplan, downloadWorkplan2);
         //hmainLay.setAlignSelf(FlexComponent.Alignment.BASELINE, hmainLay);
         hmainLay.setAlignItems(FlexComponent.Alignment.BASELINE);
         //hmainLay.setAlignItems(Alignment.BASELINE);
@@ -283,6 +303,34 @@ public class budgetWorkplanView extends Div {
         }
     }
 
+    private void exportAndDownloadExcelWorkplanQtr() {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Work plan");
+            // Set the paper size to A3 Landscape
+            sheet.getPrintSetup().setPaperSize(PrintSetup.A3_PAPERSIZE);
+            sheet.getPrintSetup().setLandscape(true);
+            createHeaderRowWorkplanQtr(workbook, sheet);
+            //createDataRows(sheet, people);
+
+            // Write the workbook to a byte array
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+
+            // Create a StreamResource with the Excel data
+            StreamResource resource = new StreamResource("Workplan.xlsx", ()
+                    -> new ByteArrayInputStream(outputStream.toByteArray()));
+
+            // Create an Anchor component with the StreamResource
+            Anchor downloadLink = new Anchor(resource, "");
+            downloadLink.getElement().setAttribute("download", true);
+            add(downloadLink);
+            // Programmatically click the download link to initiate the download
+            downloadLink.getElement().callJsFunction("click");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void createHeaderRowWorkplan(Workbook workbook, Sheet sheet) {
         short rowHeight = 500;
         short tr = 0;
@@ -304,7 +352,7 @@ public class budgetWorkplanView extends Div {
         style.setFont(fontBold);
 
         CellStyle styleq = workbook.createCellStyle();
-        styleq.setFillForegroundColor(IndexedColors.ORANGE.index);
+        styleq.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.index);
         styleq.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         styleq.setAlignment(HorizontalAlignment.CENTER);
         styleq.setVerticalAlignment(VerticalAlignment.CENTER);
@@ -324,6 +372,7 @@ public class budgetWorkplanView extends Div {
         styleq31.setVerticalAlignment(VerticalAlignment.CENTER);
         styleq31.setWrapText(true);
         styleq31.setFont(fontBold);
+        styleq31.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
 
         CellStyle styleq3 = workbook.createCellStyle();
         styleq3.setFillForegroundColor(IndexedColors.VIOLET.index);
@@ -347,9 +396,10 @@ public class budgetWorkplanView extends Div {
         styley.setAlignment(HorizontalAlignment.LEFT);
         styley.setVerticalAlignment(VerticalAlignment.CENTER);
         styley.setWrapText(true);//styley.setFont(fontBold);
+        styley.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
 
         CellStyle stylegreen = workbook.createCellStyle();
-        stylegreen.setFillForegroundColor(IndexedColors.GREEN.index);
+        stylegreen.setFillForegroundColor(IndexedColors.LIGHT_GREEN.index);
         stylegreen.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         stylegreen.setAlignment(HorizontalAlignment.CENTER);
         stylegreen.setVerticalAlignment(VerticalAlignment.CENTER);
@@ -361,6 +411,7 @@ public class budgetWorkplanView extends Div {
         stylec.setAlignment(HorizontalAlignment.CENTER);
         stylec.setVerticalAlignment(VerticalAlignment.CENTER);
         stylec.setWrapText(true);//stylec.setFont(fontBold);
+        stylec.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
 
         CellStyle stylec1 = workbook.createCellStyle();
         stylec1.setAlignment(HorizontalAlignment.CENTER);
@@ -413,7 +464,7 @@ public class budgetWorkplanView extends Div {
         cellq.setCellValue("WORKPLAN");
         rowBoldcount.add((int) 0);
         tr++;
-        
+
         Row row = sheet.createRow(tr);
         Cell cell = row.createCell((short) 0);
         row.getCell(0).setCellStyle(styleq31);
@@ -523,6 +574,19 @@ public class budgetWorkplanView extends Div {
         sheet.addMergedRegion(new CellRangeAddress(3, 3, 7, 9));
         sheet.addMergedRegion(new CellRangeAddress(3, 3, 10, 12));
         sheet.addMergedRegion(new CellRangeAddress(3, 3, 13, 15));
+        BigDecimal totalexpense = BigDecimal.ZERO;
+        BigDecimal totaljul = BigDecimal.ZERO;
+        BigDecimal totalaug = BigDecimal.ZERO;
+        BigDecimal totalsep = BigDecimal.ZERO;
+        BigDecimal totaloct = BigDecimal.ZERO;
+        BigDecimal totalnov = BigDecimal.ZERO;
+        BigDecimal totaldec = BigDecimal.ZERO;
+        BigDecimal totaljan = BigDecimal.ZERO;
+        BigDecimal totalfeb = BigDecimal.ZERO;
+        BigDecimal totalmar = BigDecimal.ZERO;
+        BigDecimal totalapr = BigDecimal.ZERO;
+        BigDecimal totalmay = BigDecimal.ZERO;
+        BigDecimal totaljun = BigDecimal.ZERO;
 
         // Creating merged regions
         Coalevel1 coal = coalevel1Service.findByCode(2);
@@ -560,91 +624,105 @@ public class budgetWorkplanView extends Div {
 
                                 rowx1.getCell(tc).setCellStyle(stylec);
                                 tc++;
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 2)));
+                                BigDecimal adds = budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 2);
+                                totalexpense = totalexpense.add(adds);
+                                rowx1.createCell((short) tc).setCellValue(adds.doubleValue());
                                 rowx1.getCell(tc).setCellStyle(stylec);
                                 tc++;
                                 rowx1.createCell((short) tc).setCellValue(d.getFundsource());
                                 rowx1.getCell(tc).setCellStyle(stylec);
                                 tc++;
                                 BigDecimal jul = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "jul");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(jul));
+                                totaljul = totaljul.add(jul);
+                                rowx1.createCell((short) tc).setCellValue(jul.doubleValue());
                                 if (jul.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
                                 }
                                 tc++;
                                 BigDecimal aug = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "aug");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(aug));
+                                totalaug = totalaug.add(aug);
+                                rowx1.createCell((short) tc).setCellValue(aug.doubleValue());
                                 if (aug.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
                                 }
                                 tc++;
                                 BigDecimal sep = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "sep");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(sep));
+                                totalsep = totalsep.add(sep);
+                                rowx1.createCell((short) tc).setCellValue(sep.doubleValue());
                                 if (sep.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
                                 }
                                 tc++;
                                 BigDecimal oct = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "oct");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(oct));
+                                totaloct = totaloct.add(oct);
+                                rowx1.createCell((short) tc).setCellValue(oct.doubleValue());
                                 if (oct.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
                                 }
                                 tc++;
                                 BigDecimal nov = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "nov");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(nov));
+                                totalnov = totalnov.add(nov);
+                                rowx1.createCell((short) tc).setCellValue(nov.doubleValue());
                                 if (nov.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
                                 }
                                 tc++;
                                 BigDecimal dec = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "dec");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(dec));
+                                totaldec = totaldec.add(dec);
+                                rowx1.createCell((short) tc).setCellValue(dec.doubleValue());
                                 if (dec.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
                                 }
                                 tc++;
                                 BigDecimal jan = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "jan");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(jan));
+                                totaljan = totaljan.add(jan);
+                                rowx1.createCell((short) tc).setCellValue(jan.doubleValue());
                                 if (jan.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
                                 }
                                 tc++;
                                 BigDecimal feb = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "feb");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(feb));
+                                totalfeb = totalfeb.add(feb);
+                                rowx1.createCell((short) tc).setCellValue(feb.doubleValue());
                                 if (feb.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
                                 }
                                 tc++;
                                 BigDecimal mar = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "mar");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(mar));
+                                totalmar = totalmar.add(mar);
+                                rowx1.createCell((short) tc).setCellValue(mar.doubleValue());
                                 if (mar.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
                                 }
                                 tc++;
                                 BigDecimal apr = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "apr");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(apr));
+                                totalapr = totalapr.add(apr);
+                                rowx1.createCell((short) tc).setCellValue(apr.doubleValue());
                                 if (apr.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
                                 }
                                 tc++;
                                 BigDecimal may = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "may");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(may));
+                                totalmay = totalmay.add(may);
+                                rowx1.createCell((short) tc).setCellValue(may.doubleValue());
                                 if (may.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
                                 }
                                 tc++;
                                 BigDecimal jun = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "jun");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(jun));
+                                totaljun = totaljun.add(jun);
+                                rowx1.createCell((short) tc).setCellValue(jun.doubleValue());
                                 if (jun.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
@@ -692,18 +770,758 @@ public class budgetWorkplanView extends Div {
                     } else {
                         // Handle overlapping regions (e.g., adjust the region or skip it)
                     }
-                }                
+                }
 
             }
 
         }
+        rownum++;
+        Row rowx1 = sheet.createRow(rownum);
+        sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 0, 1));
+        Cell cellx1 = rowx1.createCell((short) 0);
+        rowx1.getCell(0).setCellStyle(styleq31);
+        cellx1.setCellValue("TOTAL");
+        Cell cellx2 = rowx1.createCell((short) 2);
+        sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 2, 3));
+        rowx1.getCell(2).setCellStyle(styleq31);
+        cellx2.setCellValue(totalexpense.doubleValue());
+        Cell cellx4 = rowx1.createCell((short) 4);
+        rowx1.getCell(4).setCellStyle(styleq31);
+        cellx4.setCellValue(totaljul.doubleValue());
+        Cell cellx5 = rowx1.createCell((short) 5);
+        rowx1.getCell(5).setCellStyle(styleq31);
+        cellx5.setCellValue(totalaug.doubleValue());
+        Cell cellx6 = rowx1.createCell((short) 6);
+        rowx1.getCell(6).setCellStyle(styleq31);
+        cellx6.setCellValue(totalsep.doubleValue());
+        Cell cellx7 = rowx1.createCell((short) 7);
+        rowx1.getCell(7).setCellStyle(styleq31);
+        cellx7.setCellValue(totaloct.doubleValue());
+        Cell cellx8 = rowx1.createCell((short) 8);
+        rowx1.getCell(8).setCellStyle(styleq31);
+        cellx8.setCellValue(totalnov.doubleValue());
+        Cell cellx9 = rowx1.createCell((short) 9);
+        rowx1.getCell(9).setCellStyle(styleq31);
+        cellx9.setCellValue(totaldec.doubleValue());
+        Cell cellx10 = rowx1.createCell((short) 10);
+        rowx1.getCell(10).setCellStyle(styleq31);
+        cellx10.setCellValue(totaljan.doubleValue());
+        Cell cellx11 = rowx1.createCell((short) 11);
+        rowx1.getCell(11).setCellStyle(styleq31);
+        cellx11.setCellValue(totalfeb.doubleValue());
+        Cell cellx12 = rowx1.createCell((short) 12);
+        rowx1.getCell(12).setCellStyle(styleq31);
+        cellx12.setCellValue(totalmar.doubleValue());
+        Cell cellx13 = rowx1.createCell((short) 13);
+        rowx1.getCell(13).setCellStyle(styleq31);
+        cellx13.setCellValue(totalapr.doubleValue());
+        Cell cellx14 = rowx1.createCell((short) 14);
+        rowx1.getCell(14).setCellStyle(styleq31);
+        cellx14.setCellValue(totalmay.doubleValue());
+        Cell cellx15 = rowx1.createCell((short) 15);
+        rowx1.getCell(15).setCellStyle(styleq31);
+        cellx15.setCellValue(totaljun.doubleValue());
+
+        rowstart++;
+        totalexpense = BigDecimal.ZERO;
+        totaljul = BigDecimal.ZERO;
+        totalaug = BigDecimal.ZERO;
+        totalsep = BigDecimal.ZERO;
+        totaloct = BigDecimal.ZERO;
+        totalnov = BigDecimal.ZERO;
+        totaldec = BigDecimal.ZERO;
+        totaljan = BigDecimal.ZERO;
+        totalfeb = BigDecimal.ZERO;
+        totalmar = BigDecimal.ZERO;
+        totalapr = BigDecimal.ZERO;
+        totalmay = BigDecimal.ZERO;
+        totaljun = BigDecimal.ZERO;
+        coal = coalevel1Service.findByCode(3);
+        if (isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero(comboBoxBudget.getValue(), coal, selectedSections) == true) {
+            rownum++;
+            Row rowx = sheet.createRow(rownum);
+            sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 0, 20));
+            Cell cellx = rowx.createCell((short) 0);
+            rowx.getCell(0).setCellStyle(stylegreen);
+            cellx.setCellValue("CAPITAL EXPENDITURE");
+            rowBoldcount.add((int) rownum);
+
+            programmes = sampleURC_Priority_Areas.findByBudget(comboBoxBudget.getValue());
+            List<RowsWorkplan> rowcount = new ArrayList();
+
+            for (URC_Priority_Areas prog : programmes) {
+
+                programmesActivities = sampleUrc_ActivitiesService.findActivitiesByBudgetAndPriorityAndDeptUnits(comboBoxBudget.getValue(), prog, selectedSections);
+                if (programmesActivities != null) {
+                    if (budgetItemsService.isSumProgrammeGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), programmesActivities, comboBoxD_Section.getSelectedItems(), 3) == true) {
+                        for (Urc_Activities d : programmesActivities) {
+                            if (budgetItemsService.isSumActvityGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 3) == true) {
+
+                                rowend++;
+                                short tc = 0;
+                                BigDecimal er = null;
+                                rownum++;
+                                Row rowx12 = sheet.createRow(rownum);
+                                rowx12.createCell((short) tc).setCellValue(prog.getName());
+
+                                rowx12.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                rowx12.createCell((short) tc).setCellValue(d.getName());
+
+                                rowx12.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                BigDecimal adds = budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 3);
+                                totalexpense = totalexpense.add(adds);
+                                rowx12.createCell((short) tc).setCellValue(adds.doubleValue());
+                                rowx12.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                rowx12.createCell((short) tc).setCellValue(d.getFundsource());
+                                rowx12.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                BigDecimal jul = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "jul");
+                                totaljul = totaljul.add(jul);
+                                rowx12.createCell((short) tc).setCellValue(jul.doubleValue());
+                                if (jul.doubleValue() > 0) {
+                                    rowx12.getCell(tc).setCellStyle(styley);
+
+                                }
+                                tc++;
+                                BigDecimal aug = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "aug");
+                                totalaug = totalaug.add(aug);
+                                rowx12.createCell((short) tc).setCellValue(aug.doubleValue());
+                                if (aug.doubleValue() > 0) {
+                                    rowx12.getCell(tc).setCellStyle(styley);
+
+                                }
+                                tc++;
+                                BigDecimal sep = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "sep");
+                                totalsep = totalsep.add(sep);
+                                rowx12.createCell((short) tc).setCellValue(sep.doubleValue());
+                                if (sep.doubleValue() > 0) {
+                                    rowx12.getCell(tc).setCellStyle(styley);
+
+                                }
+                                tc++;
+                                BigDecimal oct = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "oct");
+                                totaloct = totaloct.add(oct);
+                                rowx12.createCell((short) tc).setCellValue(oct.doubleValue());
+                                if (oct.doubleValue() > 0) {
+                                    rowx12.getCell(tc).setCellStyle(styley);
+
+                                }
+                                tc++;
+                                BigDecimal nov = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "nov");
+                                totalnov = totalnov.add(nov);
+                                rowx12.createCell((short) tc).setCellValue(nov.doubleValue());
+                                if (nov.doubleValue() > 0) {
+                                    rowx12.getCell(tc).setCellStyle(styley);
+
+                                }
+                                tc++;
+                                BigDecimal dec = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "dec");
+                                totaldec = totaldec.add(dec);
+                                rowx12.createCell((short) tc).setCellValue(dec.doubleValue());
+                                if (dec.doubleValue() > 0) {
+                                    rowx12.getCell(tc).setCellStyle(styley);
+
+                                }
+                                tc++;
+                                BigDecimal jan = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "jan");
+                                totaljan = totaljan.add(jan);
+                                rowx12.createCell((short) tc).setCellValue(jan.doubleValue());
+                                if (jan.doubleValue() > 0) {
+                                    rowx12.getCell(tc).setCellStyle(styley);
+
+                                }
+                                tc++;
+                                BigDecimal feb = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "feb");
+                                totalfeb = totalfeb.add(feb);
+                                rowx12.createCell((short) tc).setCellValue(feb.doubleValue());
+                                if (feb.doubleValue() > 0) {
+                                    rowx12.getCell(tc).setCellStyle(styley);
+
+                                }
+                                tc++;
+                                BigDecimal mar = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "mar");
+                                totalmar = totalmar.add(mar);
+                                rowx12.createCell((short) tc).setCellValue(mar.doubleValue());
+                                if (mar.doubleValue() > 0) {
+                                    rowx12.getCell(tc).setCellStyle(styley);
+
+                                }
+                                tc++;
+                                BigDecimal apr = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "apr");
+                                totalapr = totalapr.add(apr);
+                                rowx12.createCell((short) tc).setCellValue(apr.doubleValue());
+                                if (apr.doubleValue() > 0) {
+                                    rowx12.getCell(tc).setCellStyle(styley);
+
+                                }
+                                tc++;
+                                BigDecimal may = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "may");
+                                totalmay = totalmay.add(may);
+                                rowx12.createCell((short) tc).setCellValue(may.doubleValue());
+                                if (may.doubleValue() > 0) {
+                                    rowx12.getCell(tc).setCellStyle(styley);
+
+                                }
+                                tc++;
+                                BigDecimal jun = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "jun");
+                                totaljun = totaljun.add(jun);
+                                rowx12.createCell((short) tc).setCellValue(jun.doubleValue());
+                                if (jun.doubleValue() > 0) {
+                                    rowx12.getCell(tc).setCellStyle(styley);
+
+                                }
+                                tc++;
+                                rowx12.createCell((short) tc).setCellValue(d.getOutput());
+                                rowx12.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                rowx12.createCell((short) tc).setCellValue(d.getPerformanceIndicator());
+                                rowx12.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                rowx12.createCell((short) tc).setCellValue(d.getOutcome());
+                                rowx12.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                rowx12.createCell((short) tc).setCellValue(d.getObjective());
+                                rowx12.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                rowx12.createCell((short) tc).setCellValue("");
+                                rowx12.getCell(tc).setCellStyle(stylec);
+                            }
+
+                        }
+                        if (rowstart == 4) {
+                            rowstart = rowstart + 1;
+                            rowend = rowstart + rowend;
+                            rowcount.add(new RowsWorkplan(rowstart, rowend - 1));
+                            rowstart = rowend - 1;
+                        } else {
+                            rowcount.add(new RowsWorkplan(rowstart + 1, rowend - 1));
+                            rowstart = rowend - 1;
+                        }
+
+                    }
+                }
+
+            }
+
+            for (RowsWorkplan w : rowcount) {
+                if ((w.getRowEnd() - w.getRowStart()) > 0) {
+                    //sheet.addMergedRegion(new CellRangeAddress(w.getRowStart(), w.getRowEnd(), 0, 0));
+                    CellRangeAddress newMergedRegion = new CellRangeAddress(w.getRowStart(), w.getRowEnd(), 0, 0);
+                    if (!isOverlappingWithExistingRegions(sheet, newMergedRegion)) {
+                        addMergedRegion(sheet, newMergedRegion);
+                    } else {
+                        // Handle overlapping regions (e.g., adjust the region or skip it)
+                    }
+                }
+
+            }
+
+// Iterate through each row and cell and apply the border
+        }
+        rownum++;
+
+        Row rowx3 = sheet.createRow(rownum);
+        sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 0, 1));
+        Cell cellx3 = rowx3.createCell((short) 0);
+        rowx3.getCell(0).setCellStyle(styleq31);
+        cellx3.setCellValue("TOTAL");
+        Cell cellx3Cell = rowx3.createCell((short) 2);
+        rowx3.getCell(2).setCellStyle(styleq31);
+        cellx3Cell.setCellValue(totalexpense.doubleValue());
+
+        Cell cellx41 = rowx3.createCell((short) 4);
+        rowx3.getCell(4).setCellStyle(styleq31);
+        cellx41.setCellValue(totaljul.doubleValue());
+        Cell cellx51 = rowx3.createCell((short) 5);
+        rowx3.getCell(5).setCellStyle(styleq31);
+        cellx51.setCellValue(totalaug.doubleValue());
+        Cell cellx61 = rowx3.createCell((short) 6);
+        rowx3.getCell(6).setCellStyle(styleq31);
+        cellx61.setCellValue(totalsep.doubleValue());
+        Cell cellx71 = rowx3.createCell((short) 7);
+        rowx3.getCell(7).setCellStyle(styleq31);
+        cellx71.setCellValue(totaloct.doubleValue());
+        Cell cellx81 = rowx3.createCell((short) 8);
+        rowx3.getCell(8).setCellStyle(styleq31);
+        cellx81.setCellValue(totalnov.doubleValue());
+        Cell cellx91 = rowx3.createCell((short) 9);
+        rowx3.getCell(9).setCellStyle(styleq31);
+        cellx91.setCellValue(totaldec.doubleValue());
+        Cell cellx101 = rowx3.createCell((short) 10);
+        rowx3.getCell(10).setCellStyle(styleq31);
+        cellx101.setCellValue(totaljan.doubleValue());
+        Cell cellx111 = rowx3.createCell((short) 11);
+        rowx3.getCell(11).setCellStyle(styleq31);
+        cellx111.setCellValue(totalfeb.doubleValue());
+        Cell cellx121 = rowx3.createCell((short) 12);
+        rowx3.getCell(12).setCellStyle(styleq31);
+        cellx121.setCellValue(totalmar.doubleValue());
+        Cell cellx131 = rowx3.createCell((short) 13);
+        rowx3.getCell(13).setCellStyle(styleq31);
+        cellx131.setCellValue(totalapr.doubleValue());
+        Cell cellx141 = rowx3.createCell((short) 14);
+        rowx3.getCell(14).setCellStyle(styleq31);
+        cellx141.setCellValue(totalmay.doubleValue());
+        Cell cellx151 = rowx3.createCell((short) 15);
+        rowx3.getCell(15).setCellStyle(styleq31);
+        cellx151.setCellValue(totaljun.doubleValue());
+        // Iterate through each merged region and apply the border
+        for (int i = 1; i < sheet.getNumMergedRegions(); i++) {
+            CellRangeAddress mergedRegion = sheet.getMergedRegion(i);
+
+            for (int rowz = mergedRegion.getFirstRow(); rowz <= mergedRegion.getLastRow(); rowz++) {
+                Row currentRow = sheet.getRow(rowz);
+                if (currentRow == null) {
+                    currentRow = sheet.createRow(rowz);
+                }
+
+                for (int col = mergedRegion.getFirstColumn(); col <= mergedRegion.getLastColumn(); col++) {
+                    Cell currentCell = currentRow.getCell(col);
+                    if (currentCell == null) {
+                        currentCell = currentRow.createCell(col);
+                    }
+                    CellStyle existingStyle = currentCell.getCellStyle();
+
+                    // Create a new style that combines the existing style with the border style
+                    CellStyle newStyle = sheet.getWorkbook().createCellStyle();
+                    newStyle.cloneStyleFrom(existingStyle);
+                    newStyle.setBorderTop(BorderStyle.THIN);
+                    newStyle.setBorderBottom(BorderStyle.THIN);
+                    newStyle.setBorderLeft(BorderStyle.THIN);
+                    newStyle.setBorderRight(BorderStyle.THIN);
+                    newStyle.setTopBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setBottomBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setLeftBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setRightBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setWrapText(true);
+                    // Set the new style to the cell
+                    currentCell.setCellStyle(newStyle);
+
+                }
+            }
+        }
+        int y = 0;
+        for (Row currentRow : sheet) {
+            y++;
+            if (currentRow == null) {
+                continue;
+            }
+
+            for (Cell currentCell : currentRow) {
+                if (currentCell == null) {
+                    continue;
+                }
+                if (y > 1) {
+// Get the existing cell style
+                    CellStyle existingStyle = currentCell.getCellStyle();
+
+// Create a new style that combines the existing style with the border style
+                    CellStyle newStyle = sheet.getWorkbook().createCellStyle();
+                    newStyle.cloneStyleFrom(existingStyle);
+                    newStyle.setBorderTop(BorderStyle.THIN);
+                    newStyle.setBorderBottom(BorderStyle.THIN);
+                    newStyle.setBorderLeft(BorderStyle.THIN);
+                    newStyle.setBorderRight(BorderStyle.THIN);
+                    newStyle.setTopBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setBottomBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setLeftBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setRightBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setWrapText(true);
+
+                    currentCell.setCellStyle(newStyle);
+                }
+
+            }
+        }
+        /*        for (int i = 0; i < sheet.getRow(0).getLastCellNum(); i++) {
+        sheet.autoSizeColumn(i);
+        }*/
+    }
+
+    private void createHeaderRowWorkplanQtr(Workbook workbook, Sheet sheet) {
+        short rowHeight = 500;
+        short tr = 0;
+        Font fontBold2 = workbook.createFont();
+        fontBold2.setFontName("Arial");
+        fontBold2.setFontHeightInPoints((short) 10);
+        fontBold2.setBold(false);
+
+        Font fontBold = workbook.createFont();
+        fontBold.setFontName("Arial");
+        fontBold.setFontHeightInPoints((short) 10);
+        fontBold.setBold(true);
+
+        CellStyle style = workbook.createCellStyle();
+        style.setFillForegroundColor(IndexedColors.RED.index);
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setWrapText(true);
+        style.setFont(fontBold);
+
+        CellStyle styleq = workbook.createCellStyle();
+        styleq.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.index);
+        styleq.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        styleq.setAlignment(HorizontalAlignment.CENTER);
+        styleq.setVerticalAlignment(VerticalAlignment.CENTER);
+        styleq.setWrapText(true);
+        styleq.setFont(fontBold);
+
+        CellStyle styleq2 = workbook.createCellStyle();
+        styleq2.setFillForegroundColor(IndexedColors.LIGHT_CORNFLOWER_BLUE.index);
+        styleq2.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        styleq2.setAlignment(HorizontalAlignment.CENTER);
+        styleq2.setVerticalAlignment(VerticalAlignment.CENTER);
+        styleq2.setWrapText(true);
+        styleq2.setFont(fontBold);
+
+        CellStyle styleq31 = workbook.createCellStyle();
+        styleq31.setAlignment(HorizontalAlignment.CENTER);
+        styleq31.setVerticalAlignment(VerticalAlignment.CENTER);
+        styleq31.setWrapText(true);
+        styleq31.setFont(fontBold);
+        styleq31.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
+
+        CellStyle styleq3 = workbook.createCellStyle();
+        styleq3.setFillForegroundColor(IndexedColors.VIOLET.index);
+        styleq3.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        styleq3.setAlignment(HorizontalAlignment.CENTER);
+        styleq3.setVerticalAlignment(VerticalAlignment.CENTER);
+        styleq3.setWrapText(true);
+        styleq3.setFont(fontBold);
+
+        CellStyle styleq4 = workbook.createCellStyle();
+        styleq4.setFillForegroundColor(IndexedColors.TAN.index);
+        styleq4.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        styleq4.setAlignment(HorizontalAlignment.CENTER);
+        styleq4.setVerticalAlignment(VerticalAlignment.CENTER);
+        styleq4.setWrapText(true);
+        styleq4.setFont(fontBold);
+
+        CellStyle styley = workbook.createCellStyle();
+        styley.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.index);
+        styley.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        styley.setAlignment(HorizontalAlignment.LEFT);
+        styley.setVerticalAlignment(VerticalAlignment.CENTER);
+        styley.setWrapText(true);//styley.setFont(fontBold);
+        styley.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
+
+        CellStyle stylegreen = workbook.createCellStyle();
+        stylegreen.setFillForegroundColor(IndexedColors.LIGHT_GREEN.index);
+        stylegreen.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        stylegreen.setAlignment(HorizontalAlignment.CENTER);
+        stylegreen.setVerticalAlignment(VerticalAlignment.CENTER);
+        stylegreen.setFont(fontBold);
+        stylegreen.setWrapText(true);
+        stylegreen.setFont(fontBold);
+
+        CellStyle stylec = workbook.createCellStyle();
+        stylec.setAlignment(HorizontalAlignment.CENTER);
+        stylec.setVerticalAlignment(VerticalAlignment.CENTER);
+        stylec.setWrapText(true);//stylec.setFont(fontBold);
+        stylec.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
+
+        CellStyle stylec1 = workbook.createCellStyle();
+        stylec1.setAlignment(HorizontalAlignment.CENTER);
+        stylec1.setVerticalAlignment(VerticalAlignment.CENTER);
+        stylec1.setWrapText(true);
+        stylec1.setFont(fontBold);
+
+        CellStyle borderedStyle = workbook.createCellStyle();
+        borderedStyle.setBorderTop(BorderStyle.THIN);
+        borderedStyle.setBorderBottom(BorderStyle.THIN);
+        borderedStyle.setBorderLeft(BorderStyle.THIN);
+        borderedStyle.setBorderRight(BorderStyle.THIN);
+        borderedStyle.setAlignment(HorizontalAlignment.CENTER);
+        borderedStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+
+        CellStyle borderedStyleWithColor = workbook.createCellStyle();
+        borderedStyleWithColor.cloneStyleFrom(borderedStyle); // Copy styles from the borderedStyle
+        borderedStyleWithColor.setFillForegroundColor(IndexedColors.RED.index);
+        borderedStyleWithColor.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle style11 = workbook.createCellStyle();
+        style11.setAlignment(HorizontalAlignment.LEFT);
+        style11.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style11.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
+        List<Integer> rowBoldcount = new ArrayList();
+        Row headerRow = sheet.createRow(tr);
+
+        try {
+
+            headerRow.setHeight(rowHeight);
+
+            addImageToHeader(sheet, "/META-INF/resources/images/urclogo.png");
+
+        } catch (IOException ex) {
+            Logger.getLogger(BudgetReportsView.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        // Create a cell for the header
+        // Row headerRow = sheet.createRow(0);
+        Cell headerCell = headerRow.createCell(1);
+        headerCell.setCellValue("UGANDA RAILWAYS CORPORATION");
+        headerCell.setCellStyle(styleq31);
+        CellRangeAddress cellRange3 = new CellRangeAddress(tr, tr, 1, 12);
+        sheet.addMergedRegion(cellRange3);
+        setBottomBorderForRegion(sheet, cellRange3);
+        tr++;
+        Row row0 = sheet.createRow(tr);
+        Cell cellq = row0.createCell((short) 0);
+        row0.getCell(0).setCellStyle(styleq31);
+        cellq.setCellValue("WORKPLAN");
+        rowBoldcount.add((int) 0);
+        tr++;
+
+        Row row = sheet.createRow(tr);
+        Cell cell = row.createCell((short) 0);
+        row.getCell(0).setCellStyle(styleq31);
+        cell.setCellValue("Programme");
+        Cell cell2 = row.createCell((short) 1);
+        row.getCell(1).setCellStyle(styleq31);
+        cell2.setCellValue("Activities");
+        Cell cell3 = row.createCell((short) 2);
+        row.getCell(2).setCellStyle(styleq31);
+        cell3.setCellValue("Budget");
+        Cell cell4 = row.createCell((short) 3);
+        row.getCell(3).setCellStyle(styleq31);
+        cell4.setCellValue("Funding");
+        Cell cell5 = row.createCell((short) 4);
+        row.getCell(4).setCellStyle(styleq31);
+        cell5.setCellValue("Time Line Quarterly");
+
+        Cell cell6 = row.createCell((short) 8);
+        row.getCell(8).setCellStyle(styleq31);
+        cell6.setCellValue("Output");
+        Cell cell7 = row.createCell((short) 9);
+        row.getCell(9).setCellStyle(styleq31);
+        cell7.setCellValue("Performance Indicator");
+        Cell cell8 = row.createCell((short) 10);
+        row.getCell(10).setCellStyle(styleq31);
+        cell8.setCellValue("Outcome");
+        Cell cell9 = row.createCell((short) 11);
+        row.getCell(11).setCellStyle(styleq31);
+        cell9.setCellValue("Strategic Objective");
+        Cell cell10 = row.createCell((short) 12);
+        row.getCell(12).setCellStyle(styleq31);
+        cell10.setCellValue("Remarks");
+
+        tr++;
+        Row row1 = sheet.createRow(tr);
+        Cell cella = row1.createCell((short) 4);
+        row1.getCell(4).setCellStyle(style);
+        cella.setCellValue("Q1");
+        Cell cellb = row1.createCell((short) 5);
+        row1.getCell(5).setCellStyle(style);
+        cellb.setCellValue("Q2");
+        Cell cellc = row1.createCell((short) 6);
+        row1.getCell(6).setCellStyle(style);
+        cellc.setCellValue("Q3");
+        Cell celld = row1.createCell((short) 7);
+        row1.getCell(7).setCellStyle(style);
+        celld.setCellValue("Q4");
+
+        rowBoldcount.add((int) 1);
+        //tr++;
+
+        short rownum = tr;
+        int rowstart = tr + 1;
+        System.out.println(rownum + "......" + rowstart);
+        int rowend = 0;
+        int rowstart2 = 0;
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 0, 0));
+        sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 12));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 1, 1));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 2, 2));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 3, 3));
+        sheet.addMergedRegion(new CellRangeAddress(2, 2, 4, 7));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 8, 8));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 9, 9));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 10, 10));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 11, 11));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 12, 12));
+        BigDecimal totalexpense = BigDecimal.ZERO;
+        BigDecimal totalqtr1 = BigDecimal.ZERO;
+        BigDecimal totalqtr2 = BigDecimal.ZERO;
+        BigDecimal totalqtr3 = BigDecimal.ZERO;
+        BigDecimal totalqtr4 = BigDecimal.ZERO;
+
+        Coalevel1 coal = coalevel1Service.findByCode(2);
+        List<UrcDeptSectionAnlDimbgt> selectedSections = comboBoxD_Section.getSelectedItems().stream().toList();
+        if (isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero(comboBoxBudget.getValue(), coal, selectedSections) == true) {
+            rownum++;
+            Row rowx = sheet.createRow(rownum);
+            sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 0, 12));
+            Cell cellx = rowx.createCell((short) 0);
+            rowx.getCell(0).setCellStyle(stylegreen);
+            cellx.setCellValue("REVENUE EXPENDITURE");
+            rowBoldcount.add((int) rownum);
+
+            programmes = sampleURC_Priority_Areas.findByBudget(comboBoxBudget.getValue());
+            List<RowsWorkplan> rowcount = new ArrayList();
+
+            for (URC_Priority_Areas prog : programmes) {
+
+                programmesActivities = sampleUrc_ActivitiesService.findActivitiesByBudgetAndPriorityAndDeptUnits(comboBoxBudget.getValue(), prog, selectedSections);
+                if (programmesActivities != null) {
+                    if (budgetItemsService.isSumProgrammeGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), programmesActivities, comboBoxD_Section.getSelectedItems(), 2) == true) {
+                        for (Urc_Activities d : programmesActivities) {
+                            if (budgetItemsService.isSumActvityGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 2) == true) {
+
+                                rowend++;
+                                short tc = 0;
+                                BigDecimal er = null;
+                                rownum++;
+                                Row rowx1 = sheet.createRow(rownum);
+                                rowx1.createCell((short) tc).setCellValue(prog.getName());
+
+                                rowx1.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                rowx1.createCell((short) tc).setCellValue(d.getName());
+
+                                rowx1.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                BigDecimal tBigDecimal = budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 2);
+                                totalexpense = totalexpense.add(tBigDecimal);
+                                rowx1.createCell((short) tc).setCellValue(tBigDecimal.doubleValue());
+                                rowx1.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                rowx1.createCell((short) tc).setCellValue(d.getFundsource());
+                                rowx1.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                BigDecimal jul = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "jul");
+                                BigDecimal aug = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "aug");
+                                BigDecimal sep = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "sep");
+                                BigDecimal qtr1 = jul.add(aug).add(sep);
+                                totalqtr1 = totalqtr1.add(qtr1);
+                                rowx1.createCell((short) tc).setCellValue(qtr1.doubleValue());
+                                if (qtr1.doubleValue() > 0) {
+                                    rowx1.getCell(tc).setCellStyle(styley);
+
+                                }
+
+                                tc++;
+                                BigDecimal oct = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "oct");
+                                BigDecimal nov = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "nov");
+                                BigDecimal dec = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "dec");
+                                BigDecimal qtr2 = oct.add(nov).add(dec);
+                                totalqtr2 = totalqtr2.add(qtr2);
+                                rowx1.createCell((short) tc).setCellValue(qtr2.doubleValue());
+                                if (qtr2.doubleValue() > 0) {
+                                    rowx1.getCell(tc).setCellStyle(styley);
+
+                                }
+
+                                tc++;
+                                BigDecimal jan = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "jan");
+                                BigDecimal feb = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "feb");
+                                BigDecimal mar = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "mar");
+                                BigDecimal qtr3 = jan.add(feb).add(mar);
+                                totalqtr3 = totalqtr3.add(qtr3);
+                                rowx1.createCell((short) tc).setCellValue(qtr3.doubleValue());
+                                if (qtr3.doubleValue() > 0) {
+                                    rowx1.getCell(tc).setCellStyle(styley);
+
+                                }
+
+                                tc++;
+                                BigDecimal apr = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "apr");
+                                BigDecimal may = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "may");
+                                BigDecimal jun = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 2, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "jun");
+                                BigDecimal qtr4 = apr.add(may).add(jun);
+                                totalqtr4 = totalqtr4.add(qtr4);
+                                rowx1.createCell((short) tc).setCellValue(qtr4.doubleValue());
+                                if (qtr4.doubleValue() > 0) {
+                                    rowx1.getCell(tc).setCellStyle(styley);
+
+                                }
+
+                                tc++;
+                                rowx1.createCell((short) tc).setCellValue(d.getOutput());
+                                rowx1.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                rowx1.createCell((short) tc).setCellValue(d.getPerformanceIndicator());
+                                rowx1.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                rowx1.createCell((short) tc).setCellValue(d.getOutcome());
+                                rowx1.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                rowx1.createCell((short) tc).setCellValue(d.getObjective());
+                                rowx1.getCell(tc).setCellStyle(stylec);
+                                tc++;
+                                rowx1.createCell((short) tc).setCellValue("");
+                                rowx1.getCell(tc).setCellStyle(stylec);
+
+                            }
+
+                        }
+                        if (rowstart == 4) {
+                            rowstart = rowstart + 1;
+                            rowend = rowstart + rowend;
+                            rowcount.add(new RowsWorkplan(rowstart, rowend - 1));
+                            rowstart = rowend - 1;
+                        } else {
+                            rowcount.add(new RowsWorkplan(rowstart + 1, rowend - 1));
+                            rowstart = rowend - 1;
+                        }
+                    }
+                }
+
+            }
+
+            for (RowsWorkplan w : rowcount) {
+
+                if ((w.getRowEnd() - w.getRowStart()) > 0) {
+                    //sheet.addMergedRegion(new CellRangeAddress(w.getRowStart(), w.getRowEnd(), 0, 0));
+                    CellRangeAddress newMergedRegion = new CellRangeAddress(w.getRowStart(), w.getRowEnd(), 0, 0);
+                    if (!isOverlappingWithExistingRegions(sheet, newMergedRegion)) {
+                        addMergedRegion(sheet, newMergedRegion);
+                    } else {
+                        // Handle overlapping regions (e.g., adjust the region or skip it)
+                    }
+                }
+
+            }
+
+        }
+
+        rownum++;
+        Row rowx12 = sheet.createRow(rownum);
+        sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 0, 1));
+        Cell cellx1 = rowx12.createCell((short) 0);
+        rowx12.getCell(0).setCellStyle(styleq31);
+        cellx1.setCellValue("TOTAL");
+        Cell cellx2 = rowx12.createCell((short) 2);
+        sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 2, 3));
+        rowx12.getCell(2).setCellStyle(styleq31);
+        cellx2.setCellValue(totalexpense.doubleValue());
+        Cell cellx4 = rowx12.createCell((short) 4);
+        rowx12.getCell(4).setCellStyle(styleq31);
+        cellx4.setCellValue(totalqtr1.doubleValue());
+        Cell cellx5 = rowx12.createCell((short) 5);
+        rowx12.getCell(5).setCellStyle(styleq31);
+        cellx5.setCellValue(totalqtr2.doubleValue());
+        Cell cellx6 = rowx12.createCell((short) 6);
+        rowx12.getCell(6).setCellStyle(styleq31);
+        cellx6.setCellValue(totalqtr3.doubleValue());
+        Cell cellx7 = rowx12.createCell((short) 7);
+        rowx12.getCell(7).setCellStyle(styleq31);
+        cellx7.setCellValue(totalqtr4.doubleValue());
+
+        totalexpense = BigDecimal.ZERO;
+        totalqtr1 = BigDecimal.ZERO;
+        totalqtr2 = BigDecimal.ZERO;
+        totalqtr3 = BigDecimal.ZERO;
+        totalqtr4 = BigDecimal.ZERO;
         rowstart++;
 
         coal = coalevel1Service.findByCode(3);
         if (isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero(comboBoxBudget.getValue(), coal, selectedSections) == true) {
             rownum++;
             Row rowx = sheet.createRow(rownum);
-            sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 0, 20));
+            sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 0, 12));
             Cell cellx = rowx.createCell((short) 0);
             rowx.getCell(0).setCellStyle(stylegreen);
             cellx.setCellValue("CAPITAL EXPENDITURE");
@@ -733,95 +1551,61 @@ public class budgetWorkplanView extends Div {
 
                                 rowx1.getCell(tc).setCellStyle(stylec);
                                 tc++;
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 3)));
+                                BigDecimal tBigDecimal = budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 3);
+                                totalexpense = totalexpense.add(tBigDecimal);
+                                rowx1.createCell((short) tc).setCellValue(tBigDecimal.doubleValue());
                                 rowx1.getCell(tc).setCellStyle(stylec);
                                 tc++;
                                 rowx1.createCell((short) tc).setCellValue(d.getFundsource());
                                 rowx1.getCell(tc).setCellStyle(stylec);
                                 tc++;
                                 BigDecimal jul = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "jul");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(jul));
-                                if (jul.doubleValue() > 0) {
-                                    rowx1.getCell(tc).setCellStyle(styley);
-
-                                }
-                                tc++;
                                 BigDecimal aug = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "aug");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(aug));
-                                if (aug.doubleValue() > 0) {
-                                    rowx1.getCell(tc).setCellStyle(styley);
-
-                                }
-                                tc++;
                                 BigDecimal sep = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "sep");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(sep));
-                                if (sep.doubleValue() > 0) {
+                                BigDecimal qtr1 = jul.add(aug).add(sep);
+                                totalqtr1 = totalqtr1.add(qtr1);
+                                rowx1.createCell((short) tc).setCellValue(qtr1.doubleValue());
+                                if (qtr1.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
                                 }
+
                                 tc++;
                                 BigDecimal oct = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "oct");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(oct));
-                                if (oct.doubleValue() > 0) {
-                                    rowx1.getCell(tc).setCellStyle(styley);
-
-                                }
-                                tc++;
                                 BigDecimal nov = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "nov");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(nov));
-                                if (nov.doubleValue() > 0) {
-                                    rowx1.getCell(tc).setCellStyle(styley);
-
-                                }
-                                tc++;
                                 BigDecimal dec = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "dec");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(dec));
-                                if (dec.doubleValue() > 0) {
+                                BigDecimal qtr2 = oct.add(nov).add(dec);
+                                totalqtr2 = totalqtr2.add(qtr2);
+                                rowx1.createCell((short) tc).setCellValue(qtr2.doubleValue());
+                                if (qtr2.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
                                 }
+
                                 tc++;
                                 BigDecimal jan = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "jan");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(jan));
-                                if (jan.doubleValue() > 0) {
-                                    rowx1.getCell(tc).setCellStyle(styley);
-
-                                }
-                                tc++;
                                 BigDecimal feb = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "feb");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(feb));
-                                if (feb.doubleValue() > 0) {
-                                    rowx1.getCell(tc).setCellStyle(styley);
-
-                                }
-                                tc++;
                                 BigDecimal mar = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "mar");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(mar));
-                                if (mar.doubleValue() > 0) {
+                                BigDecimal qtr3 = jan.add(feb).add(mar);
+                                totalqtr3 = totalqtr3.add(qtr3);
+                                rowx1.createCell((short) tc).setCellValue(qtr3.doubleValue());
+                                if (qtr3.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
                                 }
+
                                 tc++;
                                 BigDecimal apr = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "apr");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(apr));
-                                if (apr.doubleValue() > 0) {
-                                    rowx1.getCell(tc).setCellStyle(styley);
-
-                                }
-                                tc++;
                                 BigDecimal may = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "may");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(may));
-                                if (may.doubleValue() > 0) {
-                                    rowx1.getCell(tc).setCellStyle(styley);
-
-                                }
-                                tc++;
                                 BigDecimal jun = budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(comboBoxBudget.getValue(), 3, comboBoxD_Section.getSelectedItems(), d, comboBoxOrganisation.getSelectedItems(), "jun");
-                                rowx1.createCell((short) tc).setCellValue(decimalFormat.format(jun));
-                                if (jun.doubleValue() > 0) {
+                                BigDecimal qtr4 = apr.add(may).add(jun);
+                                totalqtr4 = totalqtr4.add(qtr4);
+                                rowx1.createCell((short) tc).setCellValue(qtr4.doubleValue());
+                                if (qtr4.doubleValue() > 0) {
                                     rowx1.getCell(tc).setCellStyle(styley);
 
                                 }
+
                                 tc++;
                                 rowx1.createCell((short) tc).setCellValue(d.getOutput());
                                 rowx1.getCell(tc).setCellStyle(stylec);
@@ -838,79 +1622,7 @@ public class budgetWorkplanView extends Div {
                                 rowx1.createCell((short) tc).setCellValue("");
                                 rowx1.getCell(tc).setCellStyle(stylec);
                             }
-                            /*                            rownum++;
-                            for (BudgetItems bgt : budgetItemsService.findBudgetItemsByUrc_Activities(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 3)) {
-                            rownum++;
-                            short tc2 = 0;
-                            //Row rowx2 = sheet.createRow(rownum);
-                            Row rowx2 = sheet.createRow((short) rownum);
-                            CellStyle activityStyle = workbook.createCellStyle();
-                            rowx2.createCell((short) 1).setCellValue(bgt.getItem());
-                            Cell cell19 = rowx2.createCell(2);
-                            cell19.setCellValue(calculateSumOfMonths(bgt).doubleValue());
-                            activityStyle.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
-                            cell19.setCellStyle(activityStyle);
-                            rowx2.createCell((short) 3).setCellValue("-");
-                            Cell cell41 = rowx2.createCell(4);
-                            cell41.setCellValue(bgt.getJul().doubleValue());
-                            activityStyle.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
-                            cell41.setCellStyle(activityStyle);
-                            
-                            Cell cell51 = rowx2.createCell(5);
-                            cell51.setCellValue(bgt.getAug().doubleValue());
-                            activityStyle.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
-                            cell51.setCellStyle(activityStyle);
-                            
-                            Cell cell61 = rowx2.createCell(6);
-                            cell61.setCellValue(bgt.getSep().doubleValue());
-                            activityStyle.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
-                            cell61.setCellStyle(activityStyle);
-                            
-                            Cell cell71 = rowx2.createCell(7);
-                            cell71.setCellValue(bgt.getOct().doubleValue());
-                            activityStyle.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
-                            cell71.setCellStyle(activityStyle);
-                            
-                            Cell cell81 = rowx2.createCell(8);
-                            cell81.setCellValue(bgt.getNov().doubleValue());
-                            activityStyle.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
-                            cell81.setCellStyle(activityStyle);
-                            
-                            Cell cell91 = rowx2.createCell(9);
-                            cell91.setCellValue(bgt.getDec().doubleValue());
-                            activityStyle.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
-                            cell91.setCellStyle(activityStyle);
-                            
-                            Cell cell101 = rowx2.createCell(10);
-                            cell101.setCellValue(bgt.getJan().doubleValue());
-                            activityStyle.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
-                            cell101.setCellStyle(activityStyle);
-                            
-                            Cell cell102 = rowx2.createCell(11);
-                            cell102.setCellValue(bgt.getFeb().doubleValue());
-                            activityStyle.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
-                            cell102.setCellStyle(activityStyle);
-                            
-                            Cell cell103 = rowx2.createCell(12);
-                            cell103.setCellValue(bgt.getMar().doubleValue());
-                            activityStyle.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
-                            cell103.setCellStyle(activityStyle);
-                            
-                            Cell cell104 = rowx2.createCell(13);
-                            cell104.setCellValue(bgt.getApr().doubleValue());
-                            activityStyle.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
-                            cell104.setCellStyle(activityStyle);
-                            
-                            Cell cell105 = rowx2.createCell(14);
-                            cell105.setCellValue(bgt.getMay().doubleValue());
-                            activityStyle.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
-                            cell105.setCellStyle(activityStyle);
-                            
-                            Cell cell16 = rowx2.createCell(15);
-                            cell16.setCellValue(bgt.getJun().doubleValue());
-                            activityStyle.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
-                            cell16.setCellStyle(activityStyle);
-                            }*/
+
                         }
                         if (rowstart == 4) {
                             rowstart = rowstart + 1;
@@ -938,78 +1650,103 @@ public class budgetWorkplanView extends Div {
                 }
 
             }
-            // Iterate through each merged region and apply the border
-            for (int i = 1; i < sheet.getNumMergedRegions(); i++) {
-                CellRangeAddress mergedRegion = sheet.getMergedRegion(i);
-
-                for (int rowz = mergedRegion.getFirstRow(); rowz <= mergedRegion.getLastRow(); rowz++) {
-                    Row currentRow = sheet.getRow(rowz);
-                    if (currentRow == null) {
-                        currentRow = sheet.createRow(rowz);
-                    }
-
-                    for (int col = mergedRegion.getFirstColumn(); col <= mergedRegion.getLastColumn(); col++) {
-                        Cell currentCell = currentRow.getCell(col);
-                        if (currentCell == null) {
-                            currentCell = currentRow.createCell(col);
-                        }
-                        CellStyle existingStyle = currentCell.getCellStyle();
-
-                        // Create a new style that combines the existing style with the border style
-                        CellStyle newStyle = sheet.getWorkbook().createCellStyle();
-                        newStyle.cloneStyleFrom(existingStyle);
-                        newStyle.setBorderTop(BorderStyle.THIN);
-                        newStyle.setBorderBottom(BorderStyle.THIN);
-                        newStyle.setBorderLeft(BorderStyle.THIN);
-                        newStyle.setBorderRight(BorderStyle.THIN);
-                        newStyle.setTopBorderColor(IndexedColors.BLACK.getIndex());
-                        newStyle.setBottomBorderColor(IndexedColors.BLACK.getIndex());
-                        newStyle.setLeftBorderColor(IndexedColors.BLACK.getIndex());
-                        newStyle.setRightBorderColor(IndexedColors.BLACK.getIndex());
-                        newStyle.setWrapText(true);
-                        // Set the new style to the cell
-                        currentCell.setCellStyle(newStyle);
-
-                    }
-                }
-            }
-// Iterate through each row and cell and apply the border
-            int y = 0;
-            for (Row currentRow : sheet) {
-                y++;
-                if (currentRow == null) {
-                    continue;
-                }
-
-                for (Cell currentCell : currentRow) {
-                    if (currentCell == null) {
-                        continue;
-                    }
-                    if (y > 1) {
-// Get the existing cell style
-                        CellStyle existingStyle = currentCell.getCellStyle();
-
-// Create a new style that combines the existing style with the border style
-                        CellStyle newStyle = sheet.getWorkbook().createCellStyle();
-                        newStyle.cloneStyleFrom(existingStyle);
-                        newStyle.setBorderTop(BorderStyle.THIN);
-                        newStyle.setBorderBottom(BorderStyle.THIN);
-                        newStyle.setBorderLeft(BorderStyle.THIN);
-                        newStyle.setBorderRight(BorderStyle.THIN);
-                        newStyle.setTopBorderColor(IndexedColors.BLACK.getIndex());
-                        newStyle.setBottomBorderColor(IndexedColors.BLACK.getIndex());
-                        newStyle.setLeftBorderColor(IndexedColors.BLACK.getIndex());
-                        newStyle.setRightBorderColor(IndexedColors.BLACK.getIndex());
-                        newStyle.setWrapText(true);
-
-                        currentCell.setCellStyle(newStyle);
-                    }
-
-                }
-            }
 
         }
+        rownum++;
+        Row rowx121 = sheet.createRow(rownum);
+        sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 0, 1));
+        Cell cellx11 = rowx121.createCell((short) 0);
+        rowx121.getCell(0).setCellStyle(styleq31);
+        cellx11.setCellValue("TOTAL");
+        Cell cellx21 = rowx121.createCell((short) 2);
+        sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 2, 3));
+        rowx121.getCell(2).setCellStyle(styleq31);
+        cellx21.setCellValue(totalexpense.doubleValue());
+        Cell cellx41 = rowx121.createCell((short) 4);
+        rowx121.getCell(4).setCellStyle(styleq31);
+        cellx41.setCellValue(totalqtr1.doubleValue());
+        Cell cellx51 = rowx121.createCell((short) 5);
+        rowx121.getCell(5).setCellStyle(styleq31);
+        cellx51.setCellValue(totalqtr2.doubleValue());
+        Cell cellx61 = rowx121.createCell((short) 6);
+        rowx121.getCell(6).setCellStyle(styleq31);
+        cellx61.setCellValue(totalqtr3.doubleValue());
+        Cell cellx71 = rowx121.createCell((short) 7);
+        rowx121.getCell(7).setCellStyle(styleq31);
+        cellx71.setCellValue(totalqtr4.doubleValue());
 
+        // Iterate through each merged region and apply the border
+        for (int i = 1; i < sheet.getNumMergedRegions(); i++) {
+            CellRangeAddress mergedRegion = sheet.getMergedRegion(i);
+
+            for (int rowz = mergedRegion.getFirstRow(); rowz <= mergedRegion.getLastRow(); rowz++) {
+                Row currentRow = sheet.getRow(rowz);
+                if (currentRow == null) {
+                    currentRow = sheet.createRow(rowz);
+                }
+
+                for (int col = mergedRegion.getFirstColumn(); col <= mergedRegion.getLastColumn(); col++) {
+                    Cell currentCell = currentRow.getCell(col);
+                    if (currentCell == null) {
+                        currentCell = currentRow.createCell(col);
+                    }
+                    CellStyle existingStyle = currentCell.getCellStyle();
+
+                    // Create a new style that combines the existing style with the border style
+                    CellStyle newStyle = sheet.getWorkbook().createCellStyle();
+                    newStyle.cloneStyleFrom(existingStyle);
+                    newStyle.setBorderTop(BorderStyle.THIN);
+                    newStyle.setBorderBottom(BorderStyle.THIN);
+                    newStyle.setBorderLeft(BorderStyle.THIN);
+                    newStyle.setBorderRight(BorderStyle.THIN);
+                    newStyle.setTopBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setBottomBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setLeftBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setRightBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setWrapText(true);
+                    // Set the new style to the cell
+                    currentCell.setCellStyle(newStyle);
+
+                }
+            }
+        }
+// Iterate through each row and cell and apply the border
+        int y = 0;
+        for (Row currentRow : sheet) {
+            y++;
+            if (currentRow == null) {
+                continue;
+            }
+
+            for (Cell currentCell : currentRow) {
+                if (currentCell == null) {
+                    continue;
+                }
+                if (y > 1) {
+// Get the existing cell style
+                    CellStyle existingStyle = currentCell.getCellStyle();
+
+// Create a new style that combines the existing style with the border style
+                    CellStyle newStyle = sheet.getWorkbook().createCellStyle();
+                    newStyle.cloneStyleFrom(existingStyle);
+                    newStyle.setBorderTop(BorderStyle.THIN);
+                    newStyle.setBorderBottom(BorderStyle.THIN);
+                    newStyle.setBorderLeft(BorderStyle.THIN);
+                    newStyle.setBorderRight(BorderStyle.THIN);
+                    newStyle.setTopBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setBottomBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setLeftBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setRightBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setWrapText(true);
+
+                    currentCell.setCellStyle(newStyle);
+                }
+
+            }
+            /*            for (int i = 0; i < sheet.getRow(0).getLastCellNum(); i++) {
+            sheet.autoSizeColumn(i);
+            }*/
+        }
     }
 
     public boolean isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero(Budget budget, Coalevel1 coalevel1, List<UrcDeptSectionAnlDimbgt> deptUnits) {

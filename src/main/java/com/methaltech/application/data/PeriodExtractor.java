@@ -28,6 +28,10 @@ public class PeriodExtractor {
         monthMap.put("Apr", 10);
         monthMap.put("May", 11);
         monthMap.put("Jun", 12);
+        monthMap.put("Qr1", 1);
+        monthMap.put("Qr2", 1);
+        monthMap.put("Qr3", 7);
+        monthMap.put("Qr4", 7);        
 
         int monthValue = monthMap.get(month);
         if (monthValue == 12) {
@@ -38,7 +42,98 @@ public class PeriodExtractor {
             return (year + 1) * 1000 + monthValue + 1;
         }
     }
+    public int generatePreviousPeriod(String yearS, String month) {
+        strings(yearS);
+        int year = getYears().get(0);
+        Map<String, Integer> monthMap = new HashMap<>();
+        monthMap.put("Jul", 1);
+        monthMap.put("Aug", 2);
+        monthMap.put("Sep", 3);
+        monthMap.put("Oct", 4);
+        monthMap.put("Nov", 5);
+        monthMap.put("Dec", 6);
+        monthMap.put("Jan", 7);
+        monthMap.put("Feb", 8);
+        monthMap.put("Mar", 9);
+        monthMap.put("Apr", 10);
+        monthMap.put("May", 11);
+        monthMap.put("Jun", 12);       
 
+        int monthValue = monthMap.get(month);
+        if (monthValue == 1) {
+            return year * 1000 + 1; // Special case for "Jun"
+        } else if (monthValue == 2) {
+            return year * 1000 + 2; // Special case for "Jun"
+        } else if (monthValue == 3) {
+            return year * 1000 + 3; // Special case for "Jun"
+        } else if (monthValue == 4) {
+            return year * 1000 + 4; // Special case for "Jun"
+        } else if (monthValue == 5) {
+            return year * 1000 + 5; // Special case for "Jun"
+        } else if (monthValue == 6) {
+            return year * 1000 + 6; // Special case for "Jun"
+        } else if (monthValue == 7) {
+            return year * 1000 + 7; // Special case for "Jun"
+        } else if (monthValue == 8) {
+            return year * 1000 + 8; // Special case for "Jun"
+        } else if (monthValue == 9) {
+            return year * 1000 + 9; // Special case for "Jun"
+        } else if (monthValue == 10) {
+            return year * 1000 + 10; // Special case for "Jun"
+        } else if (monthValue == 11) {
+            return year * 1000 + 11; // Special case for "Jun"
+        } else if (monthValue == 12) {
+            return year * 1000 + 12; // Special case for "Jun"
+        } else {
+            return 0;
+        }
+    }
+    public int generateCurrentPeriod(String yearS, String month) {
+        strings(yearS);
+        int year = getYears().get(1);
+        Map<String, Integer> monthMap = new HashMap<>();
+        monthMap.put("Jul", 1);
+        monthMap.put("Aug", 2);
+        monthMap.put("Sep", 3);
+        monthMap.put("Oct", 4);
+        monthMap.put("Nov", 5);
+        monthMap.put("Dec", 6);
+        monthMap.put("Jan", 7);
+        monthMap.put("Feb", 8);
+        monthMap.put("Mar", 9);
+        monthMap.put("Apr", 10);
+        monthMap.put("May", 11);
+        monthMap.put("Jun", 12);       
+
+        int monthValue = monthMap.get(month);
+        if (monthValue == 1) {
+            return year * 1000 + 1; // Special case for "Jun"
+        } else if (monthValue == 2) {
+            return year * 1000 + 2; // Special case for "Jun"
+        } else if (monthValue == 3) {
+            return year * 1000 + 3; // Special case for "Jun"
+        } else if (monthValue == 4) {
+            return year * 1000 + 4; // Special case for "Jun"
+        } else if (monthValue == 5) {
+            return year * 1000 + 5; // Special case for "Jun"
+        } else if (monthValue == 6) {
+            return year * 1000 + 6; // Special case for "Jun"
+        } else if (monthValue == 7) {
+            return year * 1000 + 7; // Special case for "Jun"
+        } else if (monthValue == 8) {
+            return year * 1000 + 8; // Special case for "Jun"
+        } else if (monthValue == 9) {
+            return year * 1000 + 9; // Special case for "Jun"
+        } else if (monthValue == 10) {
+            return year * 1000 + 10; // Special case for "Jun"
+        } else if (monthValue == 11) {
+            return year * 1000 + 11; // Special case for "Jun"
+        } else if (monthValue == 12) {
+            return year * 1000 + 12; // Special case for "Jun"
+        } else {
+            return 0;
+        }
+    }    
     public int generateCode2(String yearS, String month) {
         strings(yearS);
         int year = getYears().get(0);
@@ -55,38 +150,154 @@ public class PeriodExtractor {
         monthMap.put("Apr", 10);
         monthMap.put("May", 11);
         monthMap.put("Jun", 12);
+        monthMap.put("Qr1", 1);
+        monthMap.put("Qr2", 1);
+        monthMap.put("Qr3", 7);
+        monthMap.put("Qr4", 7);        
 
         int monthValue = monthMap.get(month);
         if (monthValue == 1) {
-            return year * 1000 + 7; // Special case for "Jun"
+            return year * 1000 + 1; // Special case for "Jun"
         } else if (monthValue == 2) {
-            return year * 1000 + 8; // Special case for "Jun"
+            return year * 1000 + 2; // Special case for "Jun"
         } else if (monthValue == 3) {
-            return year * 1000 + 9; // Special case for "Jun"
+            return year * 1000 + 3; // Special case for "Jun"
         } else if (monthValue == 4) {
-            return year * 1000 + 10; // Special case for "Jun"
+            return year * 1000 + 4; // Special case for "Jun"
         } else if (monthValue == 5) {
-            return year * 1000 + 11; // Special case for "Jun"
+            return year * 1000 + 5; // Special case for "Jun"
         } else if (monthValue == 6) {
-            return year * 1000 + 12; // Special case for "Jun"
+            return year * 1000 + 6; // Special case for "Jun"
         } else if (monthValue == 7) {
             year = getYears().get(1);
-            return year * 1000 + 1; // Special case for "Jun"
+            return year * 1000 + 7; // Special case for "Jun"
         } else if (monthValue == 8) {
             year = getYears().get(1);
-            return year * 1000 + 2; // Special case for "Jun"
+            return year * 1000 + 8; // Special case for "Jun"
         } else if (monthValue == 9) {
             year = getYears().get(1);
-            return year * 1000 + 3; // Special case for "Jun"
+            return year * 1000 + 9; // Special case for "Jun"
         } else if (monthValue == 10) {
             year = getYears().get(1);
-            return year * 1000 + 4; // Special case for "Jun"
+            return year * 1000 + 10; // Special case for "Jun"
         } else if (monthValue == 11) {
             year = getYears().get(1);
-            return year * 1000 + 5; // Special case for "Jun"
+            return year * 1000 + 11; // Special case for "Jun"
         } else if (monthValue == 12) {
             year = getYears().get(1);
+            return year * 1000 + 12; // Special case for "Jun"
+        } else {
+            return 0;
+        }
+    }
+    public int generateCode22(String yearS, String month) {
+        strings(yearS);
+        int year = getYears().get(0)-1;
+        Map<String, Integer> monthMap = new HashMap<>();
+        monthMap.put("Jul", 1);
+        monthMap.put("Aug", 2);
+        monthMap.put("Sep", 3);
+        monthMap.put("Oct", 4);
+        monthMap.put("Nov", 5);
+        monthMap.put("Dec", 6);
+        monthMap.put("Jan", 7);
+        monthMap.put("Feb", 8);
+        monthMap.put("Mar", 9);
+        monthMap.put("Apr", 10);
+        monthMap.put("May", 11);
+        monthMap.put("Jun", 12);
+        monthMap.put("Qr1", 1);
+        monthMap.put("Qr2", 1);
+        monthMap.put("Qr3", 7);
+        monthMap.put("Qr4", 7);        
+
+        int monthValue = monthMap.get(month);
+        if (monthValue == 1) {
+            return year * 1000 + 1; // Special case for "Jun"
+        } else if (monthValue == 2) {
+            return year * 1000 + 2; // Special case for "Jun"
+        } else if (monthValue == 3) {
+            return year * 1000 + 3; // Special case for "Jun"
+        } else if (monthValue == 4) {
+            return year * 1000 + 4; // Special case for "Jun"
+        } else if (monthValue == 5) {
+            return year * 1000 + 5; // Special case for "Jun"
+        } else if (monthValue == 6) {
             return year * 1000 + 6; // Special case for "Jun"
+        } else if (monthValue == 7) {
+            year = getYears().get(1)-1;
+            return year * 1000 + 7; // Special case for "Jun"
+        } else if (monthValue == 8) {
+            year = getYears().get(1)-1;
+            return year * 1000 + 8; // Special case for "Jun"
+        } else if (monthValue == 9) {
+            year = getYears().get(1)-1;
+            return year * 1000 + 9; // Special case for "Jun"
+        } else if (monthValue == 10) {
+            year = getYears().get(1)-1;
+            return year * 1000 + 10; // Special case for "Jun"
+        } else if (monthValue == 11) {
+            year = getYears().get(1)-1;
+            return year * 1000 + 11; // Special case for "Jun"
+        } else if (monthValue == 12) {
+            year = getYears().get(1)-1;
+            return year * 1000 + 12; // Special case for "Jun"
+        } else {
+            return 0;
+        }
+    }
+    public int generateYear(String yearS, String month) {
+        strings(yearS);
+        int year = getYears().get(0);
+        Map<String, Integer> monthMap = new HashMap<>();
+        monthMap.put("Jul", 1);
+        monthMap.put("Aug", 2);
+        monthMap.put("Sep", 3);
+        monthMap.put("Oct", 4);
+        monthMap.put("Nov", 5);
+        monthMap.put("Dec", 6);
+        monthMap.put("Jan", 7);
+        monthMap.put("Feb", 8);
+        monthMap.put("Mar", 9);
+        monthMap.put("Apr", 10);
+        monthMap.put("May", 11);
+        monthMap.put("Jun", 12);
+        monthMap.put("Qr1", 1);
+        monthMap.put("Qr2", 1);
+        monthMap.put("Qr3", 7);
+        monthMap.put("Qr4", 7);
+
+        int monthValue = monthMap.get(month);
+        if (monthValue == 1) {
+            return year; // Special case for "Jun"
+        } else if (monthValue == 2) {
+            return year; // Special case for "Jun"
+        } else if (monthValue == 3) {
+            return year; // Special case for "Jun"
+        } else if (monthValue == 4) {
+            return year; // Special case for "Jun"
+        } else if (monthValue == 5) {
+            return year; // Special case for "Jun"
+        } else if (monthValue == 6) {
+            return year; // Special case for "Jun"
+        } else if (monthValue == 7) {
+            year = getYears().get(1);
+            return year; // Special case for "Jun"
+        } else if (monthValue == 8) {
+            year = getYears().get(1);
+            return year; // Special case for "Jun"
+        } else if (monthValue == 9) {
+            year = getYears().get(1);
+            return year; // Special case for "Jun"
+        } else if (monthValue == 10) {
+            year = getYears().get(1);
+            return year; // Special case for "Jun"
+        } else if (monthValue == 11) {
+            year = getYears().get(1);
+            return year; // Special case for "Jun"
+        } else if (monthValue == 12) {
+            year = getYears().get(1);
+            return year; // Special case for "Jun"
         } else {
             return 0;
         }

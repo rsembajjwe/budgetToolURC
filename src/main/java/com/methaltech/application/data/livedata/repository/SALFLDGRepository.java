@@ -12,6 +12,19 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
 
     @Query("SELECT COALESCE(SUM(ABS(s.amount)), 0) FROM SALFLDG s WHERE s.accntCode = :accntCode AND s.period = :period")
     BigDecimal findSumOfAmountByAccntCodeAndPeriod(@Param("accntCode") String accntCode, @Param("period") int period);
+    
+@Query("SELECT COALESCE(SUM(ABS(s.amount)), 0) " +
+        "FROM SALFLDG s " +
+        "WHERE s.accntCode = :accntCode " +
+        "AND YEAR(s.transDatetime) = :year " +
+        "AND MONTH(s.transDatetime) = :month " +
+        "AND s.period = :period")
+BigDecimal findSumOfAmountByAccntCodeAndMonthAndYearAndPeriod(
+        @Param("accntCode") String accntCode,
+        @Param("month") int month,
+        @Param("year") int year,
+        @Param("period") int period);
+
 
     @Query("SELECT COALESCE(SUM(ABS(s.amount)), 0) FROM SALFLDG s WHERE s.accntCode = :accntCode AND s.period = :period AND s.analT1 IN :analT1Set")
     BigDecimal findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(@Param("accntCode") String accntCode,

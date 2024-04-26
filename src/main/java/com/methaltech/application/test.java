@@ -1,12 +1,10 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package com.methaltech.application;
 
 import com.methaltech.application.data.GenerateQtrFromFy;
 import com.methaltech.application.data.Quarters;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
+import com.methaltech.application.data.livedata.repository.SALFLDGRepository;
 import com.methaltech.application.data.livedata.service.SALFLDGService;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,19 +13,17 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- *
- * @author user
- */
 public class test {
 
     private static List<Integer> years = new ArrayList<>();
     BudgetItemsService samplBudgetItemsService;
     SALFLDGService sALFLDGService;
 
-    public test() {
+    public test(SALFLDGService sALFLDGService) {
+        this.sALFLDGService=sALFLDGService;
 
     }
+
 
     public static void main(String[] args) {
         String input = "FY2024-2025";
@@ -35,14 +31,16 @@ public class test {
 
         // int year = extractYear(input);
         //int result = generateCode(year, month);
-        int result = generateCode2(input, "Jun");
+        int result = generateCode2(input, "Jul");
         System.out.println("Result: " + result);
         //strings();
 
         System.out.println("Result: " + getYears().get(0));
         System.out.println("Result: " + getYears().get(1));
 
-        //System.out.println("Result: " + sALFLDGService.findSumOfAmountByAccntCodeAndPeriods("", aeList));
+        System.out.println("Result3: " + generateCode4(input, "Jun"));
+        System.out.println("Result31: " + generateCode5(input, "Jun"));
+   
 
     }
 
@@ -133,6 +131,35 @@ public class test {
         }
     }
 
+    private static int generateCode3(String yearS, String month) {
+        strings(yearS); // Extract years from the input string
+        int year = getYears().get(0); // Get the first year extracted
+
+        Map<String, Integer> monthMap = new HashMap<>();
+        monthMap.put("Jul", 1);
+        monthMap.put("Aug", 2);
+        monthMap.put("Sep", 3);
+        monthMap.put("Oct", 4);
+        monthMap.put("Nov", 5);
+        monthMap.put("Dec", 6);
+        monthMap.put("Jan", 7);
+        monthMap.put("Feb", 8);
+        monthMap.put("Mar", 9);
+        monthMap.put("Apr", 10);
+        monthMap.put("May", 11);
+        monthMap.put("Jun", 12);
+
+        int monthValue = monthMap.get(month);
+        if (monthValue == 1 || monthValue == 2 || monthValue == 3 || monthValue == 4 || monthValue == 5 || monthValue == 6) {
+            return year * 1000 + monthValue; // Special case for "Jun"
+        } else if (monthValue >= 7 && monthValue <= 12) {
+            year = getYears().get(1); // Get the second year extracted
+            return year * 1000 + monthValue;
+        } else {
+            return 0;
+        }
+    }
+
     public static void strings(String input) {
         // String input = "FY2024-2025";
 
@@ -153,4 +180,62 @@ public class test {
 
         return years;
     }
+
+    private static String generateCode4(String yearS, String month) {
+        strings(yearS); // Extract years from the input string
+        int year = getYears().get(0); // Get the first year extracted
+
+        Map<String, Integer> monthMap = new HashMap<>();
+        monthMap.put("Jul", 1);
+        monthMap.put("Aug", 2);
+        monthMap.put("Sep", 3);
+        monthMap.put("Oct", 4);
+        monthMap.put("Nov", 5);
+        monthMap.put("Dec", 6);
+        monthMap.put("Jan", 7);
+        monthMap.put("Feb", 8);
+        monthMap.put("Mar", 9);
+        monthMap.put("Apr", 10);
+        monthMap.put("May", 11);
+        monthMap.put("Jun", 12);
+
+        int monthValue = monthMap.get(month);
+        if (monthValue >= 1 && monthValue <= 6) {
+            return year + "/" + String.format("%03d", monthValue); // Format for "Jul" to "Jun"
+        } else if (monthValue >= 7 && monthValue <= 12) {
+            year = getYears().get(1); // Get the second year extracted
+            return year + "/" + String.format("%03d", monthValue); // Format for other months
+        } else {
+            return ""; // Return empty string for invalid input
+        }
+    }
+    private static String generateCode5(String yearS, String month) {
+        strings(yearS); // Extract years from the input string
+        int year = getYears().get(0); // Get the first year extracted
+
+        Map<String, Integer> monthMap = new HashMap<>();
+        monthMap.put("Jul", 1);
+        monthMap.put("Aug", 2);
+        monthMap.put("Sep", 3);
+        monthMap.put("Oct", 4);
+        monthMap.put("Nov", 5);
+        monthMap.put("Dec", 6);
+        monthMap.put("Jan", 7);
+        monthMap.put("Feb", 8);
+        monthMap.put("Mar", 9);
+        monthMap.put("Apr", 10);
+        monthMap.put("May", 11);
+        monthMap.put("Jun", 12);
+
+        int monthValue = monthMap.get(month);
+        if (monthValue >= 1 && monthValue <= 6) {
+            return month + "-" + Integer.toString(year).substring(2); // Format for "Jul" to "Jun"
+        } else if (monthValue >= 7 && monthValue <= 12) {
+            year = getYears().get(1); // Get the second year extracted
+            return month + "-" + Integer.toString(year).substring(2); // Format for other months
+        } else {
+            return ""; // Return empty string for invalid input
+        }
+    }    
+
 }

@@ -1000,5 +1000,5 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
 List<MonthlySumResult> findSumOfIndividualMonthsByBudgetAndCoacodeFreight(@Param("budget") Budget budget,
         @Param("display") Display display);
 
-
+List<BudgetItems> findByBudgetAndCoalevel1(Budget budget, Coalevel1 coalevel1);
 }

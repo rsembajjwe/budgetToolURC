@@ -1,12 +1,15 @@
 package com.methaltech.application.views.budget;
 
 import com.methaltech.application.data.Display;
+import com.methaltech.application.data.PeriodExtractor;
 import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.bgtool.service.*;
 import com.methaltech.application.data.entity.bgtool.*;
 import com.methaltech.application.data.entity.livedata.UR5_ACNT;
 import com.methaltech.application.data.oldbgtool.service.OldBudgetService;
 import com.methaltech.application.data.livedata.service.UR5_ACNTService;
+import static com.methaltech.application.test.getYears;
+import static com.methaltech.application.test.strings;
 import com.methaltech.application.views.MainLayout;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
@@ -80,8 +83,10 @@ import org.springframework.data.domain.PageRequest;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.PrintSetup;
@@ -125,7 +130,6 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     private Grid<Organisation> gridOrganisation = new Grid<>(Organisation.class, false);
 
     //private Grid<ProcurementMethod> gridProcurementMethod = new Grid<>(ProcurementMethod.class, false);
-
     private Grid<ProcurementType> gridProcurementType = new Grid<>(ProcurementType.class, false);
     private Grid<Fundsource> gridFundsource = new Grid<>(Fundsource.class, false);
 
@@ -212,6 +216,9 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     private MenuItem Fundsource;
     private SubMenu fundsourceView;
 
+    private MenuItem SunFile;
+    private SubMenu sunFile;
+
     private BeanValidationBinder<Budget> binder = new BeanValidationBinder<>(Budget.class);
 
     private BeanValidationBinder<COA> binderCOA = new BeanValidationBinder<>(COA.class);
@@ -233,7 +240,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
     private Organisation sampleOrganisation;
 
-   // private ProcurementMethod sampleProcurementMethod;
+    // private ProcurementMethod sampleProcurementMethod;
     private ProcurementType sampleProcurementType;
     private Fundsource sampleFundsource;
 
@@ -248,7 +255,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
     private Urc_Activities sampleUrc_Activities;
 
-   // private final ProcurementMethodService sampleProcurementMethodService;
+    // private final ProcurementMethodService sampleProcurementMethodService;
     private final ProcurementTypeService sampleProcurementTypeService;
 
     private final CurrencyDataService sampleCurrencyDataService;
@@ -346,6 +353,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     Checkbox checkbox = new Checkbox("Active");
     private final BudgetItemsService budgetItemsService;
     private final FundsourceService fundsourceService;
+    PeriodExtractor periodExtractor = new PeriodExtractor();
 
     @Autowired
     public BudgetView(BudgetService sampleBudgetService, CurrencyDataService sampleCurrencyDataService,
@@ -385,7 +393,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         this.pageSize = 10;
         this.filter = "";
         this.budgetItemsService = budgetItemsService;
-       // this.sampleProcurementMethodService = sampleProcurementMethodService;
+        // this.sampleProcurementMethodService = sampleProcurementMethodService;
         this.sampleProcurementTypeService = sampleProcurementTypeService;
         this.fundsourceService = fundsourceService;
         addClassNames("budget-view");
@@ -403,7 +411,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         createEditorLayout(splitLayout);
 
         add(splitLayout);
-        procclass.setItems(ProcClass.Works, ProcClass.Supplies, ProcClass.Consultancy, ProcClass.Non_Consultancy,ProcClass.Disposal,ProcClass.Other);
+        procclass.setItems(ProcClass.Works, ProcClass.Supplies, ProcClass.Consultancy, ProcClass.Non_Consultancy, ProcClass.Disposal, ProcClass.Other);
         Coalevel1Box1 = new ComboBox<>("Class 1");
         displayBox.setItems(Display.GENERAL, Display.FREIGHT, Display.SALARIES);
         COASearchField1.setClearButtonVisible(true);
@@ -685,6 +693,9 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             dialog.add(createFundsourceGridDialogLayout());
             dialog.open();
 
+        });
+        createIconItem(sunFile, VaadinIcon.BRIEFCASE, "Extract Sun Budget File", null, true).addClickListener(e -> {
+            exportAndDownloadSunFile(sampleBudget.getFinancialYear());
         });
 
         COASearchField.addValueChangeListener(event -> {
@@ -1497,7 +1508,6 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     gridProcurementMethod.getDataProvider().refreshAll();
     gridProcurementMethod.setItems(sampleProcurementMethodService.getAllProcurementMethods());
     }*/
-
     private void refreshGridProcurementType() {
         gridProcurementType.select(null);
         gridProcurementType.getDataProvider().refreshAll();
@@ -1730,6 +1740,9 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
         Fundsource = menuBar.addItem("Source of Funds");
         fundsourceView = Fundsource.getSubMenu();
+
+        SunFile = menuBar.addItem("Sun Setting");
+        sunFile = SunFile.getSubMenu();
         return menuBar;
     }
 
@@ -2315,7 +2328,6 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     //dialogLayout.getStyle().set("width", "18rem").set("max-width", "100%");
     return dialogLayout;
     }*/
-
     private VerticalLayout createProcurementTypeGridDialogLayout() {
         ProcurementTypeNameField = new TextField("Procurement Type");
         ProcurementTypeNameField.setPlaceholder("Procurement Type");
@@ -3979,4 +3991,508 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         return string;
     }
 
+    private void createSunBudgetFile(Workbook workbook, Sheet sheet) {
+
+        String[] headers = {
+            "ACCOUNTCODE",
+            "DEBIT/ CREDIT",
+            "DESCRIPTION",
+            "ACCT PERIOD",
+            "TRANSACTIONAL REFERENCE",
+            "BASE AMOUNT",
+            "CURR CODE"
+        };
+        int tr = 0;
+        Row headerRow = sheet.createRow(0);
+
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+        List<Coalevel1> Coalevel1List = sampleCoalevel1Service.findByBudget();
+        for (Coalevel1 list : Coalevel1List) {
+            List<BudgetItems> budgetItems = budgetItemsService.findByBudgetAndCoalevel1(sampleBudget, list);
+            for (BudgetItems k : budgetItems) {
+                if (k.getJul().doubleValue() > 0) {
+                    tr++;
+                    Row row = sheet.createRow(tr);
+                    Cell cell0 = row.createCell((short) 0);
+                    cell0.setCellValue(k.getCoacode().getCode());
+                    Cell cell1 = row.createCell((short) 1);
+                    if (list.getCode() == 1) {
+                        cell1.setCellValue("C");
+                    } else if (list.getCode() == 2) {
+                        cell1.setCellValue("D");
+                    } else if (list.getCode() == 3) {
+                        cell1.setCellValue("D");
+                    }
+
+                    Cell cell2 = row.createCell((short) 2);
+                    cell2.setCellValue(getFirstCharacters(k.getItem()));
+                    Cell cell3 = row.createCell((short) 3);
+                    cell3.setCellValue(generateAccPeriod(sampleBudget.getFinancialYear(), "Jul"));
+                    Cell cell4 = row.createCell((short) 4);
+                    cell4.setCellValue(generateTReference(sampleBudget.getFinancialYear(), "Jul"));
+
+                    Cell cell5 = row.createCell((short) 5);
+                    if (list.getCode() > 1) {
+                        cell5.setCellValue(k.getJul().negate().doubleValue());
+                    } else {
+                        cell5.setCellValue(k.getJul().doubleValue());
+                    }
+
+                    Cell cell6 = row.createCell((short) 6);
+                    cell6.setCellValue("UGX");
+                }
+                if (k.getAug().doubleValue() > 0) {
+                    tr++;
+                    Row row = sheet.createRow(tr);
+                    Cell cell0 = row.createCell((short) 0);
+                    cell0.setCellValue(k.getCoacode().getCode());
+                    Cell cell1 = row.createCell((short) 1);
+                    if (list.getCode() == 1) {
+                        cell1.setCellValue("C");
+                    } else if (list.getCode() == 2) {
+                        cell1.setCellValue("D");
+                    } else if (list.getCode() == 3) {
+                        cell1.setCellValue("D");
+                    }
+
+                    Cell cell2 = row.createCell((short) 2);
+                    cell2.setCellValue(getFirstCharacters(k.getItem()));
+                    Cell cell3 = row.createCell((short) 3);
+                    cell3.setCellValue(generateAccPeriod(sampleBudget.getFinancialYear(), "Aug"));
+                    Cell cell4 = row.createCell((short) 4);
+                    cell4.setCellValue(generateTReference(sampleBudget.getFinancialYear(), "Aug"));
+
+                    Cell cell5 = row.createCell((short) 5);
+                    if (list.getCode() > 1) {
+                        cell5.setCellValue(k.getAug().negate().doubleValue());
+                    } else {
+                        cell5.setCellValue(k.getAug().doubleValue());
+                    }
+
+                    Cell cell6 = row.createCell((short) 6);
+                    cell6.setCellValue("UGX");
+                }
+                if (k.getSep().doubleValue() > 0) {
+                    tr++;
+                    Row row = sheet.createRow(tr);
+                    Cell cell0 = row.createCell((short) 0);
+                    cell0.setCellValue(k.getCoacode().getCode());
+                    Cell cell1 = row.createCell((short) 1);
+                    if (list.getCode() == 1) {
+                        cell1.setCellValue("C");
+                    } else if (list.getCode() == 2) {
+                        cell1.setCellValue("D");
+                    } else if (list.getCode() == 3) {
+                        cell1.setCellValue("D");
+                    }
+
+                    Cell cell2 = row.createCell((short) 2);
+                    cell2.setCellValue(getFirstCharacters(k.getItem()));
+                    Cell cell3 = row.createCell((short) 3);
+                    cell3.setCellValue(generateAccPeriod(sampleBudget.getFinancialYear(), "Sep"));
+                    Cell cell4 = row.createCell((short) 4);
+                    cell4.setCellValue(generateTReference(sampleBudget.getFinancialYear(), "Sep"));
+
+                    Cell cell5 = row.createCell((short) 5);
+                    if (list.getCode() > 1) {
+                        cell5.setCellValue(k.getSep().negate().doubleValue());
+                    } else {
+                        cell5.setCellValue(k.getSep().doubleValue());
+                    }
+
+                    Cell cell6 = row.createCell((short) 6);
+                    cell6.setCellValue("UGX");
+                }
+                if (k.getOct().doubleValue() > 0) {
+                    tr++;
+                    Row row = sheet.createRow(tr);
+                    Cell cell0 = row.createCell((short) 0);
+                    cell0.setCellValue(k.getCoacode().getCode());
+                    Cell cell1 = row.createCell((short) 1);
+                    if (list.getCode() == 1) {
+                        cell1.setCellValue("C");
+                    } else if (list.getCode() == 2) {
+                        cell1.setCellValue("D");
+                    } else if (list.getCode() == 3) {
+                        cell1.setCellValue("D");
+                    }
+
+                    Cell cell2 = row.createCell((short) 2);
+                    cell2.setCellValue(getFirstCharacters(k.getItem()));
+                    Cell cell3 = row.createCell((short) 3);
+                    cell3.setCellValue(generateAccPeriod(sampleBudget.getFinancialYear(), "Oct"));
+                    Cell cell4 = row.createCell((short) 4);
+                    cell4.setCellValue(generateTReference(sampleBudget.getFinancialYear(), "Oct"));
+
+                    Cell cell5 = row.createCell((short) 5);
+                    if (list.getCode() > 1) {
+                        cell5.setCellValue(k.getOct().negate().doubleValue());
+                    } else {
+                        cell5.setCellValue(k.getOct().doubleValue());
+                    }
+
+                    Cell cell6 = row.createCell((short) 6);
+                    cell6.setCellValue("UGX");
+                }
+                if (k.getNov().doubleValue() > 0) {
+                    tr++;
+                    Row row = sheet.createRow(tr);
+                    Cell cell0 = row.createCell((short) 0);
+                    cell0.setCellValue(k.getCoacode().getCode());
+                    Cell cell1 = row.createCell((short) 1);
+                    if (list.getCode() == 1) {
+                        cell1.setCellValue("C");
+                    } else if (list.getCode() == 2) {
+                        cell1.setCellValue("D");
+                    } else if (list.getCode() == 3) {
+                        cell1.setCellValue("D");
+                    }
+
+                    Cell cell2 = row.createCell((short) 2);
+                    cell2.setCellValue(getFirstCharacters(k.getItem()));
+                    Cell cell3 = row.createCell((short) 3);
+                    cell3.setCellValue(generateAccPeriod(sampleBudget.getFinancialYear(), "Nov"));
+                    Cell cell4 = row.createCell((short) 4);
+                    cell4.setCellValue(generateTReference(sampleBudget.getFinancialYear(), "Nov"));
+
+                    Cell cell5 = row.createCell((short) 5);
+                    if (list.getCode() > 1) {
+                        cell5.setCellValue(k.getNov().negate().doubleValue());
+                    } else {
+                        cell5.setCellValue(k.getNov().doubleValue());
+                    }
+
+                    Cell cell6 = row.createCell((short) 6);
+                    cell6.setCellValue("UGX");
+                }
+                if (k.getDec().doubleValue() > 0) {
+                    tr++;
+                    Row row = sheet.createRow(tr);
+                    Cell cell0 = row.createCell((short) 0);
+                    cell0.setCellValue(k.getCoacode().getCode());
+                    Cell cell1 = row.createCell((short) 1);
+                    if (list.getCode() == 1) {
+                        cell1.setCellValue("C");
+                    } else if (list.getCode() == 2) {
+                        cell1.setCellValue("D");
+                    } else if (list.getCode() == 3) {
+                        cell1.setCellValue("D");
+                    }
+
+                    Cell cell2 = row.createCell((short) 2);
+                    cell2.setCellValue(getFirstCharacters(k.getItem()));
+                    Cell cell3 = row.createCell((short) 3);
+                    cell3.setCellValue(generateAccPeriod(sampleBudget.getFinancialYear(), "Dec"));
+                    Cell cell4 = row.createCell((short) 4);
+                    cell4.setCellValue(generateTReference(sampleBudget.getFinancialYear(), "Dec"));
+
+                    Cell cell5 = row.createCell((short) 5);
+                    if (list.getCode() > 1) {
+                        cell5.setCellValue(k.getDec().negate().doubleValue());
+                    } else {
+                        cell5.setCellValue(k.getDec().doubleValue());
+                    }
+
+                    Cell cell6 = row.createCell((short) 6);
+                    cell6.setCellValue("UGX");
+                }
+                if (k.getJan().doubleValue() > 0) {
+                    tr++;
+                    Row row = sheet.createRow(tr);
+                    Cell cell0 = row.createCell((short) 0);
+                    cell0.setCellValue(k.getCoacode().getCode());
+                    Cell cell1 = row.createCell((short) 1);
+                    if (list.getCode() == 1) {
+                        cell1.setCellValue("C");
+                    } else if (list.getCode() == 2) {
+                        cell1.setCellValue("D");
+                    } else if (list.getCode() == 3) {
+                        cell1.setCellValue("D");
+                    }
+
+                    Cell cell2 = row.createCell((short) 2);
+                    cell2.setCellValue(getFirstCharacters(k.getItem()));
+                    Cell cell3 = row.createCell((short) 3);
+                    cell3.setCellValue(generateAccPeriod(sampleBudget.getFinancialYear(), "Jan"));
+                    Cell cell4 = row.createCell((short) 4);
+                    cell4.setCellValue(generateTReference(sampleBudget.getFinancialYear(), "Jan"));
+
+                    Cell cell5 = row.createCell((short) 5);
+                    if (list.getCode() > 1) {
+                        cell5.setCellValue(k.getJan().negate().doubleValue());
+                    } else {
+                        cell5.setCellValue(k.getJan().doubleValue());
+                    }
+
+                    Cell cell6 = row.createCell((short) 6);
+                    cell6.setCellValue("UGX");
+                }
+                if (k.getFeb().doubleValue() > 0) {
+                    tr++;
+                    Row row = sheet.createRow(tr);
+                    Cell cell0 = row.createCell((short) 0);
+                    cell0.setCellValue(k.getCoacode().getCode());
+                    Cell cell1 = row.createCell((short) 1);
+                    if (list.getCode() == 1) {
+                        cell1.setCellValue("C");
+                    } else if (list.getCode() == 2) {
+                        cell1.setCellValue("D");
+                    } else if (list.getCode() == 3) {
+                        cell1.setCellValue("D");
+                    }
+
+                    Cell cell2 = row.createCell((short) 2);
+                    cell2.setCellValue(getFirstCharacters(k.getItem()));
+                    Cell cell3 = row.createCell((short) 3);
+                    cell3.setCellValue(generateAccPeriod(sampleBudget.getFinancialYear(), "Feb"));
+                    Cell cell4 = row.createCell((short) 4);
+                    cell4.setCellValue(generateTReference(sampleBudget.getFinancialYear(), "Feb"));
+
+                    Cell cell5 = row.createCell((short) 5);
+                    if (list.getCode() > 1) {
+                        cell5.setCellValue(k.getFeb().negate().doubleValue());
+                    } else {
+                        cell5.setCellValue(k.getFeb().doubleValue());
+                    }
+
+                    Cell cell6 = row.createCell((short) 6);
+                    cell6.setCellValue("UGX");
+                }
+                if (k.getMar().doubleValue() > 0) {
+                    tr++;
+                    Row row = sheet.createRow(tr);
+                    Cell cell0 = row.createCell((short) 0);
+                    cell0.setCellValue(k.getCoacode().getCode());
+                    Cell cell1 = row.createCell((short) 1);
+                    if (list.getCode() == 1) {
+                        cell1.setCellValue("C");
+                    } else if (list.getCode() == 2) {
+                        cell1.setCellValue("D");
+                    } else if (list.getCode() == 3) {
+                        cell1.setCellValue("D");
+                    }
+
+                    Cell cell2 = row.createCell((short) 2);
+                    cell2.setCellValue(getFirstCharacters(k.getItem()));
+                    Cell cell3 = row.createCell((short) 3);
+                    cell3.setCellValue(generateAccPeriod(sampleBudget.getFinancialYear(), "Mar"));
+                    Cell cell4 = row.createCell((short) 4);
+                    cell4.setCellValue(generateTReference(sampleBudget.getFinancialYear(), "Mar"));
+
+                    Cell cell5 = row.createCell((short) 5);
+                    if (list.getCode() > 1) {
+                        cell5.setCellValue(k.getMar().negate().doubleValue());
+                    } else {
+                        cell5.setCellValue(k.getMar().doubleValue());
+                    }
+
+                    Cell cell6 = row.createCell((short) 6);
+                    cell6.setCellValue("UGX");
+                }
+                if (k.getApr().doubleValue() > 0) {
+                    tr++;
+                    Row row = sheet.createRow(tr);
+                    Cell cell0 = row.createCell((short) 0);
+                    cell0.setCellValue(k.getCoacode().getCode());
+                    Cell cell1 = row.createCell((short) 1);
+                    if (list.getCode() == 1) {
+                        cell1.setCellValue("C");
+                    } else if (list.getCode() == 2) {
+                        cell1.setCellValue("D");
+                    } else if (list.getCode() == 3) {
+                        cell1.setCellValue("D");
+                    }
+
+                    Cell cell2 = row.createCell((short) 2);
+                    cell2.setCellValue(getFirstCharacters(k.getItem()));
+                    Cell cell3 = row.createCell((short) 3);
+                    cell3.setCellValue(generateAccPeriod(sampleBudget.getFinancialYear(), "Apr"));
+                    Cell cell4 = row.createCell((short) 4);
+                    cell4.setCellValue(generateTReference(sampleBudget.getFinancialYear(), "Apr"));
+
+                    Cell cell5 = row.createCell((short) 5);
+                    if (list.getCode() > 1) {
+                        cell5.setCellValue(k.getApr().negate().doubleValue());
+                    } else {
+                        cell5.setCellValue(k.getApr().doubleValue());
+                    }
+
+                    Cell cell6 = row.createCell((short) 6);
+                    cell6.setCellValue("UGX");
+                }
+                if (k.getMay().doubleValue() > 0) {
+                    tr++;
+                    Row row = sheet.createRow(tr);
+                    Cell cell0 = row.createCell((short) 0);
+                    cell0.setCellValue(k.getCoacode().getCode());
+                    Cell cell1 = row.createCell((short) 1);
+                    if (list.getCode() == 1) {
+                        cell1.setCellValue("C");
+                    } else if (list.getCode() == 2) {
+                        cell1.setCellValue("D");
+                    } else if (list.getCode() == 3) {
+                        cell1.setCellValue("D");
+                    }
+
+                    Cell cell2 = row.createCell((short) 2);
+                    cell2.setCellValue(getFirstCharacters(k.getItem()));
+                    Cell cell3 = row.createCell((short) 3);
+                    cell3.setCellValue(generateAccPeriod(sampleBudget.getFinancialYear(), "May"));
+                    Cell cell4 = row.createCell((short) 4);
+                    cell4.setCellValue(generateTReference(sampleBudget.getFinancialYear(), "May"));
+
+                    Cell cell5 = row.createCell((short) 5);
+                    if (list.getCode() > 1) {
+                        cell5.setCellValue(k.getMay().negate().doubleValue());
+                    } else {
+                        cell5.setCellValue(k.getMay().doubleValue());
+                    }
+
+                    Cell cell6 = row.createCell((short) 6);
+                    cell6.setCellValue("UGX");
+                }
+                if (k.getJun().doubleValue() > 0) {
+                    tr++;
+                    Row row = sheet.createRow(tr);
+                    Cell cell0 = row.createCell((short) 0);
+                    cell0.setCellValue(k.getCoacode().getCode());
+                    Cell cell1 = row.createCell((short) 1);
+                    if (list.getCode() == 1) {
+                        cell1.setCellValue("C");
+                    } else if (list.getCode() == 2) {
+                        cell1.setCellValue("D");
+                    } else if (list.getCode() == 3) {
+                        cell1.setCellValue("D");
+                    }
+
+                    Cell cell2 = row.createCell((short) 2);
+                    cell2.setCellValue(getFirstCharacters(k.getItem()));
+                    Cell cell3 = row.createCell((short) 3);
+                    cell3.setCellValue(generateAccPeriod(sampleBudget.getFinancialYear(), "Jun"));
+                    Cell cell4 = row.createCell((short) 4);
+                    cell4.setCellValue(generateTReference(sampleBudget.getFinancialYear(), "Jun"));
+
+                    Cell cell5 = row.createCell((short) 5);
+                    if (list.getCode() > 1) {
+                        cell5.setCellValue(k.getJun().negate().doubleValue());
+                    } else {
+                        cell5.setCellValue(k.getJun().doubleValue());
+                    }
+
+                    Cell cell6 = row.createCell((short) 6);
+                    cell6.setCellValue("UGX");
+                }
+            }
+        }
+
+        // Auto-size columns
+        for (int i = 0; i < headers.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+    }
+
+    private void exportAndDownloadSunFile(String fy) {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Sun File " + fy);
+            // Set the paper size to A3 Landscape
+            sheet.getPrintSetup().setPaperSize(PrintSetup.A3_PAPERSIZE);
+            sheet.getPrintSetup().setLandscape(true);
+            createSunBudgetFile(workbook, sheet);
+            //createDataRows(sheet, people);
+
+            // Write the workbook to a byte array
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+
+            // Create a StreamResource with the Excel data
+            StreamResource resource = new StreamResource("sun file.xlsx", ()
+                    -> new ByteArrayInputStream(outputStream.toByteArray()));
+
+            // Create an Anchor component with the StreamResource
+            Anchor downloadLink = new Anchor(resource, "");
+            downloadLink.getElement().setAttribute("download", true);
+            add(downloadLink);
+            // Programmatically click the download link to initiate the download
+            downloadLink.getElement().callJsFunction("click");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String getFirstCharacters(String text) {
+        int maxLength = 50;
+        // Return null if the input text is null or empty
+        if (text == null || text.isEmpty()) {
+            return null;
+        }
+
+        // Return the text itself if its length is less than or equal to the maxLength
+        if (text.length() <= maxLength) {
+            return text;
+        }
+
+        // Otherwise, return the substring containing the first maxLength characters
+        return text.substring(0, maxLength);
+    }
+
+    private String generateAccPeriod(String yearS, String month) {
+        strings(yearS); // Extract years from the input string
+        int year = getYears().get(0); // Get the first year extracted
+
+        Map<String, Integer> monthMap = new HashMap<>();
+        monthMap.put("Jul", 1);
+        monthMap.put("Aug", 2);
+        monthMap.put("Sep", 3);
+        monthMap.put("Oct", 4);
+        monthMap.put("Nov", 5);
+        monthMap.put("Dec", 6);
+        monthMap.put("Jan", 7);
+        monthMap.put("Feb", 8);
+        monthMap.put("Mar", 9);
+        monthMap.put("Apr", 10);
+        monthMap.put("May", 11);
+        monthMap.put("Jun", 12);
+
+        int monthValue = monthMap.get(month);
+        if (monthValue >= 1 && monthValue <= 6) {
+            return year + "/" + String.format("%03d", monthValue); // Format for "Jul" to "Jun"
+        } else if (monthValue >= 7 && monthValue <= 12) {
+            year = getYears().get(1); // Get the second year extracted
+            return year + "/" + String.format("%03d", monthValue); // Format for other months
+        } else {
+            return ""; // Return empty string for invalid input
+        }
+    }
+
+    private static String generateTReference(String yearS, String month) {
+        strings(yearS); // Extract years from the input string
+        int year = getYears().get(0); // Get the first year extracted
+
+        Map<String, Integer> monthMap = new HashMap<>();
+        monthMap.put("Jul", 1);
+        monthMap.put("Aug", 2);
+        monthMap.put("Sep", 3);
+        monthMap.put("Oct", 4);
+        monthMap.put("Nov", 5);
+        monthMap.put("Dec", 6);
+        monthMap.put("Jan", 7);
+        monthMap.put("Feb", 8);
+        monthMap.put("Mar", 9);
+        monthMap.put("Apr", 10);
+        monthMap.put("May", 11);
+        monthMap.put("Jun", 12);
+
+        int monthValue = monthMap.get(month);
+        if (monthValue >= 1 && monthValue <= 6) {
+            return "Budget Upload " + month + "-" + Integer.toString(year).substring(2); // Format for "Jul" to "Jun"
+        } else if (monthValue >= 7 && monthValue <= 12) {
+            year = getYears().get(1); // Get the second year extracted
+            return "Budget Upload " + month + "-" + Integer.toString(year).substring(2); // Format for other months
+        } else {
+            return ""; // Return empty string for invalid input
+        }
+    }
 }
