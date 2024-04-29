@@ -23,7 +23,6 @@ public class SALFLDGService {
     }
 
     public BigDecimal findSumOfAmountByAccntCodeAndPeriod(String accntCode, int period) {
-        System.out.println(accntCode+" | "+period);
         return salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(accntCode, period);
     }
 
@@ -41,7 +40,7 @@ public class SALFLDGService {
     }
     public BigDecimal findSumOfAmountByAccntCodeAndPeriods(List<String> accntCode, Quarters qtrFromFy, String fy) {
         int i = 0;
-        List<String> per = generateQtrFromFy.periods(fy, qtrFromFy);
+        List<String> per = generateQtrFromFy.previousPeriods(fy, qtrFromFy);
         // Convert the list of String periods to a list of Integer periods
         List<Integer> intPer = per.stream().map(Integer::parseInt).collect(Collectors.toList());
 

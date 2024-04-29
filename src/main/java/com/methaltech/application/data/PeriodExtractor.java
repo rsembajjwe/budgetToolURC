@@ -1,14 +1,11 @@
 package com.methaltech.application.data;
 
-import static com.methaltech.application.test.getYears;
-import static com.methaltech.application.test.strings;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import lombok.Data;
 
 public class PeriodExtractor {
 
@@ -31,7 +28,7 @@ public class PeriodExtractor {
         monthMap.put("Qr1", 1);
         monthMap.put("Qr2", 1);
         monthMap.put("Qr3", 7);
-        monthMap.put("Qr4", 7);        
+        monthMap.put("Qr4", 7);
 
         int monthValue = monthMap.get(month);
         if (monthValue == 12) {
@@ -42,6 +39,7 @@ public class PeriodExtractor {
             return (year + 1) * 1000 + monthValue + 1;
         }
     }
+
     public int generatePreviousPeriod(String yearS, String month) {
         strings(yearS);
         int year = getYears().get(0);
@@ -57,7 +55,7 @@ public class PeriodExtractor {
         monthMap.put("Mar", 9);
         monthMap.put("Apr", 10);
         monthMap.put("May", 11);
-        monthMap.put("Jun", 12);       
+        monthMap.put("Jun", 12);
 
         int monthValue = monthMap.get(month);
         if (monthValue == 1) {
@@ -88,6 +86,7 @@ public class PeriodExtractor {
             return 0;
         }
     }
+
     public int generateCurrentPeriod(String yearS, String month) {
         strings(yearS);
         int year = getYears().get(1);
@@ -103,7 +102,7 @@ public class PeriodExtractor {
         monthMap.put("Mar", 9);
         monthMap.put("Apr", 10);
         monthMap.put("May", 11);
-        monthMap.put("Jun", 12);       
+        monthMap.put("Jun", 12);
 
         int monthValue = monthMap.get(month);
         if (monthValue == 1) {
@@ -133,7 +132,8 @@ public class PeriodExtractor {
         } else {
             return 0;
         }
-    }    
+    }
+
     public int generateCode2(String yearS, String month) {
         strings(yearS);
         int year = getYears().get(0);
@@ -153,7 +153,7 @@ public class PeriodExtractor {
         monthMap.put("Qr1", 1);
         monthMap.put("Qr2", 1);
         monthMap.put("Qr3", 7);
-        monthMap.put("Qr4", 7);        
+        monthMap.put("Qr4", 7);
 
         int monthValue = monthMap.get(month);
         if (monthValue == 1) {
@@ -190,9 +190,10 @@ public class PeriodExtractor {
             return 0;
         }
     }
+
     public int generateCode22(String yearS, String month) {
         strings(yearS);
-        int year = getYears().get(0)-1;
+        int year = getYears().get(0) - 1;
         Map<String, Integer> monthMap = new HashMap<>();
         monthMap.put("Jul", 1);
         monthMap.put("Aug", 2);
@@ -209,7 +210,7 @@ public class PeriodExtractor {
         monthMap.put("Qr1", 1);
         monthMap.put("Qr2", 1);
         monthMap.put("Qr3", 7);
-        monthMap.put("Qr4", 7);        
+        monthMap.put("Qr4", 7);
 
         int monthValue = monthMap.get(month);
         if (monthValue == 1) {
@@ -225,27 +226,28 @@ public class PeriodExtractor {
         } else if (monthValue == 6) {
             return year * 1000 + 6; // Special case for "Jun"
         } else if (monthValue == 7) {
-            year = getYears().get(1)-1;
+            year = getYears().get(1) - 1;
             return year * 1000 + 7; // Special case for "Jun"
         } else if (monthValue == 8) {
-            year = getYears().get(1)-1;
+            year = getYears().get(1) - 1;
             return year * 1000 + 8; // Special case for "Jun"
         } else if (monthValue == 9) {
-            year = getYears().get(1)-1;
+            year = getYears().get(1) - 1;
             return year * 1000 + 9; // Special case for "Jun"
         } else if (monthValue == 10) {
-            year = getYears().get(1)-1;
+            year = getYears().get(1) - 1;
             return year * 1000 + 10; // Special case for "Jun"
         } else if (monthValue == 11) {
-            year = getYears().get(1)-1;
+            year = getYears().get(1) - 1;
             return year * 1000 + 11; // Special case for "Jun"
         } else if (monthValue == 12) {
-            year = getYears().get(1)-1;
+            year = getYears().get(1) - 1;
             return year * 1000 + 12; // Special case for "Jun"
         } else {
             return 0;
         }
     }
+
     public int generateYear(String yearS, String month) {
         strings(yearS);
         int year = getYears().get(0);
@@ -321,5 +323,25 @@ public class PeriodExtractor {
 
     public List<Integer> getYears() {
         return years;
+    }
+
+    public int[] extractYears(String input) {
+        int[] years = new int[2];
+        Pattern pattern = Pattern.compile("\\d+");
+        Matcher matcher = pattern.matcher(input);
+
+        int i = 0;
+        while (matcher.find() && i < 2) {
+            years[i++] = Integer.parseInt(matcher.group());
+        }
+
+        return years;
+    }
+
+    public String getPreviousFy(String fy) {
+        int[] years = extractYears(fy);
+        int fy1 = years[0];
+        int newfy1 = fy1 - 1;
+        return String.format("FY%d-%d", newfy1, fy1);
     }
 }

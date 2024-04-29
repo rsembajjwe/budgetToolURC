@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
+
 @Component
 public class GenerateQtrFromFy {
 
@@ -36,6 +37,38 @@ public class GenerateQtrFromFy {
             periods.addAll(Arrays.asList(String.format("%d004", y), String.format("%d005", y), String.format("%d006", y)));
         } else if (qtr.equals(Quarters.Total)) {
             for (int y : years) {
+                periods.addAll(Arrays.asList(
+                        String.format("%d001", y), String.format("%d002", y), String.format("%d003", y),
+                        String.format("%d004", y), String.format("%d005", y), String.format("%d006", y),
+                        String.format("%d007", y), String.format("%d008", y), String.format("%d009", y),
+                        String.format("%d010", y), String.format("%d011", y), String.format("%d012", y)
+                ));
+            }
+        }
+
+        return periods;
+    }
+
+    public List<String> previousPeriods(String fy, Quarters qtr) {
+        int[] years = extractYears(fy);
+        List<String> periods = new ArrayList<>();
+        int y = years[1];
+        System.out.println(y+" Beeeeeen");
+        if (qtr.equals(Quarters.Qtr1)) {
+
+            periods.addAll(Arrays.asList(String.format("%d001", y), String.format("%d002", y), String.format("%d003", y)));
+            System.out.println(periods.toString());
+        } else if (qtr.equals(Quarters.Qtr2)) {
+
+            periods.addAll(Arrays.asList(String.format("%d004", y), String.format("%d005", y), String.format("%d006", y)));
+        } else if (qtr.equals(Quarters.Qtr3)) {
+
+            periods.addAll(Arrays.asList(String.format("%d007", y), String.format("%d008", y), String.format("%d009", y)));
+        } else if (qtr.equals(Quarters.Qtr4)) {
+
+            periods.addAll(Arrays.asList(String.format("%d010", y), String.format("%d011", y), String.format("%d012", y)));
+        } else if (qtr.equals(Quarters.Total)) {
+            for (int x : years) {
                 periods.addAll(Arrays.asList(
                         String.format("%d001", y), String.format("%d002", y), String.format("%d003", y),
                         String.format("%d004", y), String.format("%d005", y), String.format("%d006", y),

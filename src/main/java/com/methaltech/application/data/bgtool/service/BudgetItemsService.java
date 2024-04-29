@@ -1018,7 +1018,6 @@ public class BudgetItemsService {
             b.setBudget(budget);
             b.setItem(c.getName());
             b.setCoacode(c);
-System.out.println(b.getCoacode().getCode()+" cccccccc");
             if (deptUnits.contains(freightAnlDimbgt) && (c.getDisplay() == Display.FREIGHT || c.getCode().contains("111109") || c.getCode().contains("111110"))) {
                 b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Jul")));
                 b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Aug")));
@@ -1033,7 +1032,7 @@ System.out.println(b.getCoacode().getCode()+" cccccccc");
                 b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "May")));
                 b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Jun")));
             }else if (deptUnits.contains(propertymgt) && ( c.getCode().contains("111401") || c.getCode().contains("111402")||c.getCode().contains("111403") || c.getCode().contains("111404")||c.getCode().contains("111406") || c.getCode().contains("111407"))) {
-                System.out.println(b.getCoacode().getCode()+" hhhhhhh");
+
                 b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Jul")));
                 b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Aug")));
                 b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Sep")));
@@ -1096,6 +1095,7 @@ System.out.println(b.getCoacode().getCode()+" cccccccc");
         }
         List<COA> coaList = repository.findDistinctCoacodeByBudgetAndDeptUnitIn(budget, deptUnits);
         UrcDeptSectionAnlDimbgt freightAnlDimbgt = urcDeptSectionAnlDimRepository.findByCustomANL_CODE("S020");
+        UrcDeptSectionAnlDimbgt propertymgt = urcDeptSectionAnlDimRepository.findByCustomANL_CODE("S004");
         List<BudgetItemsActuals> budgetItemses = new ArrayList<>();
         PeriodExtractor extActuals = new PeriodExtractor();
         for (COA c : coaList) {
@@ -1108,6 +1108,20 @@ System.out.println(b.getCoacode().getCode()+" cccccccc");
             if (deptUnits.contains(freightAnlDimbgt) && (c.getDisplay() == Display.FREIGHT || c.getCode().contains("111109") || c.getCode().contains("111110"))) {
                 b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Jul")));
                 // b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthAndYearAndPeriod(c.getCode(),Month.JULY.getValue(),budget.getStartDate().getYear()-1,extActuals.generateCode2(budget.getFinancialYear(), "Jul")));
+                b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Aug")));
+                b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Sep")));
+                b.setOctA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Oct")));
+                b.setNovA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Nov")));
+                b.setDecA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Dec")));
+                b.setJanA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Jan")));
+                b.setFebA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Feb")));
+                b.setMarA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Mar")));
+                b.setAprA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Apr")));
+                b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "May")));
+                b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Jun")));
+            }else if (deptUnits.contains(propertymgt) && ( c.getCode().contains("111401") || c.getCode().contains("111402")||c.getCode().contains("111403") || c.getCode().contains("111404")||c.getCode().contains("111406") || c.getCode().contains("111407"))) {
+                System.out.println(b.getCoacode().getCode()+" hhhhhhh");
+                b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Jul")));
                 b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Aug")));
                 b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Sep")));
                 b.setOctA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Oct")));
