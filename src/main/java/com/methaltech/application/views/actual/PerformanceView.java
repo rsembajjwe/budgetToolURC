@@ -88,7 +88,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @RolesAllowed({"ADMIN", "PROCUREMENT", "BLO", "HOD"})
 @Uses(Icon.class)
 public class PerformanceView extends Div {
-
+    
     private Grid<BudgetItemsActuals> gridBudgetItems = new Grid<>(BudgetItemsActuals.class, false);
     private Grid<BudgetItemsActuals> gridBudgetItemsQuarterlyGrid = new Grid<>(BudgetItemsActuals.class, false);
     private final SALFLDGService sampleSALFLDGService;
@@ -102,7 +102,7 @@ public class PerformanceView extends Div {
     private MultiSelectComboBox<UrcDeptSectionAnlDimbgt> comboBoxD_Section = new MultiSelectComboBox<>("Cost Centres");
     private DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
     PeriodExtractor extra = new PeriodExtractor();
-
+    
     Span julSpan = new Span();
     Span julActualSpan = new Span();
     Span augSpan = new Span();
@@ -129,7 +129,7 @@ public class PerformanceView extends Div {
     Span junActualSpan = new Span();
     Span totalSpan = new Span();
     Span totalActualSpan = new Span();
-
+    
     Span qtr1Span = new Span();
     Span qtr1ActualSpan = new Span();
     Span qtr2Span = new Span();
@@ -140,7 +140,7 @@ public class PerformanceView extends Div {
     Span qtr4ActualSpan = new Span();
     Span totalQtrSpan = new Span();
     Span totalQtrActualSpan = new Span();
-
+    
     Column<BudgetItemsActuals> julColumn;
     Column<BudgetItemsActuals> julAColumn;
     Column<BudgetItemsActuals> augColumn;
@@ -167,7 +167,7 @@ public class PerformanceView extends Div {
     Column<BudgetItemsActuals> junAColumn;
     Column<BudgetItemsActuals> totalColumn;
     Column<BudgetItemsActuals> totalAColumn;
-
+    
     Column<BudgetItemsActuals> qtr1Column;
     Column<BudgetItemsActuals> qtr1AColumn;
     Column<BudgetItemsActuals> qtr2Column;
@@ -178,13 +178,13 @@ public class PerformanceView extends Div {
     Column<BudgetItemsActuals> qtr4AColumn;
     Column<BudgetItemsActuals> totalQtrColumn;
     Column<BudgetItemsActuals> totalAQtrColumn;
-
+    
     Button downloadWorkplan = new Button("Download Annual", new Icon(VaadinIcon.DOWNLOAD));
     Button downloadWorkplan2 = new Button("Download Qtr", new Icon(VaadinIcon.DOWNLOAD));
     PeriodExtractor gen = new PeriodExtractor();
-
+    
     @Autowired
-
+    
     public PerformanceView(SALFLDGService sampleSALFLDGService, BudgetItemsService budgetItemsService, AuthenticatedUser authenticatedUser,
             UserService samplePersonService, BudgetService sampleBudgetService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService) {
         this.sampleSALFLDGService = sampleSALFLDGService;
@@ -195,21 +195,21 @@ public class PerformanceView extends Div {
         this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
         //this.setSizeFull();
         gridBudgetItems.setHeightFull();
-
+        
         addClassNames("actual-view");
-
+        
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         user = samplePersonService.getUserByEmail(username);
         if (authenticatedUser.get().isPresent()) {
             user = authenticatedUser.get().get();
         }
-
+        
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
         image2.setWidthFull();
         image2.getStyle().set("margin", "0").set("padding", "0");
         add(image2);
-
+        
         budget.getStyle().set("marginRight", "10px");
         comboBoxD_Section.getStyle().set("marginRight", "10px");
         comboBoxD_Section.setItemLabelGenerator(UrcDeptSectionAnlDimbgt::getNAME);
@@ -224,17 +224,17 @@ public class PerformanceView extends Div {
         div.add(budget, comboBoxD_Section, downloadWorkplan, downloadWorkplan2);
         downloadWorkplan.addThemeVariants(ButtonVariant.LUMO_ICON);
         downloadWorkplan.setEnabled(false);
-
+        
         downloadWorkplan2.addThemeVariants(ButtonVariant.LUMO_ICON);
         downloadWorkplan2.setEnabled(false);
         add(div);
-
+        
         TabSheet tabSheet = new TabSheet();
         tabSheet.add("Monthly Budget Vs Actuals", budgetCoaView());
         tabSheet.add("Quarterly Budget Vs Actuals", budgetCoaQtrView());
         setSpanValues();
         setSpanQtrValues();
-
+        
         tabSheet.addSelectedChangeListener(event -> {
             Component selectedTab = tabSheet.getSelectedTab();
             if (selectedTab != null) {
@@ -254,23 +254,23 @@ public class PerformanceView extends Div {
                 }
             }
         });
-
+        
         downloadWorkplan.addClickListener(e -> {
             if (comboBoxD_Section.isEmpty() || budget.isEmpty()) {
                 warningNotification("Ensure that You have filled the form well");
             } else {
                 exportAndDownloadExcelWorkplan(budget.getValue());
             }
-
+            
         });
-
+        
         downloadWorkplan2.addClickListener(e -> {
             if (comboBoxD_Section.isEmpty() || budget.isEmpty()) {
                 warningNotification("Ensure that You have filled the form well");
             } else {
-                 exportAndDownloadExcelWorkplanQtr(budget.getValue());
+                exportAndDownloadExcelWorkplanQtr(budget.getValue());
             }
-
+            
         });
         setSizeFull();
         tabSheet.setSizeFull();
@@ -279,31 +279,31 @@ public class PerformanceView extends Div {
         budget.addValueChangeListener(e -> {
             setSpanValues();
             setSpanQtrValues();
-
+            
             if (!comboBoxD_Section.isEmpty()) {
                 downloadWorkplan.setEnabled(true);
                 downloadWorkplan2.setEnabled(true);
-                gridBudgetItems.setItems(budgetItemsService.findDistinctBudgetItemses2(budget.getValue(), comboBoxD_Section.getSelectedItems()));
-                gridBudgetItemsQuarterlyGrid.setItems(budgetItemsService.findDistinctBudgetItemses2(budget.getValue(), comboBoxD_Section.getSelectedItems()));
+                gridBudgetItems.setItems(budgetItemsService.findDistinctBudgetItemses22(budget.getValue(), comboBoxD_Section.getSelectedItems()));
+                gridBudgetItemsQuarterlyGrid.setItems(budgetItemsService.findDistinctBudgetItemses22(budget.getValue(), comboBoxD_Section.getSelectedItems()));
             } else {
                 downloadWorkplan.setEnabled(false);
                 downloadWorkplan2.setEnabled(false);
             }
         });
-
+        
         comboBoxD_Section.addValueChangeListener(e -> {
             if (!budget.isEmpty() && !comboBoxD_Section.isEmpty()) {
                 downloadWorkplan.setEnabled(true);
                 downloadWorkplan2.setEnabled(true);
-                gridBudgetItems.setItems(budgetItemsService.findDistinctBudgetItemses2(budget.getValue(), comboBoxD_Section.getSelectedItems()));
-                gridBudgetItemsQuarterlyGrid.setItems(budgetItemsService.findDistinctBudgetItemses2(budget.getValue(), comboBoxD_Section.getSelectedItems()));
+                gridBudgetItems.setItems(budgetItemsService.findDistinctBudgetItemses22(budget.getValue(), comboBoxD_Section.getSelectedItems()));
+                gridBudgetItemsQuarterlyGrid.setItems(budgetItemsService.findDistinctBudgetItemses22(budget.getValue(), comboBoxD_Section.getSelectedItems()));
             } else {
                 downloadWorkplan.setEnabled(false);
                 downloadWorkplan2.setEnabled(false);
             }
         });
     }
-
+    
     private Div budgetCoaView() {
         Div div = new Div();
         div.setSizeFull();
@@ -326,21 +326,21 @@ public class PerformanceView extends Div {
         //gridBudgetItems.addColumn(BudgetItemsActuals::getJul).setHeader("July");
 
         julColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getJul();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(julSpan).setWidth("150px");
         julAColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getJulA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(julActualSpan).setWidth("150px");
 // Apply the orange-column class to the cells of the "Jul Actuals" column
         julColumn.setClassNameGenerator(item -> {
@@ -350,229 +350,229 @@ public class PerformanceView extends Div {
             }
             return "orange-column"; // No class applied if condition is not met
         });
-
+        
         augColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getAug();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(augSpan).setWidth("150px");
-
+        
         augAColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getAugA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(augActualSpan).setWidth("150px");
         sepColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getSep();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(sepSpan).setWidth("150px");
         sepAColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getSepA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(sepActualSpan).setWidth("150px");
         octColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getOct();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(octSpan).setWidth("150px");
         octAColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getOctA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(octActualSpan).setWidth("150px");
         novColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getNov();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(novSpan).setWidth("150px");
-
+        
         novAColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getNovA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(novActualSpan).setWidth("150px");
         decColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getDec();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(decSpan).setWidth("150px");
-
+        
         decAColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getDecA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(decActualSpan).setWidth("150px");
         janColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getJan();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(janSpan).setWidth("150px");
-
+        
         janAColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getJanA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(janActualSpan).setWidth("150px");
         febColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getFeb();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(febSpan).setWidth("150px");
-
+        
         febAColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getFebA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(febActualSpan).setWidth("150px");
         marColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getMar();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(marSpan).setWidth("150px");
-
+        
         marAColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getMarA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(marActualSpan).setWidth("150px");
         aprColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getApr();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(aprSpan).setWidth("150px");
-
+        
         aprAColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getAprA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(aprActualSpan).setWidth("150px");
         mayColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getMay();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(maySpan).setWidth("150px");
-
+        
         mayAColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getMayA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(mayActualSpan).setWidth("150px");
         julColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getJun();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(junSpan).setWidth("150px");
-
+        
         junAColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getJunA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(junActualSpan).setWidth("150px");
         totalColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getTotal();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge success");
-
+            
             return span;
-
+            
         })).setHeader("Total").setFlexGrow(0).setWidth("150px");
-
+        
         totalAColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getTotalA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge success");
-
+            
             return span;
-
+            
         })).setHeader("Total Actual").setFlexGrow(0).setWidth("150px");
-
+        
         gridBudgetItems.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
         //gridBudgetItems.setHeight("900px");
         div.add(gridBudgetItems);
         return div;
     }
-
+    
     private Div budgetCoaQtrView() {
         Div div = new Div();
         div.setSizeFull();
@@ -595,21 +595,21 @@ public class PerformanceView extends Div {
         //gridBudgetItems.addColumn(BudgetItemsActuals::getJul).setHeader("July");
 
         qtr1Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getQtr1();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(qtr1Span).setWidth("150px");
         qtr1AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getQtr1A();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(qtr1ActualSpan).setWidth("150px");
 // Apply the orange-column class to the cells of the "Jul Actuals" column
         qtr1AColumn.setClassNameGenerator(item -> {
@@ -619,84 +619,84 @@ public class PerformanceView extends Div {
             }
             return "orange-column"; // No class applied if condition is not met
         });
-
+        
         qtr2Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getQtr2();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(qtr2Span).setWidth("150px");
-
+        
         qtr2AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getQtr2A();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(qtr2ActualSpan).setWidth("150px");
         qtr3Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getQtr3();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(qtr3Span).setWidth("150px");
         qtr3AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getQtr3A();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(qtr3ActualSpan).setWidth("150px");
         qtr4Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getQtr4();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader(qtr4Span).setWidth("150px");
         qtr4AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getQtr4A();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader(qtr4ActualSpan).setWidth("150px");
         totalQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getTotal();
             Span span = createSpan(value);
-
+            
             return span;
-
+            
         })).setHeader("Total").setWidth("150px");
-
+        
         totalAQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
-
+            
             BigDecimal value = urcActivity.getTotalA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            
             return span;
-
+            
         })).setHeader("Total Actual").setWidth("150px");
-
+        
         gridBudgetItemsQuarterlyGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
         //gridBudgetItems.setHeight("900px");
         div.add(gridBudgetItemsQuarterlyGrid);
         return div;
     }
-
+    
     private Span createSpan(BigDecimal value) {
         Span span;
         if (value != null) {
@@ -707,7 +707,7 @@ public class PerformanceView extends Div {
         }
         return span;
     }
-
+    
     private String yearString(String fy, String month) {
         if (budget.isEmpty()) {
             return month;
@@ -715,7 +715,7 @@ public class PerformanceView extends Div {
             return month + " (" + extra.generateYear(fy, month.substring(0, 3)) + ")";
         }
     }
-
+    
     private String yearString2(String fy, String month) {
         if (budget.isEmpty()) {
             return month;
@@ -725,7 +725,7 @@ public class PerformanceView extends Div {
             return month + " (" + y + ")";
         }
     }
-
+    
     private String setFY(Budget budget) {
         if (budget == null) {
             return "";
@@ -733,7 +733,7 @@ public class PerformanceView extends Div {
             return budget.getFinancialYear();
         }
     }
-
+    
     private void setSpanValues() {
         julSpan.setText(yearString(setFY(budget.getValue()), "Jul"));
         julActualSpan.setText(yearString2(setFY(budget.getValue()), "Jul Actual"));
@@ -762,7 +762,7 @@ public class PerformanceView extends Div {
         // totalSpan.setText(yearString(setFY(budget.getValue()), "Total"));
         // totalActualSpan.setText(yearString2(setFY(budget.getValue()), "Total Actual"));        
     }
-
+    
     private void setSpanQtrValues() {
         qtr1Span.setText(yearString(setFY(budget.getValue()), "Qr1"));
         qtr1ActualSpan.setText(yearString2(setFY(budget.getValue()), "Qr1 Actual"));
@@ -775,32 +775,32 @@ public class PerformanceView extends Div {
         //totalQtrSpan.setText(yearString(setFY(budget.getValue()), "Total"));
         //totalQtrActualSpan.setText(yearString2(setFY(budget.getValue()), "Total Actual"));          
     }
-
+    
     public Notification warningNotification(String warning) {
         Notification notification = new Notification();
         notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
-
+        
         Div text = new Div(
                 new Text(warning),
                 new HtmlComponent("br"),
                 new Text("Close this warning to continue working.")
         );
-
+        
         Button closeButton = new Button(new Icon("lumo", "cross"));
         closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
         closeButton.getElement().setAttribute("aria-label", "Close");
         closeButton.addClickListener(event -> {
             notification.close();
         });
-
+        
         HorizontalLayout layout = new HorizontalLayout(text, closeButton);
         layout.setAlignItems(FlexComponent.Alignment.CENTER);
-
+        
         notification.add(layout);
         notification.open();
         return notification;
     }
-
+    
     private void exportAndDownloadExcelWorkplan(Budget budget) {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Actuals " + budget.getFinancialYear());
@@ -828,7 +828,7 @@ public class PerformanceView extends Div {
             e.printStackTrace();
         }
     }
-
+    
     private void createHeaderRowWorkplan(Workbook workbook, Sheet sheet) {
         short rowHeight = 500;
         short tr = 0;
@@ -836,19 +836,19 @@ public class PerformanceView extends Div {
         fontBold2.setFontName("Arial");
         fontBold2.setFontHeightInPoints((short) 10);
         fontBold2.setBold(false);
-
+        
         Font fontBold = workbook.createFont();
         fontBold.setFontName("Arial");
         fontBold.setFontHeightInPoints((short) 10);
         fontBold.setBold(true);
-
+        
         CellStyle style = workbook.createCellStyle();
         style.setFillForegroundColor(IndexedColors.RED.index);
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         style.setAlignment(HorizontalAlignment.CENTER);
         style.setWrapText(true);
         style.setFont(fontBold);
-
+        
         CellStyle styleq = workbook.createCellStyle();
         styleq.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.index);
         styleq.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -856,7 +856,7 @@ public class PerformanceView extends Div {
         styleq.setVerticalAlignment(VerticalAlignment.CENTER);
         styleq.setWrapText(true);
         styleq.setFont(fontBold);
-
+        
         CellStyle styleq2 = workbook.createCellStyle();
         styleq2.setFillForegroundColor(IndexedColors.LIGHT_CORNFLOWER_BLUE.index);
         styleq2.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -864,13 +864,13 @@ public class PerformanceView extends Div {
         styleq2.setVerticalAlignment(VerticalAlignment.CENTER);
         styleq2.setWrapText(true);
         styleq2.setFont(fontBold);
-
+        
         CellStyle styleq31 = workbook.createCellStyle();
         styleq31.setAlignment(HorizontalAlignment.CENTER);
         styleq31.setVerticalAlignment(VerticalAlignment.CENTER);
         styleq31.setWrapText(true);
         styleq31.setFont(fontBold);
-
+        
         CellStyle styleq3 = workbook.createCellStyle();
         styleq3.setFillForegroundColor(IndexedColors.VIOLET.index);
         styleq3.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -878,7 +878,7 @@ public class PerformanceView extends Div {
         styleq3.setVerticalAlignment(VerticalAlignment.CENTER);
         styleq3.setWrapText(true);
         styleq3.setFont(fontBold);
-
+        
         CellStyle styleq4 = workbook.createCellStyle();
         styleq4.setFillForegroundColor(IndexedColors.TAN.index);
         styleq4.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -886,7 +886,7 @@ public class PerformanceView extends Div {
         styleq4.setVerticalAlignment(VerticalAlignment.CENTER);
         styleq4.setWrapText(true);
         styleq4.setFont(fontBold);
-
+        
         CellStyle styley = workbook.createCellStyle();
         styley.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.index);
         styley.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -902,13 +902,13 @@ public class PerformanceView extends Div {
         stylegreen.setFont(fontBold);
         stylegreen.setWrapText(true);
         stylegreen.setFont(fontBold);
-
+        
         CellStyle stylec = workbook.createCellStyle();
         stylec.setAlignment(HorizontalAlignment.CENTER);
         stylec.setVerticalAlignment(VerticalAlignment.CENTER);
         stylec.setWrapText(true);//stylec.setFont(fontBold);
         stylec.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
-
+        
         CellStyle stylec2 = workbook.createCellStyle();
         stylec2.setAlignment(HorizontalAlignment.CENTER);
         stylec2.setVerticalAlignment(VerticalAlignment.CENTER);
@@ -916,13 +916,13 @@ public class PerformanceView extends Div {
         stylec2.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.index);
         stylec2.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         stylec2.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
-
+        
         CellStyle stylec1 = workbook.createCellStyle();
         stylec1.setAlignment(HorizontalAlignment.CENTER);
         stylec1.setVerticalAlignment(VerticalAlignment.CENTER);
         stylec1.setWrapText(true);
         stylec1.setFont(fontBold);
-
+        
         CellStyle borderedStyle = workbook.createCellStyle();
         borderedStyle.setBorderTop(BorderStyle.THIN);
         borderedStyle.setBorderBottom(BorderStyle.THIN);
@@ -930,25 +930,25 @@ public class PerformanceView extends Div {
         borderedStyle.setBorderRight(BorderStyle.THIN);
         borderedStyle.setAlignment(HorizontalAlignment.CENTER);
         borderedStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-
+        
         CellStyle borderedStyleWithColor = workbook.createCellStyle();
         borderedStyleWithColor.cloneStyleFrom(borderedStyle); // Copy styles from the borderedStyle
         borderedStyleWithColor.setFillForegroundColor(IndexedColors.RED.index);
         borderedStyleWithColor.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
+        
         CellStyle style11 = workbook.createCellStyle();
         style11.setAlignment(HorizontalAlignment.LEFT);
         style11.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         style11.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
         List<Integer> rowBoldcount = new ArrayList();
         Row headerRow = sheet.createRow(tr);
-
+        
         try {
-
+            
             headerRow.setHeight(rowHeight);
-
+            
             addImageToHeader(sheet, "/META-INF/resources/images/urclogo.png");
-
+            
         } catch (IOException ex) {
             Logger.getLogger(BudgetReportsView.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -958,7 +958,7 @@ public class PerformanceView extends Div {
         Cell headerCell = headerRow.createCell(1);
         headerCell.setCellValue("UGANDA RAILWAYS CORPORATION");
         headerCell.setCellStyle(styleq31);
-        CellRangeAddress cellRange3 = new CellRangeAddress(tr, tr, 1, 25);
+        CellRangeAddress cellRange3 = new CellRangeAddress(tr, tr, 1, 28);
         sheet.addMergedRegion(cellRange3);
         setBottomBorderForRegion(sheet, cellRange3);
         tr++;
@@ -966,11 +966,11 @@ public class PerformanceView extends Div {
         Cell cellq = row0.createCell((short) 0);
         row0.getCell(0).setCellStyle(styleq31);
         cellq.setCellValue("BUDGET ACTUALS");
-        CellRangeAddress cellRange4 = new CellRangeAddress(tr, tr, 0, 25);
+        CellRangeAddress cellRange4 = new CellRangeAddress(tr, tr, 0, 28);
         sheet.addMergedRegion(cellRange4);
         rowBoldcount.add((int) 0);
         tr++;
-
+        
         Row row = sheet.createRow(tr);
         Cell cell = row.createCell((short) 0);
         row.getCell(0).setCellStyle(styleq31);
@@ -987,7 +987,7 @@ public class PerformanceView extends Div {
         Cell cell5 = row.createCell((short) 4);
         row.getCell(4).setCellStyle(styleq31);
         cell5.setCellValue(yearString(setFY(budget.getValue()), "Aug"));
-
+        
         Cell cell6 = row.createCell((short) 5);
         row.getCell(5).setCellStyle(styleq31);
         cell6.setCellValue(yearString2(setFY(budget.getValue()), "Aug Actual"));
@@ -1003,7 +1003,7 @@ public class PerformanceView extends Div {
         Cell cell10 = row.createCell((short) 9);
         row.getCell(9).setCellStyle(styleq31);
         cell10.setCellValue(yearString2(setFY(budget.getValue()), "Oct Actual"));
-
+        
         Cell cella = row.createCell((short) 10);
         row.getCell(10).setCellStyle(styleq31);
         cella.setCellValue(yearString(setFY(budget.getValue()), "Nov"));
@@ -1016,7 +1016,7 @@ public class PerformanceView extends Div {
         Cell celld = row.createCell((short) 13);
         row.getCell(13).setCellStyle(styleq31);
         celld.setCellValue(yearString2(setFY(budget.getValue()), "Dec Actual"));
-
+        
         Cell cella1 = row.createCell((short) 14);
         row.getCell(14).setCellStyle(styleq31);
         cella1.setCellValue(yearString(setFY(budget.getValue()), "Jan"));
@@ -1029,7 +1029,7 @@ public class PerformanceView extends Div {
         Cell celld1 = row.createCell((short) 17);
         row.getCell(17).setCellStyle(styleq31);
         celld1.setCellValue(yearString2(setFY(budget.getValue()), "Feb Actual"));
-
+        
         Cell celle1 = row.createCell((short) 18);
         row.getCell(18).setCellStyle(styleq31);
         celle1.setCellValue(yearString(setFY(budget.getValue()), "Mar"));
@@ -1054,12 +1054,22 @@ public class PerformanceView extends Div {
         Cell celll1 = row.createCell((short) 25);
         row.getCell(25).setCellStyle(styleq31);
         celll1.setCellValue(yearString2(setFY(budget.getValue()), "Jun Actual"));
+        
+        Cell cellj11 = row.createCell((short) 26);
+        row.getCell(26).setCellStyle(styleq31);
+        cellj11.setCellValue("Total Budget");
+        Cell cellk2 = row.createCell((short) 27);
+        row.getCell(27).setCellStyle(styleq31);
+        cellk2.setCellValue("Actual Total Budget");
+        Cell celll3 = row.createCell((short) 28);
+        row.getCell(28).setCellStyle(styleq31);
+        celll3.setCellValue("Variance");        
         rowBoldcount.add((int) 1);
-
+        
         int rowend = 0;
         int rowstart2 = 0;
-
-        List<BudgetItemsActuals> findDistinctBudgetItemses = budgetItemsService.findDistinctBudgetItemses2(budget.getValue(), comboBoxD_Section.getSelectedItems());
+        
+        List<BudgetItemsActuals> findDistinctBudgetItemses = budgetItemsService.findDistinctBudgetItemses22(budget.getValue(), comboBoxD_Section.getSelectedItems());
         for (BudgetItemsActuals h : findDistinctBudgetItemses) {
             tr++;
             short tc = 0;
@@ -1068,7 +1078,7 @@ public class PerformanceView extends Div {
             rowx1.getCell(tc).setCellStyle(stylec);
             tc++;
             rowx1.createCell((short) tc).setCellValue(h.getItem());
-
+            
             rowx1.getCell(tc).setCellStyle(stylec);
             tc++;
             rowx1.createCell((short) tc).setCellValue(h.getJul().doubleValue());
@@ -1143,8 +1153,26 @@ public class PerformanceView extends Div {
             rowx1.createCell((short) tc).setCellValue(h.getJunA().doubleValue());
             rowx1.getCell(tc).setCellStyle(stylec);
 
+            
+            tc++;
+            rowx1.createCell((short) tc).setCellValue(h.getJul().add(h.getAug()).add(h.getSep()).add(h.getOct()).add(h.getNov()).add(h.getDec())
+                    .add(h.getJan()).add(h.getFeb()).add(h.getMar()).add(h.getApr()).add(h.getMay()).add(h.getJun()).doubleValue());
+            rowx1.getCell(tc).setCellStyle(stylec);
+            
+            tc++;
+            rowx1.createCell((short) tc).setCellValue(h.getJulA().add(h.getAugA()).add(h.getSepA()).add(h.getOctA()).add(h.getNovA()).add(h.getDecA())
+                    .add(h.getJanA()).add(h.getFebA()).add(h.getMarA()).add(h.getAprA()).add(h.getMayA()).add(h.getJunA()).doubleValue());
+            rowx1.getCell(tc).setCellStyle(stylec);
+            
+            tc++;
+            BigDecimal TT = h.getJul().add(h.getAug()).add(h.getSep()).add(h.getOct()).add(h.getNov()).add(h.getDec())
+                    .add(h.getJan()).add(h.getFeb()).add(h.getMar()).add(h.getApr()).add(h.getMay()).add(h.getJun());
+            BigDecimal TTA = h.getJulA().add(h.getAugA()).add(h.getSepA()).add(h.getOctA()).add(h.getNovA()).add(h.getDecA())
+                    .add(h.getJanA()).add(h.getFebA()).add(h.getMarA()).add(h.getAprA()).add(h.getMayA()).add(h.getJunA());
+            rowx1.createCell((short) tc).setCellValue(TTA.subtract(TT).doubleValue());
+            rowx1.getCell(tc).setCellStyle(stylec);             
         }
-
+        
         for (int i = 0; i < sheet.getRow(0).getLastCellNum(); i++) {
             sheet.autoSizeColumn(i);
         }
@@ -1154,7 +1182,7 @@ public class PerformanceView extends Div {
             if (currentRow == null) {
                 continue;
             }
-
+            
             for (Cell currentCell : currentRow) {
                 if (currentCell == null) {
                     continue;
@@ -1175,15 +1203,15 @@ public class PerformanceView extends Div {
                     newStyle.setLeftBorderColor(IndexedColors.BLACK.getIndex());
                     newStyle.setRightBorderColor(IndexedColors.BLACK.getIndex());
                     newStyle.setWrapText(true);
-
+                    
                     currentCell.setCellStyle(newStyle);
                 }
-
+                
             }
         }
-
+        
     }
-
+    
     private static void addImageToHeader(Sheet sheet, String imagePath) throws IOException {
         // Load the image
         BufferedImage bufferedImage = ImageIO.read(BudgetReportsView.class.getResourceAsStream(imagePath));
@@ -1196,20 +1224,20 @@ public class PerformanceView extends Div {
         // Add the image to the header
         Drawing<?> drawing = sheet.createDrawingPatriarch();
         ClientAnchor anchor = drawing.createAnchor(0, 0, 0, 0, 0, 0, 1, 1);
-
+        
         int pictureIndex = sheet.getWorkbook().addPicture(imageBytes, Workbook.PICTURE_TYPE_PNG);
         drawing.createPicture(anchor, pictureIndex);
     }
-
+    
     private void setBottomBorderForRegion(Sheet sheet, CellRangeAddress region) {
         RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);
     }
-
+    
     private static void createMergedRegion(Sheet sheet, int startRow, int endRow, int startColumn, int endColumn) {
         CellRangeAddress cellRangeAddress = new CellRangeAddress(startRow, endRow, startColumn, endColumn);
         sheet.addMergedRegion(cellRangeAddress);
     }
-
+    
     private static boolean isOverlappingWithExistingRegions(Sheet sheet, CellRangeAddress newRegion) {
         for (int i = 0; i < sheet.getNumMergedRegions(); i++) {
             CellRangeAddress existingRegion = sheet.getMergedRegion(i);
@@ -1229,7 +1257,8 @@ public class PerformanceView extends Div {
             ((HSSFSheet) sheet).addMergedRegion(region);
         }
     }
-     private void exportAndDownloadExcelWorkplanQtr(Budget budget) {
+    
+    private void exportAndDownloadExcelWorkplanQtr(Budget budget) {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Quarterly Actuals " + budget.getFinancialYear());
             // Set the paper size to A3 Landscape
@@ -1256,26 +1285,27 @@ public class PerformanceView extends Div {
             e.printStackTrace();
         }
     }
-         private void createHeaderRowWorkplanQtr(Workbook workbook, Sheet sheet) {
+    
+    private void createHeaderRowWorkplanQtr(Workbook workbook, Sheet sheet) {
         short rowHeight = 500;
         short tr = 0;
         Font fontBold2 = workbook.createFont();
         fontBold2.setFontName("Arial");
         fontBold2.setFontHeightInPoints((short) 10);
         fontBold2.setBold(false);
-
+        
         Font fontBold = workbook.createFont();
         fontBold.setFontName("Arial");
         fontBold.setFontHeightInPoints((short) 10);
         fontBold.setBold(true);
-
+        
         CellStyle style = workbook.createCellStyle();
         style.setFillForegroundColor(IndexedColors.RED.index);
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         style.setAlignment(HorizontalAlignment.CENTER);
         style.setWrapText(true);
         style.setFont(fontBold);
-
+        
         CellStyle styleq = workbook.createCellStyle();
         styleq.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.index);
         styleq.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -1283,7 +1313,7 @@ public class PerformanceView extends Div {
         styleq.setVerticalAlignment(VerticalAlignment.CENTER);
         styleq.setWrapText(true);
         styleq.setFont(fontBold);
-
+        
         CellStyle styleq2 = workbook.createCellStyle();
         styleq2.setFillForegroundColor(IndexedColors.LIGHT_CORNFLOWER_BLUE.index);
         styleq2.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -1291,13 +1321,13 @@ public class PerformanceView extends Div {
         styleq2.setVerticalAlignment(VerticalAlignment.CENTER);
         styleq2.setWrapText(true);
         styleq2.setFont(fontBold);
-
+        
         CellStyle styleq31 = workbook.createCellStyle();
         styleq31.setAlignment(HorizontalAlignment.CENTER);
         styleq31.setVerticalAlignment(VerticalAlignment.CENTER);
         styleq31.setWrapText(true);
         styleq31.setFont(fontBold);
-
+        
         CellStyle styleq3 = workbook.createCellStyle();
         styleq3.setFillForegroundColor(IndexedColors.VIOLET.index);
         styleq3.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -1305,7 +1335,7 @@ public class PerformanceView extends Div {
         styleq3.setVerticalAlignment(VerticalAlignment.CENTER);
         styleq3.setWrapText(true);
         styleq3.setFont(fontBold);
-
+        
         CellStyle styleq4 = workbook.createCellStyle();
         styleq4.setFillForegroundColor(IndexedColors.TAN.index);
         styleq4.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -1313,7 +1343,7 @@ public class PerformanceView extends Div {
         styleq4.setVerticalAlignment(VerticalAlignment.CENTER);
         styleq4.setWrapText(true);
         styleq4.setFont(fontBold);
-
+        
         CellStyle styley = workbook.createCellStyle();
         styley.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.index);
         styley.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -1329,13 +1359,13 @@ public class PerformanceView extends Div {
         stylegreen.setFont(fontBold);
         stylegreen.setWrapText(true);
         stylegreen.setFont(fontBold);
-
+        
         CellStyle stylec = workbook.createCellStyle();
         stylec.setAlignment(HorizontalAlignment.CENTER);
         stylec.setVerticalAlignment(VerticalAlignment.CENTER);
         stylec.setWrapText(true);//stylec.setFont(fontBold);
         stylec.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
-
+        
         CellStyle stylec2 = workbook.createCellStyle();
         stylec2.setAlignment(HorizontalAlignment.CENTER);
         stylec2.setVerticalAlignment(VerticalAlignment.CENTER);
@@ -1343,13 +1373,13 @@ public class PerformanceView extends Div {
         stylec2.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.index);
         stylec2.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         stylec2.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
-
+        
         CellStyle stylec1 = workbook.createCellStyle();
         stylec1.setAlignment(HorizontalAlignment.CENTER);
         stylec1.setVerticalAlignment(VerticalAlignment.CENTER);
         stylec1.setWrapText(true);
         stylec1.setFont(fontBold);
-
+        
         CellStyle borderedStyle = workbook.createCellStyle();
         borderedStyle.setBorderTop(BorderStyle.THIN);
         borderedStyle.setBorderBottom(BorderStyle.THIN);
@@ -1357,25 +1387,25 @@ public class PerformanceView extends Div {
         borderedStyle.setBorderRight(BorderStyle.THIN);
         borderedStyle.setAlignment(HorizontalAlignment.CENTER);
         borderedStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-
+        
         CellStyle borderedStyleWithColor = workbook.createCellStyle();
         borderedStyleWithColor.cloneStyleFrom(borderedStyle); // Copy styles from the borderedStyle
         borderedStyleWithColor.setFillForegroundColor(IndexedColors.RED.index);
         borderedStyleWithColor.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
+        
         CellStyle style11 = workbook.createCellStyle();
         style11.setAlignment(HorizontalAlignment.LEFT);
         style11.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         style11.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
         List<Integer> rowBoldcount = new ArrayList();
         Row headerRow = sheet.createRow(tr);
-
+        
         try {
-
+            
             headerRow.setHeight(rowHeight);
-
+            
             addImageToHeader(sheet, "/META-INF/resources/images/urclogo.png");
-
+            
         } catch (IOException ex) {
             Logger.getLogger(BudgetReportsView.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -1385,7 +1415,7 @@ public class PerformanceView extends Div {
         Cell headerCell = headerRow.createCell(1);
         headerCell.setCellValue("UGANDA RAILWAYS CORPORATION");
         headerCell.setCellStyle(styleq31);
-        CellRangeAddress cellRange3 = new CellRangeAddress(tr, tr, 1, 9);
+        CellRangeAddress cellRange3 = new CellRangeAddress(tr, tr, 1, 12);
         sheet.addMergedRegion(cellRange3);
         setBottomBorderForRegion(sheet, cellRange3);
         tr++;
@@ -1393,11 +1423,11 @@ public class PerformanceView extends Div {
         Cell cellq = row0.createCell((short) 0);
         row0.getCell(0).setCellStyle(styleq31);
         cellq.setCellValue("BUDGET " + budget.getValue().getFinancialYear() + " VS ACTUALS " + gen.getPreviousFy(budget.getValue().getFinancialYear()));
-        CellRangeAddress cellRange4 = new CellRangeAddress(tr, tr, 0, 9);
+        CellRangeAddress cellRange4 = new CellRangeAddress(tr, tr, 0, 12);
         sheet.addMergedRegion(cellRange4);
         rowBoldcount.add((int) 0);
         tr++;
-
+        
         Row row = sheet.createRow(tr);
         Cell cell = row.createCell((short) 0);
         row.getCell(0).setCellStyle(styleq31);
@@ -1414,7 +1444,7 @@ public class PerformanceView extends Div {
         Cell cell5 = row.createCell((short) 4);
         row.getCell(4).setCellStyle(styleq31);
         cell5.setCellValue("Qtr2");
-
+        
         Cell cell6 = row.createCell((short) 5);
         row.getCell(5).setCellStyle(styleq31);
         cell6.setCellValue("Qtr2 Actuals");
@@ -1430,10 +1460,22 @@ public class PerformanceView extends Div {
         Cell cell10 = row.createCell((short) 9);
         row.getCell(9).setCellStyle(styleq31);
         cell10.setCellValue("Qtr4 Actuals");
-
+        
+        Cell cell11 = row.createCell((short) 10);
+        row.getCell(10).setCellStyle(styleq31);
+        cell11.setCellValue("Total Budget");
+        
+        Cell cell12 = row.createCell((short) 11);
+        row.getCell(11).setCellStyle(styleq31);
+        cell12.setCellValue("Total Actuals Budget");
+        
+        Cell cell13 = row.createCell((short) 12);
+        row.getCell(12).setCellStyle(styleq31);
+        cell13.setCellValue("Variance");
+        
         rowBoldcount.add((int) 1);
-
-        List<BudgetItemsActuals> findDistinctBudgetItemses = budgetItemsService.findDistinctBudgetItemses2(budget.getValue(), comboBoxD_Section.getSelectedItems());
+        
+        List<BudgetItemsActuals> findDistinctBudgetItemses = budgetItemsService.findDistinctBudgetItemses22(budget.getValue(), comboBoxD_Section.getSelectedItems());
         for (BudgetItemsActuals h : findDistinctBudgetItemses) {
             tr++;
             short tc = 0;
@@ -1442,7 +1484,7 @@ public class PerformanceView extends Div {
             rowx1.getCell(tc).setCellStyle(stylec);
             tc++;
             rowx1.createCell((short) tc).setCellValue(h.getItem());
-
+            
             rowx1.getCell(tc).setCellStyle(stylec);
             tc++;
             rowx1.createCell((short) tc).setCellValue(h.getJul().add(h.getAug()).add(h.getSep()).doubleValue());
@@ -1468,9 +1510,27 @@ public class PerformanceView extends Div {
             tc++;
             rowx1.createCell((short) tc).setCellValue(h.getAprA().add(h.getMayA()).add(h.getJunA()).doubleValue());
             rowx1.getCell(tc).setCellStyle(stylec);
-
+            
+            tc++;
+            rowx1.createCell((short) tc).setCellValue(h.getJul().add(h.getAug()).add(h.getSep()).add(h.getOct()).add(h.getNov()).add(h.getDec())
+                    .add(h.getJan()).add(h.getFeb()).add(h.getMar()).add(h.getApr()).add(h.getMay()).add(h.getJun()).doubleValue());
+            rowx1.getCell(tc).setCellStyle(stylec);
+            
+            tc++;
+            rowx1.createCell((short) tc).setCellValue(h.getJulA().add(h.getAugA()).add(h.getSepA()).add(h.getOctA()).add(h.getNovA()).add(h.getDecA())
+                    .add(h.getJanA()).add(h.getFebA()).add(h.getMarA()).add(h.getAprA()).add(h.getMayA()).add(h.getJunA()).doubleValue());
+            rowx1.getCell(tc).setCellStyle(stylec);
+            
+            tc++;
+            BigDecimal TT = h.getJul().add(h.getAug()).add(h.getSep()).add(h.getOct()).add(h.getNov()).add(h.getDec())
+                    .add(h.getJan()).add(h.getFeb()).add(h.getMar()).add(h.getApr()).add(h.getMay()).add(h.getJun());
+            BigDecimal TTA = h.getJulA().add(h.getAugA()).add(h.getSepA()).add(h.getOctA()).add(h.getNovA()).add(h.getDecA())
+                    .add(h.getJanA()).add(h.getFebA()).add(h.getMarA()).add(h.getAprA()).add(h.getMayA()).add(h.getJunA());
+            rowx1.createCell((short) tc).setCellValue(TTA.subtract(TT).doubleValue());
+            rowx1.getCell(tc).setCellStyle(stylec);            
+            
         }
-
+        
         for (int i = 0; i < sheet.getRow(0).getLastCellNum(); i++) {
             sheet.autoSizeColumn(i);
         }
@@ -1480,7 +1540,7 @@ public class PerformanceView extends Div {
             if (currentRow == null) {
                 continue;
             }
-
+            
             for (Cell currentCell : currentRow) {
                 if (currentCell == null) {
                     continue;
@@ -1501,10 +1561,10 @@ public class PerformanceView extends Div {
                     newStyle.setLeftBorderColor(IndexedColors.BLACK.getIndex());
                     newStyle.setRightBorderColor(IndexedColors.BLACK.getIndex());
                     newStyle.setWrapText(true);
-
+                    
                     currentCell.setCellStyle(newStyle);
                 }
-
+                
             }
         }
     }

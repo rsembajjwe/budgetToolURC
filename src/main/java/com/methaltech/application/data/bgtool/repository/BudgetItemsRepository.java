@@ -282,6 +282,20 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("activity") Urc_Activities activity
     );
 
+    
+        @Query("SELECT DISTINCT b.coacode FROM BudgetItems b "
+            + "WHERE b.budgetType IN :budgetType "
+            + "AND b.budget = :budget "
+            + "AND b.deptUnit IN :deptUnit "
+            + "AND b.coalevel1 = :coalevel1 ")
+    List<COA> findDistinctCoacodesByCriteria(
+            @Param("budgetType") Set<Organisation> budgetType,
+            @Param("budget") Budget budget,
+            @Param("deptUnit") Set<UrcDeptSectionAnlDimbgt> deptUnit,
+            @Param("coalevel1") Coalevel1 coalevel1
+    );
+    
+    
     @Query("SELECT DISTINCT b.coacode FROM BudgetItems b "
             + "WHERE b.budgetType = :budgetType "
             + "AND b.budget = :budget "
@@ -311,6 +325,37 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("deptUnit") UrcDeptSectionAnlDimbgt deptUnit,
             @Param("coacode") COA coacode
     );
+    
+    @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + "
+            + "b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.coalevel1 = :coalevel1 "
+            + "AND b.budgetType IN :budgetType "
+            + "AND b.budget = :budget "
+            + "AND b.deptUnit IN :deptUnit "
+            + "AND b.coacode = :coacode")
+    BigDecimal sumMonthsByOrgAndBudgetAndSection(
+            @Param("coalevel1") Coalevel1 coalevel1,
+            @Param("budgetType") Set<Organisation> budgetType,
+            @Param("budget") Budget budget,
+            @Param("deptUnit") Set<UrcDeptSectionAnlDimbgt> deptUnit,
+            @Param("coacode") COA coacode
+    );    
+    
+    @Query("SELECT b "
+            + "FROM BudgetItems b "
+            + "WHERE b.coalevel1 = :coalevel1 "
+            + "AND b.budgetType IN :budgetType "
+            + "AND b.budget = :budget "
+            + "AND b.deptUnit IN :deptUnit "
+            + "AND b.coacode = :coacode")
+    List<BudgetItems> findByOrgAndBudgetAndSection3(
+            @Param("coalevel1") Coalevel1 coalevel1,
+            @Param("budgetType") Set<Organisation> budgetType,
+            @Param("budget") Budget budget,
+            @Param("deptUnit") Set<UrcDeptSectionAnlDimbgt> deptUnit,
+            @Param("coacode") COA coacode
+    );      
 
     @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + "
             + "b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "

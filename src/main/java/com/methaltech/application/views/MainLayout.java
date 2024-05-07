@@ -8,25 +8,19 @@ import com.methaltech.application.data.entity.bgtool.User;
 import com.methaltech.application.data.bgtool.service.UserService;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.UnitMeasures.UnitsMeasureView;
-import com.methaltech.application.views.about.AboutView;
 import com.methaltech.application.views.actual.ActualView;
 import com.methaltech.application.views.actual.PerformanceView;
+import com.methaltech.application.views.approvals.ApprovalView;
 import com.methaltech.application.views.budget.BudgetFormView;
 import com.methaltech.application.views.budget.BudgetView;
-import com.methaltech.application.views.budget.transferView;
 import com.methaltech.application.views.budgetReport.BudgetReportsView;
-import com.methaltech.application.views.cardlist.CardListView;
 import com.methaltech.application.views.currency.currencyView;
-import com.methaltech.application.views.emailsender.EmailSenderView;
 import com.methaltech.application.views.freight.freightVolumeView;
-import com.methaltech.application.views.helloworld.HelloWorldView;
-import com.methaltech.application.views.masterdetail.MasterDetailView;
 import com.methaltech.application.views.procurementplan.ProcurementCOASettingView;
 import com.methaltech.application.views.procurementplan.ProcurementPlanView;
 import com.methaltech.application.views.salary.staffSalaryView;
 import com.methaltech.application.views.structure.structureView;
 import com.methaltech.application.views.users.UserView;
-import com.methaltech.application.views.workplan.WorkplanView;
 import com.methaltech.application.views.workplan.budgetWorkplanView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
@@ -133,7 +127,7 @@ public class MainLayout extends AppLayout {
 
         Scroller scroller = new Scroller(createNavigation());
 
-        addToDrawer(header, header2,scroller, createFooter());
+        addToDrawer(header, header2, scroller, createFooter());
     }
 
     private SideNav createNavigation() {
@@ -186,7 +180,7 @@ public class MainLayout extends AppLayout {
         if (accessChecker.hasAccess(budgetWorkplanView.class)) {
             nav.addItem(new SideNavItem("Work plans", budgetWorkplanView.class, LineAwesomeIcon.BACON_SOLID.create()));
 
-        }        
+        }
 
         if (accessChecker.hasAccess(BudgetReportsView.class)) {
             nav.addItem(new SideNavItem("Budget Reports", BudgetReportsView.class, LineAwesomeIcon.ACCESSIBLE_ICON.create()));
@@ -195,7 +189,7 @@ public class MainLayout extends AppLayout {
         if (accessChecker.hasAccess(ProcurementCOASettingView.class)) {
             nav.addItem(new SideNavItem("Procurement Plan Chart of Accounts Settings", ProcurementCOASettingView.class, LineAwesomeIcon.PIED_PIPER_HAT.create()));
 
-        }        
+        }
         if (accessChecker.hasAccess(ProcurementPlanView.class)) {
             nav.addItem(new SideNavItem("Procurement Plan", ProcurementPlanView.class, LineAwesomeIcon.PIED_PIPER_HAT.create()));
 
@@ -203,17 +197,20 @@ public class MainLayout extends AppLayout {
         if (accessChecker.hasAccess(ActualView.class)) {
             nav.addItem(new SideNavItem("Budget Actuals", ActualView.class, LineAwesomeIcon.ALGOLIA.create()));
 
-        } 
+        }
         if (accessChecker.hasAccess(PerformanceView.class)) {
-            nav.addItem(new SideNavItem("Budget Performance", PerformanceView.class, LineAwesomeIcon.ALGOLIA.create()));
+            nav.addItem(new SideNavItem("Budget Analysis Report", PerformanceView.class, LineAwesomeIcon.ALGOLIA.create()));
 
-        }        
-        
+        }
+        if (accessChecker.hasAccess(ApprovalView.class)) {
+            nav.addItem(new SideNavItem("Budget Approvals", ApprovalView.class, LineAwesomeIcon.AVIATO.create()));
+
+        }
+
         /*                if (accessChecker.hasAccess(EmailSenderView.class)) {
         nav.addItem(new SideNavItem("Send Email", EmailSenderView.class, LineAwesomeIcon.ENVELOPE_OPEN.create()));
         
         }*/
-
         return nav;
     }
 

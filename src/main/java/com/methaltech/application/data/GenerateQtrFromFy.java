@@ -53,11 +53,10 @@ public class GenerateQtrFromFy {
         int[] years = extractYears(fy);
         List<String> periods = new ArrayList<>();
         int y = years[1];
-        System.out.println(y+" Beeeeeen");
         if (qtr.equals(Quarters.Qtr1)) {
 
             periods.addAll(Arrays.asList(String.format("%d001", y), String.format("%d002", y), String.format("%d003", y)));
-            System.out.println(periods.toString());
+ 
         } else if (qtr.equals(Quarters.Qtr2)) {
 
             periods.addAll(Arrays.asList(String.format("%d004", y), String.format("%d005", y), String.format("%d006", y)));

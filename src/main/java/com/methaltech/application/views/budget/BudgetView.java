@@ -6,8 +6,10 @@ import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.bgtool.service.*;
 import com.methaltech.application.data.entity.bgtool.*;
 import com.methaltech.application.data.entity.livedata.UR5_ACNT;
+import com.methaltech.application.data.entity.livedata.UrcDepartmentAnlDim;
 import com.methaltech.application.data.oldbgtool.service.OldBudgetService;
 import com.methaltech.application.data.livedata.service.UR5_ACNTService;
+import com.methaltech.application.data.livedata.service.UrcDepartmentAnlDimService;
 import static com.methaltech.application.test.getYears;
 import static com.methaltech.application.test.strings;
 import com.methaltech.application.views.MainLayout;
@@ -218,6 +220,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
     private MenuItem SunFile;
     private SubMenu sunFile;
+    private SubMenu parameterFile;
 
     private BeanValidationBinder<Budget> binder = new BeanValidationBinder<>(Budget.class);
 
@@ -278,6 +281,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     private final URC_Priority_AreasService sampleURC_Priority_AreasService;
     private final Urc_ActivitiesService sampleUrc_ActivitiesService;
     private final UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService;
+    private final DeptSectionMergerService sampleDeptSectionMergerService;
 
     private TextField currencyDataNameField = new TextField("Currency");
     private TextField currencyAbrField = new TextField("Currency Abr");
@@ -355,6 +359,8 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     private final FundsourceService fundsourceService;
     PeriodExtractor periodExtractor = new PeriodExtractor();
 
+    private final UrcDepartmentAnlDimService sampleUrcAnlCodeService;
+
     @Autowired
     public BudgetView(BudgetService sampleBudgetService, CurrencyDataService sampleCurrencyDataService,
             CurrencyService sampleCurrencyService, UnitService sampleUnitService,
@@ -368,7 +374,8 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             Urc_ActivitiesService sampleUrc_ActivitiesService, URC_Strategic_PlanService sampleURC_Strategic_PlanService,
             URC_Priority_AreasService sampleURC_Priority_AreasService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService,
             OldBudgetService oldbudgetRepository, BudgetItemsService budgetItemsService,
-            ProcurementTypeService sampleProcurementTypeService, FundsourceService fundsourceService) {
+            ProcurementTypeService sampleProcurementTypeService, FundsourceService fundsourceService,
+            UrcDepartmentAnlDimService sampleUrcAnlCodeService, DeptSectionMergerService sampleDeptSectionMergerService) {
         this.sampleBudgetService = sampleBudgetService;
         this.sampleCurrencyDataService = sampleCurrencyDataService;
         this.sampleCurrencyService = sampleCurrencyService;
@@ -396,6 +403,8 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         // this.sampleProcurementMethodService = sampleProcurementMethodService;
         this.sampleProcurementTypeService = sampleProcurementTypeService;
         this.fundsourceService = fundsourceService;
+        this.sampleUrcAnlCodeService = sampleUrcAnlCodeService;
+        this.sampleDeptSectionMergerService = sampleDeptSectionMergerService;
         addClassNames("budget-view");
 
         // Create UI
@@ -696,6 +705,9 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         });
         createIconItem(sunFile, VaadinIcon.BRIEFCASE, "Extract Sun Budget File", null, true).addClickListener(e -> {
             exportAndDownloadSunFile(sampleBudget.getFinancialYear());
+        });
+        createIconItem(parameterFile, VaadinIcon.BRIEFCASE, "Extract Budget Parameters", null, true).addClickListener(e -> {
+            extractFundsourcesAndActvities();
         });
 
         COASearchField.addValueChangeListener(event -> {
@@ -1743,6 +1755,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
         SunFile = menuBar.addItem("Sun Setting");
         sunFile = SunFile.getSubMenu();
+        parameterFile = SunFile.getSubMenu();
         return menuBar;
     }
 
@@ -3991,6 +4004,118 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         return string;
     }
 
+    private void extractFundsourcesAndActvities() {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Activities " + sampleBudget.getFinancialYear());
+            // Set the paper size to A3 Landscape
+            sheet.getPrintSetup().setPaperSize(PrintSetup.A4_PAPERSIZE);
+            sheet.getPrintSetup().setLandscape(true);
+            String[] headers = {
+                "ACTIVITY CODE",
+                "ACTIVITY DESCRIPTION"
+            };
+            int tr = 0;
+            Row headerRow = sheet.createRow(0);
+
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+            }
+            List<Urc_Activities> acts = sampleUrc_ActivitiesService.listByBudget2(sampleBudget);
+            for (Urc_Activities a : acts) {
+                tr++;
+                Row row = sheet.createRow(tr);
+                Cell cell0 = row.createCell((short) 0);
+                cell0.setCellValue(a.getActivityCode());
+                Cell cell1 = row.createCell((short) 1);
+
+                cell1.setCellValue(getFirstCharacters(a.getName()));
+
+            }
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+            tr = 0;
+            Sheet sheet2 = workbook.createSheet("Budget Type " + sampleBudget.getFinancialYear());
+            // Set the paper size to A3 Landscape
+            sheet2.getPrintSetup().setPaperSize(PrintSetup.A4_PAPERSIZE);
+            sheet2.getPrintSetup().setLandscape(true);
+            String[] headers2 = {
+                "BUDGET TYPE CODE",
+                "BUDGET TYPE DESCRIPTION"
+            };
+
+            Row headerRow2 = sheet2.createRow(0);
+
+            for (int i = 0; i < headers2.length; i++) {
+                Cell cell = headerRow2.createCell(i);
+                cell.setCellValue(headers2[i]);
+            }
+            List<Organisation> organisations = sampleOrganisationService.findByBudgetList(sampleBudget);
+            for (Organisation a : organisations) {
+                tr++;
+                Row row = sheet2.createRow(tr);
+                Cell cell0 = row.createCell((short) 0);
+                cell0.setCellValue(a.getId());
+                Cell cell1 = row.createCell((short) 1);
+
+                cell1.setCellValue(getFirstCharacters(a.getName()));
+
+            }
+            for (int i = 0; i < headers2.length; i++) {
+                sheet2.autoSizeColumn(i);
+            }
+
+            tr = 0;
+            Sheet sheet3 = workbook.createSheet("Budget Funds Sources " + sampleBudget.getFinancialYear());
+            // Set the paper size to A3 Landscape
+            sheet3.getPrintSetup().setPaperSize(PrintSetup.A4_PAPERSIZE);
+            sheet3.getPrintSetup().setLandscape(true);
+            String[] headers3 = {
+                "BUDGET FUND SOURCE CODE",
+                "BUDGET FUND SOURCE DESCRIPTION"
+            };
+
+            Row headerRow3 = sheet3.createRow(0);
+
+            for (int i = 0; i < headers3.length; i++) {
+                Cell cell = headerRow3.createCell(i);
+                cell.setCellValue(headers3[i]);
+            }
+            List<Fundsource> fundsources = fundsourceService.findFundsourcesByBudget(sampleBudget);
+            for (Fundsource a : fundsources) {
+                tr++;
+                Row row = sheet3.createRow(tr);
+                Cell cell0 = row.createCell((short) 0);
+                cell0.setCellValue(a.getId());
+                Cell cell1 = row.createCell((short) 1);
+
+                cell1.setCellValue(getFirstCharacters(a.getFundsource()));
+
+            }
+            for (int i = 0; i < headers3.length; i++) {
+                sheet3.autoSizeColumn(i);
+            }
+            // Write the workbook to a byte array
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+
+            // Create a StreamResource with the Excel data
+            StreamResource resource = new StreamResource("Budget Parameters " + sampleBudget.getFinancialYear() + ".xlsx", ()
+                    -> new ByteArrayInputStream(outputStream.toByteArray()));
+
+            // Create an Anchor component with the StreamResource
+            Anchor downloadLink = new Anchor(resource, "");
+            downloadLink.getElement().setAttribute("download", true);
+            add(downloadLink);
+            // Programmatically click the download link to initiate the download
+            downloadLink.getElement().callJsFunction("click");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     private void createSunBudgetFile(Workbook workbook, Sheet sheet) {
 
         String[] headers = {
@@ -4000,7 +4125,12 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             "ACCT PERIOD",
             "TRANSACTIONAL REFERENCE",
             "BASE AMOUNT",
-            "CURR CODE"
+            "CURR CODE",
+            "DEPARTMENT",
+            "SECTION",
+            "ACTIVITY CODE",
+            "BUDGET TYPE",
+            "BUDGET FUND SOURCE"
         };
         int tr = 0;
         Row headerRow = sheet.createRow(0);
@@ -4013,6 +4143,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         for (Coalevel1 list : Coalevel1List) {
             List<BudgetItems> budgetItems = budgetItemsService.findByBudgetAndCoalevel1(sampleBudget, list);
             for (BudgetItems k : budgetItems) {
+                String deptCode = sampleDeptSectionMergerService.getDeptCode(k.getDeptUnit().getANL_CODE());
                 if (k.getJul().doubleValue() > 0) {
                     tr++;
                     Row row = sheet.createRow(tr);
@@ -4043,6 +4174,27 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
                     Cell cell6 = row.createCell((short) 6);
                     cell6.setCellValue("UGX");
+                    Cell cell7 = row.createCell((short) 7);
+                    cell7.setCellValue(deptCode);
+
+                    Cell cell8 = row.createCell((short) 8);
+                    cell8.setCellValue(k.getDeptUnit().getANL_CODE());
+
+                    Cell cell9 = row.createCell((short) 9);
+                    if (k.getActivity() != null) {
+                        cell9.setCellValue(k.getActivity().getActivityCode());
+                    }
+
+                    Cell cell10 = row.createCell((short) 10);
+                    if (k.getBudgetType() != null) {
+                        cell10.setCellValue(k.getBudgetType().getId());
+                    }
+
+                    Cell cell11 = row.createCell((short) 11);
+                    if (k.getFundsource() != null) {
+                        cell11.setCellValue(k.getFundsource().getId());
+                    }
+
                 }
                 if (k.getAug().doubleValue() > 0) {
                     tr++;
@@ -4074,6 +4226,25 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
                     Cell cell6 = row.createCell((short) 6);
                     cell6.setCellValue("UGX");
+                    Cell cell7 = row.createCell((short) 7);
+                    cell7.setCellValue(deptCode);
+
+                    Cell cell8 = row.createCell((short) 8);
+                    cell8.setCellValue(k.getDeptUnit().getANL_CODE());
+                    Cell cell9 = row.createCell((short) 9);
+                    if (k.getActivity() != null) {
+                        cell9.setCellValue(k.getActivity().getActivityCode());
+                    }
+
+                    Cell cell10 = row.createCell((short) 10);
+                    if (k.getBudgetType() != null) {
+                        cell10.setCellValue(k.getBudgetType().getId());
+                    }
+
+                    Cell cell11 = row.createCell((short) 11);
+                    if (k.getFundsource() != null) {
+                        cell11.setCellValue(k.getFundsource().getId());
+                    }
                 }
                 if (k.getSep().doubleValue() > 0) {
                     tr++;
@@ -4105,6 +4276,25 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
                     Cell cell6 = row.createCell((short) 6);
                     cell6.setCellValue("UGX");
+                    Cell cell7 = row.createCell((short) 7);
+                    cell7.setCellValue(deptCode);
+
+                    Cell cell8 = row.createCell((short) 8);
+                    cell8.setCellValue(k.getDeptUnit().getANL_CODE());
+                    Cell cell9 = row.createCell((short) 9);
+                    if (k.getActivity() != null) {
+                        cell9.setCellValue(k.getActivity().getActivityCode());
+                    }
+
+                    Cell cell10 = row.createCell((short) 10);
+                    if (k.getBudgetType() != null) {
+                        cell10.setCellValue(k.getBudgetType().getId());
+                    }
+
+                    Cell cell11 = row.createCell((short) 11);
+                    if (k.getFundsource() != null) {
+                        cell11.setCellValue(k.getFundsource().getId());
+                    }
                 }
                 if (k.getOct().doubleValue() > 0) {
                     tr++;
@@ -4136,6 +4326,24 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
                     Cell cell6 = row.createCell((short) 6);
                     cell6.setCellValue("UGX");
+                    Cell cell7 = row.createCell((short) 7);
+                    cell7.setCellValue(deptCode);
+
+                    Cell cell8 = row.createCell((short) 8);
+                    cell8.setCellValue(k.getDeptUnit().getANL_CODE());
+                    Cell cell9 = row.createCell((short) 9);
+                    if (k.getActivity() != null) {
+                        cell9.setCellValue(k.getActivity().getActivityCode());
+                    }
+
+                    Cell cell10 = row.createCell((short) 10);
+                    if (k.getBudgetType() != null) {
+                        cell10.setCellValue(k.getBudgetType().getId());
+                    }
+                    Cell cell11 = row.createCell((short) 11);
+                    if (k.getFundsource() != null) {
+                        cell11.setCellValue(k.getFundsource().getId());
+                    }
                 }
                 if (k.getNov().doubleValue() > 0) {
                     tr++;
@@ -4167,6 +4375,24 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
                     Cell cell6 = row.createCell((short) 6);
                     cell6.setCellValue("UGX");
+                    Cell cell7 = row.createCell((short) 7);
+                    cell7.setCellValue(deptCode);
+
+                    Cell cell8 = row.createCell((short) 8);
+                    cell8.setCellValue(k.getDeptUnit().getANL_CODE());
+                    Cell cell9 = row.createCell((short) 9);
+                    if (k.getActivity() != null) {
+                        cell9.setCellValue(k.getActivity().getActivityCode());
+                    }
+
+                    Cell cell10 = row.createCell((short) 10);
+                    if (k.getBudgetType() != null) {
+                        cell10.setCellValue(k.getBudgetType().getId());
+                    }
+                    Cell cell11 = row.createCell((short) 11);
+                    if (k.getFundsource() != null) {
+                        cell11.setCellValue(k.getFundsource().getId());
+                    }
                 }
                 if (k.getDec().doubleValue() > 0) {
                     tr++;
@@ -4198,6 +4424,25 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
                     Cell cell6 = row.createCell((short) 6);
                     cell6.setCellValue("UGX");
+                    Cell cell7 = row.createCell((short) 7);
+                    cell7.setCellValue(deptCode);
+
+                    Cell cell8 = row.createCell((short) 8);
+                    cell8.setCellValue(k.getDeptUnit().getANL_CODE());
+
+                    Cell cell9 = row.createCell((short) 9);
+                    if (k.getActivity() != null) {
+                        cell9.setCellValue(k.getActivity().getActivityCode());
+                    }
+
+                    Cell cell10 = row.createCell((short) 10);
+                    if (k.getBudgetType() != null) {
+                        cell10.setCellValue(k.getBudgetType().getId());
+                    }
+                    Cell cell11 = row.createCell((short) 11);
+                    if (k.getFundsource() != null) {
+                        cell11.setCellValue(k.getFundsource().getId());
+                    }
                 }
                 if (k.getJan().doubleValue() > 0) {
                     tr++;
@@ -4229,6 +4474,25 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
                     Cell cell6 = row.createCell((short) 6);
                     cell6.setCellValue("UGX");
+                    Cell cell7 = row.createCell((short) 7);
+                    cell7.setCellValue(deptCode);
+
+                    Cell cell8 = row.createCell((short) 8);
+                    cell8.setCellValue(k.getDeptUnit().getANL_CODE());
+
+                    Cell cell9 = row.createCell((short) 9);
+                    if (k.getActivity() != null) {
+                        cell9.setCellValue(k.getActivity().getActivityCode());
+                    }
+
+                    Cell cell10 = row.createCell((short) 10);
+                    if (k.getBudgetType() != null) {
+                        cell10.setCellValue(k.getBudgetType().getId());
+                    }
+                    Cell cell11 = row.createCell((short) 11);
+                    if (k.getFundsource() != null) {
+                        cell11.setCellValue(k.getFundsource().getId());
+                    }
                 }
                 if (k.getFeb().doubleValue() > 0) {
                     tr++;
@@ -4260,6 +4524,25 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
                     Cell cell6 = row.createCell((short) 6);
                     cell6.setCellValue("UGX");
+                    Cell cell7 = row.createCell((short) 7);
+                    cell7.setCellValue(deptCode);
+
+                    Cell cell8 = row.createCell((short) 8);
+                    cell8.setCellValue(k.getDeptUnit().getANL_CODE());
+
+                    Cell cell9 = row.createCell((short) 9);
+                    if (k.getActivity() != null) {
+                        cell9.setCellValue(k.getActivity().getActivityCode());
+                    }
+
+                    Cell cell10 = row.createCell((short) 10);
+                    if (k.getBudgetType() != null) {
+                        cell10.setCellValue(k.getBudgetType().getId());
+                    }
+                    Cell cell11 = row.createCell((short) 11);
+                    if (k.getFundsource() != null) {
+                        cell11.setCellValue(k.getFundsource().getId());
+                    }
                 }
                 if (k.getMar().doubleValue() > 0) {
                     tr++;
@@ -4291,6 +4574,25 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
                     Cell cell6 = row.createCell((short) 6);
                     cell6.setCellValue("UGX");
+                    Cell cell7 = row.createCell((short) 7);
+                    cell7.setCellValue(deptCode);
+
+                    Cell cell8 = row.createCell((short) 8);
+                    cell8.setCellValue(k.getDeptUnit().getANL_CODE());
+
+                    Cell cell9 = row.createCell((short) 9);
+                    if (k.getActivity() != null) {
+                        cell9.setCellValue(k.getActivity().getActivityCode());
+                    }
+
+                    Cell cell10 = row.createCell((short) 10);
+                    if (k.getBudgetType() != null) {
+                        cell10.setCellValue(k.getBudgetType().getId());
+                    }
+                    Cell cell11 = row.createCell((short) 11);
+                    if (k.getFundsource() != null) {
+                        cell11.setCellValue(k.getFundsource().getId());
+                    }
                 }
                 if (k.getApr().doubleValue() > 0) {
                     tr++;
@@ -4322,6 +4624,25 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
                     Cell cell6 = row.createCell((short) 6);
                     cell6.setCellValue("UGX");
+                    Cell cell7 = row.createCell((short) 7);
+                    cell7.setCellValue(deptCode);
+
+                    Cell cell8 = row.createCell((short) 8);
+                    cell8.setCellValue(k.getDeptUnit().getANL_CODE());
+
+                    Cell cell9 = row.createCell((short) 9);
+                    if (k.getActivity() != null) {
+                        cell9.setCellValue(k.getActivity().getActivityCode());
+                    }
+
+                    Cell cell10 = row.createCell((short) 10);
+                    if (k.getBudgetType() != null) {
+                        cell10.setCellValue(k.getBudgetType().getId());
+                    }
+                    Cell cell11 = row.createCell((short) 11);
+                    if (k.getFundsource() != null) {
+                        cell11.setCellValue(k.getFundsource().getId());
+                    }
                 }
                 if (k.getMay().doubleValue() > 0) {
                     tr++;
@@ -4353,6 +4674,25 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
                     Cell cell6 = row.createCell((short) 6);
                     cell6.setCellValue("UGX");
+                    Cell cell7 = row.createCell((short) 7);
+                    cell7.setCellValue(deptCode);
+
+                    Cell cell8 = row.createCell((short) 8);
+                    cell8.setCellValue(k.getDeptUnit().getANL_CODE());
+
+                    Cell cell9 = row.createCell((short) 9);
+                    if (k.getActivity() != null) {
+                        cell9.setCellValue(k.getActivity().getActivityCode());
+                    }
+
+                    Cell cell10 = row.createCell((short) 10);
+                    if (k.getBudgetType() != null) {
+                        cell10.setCellValue(k.getBudgetType().getId());
+                    }
+                    Cell cell11 = row.createCell((short) 11);
+                    if (k.getFundsource() != null) {
+                        cell11.setCellValue(k.getFundsource().getId());
+                    }
                 }
                 if (k.getJun().doubleValue() > 0) {
                     tr++;
@@ -4384,6 +4724,26 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
                     Cell cell6 = row.createCell((short) 6);
                     cell6.setCellValue("UGX");
+
+                    Cell cell7 = row.createCell((short) 7);
+                    cell7.setCellValue(deptCode);
+
+                    Cell cell8 = row.createCell((short) 8);
+                    cell8.setCellValue(k.getDeptUnit().getANL_CODE());
+
+                    Cell cell9 = row.createCell((short) 9);
+                    if (k.getActivity() != null) {
+                        cell9.setCellValue(k.getActivity().getActivityCode());
+                    }
+
+                    Cell cell10 = row.createCell((short) 10);
+                    if (k.getBudgetType() != null) {
+                        cell10.setCellValue(k.getBudgetType().getId());
+                    }
+                    Cell cell11 = row.createCell((short) 11);
+                    if (k.getFundsource() != null) {
+                        cell11.setCellValue(k.getFundsource().getId());
+                    }
                 }
             }
         }
@@ -4398,7 +4758,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Sun File " + fy);
             // Set the paper size to A3 Landscape
-            sheet.getPrintSetup().setPaperSize(PrintSetup.A3_PAPERSIZE);
+            sheet.getPrintSetup().setPaperSize(PrintSetup.A4_PAPERSIZE);
             sheet.getPrintSetup().setLandscape(true);
             createSunBudgetFile(workbook, sheet);
             //createDataRows(sheet, people);

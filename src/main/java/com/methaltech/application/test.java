@@ -4,12 +4,15 @@ package com.methaltech.application;
 import com.methaltech.application.data.GenerateQtrFromFy;
 import com.methaltech.application.data.Quarters;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
+import com.methaltech.application.data.entity.bgtool.DeptSectionMerger;
 import com.methaltech.application.data.livedata.repository.SALFLDGRepository;
 import com.methaltech.application.data.livedata.service.SALFLDGService;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -236,6 +239,32 @@ public class test {
         } else {
             return ""; // Return empty string for invalid input
         }
-    }    
+    } 
+    
+    public void showThat(){
+        DeptSectionMerger deptSectionMerger = new DeptSectionMerger();
+        deptSectionMerger.setDeptcode("D001");
+        Set<String> sectionCodes = new HashSet<>();
+        sectionCodes.add("S001");
+        sectionCodes.add("S002");
+        sectionCodes.add("S003");
+        deptSectionMerger.setSectioncodes(sectionCodes);
+        
+        DeptSectionMerger deptSectionMerger2 = new DeptSectionMerger();
+        deptSectionMerger2.setDeptcode("D002");
+        Set<String> sectionCodes2 = new HashSet<>();
+        sectionCodes2.add("S004");
+        sectionCodes2.add("S005");
+        sectionCodes2.add("S006");
+        deptSectionMerger2.setSectioncodes(sectionCodes2);
+
+        DeptSectionMerger deptSectionMerger3 = new DeptSectionMerger();
+        deptSectionMerger3.setDeptcode("D003");
+        Set<String> sectionCodes3 = new HashSet<>();
+        sectionCodes3.add("S007");
+        sectionCodes3.add("S008");
+        sectionCodes3.add("S009");
+        deptSectionMerger3.setSectioncodes(sectionCodes3);        
+    }
 
 }

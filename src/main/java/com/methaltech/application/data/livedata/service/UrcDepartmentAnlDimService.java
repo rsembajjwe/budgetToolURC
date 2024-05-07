@@ -21,6 +21,10 @@ public class UrcDepartmentAnlDimService {
 
     public List<UrcDepartmentAnlDim> getAllUrcDepartmentAnlDims() {
         return repository.findByANL_CODEStartingWithD();
+    }   
+    
+    public List<UrcDepartmentAnlDim> findByANL_CODEIn(List<String> anlCodes) {
+        return repository.findByANL_CODEIn(anlCodes);
     }    
 
     public Optional<UrcDepartmentAnlDim> getUrcDepartmentAnlDimById(String id) {
@@ -29,6 +33,10 @@ public class UrcDepartmentAnlDimService {
 
     public UrcDepartmentAnlDim createUrcDepartmentAnlDim(UrcDepartmentAnlDim urcDepartmentAnlDim) {
         return repository.save(urcDepartmentAnlDim);
+    }
+    
+        public UrcDepartmentAnlDim findByAnlDimCode(String analcode) {
+        return repository.findByANL_CODE(analcode);
     }
 
     public UrcDepartmentAnlDim updateUrcDepartmentAnlDim(String id, UrcDepartmentAnlDim updatedUrcDepartmentAnlDim) {
