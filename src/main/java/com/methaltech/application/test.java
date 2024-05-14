@@ -35,15 +35,18 @@ public class test {
         // int year = extractYear(input);
         //int result = generateCode(year, month);
         int result = generateCode2(input, "Jul");
-        System.out.println("Result: " + result);
+        /*        System.out.println("Result: " + result);
         //strings();
-
+        
         System.out.println("Result: " + getYears().get(0));
         System.out.println("Result: " + getYears().get(1));
-
+        
         System.out.println("Result3: " + generateCode4(input, "Jun"));
-        System.out.println("Result31: " + generateCode5(input, "Jun"));
-   
+        System.out.println("Result31: " + generateCode5(input, "Jun"));*/
+        for (int i = 1; i <= 99; i++) {
+            String result2 = generateString(i);
+            System.out.println(result2);
+        }   
 
     }
 
@@ -266,5 +269,14 @@ public class test {
         sectionCodes3.add("S009");
         deptSectionMerger3.setSectioncodes(sectionCodes3);        
     }
+    
+        public static String generateString(int index) {
+        // Convert index to string with leading zeros
+        String indexString = String.format("%02d", index);
+        // Generate the string
+        String generatedString = "ZBT" + indexString;
+        return generatedString;
+    }
+
 
 }

@@ -12,4 +12,5 @@ public interface OrganisationRepository extends JpaRepository<Organisation, Long
     List<Organisation> findByBudget(Budget budget);
 
     Page<Organisation> findByBudget(Budget budget, Pageable pageable);
+    Organisation findTopByBudgetOrderByIdDesc(Budget budget);
 }

@@ -22,11 +22,10 @@ public @Data class Fundsource {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     String fundsource;
+    private String code;
     @ManyToOne
     @JoinColumn(name = "budget_id")
     @JsonIgnore
     private Budget budget; 
-    /*    @ManyToMany
-    @JoinTable(name = "procPlanFundsource", joinColumns = @JoinColumn(name = "fundsource_id"), inverseJoinColumns = @JoinColumn(name = "procurementPlan_id"))
-    private Set<ProcurementPlan> procurementPlan; */   
+   
 }

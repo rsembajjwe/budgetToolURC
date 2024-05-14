@@ -325,6 +325,20 @@ public class PeriodExtractor {
         return years;
     }
 
+    public List<Integer> extYears(String fy) {
+        Pattern pattern = Pattern.compile("\\d{4}");
+
+        // Create a matcher for the input string
+        Matcher matcher = pattern.matcher(fy);
+
+        // Find and print all matches (years) in the input string
+        while (matcher.find()) {
+            years.add(Integer.parseInt(matcher.group()));
+            // System.out.println("Year: " + matcher.group());
+        }
+        return years;
+    }
+
     public int[] extractYears(String input) {
         int[] years = new int[2];
         Pattern pattern = Pattern.compile("\\d+");

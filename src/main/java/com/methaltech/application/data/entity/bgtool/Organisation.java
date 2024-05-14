@@ -1,4 +1,3 @@
-
 package com.methaltech.application.data.entity.bgtool;
 
 import java.util.List;
@@ -17,13 +16,17 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "Organisation")
 @NoArgsConstructor
-public @Data class Organisation {
-     @Id
+public @Data
+class Organisation {
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
-    
+
+    private String code;
+
     @ManyToOne
     @JoinColumn(name = "budget_id")
     private Budget budget;

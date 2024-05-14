@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrganisationService {
 
     private final OrganisationRepository organisationRepository;
-    
 
     public OrganisationService(OrganisationRepository organisationRepository) {
         this.organisationRepository = organisationRepository;
@@ -36,6 +35,10 @@ public class OrganisationService {
         return organisationRepository.findById(id).orElse(null);
     }
 
+    public Organisation getLastSavedOrganisationByBudget(Budget budget) {
+        return organisationRepository.findTopByBudgetOrderByIdDesc(budget);
+    }
+
     public void delete(Long id) {
         organisationRepository.deleteById(id);
     }
@@ -47,7 +50,8 @@ public class OrganisationService {
     public Page<Organisation> findByBudget(Budget budget, Pageable pageable) {
         return organisationRepository.findByBudget(budget, pageable);
     }
+
     public List<Organisation> findByBudgetList(Budget budget) {
         return organisationRepository.findByBudget(budget);
-    }    
+    }
 }

@@ -99,8 +99,8 @@ public final class ApprovalView extends Div {
         TabSheet tabSheet = new TabSheet();
         //tabSheet.add("Budget", coaDiv());
         tabSheet.add("Budget", coaDiv());
-        tabSheet.add("Approvals", new Div(new Text("This is the Payment tab content")));
-       // tabSheet.add("Approvals", gridApprovals());
+        //tabSheet.add("Approvals", new Div(new Text("This is the Payment tab content")));
+        tabSheet.add("Approvals", gridApprovals());
         tabSheet.setHeightFull();
 
         // add( HeaderMenu(),coaDiv());
@@ -539,6 +539,7 @@ public final class ApprovalView extends Div {
 
         gridBudgetApproval.addColumn(BudgetApproval::getMaApproval).setHeader("MD Approval");
         gridBudgetApproval.addColumn(BudgetApproval::getMaApprovalDate).setHeader("MD Approval Date");
+        gridBudgetApproval.setHeight("150px");
         divApprovals.add(gridBudgetApproval);
         return divApprovals;
     }

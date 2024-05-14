@@ -12,5 +12,6 @@ import org.springframework.stereotype.Repository;
 public interface FundsourceRepository extends JpaRepository<Fundsource, Long> {
     List<Fundsource> findByBudget(Budget budget);
     Fundsource findByFundsourceAndBudget(String fundsource, Budget budget);
+    Fundsource findTopByBudgetOrderByIdDesc(Budget budget);
 }
 

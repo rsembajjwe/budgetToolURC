@@ -3,6 +3,8 @@ package com.methaltech.application.views;
 import com.methaltech.application.data.Role;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
 import com.methaltech.application.data.bgtool.service.BudgetService;
+import com.methaltech.application.data.bgtool.service.FundsourceService;
+import com.methaltech.application.data.bgtool.service.OrganisationService;
 import com.methaltech.application.data.bgtool.service.URC_Priority_AreasService;
 import com.methaltech.application.data.bgtool.service.UrcDeptSectionAnlDimbgtService;
 import com.methaltech.application.data.bgtool.service.Urc_ActivitiesService;
@@ -11,6 +13,8 @@ import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.BudgetItems;
 import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
+import com.methaltech.application.data.entity.bgtool.Fundsource;
+import com.methaltech.application.data.entity.bgtool.Organisation;
 import com.methaltech.application.data.entity.bgtool.URC_Priority_Areas;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
@@ -125,10 +129,12 @@ public class UrcProgrammesView extends Div {
     private MenuBar menuBar = new MenuBar();
     private UrcDeptSectionAnlDimbgtService urcDeptSectionAnlDimbgtService;
     private Urc_ActivitiesService urc_ActivitiesService;
+    private final OrganisationService sampleOrganisationService;
+    private final FundsourceService fundsourceService;
 
     public UrcProgrammesView(BudgetService chosenBudgetService, AuthenticatedUser authenticatedUser, UserService userService, URC_Priority_AreasService uRC_Priority_AreasService,
             BudgetItemsService budgetItemsService, Urc_ActivitiesService sampleUrc_ActivitiesService, UrcDeptSectionAnlDimbgtService urcDeptSectionAnlDimbgtService,
-            Urc_ActivitiesService urc_ActivitiesService) {
+            Urc_ActivitiesService urc_ActivitiesService, OrganisationService sampleOrganisationService,FundsourceService fundsourceService) {
         this.chosenBudgetService = chosenBudgetService;
         this.authenticatedUser = authenticatedUser;
         this.userService = userService;
@@ -137,6 +143,8 @@ public class UrcProgrammesView extends Div {
         this.sampleUrc_ActivitiesService = sampleUrc_ActivitiesService;
         this.urcDeptSectionAnlDimbgtService = urcDeptSectionAnlDimbgtService;
         this.urc_ActivitiesService = urc_ActivitiesService;
+        this.sampleOrganisationService = sampleOrganisationService;
+        this.fundsourceService=fundsourceService;
         gridUrc_Activities.setHeight("100%");
         Urc_ActivitiesGridContextMenu contextMenu = new Urc_ActivitiesGridContextMenu(gridUrc_Activities);
         // menuBar.setOpenOnHover(true);
@@ -486,8 +494,41 @@ public class UrcProgrammesView extends Div {
         HorizontalLayout lays = new HorizontalLayout();
         Button saveA = new Button("Save");
         Button deleteA = new Button("Delete");
-        lays.add(saveA, deleteA);
+        Button rectifyA = new Button("Rectify");
+        lays.add(saveA, deleteA, rectifyA);
         vlay2.add(lays);
+
+        rectifyA.addClickListener(e -> {
+            List<Urc_Activities> list = sampleUrc_ActivitiesService.listByBudget2(budgetComboBox.getValue());
+            for (Urc_Activities a : list) {
+                a.setActivityCode("ZBA" + a.getActivityCode());
+                if (!budgetComboBox.isEmpty()) {
+                    sampleUrc_ActivitiesService.update(a);
+                }
+
+            }
+            List<Organisation> listorg = sampleOrganisationService.findByBudgetList(budgetComboBox.getValue());
+            int i=0;
+            for (Organisation a : listorg) {
+                i++;
+                a.setCode(generateBudgetTypeCode(i));
+                if (!budgetComboBox.isEmpty()) {
+                    sampleOrganisationService.update(a);
+                }
+
+            }
+            
+            List<Fundsource> listfunds = fundsourceService.findFundsourcesByBudget(budgetComboBox.getValue());
+            int i2=0;
+            for (Fundsource a : listfunds) {
+                i2++;
+                a.setCode(generateFundSourceCode(i2));
+                if (!budgetComboBox.isEmpty()) {
+                    fundsourceService.save(a);
+                }
+
+            }            
+        });
         saveA.addClickListener(e -> {
             if (!activity.isEmpty() && !fundsource.isEmpty() && !performanceIndicator.isEmpty() && !outcome.isEmpty() && !output.isEmpty() && !objective.isEmpty() && !comboBoxD_Section.isEmpty() && !budgetComboBox.isEmpty()) {
                 Urc_Activities act = gridUrc_Activities.asSingleSelect().getValue();
@@ -520,9 +561,9 @@ public class UrcProgrammesView extends Div {
                             String nextActivityCode = "";
                             if (maxActivityCode != null) {
                                 int nextActivityCodeNumber = Integer.parseInt(maxActivityCode.substring(4)) + 1;
-                                nextActivityCode = act.getDeptSection().getANL_CODE().trim() + String.format("%07d", nextActivityCodeNumber);
+                                nextActivityCode = "ZBA" + act.getDeptSection().getANL_CODE().trim() + String.format("%07d", nextActivityCodeNumber);
                             } else {
-                                nextActivityCode = act.getDeptSection().getANL_CODE().trim() + "0000001";
+                                nextActivityCode = "ZBA" + act.getDeptSection().getANL_CODE().trim() + "0000001";
                             }
 
                             act.setActivityCode(nextActivityCode);
@@ -852,9 +893,9 @@ public class UrcProgrammesView extends Div {
                     String nextActivityCode = "";
                     if (maxActivityCode != null) {
                         int nextActivityCodeNumber = Integer.parseInt(maxActivityCode.substring(4)) + 1;
-                        nextActivityCode = activ.getDeptSection().getANL_CODE().trim() + String.format("%07d", nextActivityCodeNumber);
+                        nextActivityCode = "ZBA" + activ.getDeptSection().getANL_CODE().trim() + String.format("%07d", nextActivityCodeNumber);
                     } else {
-                        nextActivityCode = activ.getDeptSection().getANL_CODE().trim() + "0000001";
+                        nextActivityCode = "ZBA" + activ.getDeptSection().getANL_CODE().trim() + "0000001";
                     }
 
                     activ.setActivityCode(nextActivityCode);
@@ -989,4 +1030,18 @@ public class UrcProgrammesView extends Div {
 
         return notification;
     }
+        private String generateBudgetTypeCode(int index) {
+        // Convert index to string with leading zeros
+        String indexString = String.format("%02d", index);
+        // Generate the string
+        String generatedString = "ZBT" + indexString;
+        return generatedString;
+    }
+        private String generateFundSourceCode(int index) {
+        // Convert index to string with leading zeros
+        String indexString = String.format("%02d", index);
+        // Generate the string
+        String generatedString = "ZBFS" + indexString;
+        return generatedString;
+    }        
 }

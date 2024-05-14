@@ -23,7 +23,7 @@ public interface Urc_ActivitiesRepository extends JpaRepository<Urc_Activities, 
     @Query("SELECT ua FROM Urc_Activities ua WHERE ua.urcPriorityAreas.urcStrategicPlan.nationalBudgetFocusArea.nationalTransportMasterPlan.ndp111Objective.budget = :budget")
     Page<Urc_Activities> findByBudget(Budget budget, Pageable pageable);
 
-    @Query("SELECT ua FROM Urc_Activities ua WHERE ua.urcPriorityAreas.urcStrategicPlan.nationalBudgetFocusArea.nationalTransportMasterPlan.ndp111Objective.budget = :budget")
+      @Query("SELECT ua FROM Urc_Activities ua WHERE ua.urcPriorityAreas.urcStrategicPlan.nationalBudgetFocusArea.nationalTransportMasterPlan.ndp111Objective.budget = :budget")
     List<Urc_Activities> findByBudget2(Budget budget);
 
     List<Urc_Activities> findByBudget(Budget budget);
