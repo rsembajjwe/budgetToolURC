@@ -676,7 +676,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         });
         createIconItem(sunFileJan, VaadinIcon.BRIEFCASE, "Extract Sun Budget (JAN-JUN) File", null, true).addClickListener(e -> {
             exportAndDownloadSunFile5();
-        });        
+        });
 
         createIconItem(parameterFile, VaadinIcon.BRIEFCASE, "Extract Budget Parameters", null, true).addClickListener(e -> {
             extractFundsourcesAndActvities();
@@ -1728,7 +1728,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
         SunFile = menuBar.addItem("Sun Setting");
         sunFileJul = SunFile.getSubMenu();
-        sunFileJan=SunFile.getSubMenu();
+        sunFileJan = SunFile.getSubMenu();
         parameterFile = SunFile.getSubMenu();
         return menuBar;
     }
@@ -2434,6 +2434,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         gridFundsource.setSelectionMode(Grid.SelectionMode.SINGLE);
         // Configure Grid
         gridFundsource.addColumn("fundsource").setAutoWidth(true);
+        gridFundsource.addColumn("code").setAutoWidth(true);
         gridFundsource.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_WRAP_CELL_CONTENT);
         refreshGridFundsource();
         gridFundsource.asSingleSelect().addValueChangeListener(event -> {
@@ -6894,7 +6895,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         int delayBetweenDownloadsMillis = 1000;
         // Download text file
         StreamResource resourceJul = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Jul").replace("/", "") + ".txt",
-                () -> new ByteArrayInputStream(fixedWidthTextJul.toString().getBytes(StandardCharsets.UTF_8)));
+                () -> new ByteArrayInputStream(fixedWidthTextJul.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
         resourceJul.setContentType("text/plain");
         resourceJul.setCacheTime(0);
 
@@ -6911,7 +6912,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         );
 
         StreamResource resourceAug = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Aug").replace("/", "") + ".txt",
-                () -> new ByteArrayInputStream(fixedWidthTextAug.toString().getBytes(StandardCharsets.UTF_8)));
+                () -> new ByteArrayInputStream(fixedWidthTextAug.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
         resourceAug.setContentType("text/plain");
         resourceAug.setCacheTime(0);
 
@@ -6922,7 +6923,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         downloadLinkAug.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
 
         StreamResource resourceSep = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Sep").replace("/", "") + ".txt",
-                () -> new ByteArrayInputStream(fixedWidthTextSep.toString().getBytes(StandardCharsets.UTF_8)));
+                () -> new ByteArrayInputStream(fixedWidthTextSep.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
         resourceSep.setContentType("text/plain");
         resourceSep.setCacheTime(0);
 
@@ -6933,7 +6934,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         downloadLinkSep.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
         // Download text file
         StreamResource resourceOct = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Oct").replace("/", "") + ".txt",
-                () -> new ByteArrayInputStream(fixedWidthTextOct.toString().getBytes(StandardCharsets.UTF_8)));
+                () -> new ByteArrayInputStream(fixedWidthTextOct.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
         resourceOct.setContentType("text/plain");
         resourceOct.setCacheTime(0);
 
@@ -6944,7 +6945,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         downloadLinkOct.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
 
         StreamResource resourceNov = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Nov").replace("/", "") + ".txt",
-                () -> new ByteArrayInputStream(fixedWidthTextNov.toString().getBytes(StandardCharsets.UTF_8)));
+                () -> new ByteArrayInputStream(fixedWidthTextNov.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
         resourceNov.setContentType("text/plain");
         resourceNov.setCacheTime(0);
 
@@ -6955,7 +6956,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         downloadLinkNov.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
 
         StreamResource resourceDec = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Dec").replace("/", "") + ".txt",
-                () -> new ByteArrayInputStream(fixedWidthTextDec.toString().getBytes(StandardCharsets.UTF_8)));
+                () -> new ByteArrayInputStream(fixedWidthTextDec.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
         resourceDec.setContentType("text/plain");
         resourceDec.setCacheTime(0);
 
@@ -7174,7 +7175,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         int delayBetweenDownloadsMillis = 1000;
 
         StreamResource resourceJan = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Jan").replace("/", "") + ".txt",
-                () -> new ByteArrayInputStream(fixedWidthTextJan.toString().getBytes(StandardCharsets.UTF_8)));
+                () -> new ByteArrayInputStream(fixedWidthTextJan.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
         resourceJan.setContentType("text/plain");
         resourceJan.setCacheTime(0);
 
@@ -7185,7 +7186,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         downloadLinkJan.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
 
         StreamResource resourceFeb = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Feb").replace("/", "") + ".txt",
-                () -> new ByteArrayInputStream(fixedWidthTextFeb.toString().getBytes(StandardCharsets.UTF_8)));
+                () -> new ByteArrayInputStream(fixedWidthTextFeb.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
         resourceFeb.setContentType("text/plain");
         resourceFeb.setCacheTime(0);
 
@@ -7196,7 +7197,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         downloadLinkFeb.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
 
         StreamResource resourceMar = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Mar").replace("/", "") + ".txt",
-                () -> new ByteArrayInputStream(fixedWidthTextMar.toString().getBytes(StandardCharsets.UTF_8)));
+                () -> new ByteArrayInputStream(fixedWidthTextMar.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
         resourceMar.setContentType("text/plain");
         resourceMar.setCacheTime(0);
 
@@ -7207,7 +7208,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         downloadLinkMar.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
 
         StreamResource resourceApr = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Apr").replace("/", "") + ".txt",
-                () -> new ByteArrayInputStream(fixedWidthTextApr.toString().getBytes(StandardCharsets.UTF_8)));
+                () -> new ByteArrayInputStream(fixedWidthTextApr.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
         resourceApr.setContentType("text/plain");
         resourceApr.setCacheTime(0);
 
@@ -7218,7 +7219,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         downloadLinkApr.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
 
         StreamResource resourceMay = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "May").replace("/", "") + ".txt",
-                () -> new ByteArrayInputStream(fixedWidthTextMay.toString().getBytes(StandardCharsets.UTF_8)));
+                () -> new ByteArrayInputStream(fixedWidthTextMay.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
         resourceMay.setContentType("text/plain");
         resourceMay.setCacheTime(0);
 
@@ -7229,7 +7230,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         downloadLinkMay.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
 
         StreamResource resourceJun = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Jun").replace("/", "") + ".txt",
-                () -> new ByteArrayInputStream(fixedWidthTextJun.toString().getBytes(StandardCharsets.UTF_8)));
+                () -> new ByteArrayInputStream(fixedWidthTextJun.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
         resourceJun.setContentType("text/plain");
         resourceJun.setCacheTime(0);
 
@@ -7246,7 +7247,16 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             String anal_t3, String anal_t4, String anal_t5, String anal_t6,
             String anal_t7, String anal_t8, String anal_t9, String anal_t10) {
         // Define start positions and lengths
-
+        
+        if(anal_t7 == null||anal_t7.isBlank()||anal_t7.isEmpty()){
+            anal_t7="ZBT00";
+        }
+        if(anal_t8 == null||anal_t8.isBlank()||anal_t8.isEmpty()){
+            anal_t8="ZBFS00";
+        }
+        if(anal_t9 == null||anal_t9.isBlank()||anal_t9.isEmpty()){
+            anal_t9="ZBAS0200000000";
+        }        
         int accCodeLength = 15;
 
         int periodLength = 7;
@@ -7272,7 +7282,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         fixedWidthTextBuilder.append(String.format("%-" + d_cLength + "s", d_c).substring(0, d_cLength));
         fixedWidthTextBuilder.append(String.format("%-" + jnrl_typeLength + "s", jnrl_type).substring(0, jnrl_typeLength));
         fixedWidthTextBuilder.append(String.format("%-" + trans_refLength + "s", trans_ref).substring(0, trans_refLength));
-        fixedWidthTextBuilder.append(String.format("%-" + descLength + "s", desc).substring(0, descLength));
+        fixedWidthTextBuilder.append(String.format("%-" + descLength + "s", desc.trim()).substring(0, descLength));
         fixedWidthTextBuilder.append(String.format("%-" + currLength + "s", curr).substring(0, currLength));
         fixedWidthTextBuilder.append(String.format("%-" + amountLength + "s", amountS).substring(0, amountLength));
 
@@ -7286,8 +7296,12 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         fixedWidthTextBuilder.append(String.format("%-" + analLength + "s", anal_t8).substring(0, analLength));
         fixedWidthTextBuilder.append(String.format("%-" + analLength + "s", anal_t9).substring(0, analLength));
         fixedWidthTextBuilder.append(String.format("%-" + analLength + "s", anal_t10).substring(0, analLength));
+        if (accCode.startsWith("1")) {
+            return fixedWidthTextBuilder.toString().trim()+" ";
+        } else {
+            return fixedWidthTextBuilder.toString().trim()+" ";
+        }
 
-        return fixedWidthTextBuilder.toString();
     }
 
     public String getFirstCharacters(String text) {

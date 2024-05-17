@@ -29,6 +29,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Footer;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
@@ -95,6 +96,9 @@ public final class ApprovalView extends Div {
         if (authenticatedUser.get().isPresent()) {
             user = authenticatedUser.get().get();
         }
+        Image image2 = new Image("images/ugflagstrip.png", "Strip");
+        image2.setWidthFull();
+        image2.getStyle().set("margin", "0").set("padding", "0");
 
         TabSheet tabSheet = new TabSheet();
         //tabSheet.add("Budget", coaDiv());
@@ -108,7 +112,7 @@ public final class ApprovalView extends Div {
         divs.add(HeaderMenu(), tabSheet);
         divs.setHeightFull();
         divs.getStyle().set("flex-grow", "1");
-        add(divs);
+        add(image2, divs);
 
     }
 
@@ -526,7 +530,16 @@ public final class ApprovalView extends Div {
     }
 
     private Div gridApprovals() {
-        Div divApprovals=new Div();
+        Div divApprovals = new Div();
+
+        gridBudgetApproval.addColumn(new ComponentRenderer<>(urcActivity -> {
+
+            Span span = new Span(urcActivity.getSection().getNAME());
+            span.getElement().getThemeList().add("badge success");
+
+            return span;
+
+        })).setHeader("Cost Centre").setFlexGrow(0).setWidth("150px");
         gridBudgetApproval.addColumn(BudgetApproval::getBloSubmission).setHeader("BLO Submission");
         gridBudgetApproval.addColumn(BudgetApproval::getBloSubmissionDate).setHeader("BLO Submission Date");
         gridBudgetApproval.addColumn(BudgetApproval::getHodSubmission).setHeader("HOD Submission");

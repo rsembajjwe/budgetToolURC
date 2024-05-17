@@ -153,6 +153,7 @@ public class staffSalaryView extends Div {
 
     private ComboBox<Fundsource> budgetItemfundSource = new ComboBox<>("Fund Source");
     private final FundsourceService sampleFundsourceService;
+    private Upload upload;
 
     public staffSalaryView(AuthenticatedUser authenticatedUser, FreightVolumesService sampleFreightVolumesService, BudgetService sampleBudgetService, CoaService sampleCoaService,
             CurrencyService sampleCurrencyService, BudgetItemsService budgetItemsService, StockUnitMeasureService sampleStockUnitMeasureService,
@@ -234,6 +235,12 @@ public class staffSalaryView extends Div {
                 .stream());
         comboBoxBudget.setItemLabelGenerator(Budget::getFinancialYear);
         comboBoxBudget.addValueChangeListener(e -> {
+            if (!e.getValue().isActive()) {
+                save.setEnabled(false);
+                cancel.setEnabled(false);
+                delete.setEnabled(false);
+                upload.setVisible(false);
+            }
             budgetItemfundSource.setItems(sampleFundsourceService.findFundsourcesByBudget(e.getValue()));
             setSalaryGrid2();
             if (!comboBoxD_Section.isEmpty() && !comboBoxBudget.isEmpty()) {
@@ -391,7 +398,7 @@ public class staffSalaryView extends Div {
                 code.setValue(selectedSalary.getCode() != null ? selectedSalary.getCode() : "");
                 email.setValue(selectedSalary.getEmail() != null ? selectedSalary.getEmail() : "");
                 nextofkin.setValue(selectedSalary.getNextofkin() != null ? selectedSalary.getNextofkin() : "");
-               // budgetItemfundSource.setValue(selectedSalary. != null ? selectedSalary.getNextofkin() : "");
+                // budgetItemfundSource.setValue(selectedSalary. != null ? selectedSalary.getNextofkin() : "");
 
             } else {
                 fname.clear();
@@ -406,7 +413,7 @@ public class staffSalaryView extends Div {
                 salaryz.clear();
                 email.clear();
                 nextofkin.clear();
-                
+
             }
         });
 
@@ -418,7 +425,7 @@ public class staffSalaryView extends Div {
         ho.add(save, delete, cancel);
         form.add(code, fname, lname, email, tel, mob, position, grade, Address,
                 Address2, nextofkin,
-                salaryz,ho
+                salaryz, ho
         );
 
         // binder.bindInstanceFields(this);
@@ -847,7 +854,7 @@ public class staffSalaryView extends Div {
             }
         });
         MultiFileMemoryBuffer buffer = new MultiFileMemoryBuffer();
-        Upload upload = new Upload(buffer);
+        upload = new Upload(buffer);
         upload.setAcceptedFileTypes(
                 // Microsoft Excel (OpenXML, .xlsx)
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -877,7 +884,7 @@ public class staffSalaryView extends Div {
 
         });
         FormLayout formLayout = new FormLayout();
-        formLayout.add(comboBoxBudget, comboBoxD_Section, comboBoxOrganisation, comboBoxUrc_Activities,budgetItemfundSource, upload);
+        formLayout.add(comboBoxBudget, comboBoxD_Section, comboBoxOrganisation, comboBoxUrc_Activities, budgetItemfundSource, upload);
         formLayout.setResponsiveSteps(
                 // Use one column by default
                 new ResponsiveStep("0", 1),

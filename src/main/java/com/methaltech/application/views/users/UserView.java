@@ -220,6 +220,7 @@ public class UserView extends Div implements BeforeEnterObserver {
             // refreshGrid();
             refreshgridUser();
         });
+        
 
         save.addClickListener(e -> {
             CharSequence editorTextFields = validEditorTextFields();
@@ -330,6 +331,9 @@ public class UserView extends Div implements BeforeEnterObserver {
 
             refreshgridUser();
             sampleBudget = ev.getValue();
+            if(!ev.getValue().isActive()){
+               save.setEnabled(false);
+            }
         });
         return div;
     }

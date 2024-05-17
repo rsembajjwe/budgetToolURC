@@ -131,10 +131,14 @@ public class UrcProgrammesView extends Div {
     private Urc_ActivitiesService urc_ActivitiesService;
     private final OrganisationService sampleOrganisationService;
     private final FundsourceService fundsourceService;
+    Button saveA = new Button("Save");
+    Button deleteA = new Button("Delete");
+    Button rectifyA = new Button("Rectify");
+    Button saveButton = new Button("Change Programme");
 
     public UrcProgrammesView(BudgetService chosenBudgetService, AuthenticatedUser authenticatedUser, UserService userService, URC_Priority_AreasService uRC_Priority_AreasService,
             BudgetItemsService budgetItemsService, Urc_ActivitiesService sampleUrc_ActivitiesService, UrcDeptSectionAnlDimbgtService urcDeptSectionAnlDimbgtService,
-            Urc_ActivitiesService urc_ActivitiesService, OrganisationService sampleOrganisationService,FundsourceService fundsourceService) {
+            Urc_ActivitiesService urc_ActivitiesService, OrganisationService sampleOrganisationService, FundsourceService fundsourceService) {
         this.chosenBudgetService = chosenBudgetService;
         this.authenticatedUser = authenticatedUser;
         this.userService = userService;
@@ -144,7 +148,7 @@ public class UrcProgrammesView extends Div {
         this.urcDeptSectionAnlDimbgtService = urcDeptSectionAnlDimbgtService;
         this.urc_ActivitiesService = urc_ActivitiesService;
         this.sampleOrganisationService = sampleOrganisationService;
-        this.fundsourceService=fundsourceService;
+        this.fundsourceService = fundsourceService;
         gridUrc_Activities.setHeight("100%");
         Urc_ActivitiesGridContextMenu contextMenu = new Urc_ActivitiesGridContextMenu(gridUrc_Activities);
         // menuBar.setOpenOnHover(true);
@@ -244,6 +248,15 @@ public class UrcProgrammesView extends Div {
         budgetComboBox.addValueChangeListener(event -> {
             Budget selectedBudget = event.getValue();
             refreshGrid(selectedBudget);
+            if (!event.getValue().isActive()) {
+                save.setEnabled(false);
+                delete.setEnabled(false);
+                saveA.setEnabled(false);
+                deleteA.setEnabled(false);
+                uploadProgrammeTemplate.setVisible(false);
+                uploadActivityTemplate.setVisible(false);
+                saveButton.setEnabled(false);
+            }
         });
         searchCoa.addValueChangeListener(e -> {
             refreshGrid2(e.getValue(), budgetComboBox.getValue());
@@ -492,10 +505,8 @@ public class UrcProgrammesView extends Div {
         formActivity.add(activity, fundsource, performanceIndicator, outcome, output, objective);
         vlay2.add(formActivity);
         HorizontalLayout lays = new HorizontalLayout();
-        Button saveA = new Button("Save");
-        Button deleteA = new Button("Delete");
-        Button rectifyA = new Button("Rectify");
-        lays.add(saveA, deleteA, rectifyA);
+
+        lays.add(saveA, deleteA,rectifyA);
         vlay2.add(lays);
 
         rectifyA.addClickListener(e -> {
@@ -508,7 +519,7 @@ public class UrcProgrammesView extends Div {
 
             }
             List<Organisation> listorg = sampleOrganisationService.findByBudgetList(budgetComboBox.getValue());
-            int i=0;
+            int i = 0;
             for (Organisation a : listorg) {
                 i++;
                 a.setCode(generateBudgetTypeCode(i));
@@ -517,9 +528,9 @@ public class UrcProgrammesView extends Div {
                 }
 
             }
-            
+
             List<Fundsource> listfunds = fundsourceService.findFundsourcesByBudget(budgetComboBox.getValue());
-            int i2=0;
+            int i2 = 0;
             for (Fundsource a : listfunds) {
                 i2++;
                 a.setCode(generateFundSourceCode(i2));
@@ -527,7 +538,7 @@ public class UrcProgrammesView extends Div {
                     fundsourceService.save(a);
                 }
 
-            }            
+            }
         });
         saveA.addClickListener(e -> {
             if (!activity.isEmpty() && !fundsource.isEmpty() && !performanceIndicator.isEmpty() && !outcome.isEmpty() && !output.isEmpty() && !objective.isEmpty() && !comboBoxD_Section.isEmpty() && !budgetComboBox.isEmpty()) {
@@ -982,7 +993,7 @@ public class UrcProgrammesView extends Div {
                 });
 
                 dialogLayout.add(span, gridCOA2);
-                Button saveButton = new Button("Change Programme");
+                
                 saveButton.addClickListener(ev -> {
                     if (!gridCOA2.asSingleSelect().isEmpty()) {
                         person.setUrcPriorityAreas(gridCOA2.asSingleSelect().getValue());
@@ -1030,18 +1041,20 @@ public class UrcProgrammesView extends Div {
 
         return notification;
     }
-        private String generateBudgetTypeCode(int index) {
+
+    private String generateBudgetTypeCode(int index) {
         // Convert index to string with leading zeros
         String indexString = String.format("%02d", index);
         // Generate the string
         String generatedString = "ZBT" + indexString;
         return generatedString;
     }
-        private String generateFundSourceCode(int index) {
+
+    private String generateFundSourceCode(int index) {
         // Convert index to string with leading zeros
         String indexString = String.format("%02d", index);
         // Generate the string
         String generatedString = "ZBFS" + indexString;
         return generatedString;
-    }        
+    }
 }

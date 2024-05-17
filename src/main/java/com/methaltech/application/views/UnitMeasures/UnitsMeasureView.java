@@ -163,8 +163,8 @@ public class UnitsMeasureView extends Div {
         });
         transfer.addClickListener(e -> {
             if (sampleStockUnitMeasureService.count() < 1) {
-                sampleStockUnitMeasureService.updateTransfer();
-                refreshgridUser();
+               // sampleStockUnitMeasureService.updateTransfer();
+               // refreshgridUser();
             } else {
                 Notification notee = Notification.show("Already Imported");
                 notee.addThemeVariants(NotificationVariant.LUMO_WARNING);
@@ -285,7 +285,7 @@ public class UnitsMeasureView extends Div {
         cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        buttonLayout.add(save, cancel, transfer);
+        buttonLayout.add(save, cancel);
 
         editorLayoutDiv.add(buttonLayout);
 

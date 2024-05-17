@@ -871,6 +871,17 @@ public class BudgetFormView extends Div {
                 refreshgridBudgetItemCOA2();
             }
             refreshActivitiesSetingGrid2("");
+            if (!e.getValue().isActive()) {
+                saveBudgetItem.setEnabled(false);
+                deleteBudgetItem.setEnabled(false);
+                distrWorkplan.setEnabled(false);
+                quarterWorkplan.setEnabled(false);
+                clearWorkplan.setEnabled(false);
+                templateDownload.setEnabled(false);
+                uploadBudget.setVisible(false);
+                disabledBudget(false);
+            }
+
         });
         comboBoxD_Section.addValueChangeListener(ed -> {
             gridCOA.setItems(new ArrayList<>());
@@ -881,6 +892,10 @@ public class BudgetFormView extends Div {
                 comboBoxCoalevel1.setItems(coalevel1Service.findByBudget());
                 gridCOA.setEnabled(true);
                 gridCOA.getSelectedItems().clear();
+                if (!comboBoxBudget.getValue().isActive()) {
+
+                    disabledBudget(false);
+                }
 
             } else {
                 comboBoxCoalevel1.clear();
@@ -889,10 +904,18 @@ public class BudgetFormView extends Div {
             }
             if (!comboBoxBudget.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxCoalevel1.isEmpty() && chosenCOA != null && chosenUrc_Activities != null) {
                 refreshgridBudgetItems();
+                if (!comboBoxBudget.getValue().isActive()) {
+
+                    disabledBudget(false);
+                }
             }
             if (!comboBoxBudget.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxCoalevel1.isEmpty() && chosenCOA != null) {
 
                 refreshgridBudgetItemCOA2();
+                if (!comboBoxBudget.getValue().isActive()) {
+
+                    disabledBudget(false);
+                }
             }
             refreshActivitiesSetingGrid2("");
         });
@@ -1319,11 +1342,11 @@ public class BudgetFormView extends Div {
         button.addClickListener(e -> {
             fixCOA();
             //fixFundsource();
-            /*            List<BudgetItems> findByDeptUnitAndBudget = budgetItemsService.findByCoacodeCodeStartingWith2Or3();
+            List<BudgetItems> findByDeptUnitAndBudget = budgetItemsService.findByCoacodeCodeStartingWith2Or3();
             for (BudgetItems y : findByDeptUnitAndBudget) {
-            y.setProcClass(y.getCoacode().getProcclass());
-            budgetItemsService.update(y);
-            }*/
+                y.setProcClass(y.getCoacode().getProcclass());
+                budgetItemsService.update(y);
+            }
         });
         footer.add(saveBudgetItem, deleteBudgetItem, distrWorkplan, quarterWorkplan, clearWorkplan, templateDownload, uploadBudget);
         if (user.getRoles().contains(Role.ADMIN)) {
@@ -1413,6 +1436,7 @@ public class BudgetFormView extends Div {
         }
         //fixFundsource();
     }
+    
 
     private void fixFundsource() {
         List<BudgetItems> findByDeptUnitAndBudget = budgetItemsService.findByAll();
@@ -1860,6 +1884,7 @@ public class BudgetFormView extends Div {
                 if (vl.getValue().getDisplay() == Display.FREIGHT || vl.getValue().getDisplay() == Display.SALARIES) {
                     disabledBudget(false);
                 } else {
+
                     disabledBudget(true);
                 }
                 chosenCOA = vl.getValue();
@@ -1867,6 +1892,10 @@ public class BudgetFormView extends Div {
 
                 if (!comboBoxBudget.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxCoalevel1.isEmpty() && chosenCOA != null) {
                     refreshgridBudgetItems();
+                    if (!comboBoxBudget.getValue().isActive()) {
+
+                        disabledBudget(false);
+                    }
                 }
                 refreshgridBudgetItemCOA2();
             }
@@ -2105,7 +2134,13 @@ public class BudgetFormView extends Div {
                         if (coacode.getDisplay() == Display.FREIGHT || coacode.getDisplay() == Display.SALARIES) {
                             disabledBudget(false);
                         } else {
-                            disabledBudget(true);
+                            // disabledBudget(true);
+                            if (!comboBoxBudget.getValue().isActive()) {
+
+                                disabledBudget(false);
+                            } else {
+                                disabledBudget(true);
+                            }
                         }
                         String code = coacode.getCode();
                         COA coa = coaService.findByCodeAndBudget(code, chosenBudget);

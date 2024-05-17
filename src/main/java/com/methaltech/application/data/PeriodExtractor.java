@@ -40,6 +40,37 @@ public class PeriodExtractor {
         }
     }
 
+    public List<Integer> getListOfPeriodByFY(String fy, Quarters qtr) {
+        List<Integer> listPeriods = new ArrayList<>();
+        strings(fy);
+        int year = getYears().get(1);
+        switch (qtr) {
+            case Qtr1:
+                listPeriods.add(year * 1000 + 1);
+                listPeriods.add(year * 1000 + 2);
+                listPeriods.add(year * 1000 + 3);
+                break;
+            case Qtr2:
+                listPeriods.add(year * 1000 + 4);
+                listPeriods.add(year * 1000 + 5);
+                listPeriods.add(year * 1000 + 6);
+                break;
+            case Qtr3:
+                listPeriods.add(year * 1000 + 7);
+                listPeriods.add(year * 1000 + 8);
+                listPeriods.add(year * 1000 + 9);
+                break;
+            case Qtr4:
+                listPeriods.add(year * 1000 + 10);
+                listPeriods.add(year * 1000 + 11);
+                listPeriods.add(year * 1000 + 12);
+                break;
+            default:
+                break;
+        }
+        return listPeriods;
+    }
+
     public int generatePreviousPeriod(String yearS, String month) {
         strings(yearS);
         int year = getYears().get(0);

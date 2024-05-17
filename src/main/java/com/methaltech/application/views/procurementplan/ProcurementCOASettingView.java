@@ -107,8 +107,8 @@ public class ProcurementCOASettingView extends Div {
     private TextArea description;
     private Checkbox important;
 
-    private final Button cancel = new Button("Cancel");
-    private final Button save = new Button("Save");
+    private  Button cancel = new Button("Cancel");
+    private  Button save = new Button("Save");
 
     private final Button cancelCurrencyData = new Button("Cancel");
     private final Button saveCurrencyData = new Button("Save");
@@ -312,7 +312,14 @@ public class ProcurementCOASettingView extends Div {
             }
 
         });
-        
+        comboBoxBudget.addValueChangeListener(e -> {
+            Notification.show("YYYYYY");
+            if (!e.getValue().isActive()) {
+                save.setEnabled(false);
+                cancel.setEnabled(false);
+            }
+        });
+
         SplitLayout splitLayout = new SplitLayout();
         splitLayout.setSplitterPosition(65);
         splitLayout.setHeightFull();
@@ -361,7 +368,6 @@ public class ProcurementCOASettingView extends Div {
 
         });
 
-
         lay.add(comboBoxBudget, Coalevel1Box1, COASearchField1);
         VerticalLayout dialogLayout = new VerticalLayout(lay, gridCOA);
 
@@ -394,7 +400,7 @@ public class ProcurementCOASettingView extends Div {
                 Notification.show("Select all the required parameters");
             }
 
-        });        
+        });
         Text label = new Text("CODE DETAILS");
         CodeField = new TextField("Code");
         CodeField.setPlaceholder("Account Code");
@@ -420,7 +426,7 @@ public class ProcurementCOASettingView extends Div {
         CodeField.setEnabled(false);
         COANameField.setEnabled(false);
 
-        VerticalLayout dialogLayout = new VerticalLayout(upload,label, CodeField, COANameField, procclass);
+        VerticalLayout dialogLayout = new VerticalLayout(upload, label, CodeField, COANameField, procclass);
         procclass.setItems(ProcClass.Works, ProcClass.Supplies, ProcClass.Consultancy, ProcClass.Non_Consultancy, ProcClass.Disposal, ProcClass.Other);
         dialogLayout.setPadding(true);
         dialogLayout.setSpacing(false);

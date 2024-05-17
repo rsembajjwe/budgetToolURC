@@ -270,6 +270,9 @@ public class freightVolumeView extends Div {
         symbols.setGroupingSeparator(','); // Set the grouping separator to a comma
 
         comboBoxBudget.addValueChangeListener(e -> {
+            if(!e.getValue().isActive()){
+                save.setEnabled(false);cancel.setEnabled(false);
+            }
             if (!comboBoxBudget.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxCOA.isEmpty()) {
                 upload.setVisible(true);
             } else {
@@ -537,7 +540,7 @@ public class freightVolumeView extends Div {
 
     private VerticalLayout secondPanel() {
         VerticalLayout lay = new VerticalLayout();
-        lay.add(new H1("hOW ARE YOU?"));
+        lay.add(new H1(""));
         return lay;
     }
 
