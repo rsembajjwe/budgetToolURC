@@ -387,7 +387,7 @@ public class UserView extends Div implements BeforeEnterObserver {
         roles.setErrorMessage("Required");
 
         // Populate combo with roles
-        roles.setItems(Role.ADMIN, Role.USER, Role.BLO, Role.HR, Role.FREIGHT, Role.HOD,Role.PROCUREMENT);
+        roles.setItems(Role.ADMIN, Role.USER, Role.BLO, Role.HR, Role.FREIGHT, Role.HOD,Role.PROCUREMENT,Role.MD);
         formLayout.add(fname, lname, username, tel, roles, sections);
 
         editorDiv.add(formLayout);
@@ -672,30 +672,6 @@ public class UserView extends Div implements BeforeEnterObserver {
                 unitListEditor(unitsList);
             }));
 
-            add(new Hr());
-
-            GridMenuItem<User> emailItem = addItem("Email",
-                    e -> e.getItem().ifPresent(person -> {
-                        // System.out.printf("Email: %s%n",
-                        // person.getFullName());
-                    }));
-            GridMenuItem<User> phoneItem = addItem("Call",
-                    e -> e.getItem().ifPresent(person -> {
-                        // System.out.printf("Phone: %s%n",
-                        // person.getFullName());
-                    }));
-
-            setDynamicContentHandler(person -> {
-                // Do not show context menu when header is clicked
-                if (person == null) {
-                    return false;
-                }
-                emailItem
-                        .setText(String.format("Email: %s", person.getEmail()));
-                phoneItem.setText(String.format("Call: %s",
-                        person.getTel()));
-                return true;
-            });
         }
 
     }

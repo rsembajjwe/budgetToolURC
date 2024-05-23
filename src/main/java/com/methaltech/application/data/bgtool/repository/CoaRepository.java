@@ -18,6 +18,7 @@ import org.springframework.data.repository.query.Param;
 public interface CoaRepository extends JpaRepository<COA, Long> {
 
     List<COA> findByBudgetAndCoalevel1(Budget budget, Coalevel1 coalevel1);
+
     List<COA> findByBudgetAndCoalevel11(Budget budget, Coalevel11 coalevel11);
 
     List<COA> findByBudgetAndCoalevel1AndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(Budget budget, Coalevel1 coalevel1, String name, String code);
@@ -37,16 +38,16 @@ public interface CoaRepository extends JpaRepository<COA, Long> {
     List<COA> findByBudget(Budget oldbudget);
 
     //COA findByCodeAndBudget(String code, Budget budget);
-    @Query("SELECT c FROM COA c LEFT JOIN FETCH c.dsections WHERE c.code = :code AND c.budget = :budget")
+    @Query("SELECT c FROM COA c LEFT JOIN FETCH c.dsections WHERE c.code = :code AND c.stateOpen = true AND c.budget = :budget")
     COA findByCodeAndBudgetWithDSections(@Param("code") String code, @Param("budget") Budget budget);
 
-    @Query("SELECT c FROM COA c JOIN c.dsections ds WHERE c.budget = :budget")
+    @Query("SELECT c FROM COA c JOIN c.dsections ds WHERE c.budget = :budget AND c.stateOpen = true")
     List<COA> findByBudgetAndDSections(@Param("budget") Budget budget);
 
-    @Query("SELECT c FROM COA c JOIN c.deptsection dept WHERE dept IN :deptsection AND c.code LIKE :codePrefix% AND c.budget = :budget")
+    @Query("SELECT c FROM COA c JOIN c.deptsection dept WHERE dept IN :deptsection AND c.code LIKE :codePrefix% AND c.budget = :budget AND c.stateOpen = true")
     List<COA> findByDeptsectionAndCodePrefix(@Param("deptsection") Set<UrcDeptSectionAnlDimbgt> deptsection, @Param("codePrefix") String codePrefix, @Param("budget") Budget budget);
 
-    @Query("SELECT c FROM COA c JOIN c.deptsection dept WHERE dept IN :deptsection AND c.code LIKE :codePrefix% AND ((LOWER(c.code) LIKE LOWER(CONCAT('%', :category, '%')) OR LOWER(c.name) LIKE LOWER(CONCAT('%', :category, '%'))) OR (c.name IS NULL AND :category IS NULL)) AND c.budget = :budget")
+    @Query("SELECT c FROM COA c JOIN c.deptsection dept WHERE dept IN :deptsection AND c.code LIKE :codePrefix% AND ((LOWER(c.code) LIKE LOWER(CONCAT('%', :category, '%')) OR LOWER(c.name) LIKE LOWER(CONCAT('%', :category, '%'))) OR (c.name IS NULL AND :category IS NULL)) AND c.budget = :budget AND c.stateOpen = true")
     List<COA> findByDeptsectionAndCodePrefixSearch(@Param("deptsection") Set<UrcDeptSectionAnlDimbgt> deptsection, @Param("codePrefix") String codePrefix, @Param("category") String category, @Param("budget") Budget budget);
 
     @Query("SELECT c FROM COA c "
@@ -54,6 +55,7 @@ public interface CoaRepository extends JpaRepository<COA, Long> {
             + "WHERE dept IN :deptsection "
             + "AND c.coalevel1 = :coalevel1 "
             + "AND c.budget = :budget "
+            + "AND c.stateOpen = true "
             + "AND (:searchTerm is null OR "
             + "     LOWER(c.code) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR "
             + "     LOWER(c.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
@@ -70,7 +72,7 @@ public interface CoaRepository extends JpaRepository<COA, Long> {
             + "AND c.code LIKE :category% "
             + "AND (c.code LIKE CONCAT('%', :codePrefix, '%') OR c.name LIKE CONCAT('%', :codePrefix, '%')) "
             + "AND cl12.name = 'GENERAL' "
-            + "AND c.budget = :budget")
+            + "AND c.budget = :budget AND c.stateOpen = true")
     List<COA> findBySectionsAndCodePrefixSearch2(
             @Param("sections") Set<Section> sections,
             @Param("codePrefix") String codePrefix,
@@ -80,8 +82,11 @@ public interface CoaRepository extends JpaRepository<COA, Long> {
 
     @Query("SELECT c FROM COA c "
             + "JOIN c.deptsection ds "
-            + "WHERE ds = :deptSection AND c.code LIKE :codeFilter% AND c.budget = :budget")
-    List<COA> findByDeptSectionAndCodeStartingWith(
+            + "WHERE ds = :deptSection "
+            + "AND c.code LIKE :codeFilter% "
+            + "AND c.budget = :budget "
+            + "AND c.stateOpen = true")
+    List<COA> findByDeptSectionAndCodeStartingWithAndStateOpen(
             @Param("deptSection") UrcDeptSectionAnlDimbgt deptSection,
             @Param("codeFilter") String codeFilter,
             @Param("budget") Budget budget
@@ -89,12 +94,13 @@ public interface CoaRepository extends JpaRepository<COA, Long> {
 
     List<COA> findByBudgetAndDisplay(Budget budget, Display display);
 
-    @Query("SELECT c FROM COA c WHERE c.code = :code AND c.budget = :budget")
+    @Query("SELECT c FROM COA c WHERE c.code = :code AND c.budget = :budget AND c.stateOpen = true")
     COA findByCodeAndBudget(@Param("code") String code, @Param("budget") Budget budget);
 
     List<COA> findByBudgetAndDisplayAndStateOpen(Budget budget, Display display, boolean stateOpen);
-    
-        // Custom method to find COA by Budget and List of ProcClass
+
+    // Custom method to find COA by Budget and List of ProcClass
     List<COA> findByBudgetAndProcclassIn(Budget budget, List<ProcClass> procclasses);
+
     List<COA> findByBudgetAndProcclass(Budget budget, ProcClass procclasses);
 }

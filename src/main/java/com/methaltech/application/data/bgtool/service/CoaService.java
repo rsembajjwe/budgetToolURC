@@ -228,7 +228,7 @@ public COA save(COA coa) {
     }
 
     public List<COA> findByDeptSectionAndCodeStartingWith(UrcDeptSectionAnlDimbgt section, String code, Budget budget) {
-        return coaRepository.findByDeptSectionAndCodeStartingWith(section, code, budget);
+        return coaRepository.findByDeptSectionAndCodeStartingWithAndStateOpen(section, code, budget);
     }
 
     public List<COA> findByBudgetAndDisplay(Budget budget, Display display) {

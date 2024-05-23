@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Set;
 import lombok.Data;
 
@@ -26,21 +27,21 @@ class BudgetApproval {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     private Boolean bloSubmission;
-    private LocalDate bloSubmissionDate;
+    private LocalDateTime bloSubmissionDate;
     private Boolean hodSubmission;
-    private LocalDate hodSubmissionDate;
+    private LocalDateTime hodSubmissionDate;
     private Boolean maSubmission;
-    private LocalDate maSubmissionDate;
+    private LocalDateTime maSubmissionDate;
     private Boolean cfoSubmission;
-    private LocalDate cfoSubmissionDate;
+    private LocalDateTime cfoSubmissionDate;
     private Boolean maApproval;
-    private LocalDate maApprovalDate;
+    private LocalDateTime maApprovalDate;
     /*        @ManyToOne
     @JoinColumn(name = "dept_id")
     UrcDepartmentAnlDim dept;*/
     @ManyToOne
-    @JoinColumn(name = "section_id")
-    UrcDeptSectionAnlDimbgt section;
+    @JoinColumn(name = "section_id", unique = true)
+    private UrcDeptSectionAnlDimbgt section;
     @ManyToOne
     @JoinColumn(name = "budget_id")
     Budget budget;

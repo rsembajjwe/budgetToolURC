@@ -270,8 +270,10 @@ public class freightVolumeView extends Div {
         symbols.setGroupingSeparator(','); // Set the grouping separator to a comma
 
         comboBoxBudget.addValueChangeListener(e -> {
-            if(!e.getValue().isActive()){
-                save.setEnabled(false);cancel.setEnabled(false);
+            if (!e.getValue().isActive()) {
+                save.setEnabled(false);
+                cancel.setEnabled(false);
+                upload.setVisible(false);
             }
             if (!comboBoxBudget.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxCOA.isEmpty()) {
                 upload.setVisible(true);
@@ -1348,7 +1350,7 @@ public class freightVolumeView extends Div {
                                 } else {
                                     cell5.setCellValue("-");
                                 }
-cell5.setCellStyle(boldRowStyleTotalColumn);
+                                cell5.setCellStyle(boldRowStyleTotalColumn);
 
                                 Cell cell6 = Q5.createCell((short) 6);
                                 if (total.getAug() != null) {
@@ -1356,7 +1358,7 @@ cell5.setCellStyle(boldRowStyleTotalColumn);
                                 } else {
                                     cell6.setCellValue("-");
                                 }
-cell6.setCellStyle(boldRowStyleTotalColumn);
+                                cell6.setCellStyle(boldRowStyleTotalColumn);
 
                                 Cell cell7 = Q5.createCell((short) 7);
                                 if (total.getSep() != null) {
@@ -1364,7 +1366,7 @@ cell6.setCellStyle(boldRowStyleTotalColumn);
                                 } else {
                                     cell7.setCellValue("-");
                                 }
-cell7.setCellStyle(boldRowStyleTotalColumn);
+                                cell7.setCellStyle(boldRowStyleTotalColumn);
 
                                 Cell cell8 = Q5.createCell((short) 8);
                                 if (total.getOct() != null) {
@@ -1372,7 +1374,7 @@ cell7.setCellStyle(boldRowStyleTotalColumn);
                                 } else {
                                     cell8.setCellValue("-");
                                 }
-cell8.setCellStyle(boldRowStyleTotalColumn);
+                                cell8.setCellStyle(boldRowStyleTotalColumn);
 
                                 Cell cell9 = Q5.createCell((short) 9);
                                 if (total.getNov() != null) {
@@ -1380,7 +1382,7 @@ cell8.setCellStyle(boldRowStyleTotalColumn);
                                 } else {
                                     cell9.setCellValue("-");
                                 }
-cell9.setCellStyle(boldRowStyleTotalColumn);
+                                cell9.setCellStyle(boldRowStyleTotalColumn);
 
                                 Cell cell10 = Q5.createCell((short) 10);
                                 if (total.getDec() != null) {
@@ -1388,7 +1390,7 @@ cell9.setCellStyle(boldRowStyleTotalColumn);
                                 } else {
                                     cell10.setCellValue("-");
                                 }
-cell10.setCellStyle(boldRowStyleTotalColumn);
+                                cell10.setCellStyle(boldRowStyleTotalColumn);
 
                                 Cell cell11 = Q5.createCell((short) 11);
                                 if (total.getJan() != null) {
@@ -1396,7 +1398,7 @@ cell10.setCellStyle(boldRowStyleTotalColumn);
                                 } else {
                                     cell11.setCellValue("-");
                                 }
-cell11.setCellStyle(boldRowStyleTotalColumn);
+                                cell11.setCellStyle(boldRowStyleTotalColumn);
 
                                 Cell cell12 = Q5.createCell((short) 12);
                                 if (total.getFeb() != null) {
@@ -1404,7 +1406,7 @@ cell11.setCellStyle(boldRowStyleTotalColumn);
                                 } else {
                                     cell12.setCellValue("-");
                                 }
-cell12.setCellStyle(boldRowStyleTotalColumn);
+                                cell12.setCellStyle(boldRowStyleTotalColumn);
 
                                 Cell cell13 = Q5.createCell((short) 13);
                                 if (total.getMar() != null) {
@@ -1414,7 +1416,7 @@ cell12.setCellStyle(boldRowStyleTotalColumn);
                                 }
 
                                 cell13.setCellStyle(boldRowStyleTotalColumn);
-                                
+
                                 Cell cell14 = Q5.createCell((short) 14);
                                 if (total.getApr() != null) {
                                     cell14.setCellValue(total.getApr().doubleValue());
@@ -1429,7 +1431,7 @@ cell12.setCellStyle(boldRowStyleTotalColumn);
                                 } else {
                                     cell15.setCellValue("-");
                                 }
-cell15.setCellStyle(boldRowStyleTotalColumn);
+                                cell15.setCellStyle(boldRowStyleTotalColumn);
 
                                 Cell cell16 = Q5.createCell((short) 16);
                                 if (total.getJun() != null) {
@@ -1438,7 +1440,6 @@ cell15.setCellStyle(boldRowStyleTotalColumn);
                                     cell16.setCellValue("-");
                                 }
                                 cell16.setCellStyle(boldRowStyleTotalColumn);
-                                
 
                                 Cell cell17 = Q5.createCell((short) 17);
                                 if (total.getTotal() != null) {
@@ -1684,11 +1685,8 @@ cell15.setCellStyle(boldRowStyleTotalColumn);
             }*/
             }
 
-        }}
-
-    
-
-    
+        }
+    }
 
     private void exportAndDownloadFreightVolume(Budget budget) {
         try (Workbook workbook = new XSSFWorkbook()) {

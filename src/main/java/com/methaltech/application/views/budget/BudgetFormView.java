@@ -3,6 +3,7 @@ package com.methaltech.application.views.budget;
 import com.methaltech.application.data.Display;
 import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.Role;
+import com.methaltech.application.data.bgtool.service.BudgetApprovalService;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
 import com.methaltech.application.data.bgtool.service.UserService;
 import com.methaltech.application.data.bgtool.service.BudgetService;
@@ -242,6 +243,8 @@ public class BudgetFormView extends Div {
     private final StaffService staffService;
     private final StaffSalaryService staffSalaryService;
     private ComboBox<ProcClass> procClassCombo = new ComboBox("Procurement Class");
+    BudgetItemsGridContextMenu contextMenu = new BudgetItemsGridContextMenu(gridBudgetItems);
+    private final BudgetApprovalService sampleBudgetApprovalService;
 
     public BudgetFormView(AuthenticatedUser authenticatedUser, BudgetService chosenBudgetService, Urc_ActivitiesService sampleUrc_ActivitiesService,
             UserService userService, UnitService unitService, UnitsBudgetService unitsbudgetService,
@@ -250,7 +253,8 @@ public class BudgetFormView extends Div {
             CurrencyService sampleCurrencyService, BudgetItemsService budgetItemsService, StockUnitMeasureService sampleStockUnitMeasureService,
             UR5_ACNTService sampleUR5_ACNTService, UrcDeptSectionAnlDimbgtService urcDeptSectionAnlDimbgtService,
             CurrencyDataService sampleCurrencyDataService, COAReconcileService coaReconcileService, StaffService staffService,
-            StaffSalaryService staffSalaryService, FundsourceService sampleFundsourceService, ProcurementPlanService sampleProcurementPlanService) {
+            StaffSalaryService staffSalaryService, FundsourceService sampleFundsourceService, ProcurementPlanService sampleProcurementPlanService,
+            BudgetApprovalService sampleBudgetApprovalService) {
         this.chosenBudgetService = chosenBudgetService;
         this.sampleUrc_ActivitiesService = sampleUrc_ActivitiesService;
         this.userService = userService;
@@ -273,6 +277,7 @@ public class BudgetFormView extends Div {
         this.staffSalaryService = staffSalaryService;
         this.sampleFundsourceService = sampleFundsourceService;
         this.sampleProcurementPlanService = sampleProcurementPlanService;
+        this.sampleBudgetApprovalService = sampleBudgetApprovalService;
         this.setHeight("100%");
         gridUrc_Activities.setHeight("100%");
 
@@ -321,6 +326,7 @@ public class BudgetFormView extends Div {
             fixCOA();
         });
         uploadBudget.setUploadButton(uploadButtonButton);
+
         uploadBudget.addSucceededListener(event -> {
             List<errorMessages> mes = new ArrayList<>();
             errorMessages m = new errorMessages();
@@ -837,9 +843,48 @@ public class BudgetFormView extends Div {
             refreshgridBudgetItemCOA2();
         });
         comboBoxBudget.addValueChangeListener(e -> {
+            if (!comboBoxBudget.isEmpty() && !comboBoxD_Section.isEmpty()) {
+                BudgetApproval findTopByBudgetAndSection = sampleBudgetApprovalService.findTopByBudgetAndSectionOrderByBloSubmissionDateDesc(chosenBudget, chosenDsection);
+
+                if (findTopByBudgetAndSection == null) {
+                    saveBudgetItem.setEnabled(true);
+                    deleteBudgetItem.setEnabled(true);
+                    uploadBudget.setVisible(true);
+                    contextMenu.setEnabled(true);
+                } else {
+                    if (findTopByBudgetAndSection.getBloSubmission() != null) {
+
+                        if (findTopByBudgetAndSection.getBloSubmission()) {
+                            saveBudgetItem.setEnabled(false);
+                            deleteBudgetItem.setEnabled(false);
+                            uploadBudget.setVisible(false);
+                            contextMenu.setEnabled(false);
+
+                        } else {
+                            saveBudgetItem.setEnabled(true);
+                            deleteBudgetItem.setEnabled(true);
+                            uploadBudget.setVisible(true);
+                            contextMenu.setEnabled(true);
+                        }
+
+                    } else {
+                        saveBudgetItem.setEnabled(true);
+                        deleteBudgetItem.setEnabled(true);
+                        uploadBudget.setVisible(true);
+                        contextMenu.setEnabled(true);
+                    }
+
+                }
+            }
+
+            if (!e.getValue().isActive()) {
+
+            }
             if (e.getValue().isActive() == false) {
                 disabledBudget(false);
+                contextMenu.setEnabled(false);
             }
+
             gridCOA.setItems(new ArrayList<>());
             budgetItemfundSource.setItems(sampleFundsourceService.findFundsourcesByBudget(e.getValue()));
             chosenBudget = e.getValue();
@@ -889,6 +934,37 @@ public class BudgetFormView extends Div {
 
             setBudgetDetails();
             if (!comboBoxBudget.isEmpty() && !comboBoxD_Section.isEmpty()) {
+                BudgetApproval findTopByBudgetAndSection = sampleBudgetApprovalService.findTopByBudgetAndSectionOrderByBloSubmissionDateDesc(chosenBudget, chosenDsection);
+
+                if (findTopByBudgetAndSection == null) {
+                    saveBudgetItem.setEnabled(true);
+                    deleteBudgetItem.setEnabled(true);
+                    uploadBudget.setVisible(true);
+                    contextMenu.setEnabled(true);
+                } else {
+                    if (findTopByBudgetAndSection.getBloSubmission() != null) {
+
+                        if (findTopByBudgetAndSection.getBloSubmission()) {
+                            saveBudgetItem.setEnabled(false);
+                            deleteBudgetItem.setEnabled(false);
+                            uploadBudget.setVisible(false);
+                            contextMenu.setEnabled(false);
+
+                        } else {
+                            saveBudgetItem.setEnabled(true);
+                            deleteBudgetItem.setEnabled(true);
+                            uploadBudget.setVisible(true);
+                            contextMenu.setEnabled(true);
+                        }
+
+                    } else {
+                        saveBudgetItem.setEnabled(true);
+                        deleteBudgetItem.setEnabled(true);
+                        uploadBudget.setVisible(true);
+                        contextMenu.setEnabled(true);
+                    }
+
+                }
                 comboBoxCoalevel1.setItems(coalevel1Service.findByBudget());
                 gridCOA.setEnabled(true);
                 gridCOA.getSelectedItems().clear();
@@ -1436,7 +1512,6 @@ public class BudgetFormView extends Div {
         }
         //fixFundsource();
     }
-    
 
     private void fixFundsource() {
         List<BudgetItems> findByDeptUnitAndBudget = budgetItemsService.findByAll();
@@ -1883,6 +1958,37 @@ public class BudgetFormView extends Div {
             if (vl.getValue() != null) {
                 if (vl.getValue().getDisplay() == Display.FREIGHT || vl.getValue().getDisplay() == Display.SALARIES) {
                     disabledBudget(false);
+                } else if (!comboBoxBudget.isEmpty() && !comboBoxD_Section.isEmpty()) {
+                    BudgetApproval findTopByBudgetAndSection = sampleBudgetApprovalService.findTopByBudgetAndSectionOrderByBloSubmissionDateDesc(chosenBudget, chosenDsection);
+                if (findTopByBudgetAndSection == null) {
+                    saveBudgetItem.setEnabled(true);
+                    deleteBudgetItem.setEnabled(true);
+                    uploadBudget.setVisible(true);
+                    contextMenu.setEnabled(true);
+                } else {
+                    if (findTopByBudgetAndSection.getBloSubmission() != null) {
+
+                        if (findTopByBudgetAndSection.getBloSubmission()) {
+                            saveBudgetItem.setEnabled(false);
+                            deleteBudgetItem.setEnabled(false);
+                            uploadBudget.setVisible(false);
+                            contextMenu.setEnabled(false);
+
+                        } else {
+                            saveBudgetItem.setEnabled(true);
+                            deleteBudgetItem.setEnabled(true);
+                            uploadBudget.setVisible(true);
+                            contextMenu.setEnabled(true);
+                        }
+
+                    } else {
+                        saveBudgetItem.setEnabled(true);
+                        deleteBudgetItem.setEnabled(true);
+                        uploadBudget.setVisible(true);
+                        contextMenu.setEnabled(true);
+                    }
+
+                }
                 } else {
 
                     disabledBudget(true);
@@ -1998,7 +2104,6 @@ public class BudgetFormView extends Div {
 
         gridBudgetItems.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
         gridBudgetItems.setWidthFull();
-        BudgetItemsGridContextMenu contextMenu = new BudgetItemsGridContextMenu(gridBudgetItems);
 
         gridBudgetItems.asSingleSelect().addValueChangeListener(vl -> {
             if (vl.getValue() != null) {
@@ -2133,8 +2238,40 @@ public class BudgetFormView extends Div {
                     if (coacode != null) {
                         if (coacode.getDisplay() == Display.FREIGHT || coacode.getDisplay() == Display.SALARIES) {
                             disabledBudget(false);
+                        } else if (!comboBoxBudget.isEmpty() && !comboBoxD_Section.isEmpty()) {
+                            BudgetApproval findTopByBudgetAndSection = sampleBudgetApprovalService.findTopByBudgetAndSectionOrderByBloSubmissionDateDesc(chosenBudget, chosenDsection);
+
+                if (findTopByBudgetAndSection == null) {
+                    saveBudgetItem.setEnabled(true);
+                    deleteBudgetItem.setEnabled(true);
+                    uploadBudget.setVisible(true);
+                    contextMenu.setEnabled(true);
+                } else {
+                    if (findTopByBudgetAndSection.getBloSubmission() != null) {
+
+                        if (findTopByBudgetAndSection.getBloSubmission()) {
+                            saveBudgetItem.setEnabled(false);
+                            deleteBudgetItem.setEnabled(false);
+                            uploadBudget.setVisible(false);
+                            contextMenu.setEnabled(false);
+
                         } else {
-                            // disabledBudget(true);
+                            saveBudgetItem.setEnabled(true);
+                            deleteBudgetItem.setEnabled(true);
+                            uploadBudget.setVisible(true);
+                            contextMenu.setEnabled(true);
+                        }
+
+                    } else {
+                        saveBudgetItem.setEnabled(true);
+                        deleteBudgetItem.setEnabled(true);
+                        uploadBudget.setVisible(true);
+                        contextMenu.setEnabled(true);
+                    }
+
+                }
+                        } else {
+
                             if (!comboBoxBudget.getValue().isActive()) {
 
                                 disabledBudget(false);

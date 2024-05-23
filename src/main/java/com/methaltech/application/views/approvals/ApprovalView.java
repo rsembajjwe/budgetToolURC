@@ -1,15 +1,18 @@
 package com.methaltech.application.views.approvals;
 
 import com.methaltech.application.data.Role;
+import com.methaltech.application.data.bgtool.service.BudgetApprovalService;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
 import com.methaltech.application.data.bgtool.service.BudgetService;
 import com.methaltech.application.data.bgtool.service.CoaService;
 import com.methaltech.application.data.bgtool.service.Coalevel1Service;
 import com.methaltech.application.data.bgtool.service.DeptSectionMergerService;
 import com.methaltech.application.data.bgtool.service.OrganisationService;
+import com.methaltech.application.data.bgtool.service.UrcDeptSectionAnlDimbgtService;
 import com.methaltech.application.data.bgtool.service.UserService;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.BudgetApproval;
+import com.methaltech.application.data.entity.bgtool.BudgetApprovalMessages;
 import com.methaltech.application.data.entity.bgtool.BudgetItems;
 import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
@@ -27,15 +30,20 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Footer;
+import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.messages.MessageList;
+import com.vaadin.flow.component.messages.MessageListItem;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayoutVariant;
 import com.vaadin.flow.component.tabs.TabSheet;
@@ -46,9 +54,20 @@ import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.RolesAllowed;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 
 @PageTitle("Approval")
@@ -74,14 +93,18 @@ public final class ApprovalView extends Div {
     private final OrganisationService organisationService;
     private DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
     private final BudgetItemsService budgetItemsService;
+    private final BudgetApprovalService sampleBudgetApprovalService;
+    private final UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService;
     private Span footerTotal = new Span("");
     Footer footer = new Footer();
     private Grid<BudgetItems> gridBudgetItems = new Grid<>(BudgetItems.class, false);
     private Grid<BudgetApproval> gridBudgetApproval = new Grid<>(BudgetApproval.class, false);
+    MessageList messageList = new MessageList();
 
     public ApprovalView(UserService userService, AuthenticatedUser authenticatedUser, BudgetService chosenBudgetService,
             DeptSectionMergerService sampleDeptSectionMergerService, Coalevel1Service coalevel1Service,
-            CoaService coaService, OrganisationService organisationService, BudgetItemsService budgetItemsService) {
+            CoaService coaService, OrganisationService organisationService, BudgetItemsService budgetItemsService,
+            BudgetApprovalService sampleBudgetApprovalService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService) {
         this.userService = userService;
         this.authenticatedUser = authenticatedUser;
         this.chosenBudgetService = chosenBudgetService;
@@ -90,12 +113,17 @@ public final class ApprovalView extends Div {
         this.coaService = coaService;
         this.organisationService = organisationService;
         this.budgetItemsService = budgetItemsService;
+        this.sampleBudgetApprovalService = sampleBudgetApprovalService;
+        this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
         this.setHeightFull();
+
+        addClassNames("approval-view");
         footerTotal.getElement().getThemeList().add("badge success");
 
         if (authenticatedUser.get().isPresent()) {
             user = authenticatedUser.get().get();
         }
+        setApprovalData();
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
         image2.setWidthFull();
         image2.getStyle().set("margin", "0").set("padding", "0");
@@ -103,14 +131,13 @@ public final class ApprovalView extends Div {
         TabSheet tabSheet = new TabSheet();
         //tabSheet.add("Budget", coaDiv());
         tabSheet.add("Budget", coaDiv());
-        //tabSheet.add("Approvals", new Div(new Text("This is the Payment tab content")));
         tabSheet.add("Approvals", gridApprovals());
-        tabSheet.setHeightFull();
+        tabSheet.setSizeFull();
 
         // add( HeaderMenu(),coaDiv());
         Div divs = new Div();
         divs.add(HeaderMenu(), tabSheet);
-        divs.setHeightFull();
+        divs.setSizeFull();
         divs.getStyle().set("flex-grow", "1");
         add(image2, divs);
 
@@ -150,6 +177,8 @@ public final class ApprovalView extends Div {
             comboBoxCoalevel1.setItems(coalevel1Service.findByBudget());
             comboBoxOrganisation.setItems(organisationService.findByBudgetList(e.getValue()));
             refreshgridBudgetItemCOA();
+            refreshGrid();
+
         });
 
         comboBoxD_Section.addValueChangeListener(e -> {
@@ -346,7 +375,7 @@ public final class ApprovalView extends Div {
                 }).setWidth("170px").setFlexGrow(0);
 
         gridBudgetItems.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
-        gridBudgetItems.setWidthFull();
+        gridBudgetItems.setWidthFull(); //gridBudgetItems.setSizeFull();
         gridDetails.add(gridBudgetItems);
         return gridDetails;
     }
@@ -531,7 +560,7 @@ public final class ApprovalView extends Div {
 
     private Div gridApprovals() {
         Div divApprovals = new Div();
-
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm");
         gridBudgetApproval.addColumn(new ComponentRenderer<>(urcActivity -> {
 
             Span span = new Span(urcActivity.getSection().getNAME());
@@ -541,19 +570,244 @@ public final class ApprovalView extends Div {
 
         })).setHeader("Cost Centre").setFlexGrow(0).setWidth("150px");
         gridBudgetApproval.addColumn(BudgetApproval::getBloSubmission).setHeader("BLO Submission");
-        gridBudgetApproval.addColumn(BudgetApproval::getBloSubmissionDate).setHeader("BLO Submission Date");
+        // gridBudgetApproval.addColumn(BudgetApproval::getBloSubmissionDate).setHeader("BLO Submission Date");
+        gridBudgetApproval.addColumn(budgetApproval -> {
+            LocalDateTime dateTime = budgetApproval.getBloSubmissionDate();
+            return dateTime != null ? dateTime.format(formatter) : "";
+        }).setHeader("BLO Submission Date");
         gridBudgetApproval.addColumn(BudgetApproval::getHodSubmission).setHeader("HOD Submission");
-        gridBudgetApproval.addColumn(BudgetApproval::getHodSubmissionDate).setHeader("HOD Submission Date");
+        gridBudgetApproval.addColumn(budgetApproval -> {
+            LocalDateTime dateTime = budgetApproval.getHodSubmissionDate();
+            return dateTime != null ? dateTime.format(formatter) : "";
+        }).setHeader("HOD Submission Date");
 
         gridBudgetApproval.addColumn(BudgetApproval::getMaSubmission).setHeader("MA Submission");
-        gridBudgetApproval.addColumn(BudgetApproval::getMaSubmissionDate).setHeader("MA Submission Date");
+
+        gridBudgetApproval.addColumn(budgetApproval -> {
+            LocalDateTime dateTime = budgetApproval.getMaSubmissionDate();
+            return dateTime != null ? dateTime.format(formatter) : "";
+        }).setHeader("MA Submission Date");
         gridBudgetApproval.addColumn(BudgetApproval::getCfoSubmission).setHeader("CFO Submission");
-        gridBudgetApproval.addColumn(BudgetApproval::getCfoSubmissionDate).setHeader("CFO Submission Date");
+
+        gridBudgetApproval.addColumn(budgetApproval -> {
+            LocalDateTime dateTime = budgetApproval.getCfoSubmissionDate();
+            return dateTime != null ? dateTime.format(formatter) : "";
+        }).setHeader("CFO Submission Date");
 
         gridBudgetApproval.addColumn(BudgetApproval::getMaApproval).setHeader("MD Approval");
-        gridBudgetApproval.addColumn(BudgetApproval::getMaApprovalDate).setHeader("MD Approval Date");
-        gridBudgetApproval.setHeight("150px");
-        divApprovals.add(gridBudgetApproval);
+
+        gridBudgetApproval.addColumn(budgetApproval -> {
+            LocalDateTime dateTime = budgetApproval.getMaApprovalDate();
+            return dateTime != null ? dateTime.format(formatter) : "";
+        }).setHeader("MD Submission Date");
+
+        gridBudgetApproval.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
+        Scroller scroller = new Scroller(
+                new Div(messageList));
+        scroller.setScrollDirection(Scroller.ScrollDirection.VERTICAL);
+        scroller.getStyle()
+                .set("border-bottom", "1px solid var(--lumo-contrast-20pct)")
+                .set("padding", "var(--lumo-space-m)");
+        divApprovals.add(gridBudgetApproval, scroller);
+        gridBudgetApproval.setHeight("350px");
+        divApprovals.setSizeFull();
+
+        gridBudgetApproval.asSingleSelect().addValueChangeListener(e -> {
+            BudgetApprovalContextMenu cont = new BudgetApprovalContextMenu(e.getSource());
+        });
         return divApprovals;
     }
+
+    private void refreshGrid() {
+        gridBudgetApproval.setItems(sampleBudgetApprovalService.getBudgetApprovalsByBudgetAndSections(comboBoxBudget.getValue(), user.getDeptsection()));
+        List<BudgetApproval> listB = gridBudgetApproval.getListDataView().getItems().toList();
+        Set<BudgetApprovalMessages> messages = new HashSet<>();
+        int r = 0;
+        for (BudgetApproval budgetApproval : listB) {
+            messages.addAll(budgetApproval.getMessages());
+
+        }
+        /*        List<BudgetApprovalMessages> sortedMessages = messages.stream()
+        .sorted(Comparator.comparing(BudgetApprovalMessages::getSentDate))
+        .collect(Collectors.toList());*/
+        List<BudgetApprovalMessages> sortedMessages = messages.stream()
+        .sorted(Comparator.comparing(BudgetApprovalMessages::getSentDate).reversed())
+        .collect(Collectors.toList());
+
+        List<MessageListItem> messageListItem = new ArrayList<>();
+        for (BudgetApprovalMessages sortM : sortedMessages) {
+            r++;
+            LocalDateTime ldate = sortM.getSentDate();
+            ZoneId zoneId = ZoneId.systemDefault();
+            //LocalDateTime localDateTime = ldate.atStartOfDay();
+            //LocalDateTime localDateTime2 = ldate.
+            ZonedDateTime zonedDateTime = ldate.atZone(zoneId);
+            Instant instant = zonedDateTime.toInstant();
+            MessageListItem mm = new MessageListItem(sortM.getMessage(), instant, sortM.getApprover().getFirstName() + " " + sortM.getApprover().getLastName());
+
+            if (r % 2 == 0) {
+                mm.setUserColorIndex(1);
+
+            } else {
+                mm.setUserColorIndex(2);
+            }
+
+            messageListItem.add(mm);
+
+        }
+        messageList.setItems(messageListItem);
+    }
+
+    private void setApprovalData() {
+        Optional<Budget> budget = chosenBudgetService.getLastSavedBudget2();
+        if (budget.isPresent()) {
+            List<BudgetApproval> approvals = sampleBudgetApprovalService.getBudgetApprovalsByBudget(budget.get());
+            List<UrcDeptSectionAnlDimbgt> getAllUrcSectionsAnlDims = sampleUrcDeptSectionAnlDimbgtService.getAllUrcSectionsAnlDims();
+            for (UrcDeptSectionAnlDimbgt ser : getAllUrcSectionsAnlDims) {
+                boolean exists = false;
+                for (BudgetApproval approval : approvals) {
+                    if (approval.getSection().equals(ser)) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (exists == false) {
+                    BudgetApproval app = new BudgetApproval();
+                    app.setBudget(budget.get());
+                    app.setSection(ser);
+                    sampleBudgetApprovalService.saveBudgetApproval(app);
+                }
+            }
+        }
+
+    }
+
+    private class BudgetApprovalContextMenu extends GridContextMenu<BudgetApproval> {
+
+        public BudgetApprovalContextMenu(Grid<BudgetApproval> target) {
+            super(target);
+            boolean blo = false;
+            if (user.getRoles().contains(Role.BLO)) {
+                if (!gridBudgetApproval.asSingleSelect().isEmpty()) {
+                    BudgetApproval pp = gridBudgetApproval.asSingleSelect().getValue();
+                    if (pp.getBloSubmission() == null) {
+                        blo = true;
+                    } else if (pp.getBloSubmission() == false) {
+                        blo = true;
+                    } else {
+                        blo = false;
+                    }
+                    addItem("Submit to HOD", e -> e.getItem().ifPresent(person -> {
+
+                        Optional<BudgetApproval> bgtOptional = e.getItem();
+
+                        if (bgtOptional.isPresent()) {
+                            BudgetApproval appBud = bgtOptional.get();
+                            appBud.setBloSubmission(Boolean.TRUE);
+                            appBud.setBloSubmissionDate(LocalDateTime.now());
+                            Set<BudgetApprovalMessages> setM = appBud.getMessages();
+
+                            BudgetApprovalMessages newMessage = new BudgetApprovalMessages();
+                            newMessage.setApprover(user);
+                            newMessage.setSentDate(LocalDateTime.now());
+                            newMessage.setMessage(appBud.getSection().getNAME() + " Budget Submitted to HOD");
+                            setM.add(newMessage);
+                            sampleBudgetApprovalService.saveBudgetApproval(appBud);
+                            refreshGrid();
+
+                        } else {
+                            Notificationwarning("Now Cost Centre Selected");
+                        }
+
+                    })).setEnabled(blo);
+                }
+
+            }
+
+            if (user.getRoles().contains(Role.HOD)) {
+                if (!gridBudgetApproval.asSingleSelect().isEmpty()) {
+                    BudgetApproval pp = gridBudgetApproval.asSingleSelect().getValue();
+                    if (pp.getHodSubmission() == null) {
+                        blo = true;
+                    } else if (pp.getHodSubmission() == false) {
+                        blo = true;
+                    } else {
+                        blo = false;
+                    }
+                    add(new Hr());
+                    addItem("Submit to MA", e -> e.getItem().ifPresent(person -> {
+                        // System.out.printf("Edit: %s%n", person.getFullName());
+                    })).setEnabled(blo);
+                }
+
+            }
+
+            if (user.getRoles().contains(Role.ADMIN)) {
+
+                if (!gridBudgetApproval.asSingleSelect().isEmpty()) {
+                    BudgetApproval pp = gridBudgetApproval.asSingleSelect().getValue();
+                    if (pp.getMaSubmission() == null) {
+                        blo = true;
+                    } else if (pp.getMaSubmission() == false) {
+                        blo = true;
+                    } else {
+                        blo = false;
+                    }                    
+                    add(new Hr());
+                    addItem("Submit to CFO", e -> e.getItem().ifPresent(person -> {
+                        // System.out.printf("Edit: %s%n", person.getFullName());
+                    })).setEnabled(blo);
+                }
+
+            }
+
+            if (user.getRoles().contains(Role.CFO)) {
+
+                if (!gridBudgetApproval.asSingleSelect().isEmpty()) {
+                    BudgetApproval pp = gridBudgetApproval.asSingleSelect().getValue();
+                    if (pp.getCfoSubmission() == null) {
+                        blo = true;
+                    } else if (pp.getCfoSubmission() == false) {
+                        blo = true;
+                    } else {
+                        blo = false;
+                    }                    
+                    add(new Hr());
+                    addItem("Submit to MD", e -> e.getItem().ifPresent(person -> {
+                        // System.out.printf("Edit: %s%n", person.getFullName());
+                    })).setEnabled(blo);
+                }
+
+            }
+
+            if (user.getRoles().contains(Role.MD)) {
+                if (!gridBudgetApproval.asSingleSelect().isEmpty()) {
+                    BudgetApproval pp = gridBudgetApproval.asSingleSelect().getValue();
+                    if (pp.getMaApproval() == null) {
+                        blo = true;
+                    } else if (pp.getMaApproval() == false) {
+                        blo = true;
+                    } else {
+                        blo = false;
+                    }                    
+                    add(new Hr());
+                    addItem("Approve Budget", e -> e.getItem().ifPresent(person -> {
+                        // System.out.printf("Edit: %s%n", person.getFullName());
+                    })).setEnabled(blo);
+                }
+
+            }
+
+        }
+
+        public boolean getStatus(boolean state) {
+            if (state == false) {
+                return true;
+            } else {
+                return false;
+            }
+
+        }
+    }
+
 }

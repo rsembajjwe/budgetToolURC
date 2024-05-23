@@ -240,6 +240,10 @@ public class ProcurementPlanView extends Div {
     private MultiSelectComboBox<Fundsource> funds2 = new MultiSelectComboBox("Source of Funds");
     private User user;
     private Set<ProcurementPlan> selectedProcurementPlan = null;
+    PersonContextMenuGrid2 contextMenu2=null;
+    ProcuremetPlanGridContextMenu contextMenu=null;
+    BudgetItemsGridContextMenu budgetItemsGridContextMenu=null;
+    BudgetItemsGridContextMenu2 budgetItemsGridContextMenu2=null;
 
     @Autowired
     public ProcurementPlanView(UserService samplePersonService, EmailValidator emailValidator,
@@ -478,7 +482,7 @@ public class ProcurementPlanView extends Div {
 
         });
         if (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT)) {
-            ProcuremetPlanGridContextMenu contextMenu = new ProcuremetPlanGridContextMenu(grid);
+            contextMenu = new ProcuremetPlanGridContextMenu(grid);
         }
 
         //refreshgridProcurementPlan(procClassCombo.getValue());
@@ -491,6 +495,11 @@ public class ProcurementPlanView extends Div {
         });
 
         budget.addValueChangeListener(e -> {
+            if(!e.getValue().isActive()){
+                
+                contextMenu.setEnabled(false);
+                budgetItemsGridContextMenu.setEnabled(false);
+            }
             if (!procClassCombo.isEmpty()) {
                 refreshgridProcurementPlan(procClassCombo.getValue(), comboBoxD_Section.getSelectedItems());
                 tabSheet.getSelectedTab().setLabel(procClassCombo.getValue().name());
@@ -670,7 +679,9 @@ public class ProcurementPlanView extends Div {
         });
         //grid.addColumn("roles").setAutoWidth(true);
         if (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT)) {
-            PersonContextMenuGrid2 contextMenu2 = new PersonContextMenuGrid2(grid2);
+            contextMenu2 = new PersonContextMenuGrid2(grid2);
+            
+            
         }
 
         refreshgridProcurementPlan2(procClassCombo2.getValue(), comboBoxD_Section2.getSelectedItems());
@@ -853,6 +864,12 @@ public class ProcurementPlanView extends Div {
         currency2.setItemLabelGenerator(item -> item.getData().getCurrencyShort());
         //procClassCombo.setItemLabelGenerator(ProcClass::getFinancialYear);c
         budget2.addValueChangeListener(e -> {
+
+            if(!e.getValue().isActive()){
+                budgetItemsGridContextMenu2.setEnabled(false);
+                contextMenu2.setEnabled(false);
+                
+            }            
             fundsource2.setItems(sampleFundsourceService.findFundsourcesByBudget(e.getValue()));
             funds2.setItems(sampleFundsourceService.findFundsourcesByBudget(e.getValue()));
         });
@@ -4993,7 +5010,7 @@ public class ProcurementPlanView extends Div {
         gridBudgetItems.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
         gridBudgetItems.setWidthFull();
         gridBudgetItems.setSelectionMode(Grid.SelectionMode.MULTI);
-        BudgetItemsGridContextMenu budgetItemsGridContextMenu = new BudgetItemsGridContextMenu(gridBudgetItems);
+        budgetItemsGridContextMenu = new BudgetItemsGridContextMenu(gridBudgetItems);
 
     }
 
@@ -5137,7 +5154,7 @@ public class ProcurementPlanView extends Div {
         gridBudgetItems2.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
         gridBudgetItems2.setWidthFull();
         gridBudgetItems2.setSelectionMode(Grid.SelectionMode.MULTI);
-        BudgetItemsGridContextMenu2 budgetItemsGridContextMenu = new BudgetItemsGridContextMenu2(gridBudgetItems2);
+        budgetItemsGridContextMenu2 = new BudgetItemsGridContextMenu2(gridBudgetItems2);
 
     }
 

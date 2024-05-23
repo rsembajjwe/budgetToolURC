@@ -79,6 +79,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -172,7 +173,7 @@ public class BudgetReportsView extends Div {
             Urc_ActivitiesService sampleUrc_ActivitiesService, CustomDetailedBudgetReportImpService sampleCustomDetailedBudgetReportImpService,
             CustomDetailedBudgetReportService sampleCustomDetailedBudgetReportService, UrcAcntService urcAcntService,
             FreightVolumesService sampleFreightVolumesService, CoaService sampleCoaService, SALFLDGService samopleSALFLDGService,
-            GenerateQtrFromFy gen,UrcBSalfldgService sampleUrcBSalfldgService) {
+            GenerateQtrFromFy gen, UrcBSalfldgService sampleUrcBSalfldgService) {
         this.userService = userService;
         this.budgetService = budgetService;
         this.departmentsectionService = departmentsectionService;
@@ -195,7 +196,7 @@ public class BudgetReportsView extends Div {
         this.sampleCoaService = sampleCoaService;
         this.samopleSALFLDGService = samopleSALFLDGService;
         this.gen = gen;
-        this.sampleUrcBSalfldgService=sampleUrcBSalfldgService;
+        this.sampleUrcBSalfldgService = sampleUrcBSalfldgService;
 
         reportColumns.add(Report.BASIC);
         reportColumns.add(Report.QTR1);
@@ -8143,7 +8144,7 @@ public class BudgetReportsView extends Div {
 
         MonthlySumResponseFreight pmon = sampleFreightVolumesService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget("111102", comboBox.getValue()));
         Row Q5 = createHeaderRow(sheet, tr, "ZFVNR -EXP", "Net Tons- Exports",
-                pmon.getTotal().doubleValue(),
+                sampleUrcBSalfldgService.findTotalAmountByAccntCode("ZFVNR -EXP").doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods("ZFVNR -EXP", Quarters.Qtr1, comboBox.getValue().getFinancialYear()).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods("ZFVNR -EXP", Quarters.Qtr2, comboBox.getValue().getFinancialYear()).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods("ZFVNR -EXP", Quarters.Qtr3, comboBox.getValue().getFinancialYear()).doubleValue(),
@@ -8154,7 +8155,7 @@ public class BudgetReportsView extends Div {
         MonthlySumResponseFreight mon2 = sampleFreightVolumesService.getTotals(comboBox.getValue(), sampleCoaService.findByCodeAndBudget("111101", comboBox.getValue()));
         MonthlySumResponseFreight pmon2 = sampleFreightVolumesService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget("111101", comboBox.getValue()));
         Row Q6 = createHeaderRow(sheet, tr, "ZFVNR-IMP", "Net Tons -Imports",
-                pmon2.getTotal().doubleValue(),
+                sampleUrcBSalfldgService.findTotalAmountByAccntCode("ZFVNR-IMP").doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods("ZFVNR-IMP", Quarters.Qtr1, comboBox.getValue().getFinancialYear()).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods("ZFVNR-IMP", Quarters.Qtr2, comboBox.getValue().getFinancialYear()).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods("ZFVNR-IMP", Quarters.Qtr3, comboBox.getValue().getFinancialYear()).doubleValue(),
@@ -8166,7 +8167,7 @@ public class BudgetReportsView extends Div {
         MonthlySumResponseFreight mon3 = sampleFreightVolumesService.getTotals(comboBox.getValue(), sampleCoaService.findByCodeAndBudget("111103", comboBox.getValue()));
         MonthlySumResponseFreight pmon3 = sampleFreightVolumesService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget("111103", comboBox.getValue()));
         Row Q7 = createHeaderRow(sheet, tr, "ZFVTN-LC", "Local Net Tons",
-                pmon3.getTotal().doubleValue(),
+                sampleUrcBSalfldgService.findTotalAmountByAccntCode("ZFVTN-LC").doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods("ZFVTN-LC", Quarters.Qtr1, comboBox.getValue().getFinancialYear()).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods("ZFVTN-LC", Quarters.Qtr2, comboBox.getValue().getFinancialYear()).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods("ZFVTN-LC", Quarters.Qtr3, comboBox.getValue().getFinancialYear()).doubleValue(),
@@ -8377,6 +8378,8 @@ public class BudgetReportsView extends Div {
         List<MonthlySumResponseFreight> listVariableCosts = new ArrayList<>();//VariableCosts
 
         BigDecimal ptotal = BigDecimal.ZERO;
+        BigDecimal suntotal = BigDecimal.ZERO;
+        BigDecimal suntotalT = BigDecimal.ZERO;
         tr++;
         titleBoldRed.add((int) tr);
         titles = Arrays.asList("", "INCOME", "", "", "", "", "", "", "", "", "", "");
@@ -8411,6 +8414,8 @@ public class BudgetReportsView extends Div {
                 MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                 ptot = pmon101.getTotal();
             }
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
 
             Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                     sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
@@ -8433,13 +8438,14 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q54 = createHeaderRow(sheet, tr, "", "Total Assets hire income",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 mon101T.getTotal().doubleValue(), mon101T.getQtr1().doubleValue(), mon101T.getQtr2().doubleValue(),
                 mon101T.getQtr3().doubleValue(), mon101T.getQtr4().doubleValue());
+        suntotal = BigDecimal.ZERO;
 
         listCoas.clear();
 
@@ -8447,7 +8453,7 @@ public class BudgetReportsView extends Div {
         titleJustBold.add((int) tr);
         titles = Arrays.asList("", "Freight Services", "", "", "", "", "", "", "", "", "", "");
         Row Q55 = createHeaderRow(sheet, tr, titles);
-
+        BigDecimal tt = BigDecimal.ZERO;
         tr++;
         titleJustBold.add((int) tr);
         titles = Arrays.asList("", "Northern Route", "", "", "", "", "", "", "", "", "", "");
@@ -8474,7 +8480,9 @@ public class BudgetReportsView extends Div {
                 MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                 ptot = pmon101.getTotal();
             }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            tt = tt.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
             Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                     sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                     getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -8497,7 +8505,7 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q57 = createHeaderRow(sheet, tr, "", "Total freight-Northern Route",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
@@ -8505,6 +8513,7 @@ public class BudgetReportsView extends Div {
                 mon101T2.getTotal().doubleValue(), mon101T2.getQtr1().doubleValue(), mon101T2.getQtr2().doubleValue(),
                 mon101T2.getQtr3().doubleValue(), mon101T2.getQtr4().doubleValue());
         listCOACodes.clear();
+        suntotal = BigDecimal.ZERO;
         tr++;
         titleJustBold.add((int) tr);
         titles = Arrays.asList("", "Southern Route", "", "", "", "", "", "", "", "", "", "");
@@ -8527,7 +8536,9 @@ public class BudgetReportsView extends Div {
                 MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                 ptot = pmon101.getTotal();
             }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            tt = tt.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
             Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                     sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                     getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -8548,7 +8559,7 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q59 = createHeaderRow(sheet, tr, "", "Total freight-Southern Route",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
@@ -8556,12 +8567,13 @@ public class BudgetReportsView extends Div {
                 mon101T3.getTotal().doubleValue(), mon101T3.getQtr1().doubleValue(), mon101T3.getQtr2().doubleValue(),
                 mon101T3.getQtr3().doubleValue(), mon101T3.getQtr4().doubleValue());
         listCOACodes.clear();
+        suntotal = BigDecimal.ZERO;
 
         tr++;
         titleBoldTotal.add((int) tr);
 
         Row Q60 = createHeaderRow(sheet, tr, "", "Total freight Services",
-                BigDecimal.ZERO.doubleValue(),
+                tt.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesT, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesT, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesT, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
@@ -8605,7 +8617,8 @@ public class BudgetReportsView extends Div {
                 MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                 ptot = pmon101.getTotal();
             }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
             Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                     sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                     getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -8626,13 +8639,14 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q61 = createHeaderRow(sheet, tr, "", "Total Other fees",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 mon101T4.getTotal().doubleValue(), mon101T4.getQtr1().doubleValue(), mon101T4.getQtr2().doubleValue(),
                 mon101T4.getQtr3().doubleValue(), mon101T4.getQtr4().doubleValue());
+        suntotal = BigDecimal.ZERO;
 
         tr++;
         titleJustBold.add((int) tr);
@@ -8658,7 +8672,8 @@ public class BudgetReportsView extends Div {
                 MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                 ptot = pmon101.getTotal();
             }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
             Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                     sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                     getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -8679,13 +8694,15 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q64 = createHeaderRow(sheet, tr, "", "Total Rent Income",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 mon101T5.getTotal().doubleValue(), mon101T5.getQtr1().doubleValue(), mon101T5.getQtr2().doubleValue(),
                 mon101T5.getQtr3().doubleValue(), mon101T5.getQtr4().doubleValue());
+
+        suntotal = BigDecimal.ZERO;
 
         tr++;
         titleBoldBlue.add((int) tr);
@@ -8715,7 +8732,8 @@ public class BudgetReportsView extends Div {
                 MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                 ptot = pmon101.getTotal();
             }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
             Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                     sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                     getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -8734,13 +8752,14 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q66 = createHeaderRow(sheet, tr, "", "Total Passenger Service Income",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 mon101T6.getTotal().doubleValue(), mon101T6.getQtr1().doubleValue(), mon101T6.getQtr2().doubleValue(),
                 mon101T6.getQtr3().doubleValue(), mon101T6.getQtr4().doubleValue());
+        suntotal = BigDecimal.ZERO;
 
         tr++;
         titleJustBold.add((int) tr);
@@ -8773,7 +8792,8 @@ public class BudgetReportsView extends Div {
                 MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                 ptot = pmon101.getTotal();
             }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
             Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                     sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                     getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -8793,13 +8813,15 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q68 = createHeaderRow(sheet, tr, "", "Total-Miscellaneous Receipts",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 mon101T7.getTotal().doubleValue(), mon101T7.getQtr1().doubleValue(), mon101T7.getQtr2().doubleValue(),
                 mon101T7.getQtr3().doubleValue(), mon101T7.getQtr4().doubleValue());
+
+        suntotal = BigDecimal.ZERO;
 
         tr++;
         titleJustBold.add((int) tr);
@@ -8838,7 +8860,8 @@ public class BudgetReportsView extends Div {
                 MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                 ptot = pmon101.getTotal();
             }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
             Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                     sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                     getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -8877,7 +8900,8 @@ public class BudgetReportsView extends Div {
                 MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                 ptot = pmon101.getTotal();
             }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
             Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                     sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                     getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -8897,13 +8921,14 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q74 = createHeaderRow(sheet, tr, "", "Total-Non-Recurring Income",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesT, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesT, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesT, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesT, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 mon101T8.getTotal().doubleValue(), mon101T8.getQtr1().doubleValue(), mon101T8.getQtr2().doubleValue(),
                 mon101T8.getQtr3().doubleValue(), mon101T8.getQtr4().doubleValue());
+        suntotal = BigDecimal.ZERO;
 
         tr++;
         titleBoldRed.add((int) tr);
@@ -8928,7 +8953,7 @@ public class BudgetReportsView extends Div {
         }
         MonthlySumResponseFreight calculateTotal1 = calculateTotal(listIncomeTotals);
         Row Q78 = createHeaderRow(sheet, tr, "", "Total Income",
-                BigDecimal.ZERO.doubleValue(),
+                suntotalT.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesTT, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesTT, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesTT, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
@@ -8948,6 +8973,7 @@ public class BudgetReportsView extends Div {
         totalIncomeActuals.setQtr4(samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesTT, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())));
         totalIncomeActuals.setTotal(calculateTotal1.getTotal());
         listIncomeTotals.clear();
+        suntotalT = BigDecimal.ZERO;
         tr++;
         titleBoldRed.add((int) tr);
         titles = Arrays.asList("", "EXPENDITURE", "", "", "", "", "", "", "", "", "", "");
@@ -8985,7 +9011,8 @@ public class BudgetReportsView extends Div {
                 MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                 ptot = pmon101.getTotal();
             }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
             Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                     sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                     getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -9007,7 +9034,7 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q82 = createHeaderRow(sheet, tr, "", "Total-Fuel",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
@@ -9019,7 +9046,7 @@ public class BudgetReportsView extends Div {
         VariableCosts1.setQtr2(samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())));
         VariableCosts1.setQtr3(samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())));
         VariableCosts1.setQtr4(samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())));
-        listVariableCosts.add(VariableCosts1);
+        listVariableCosts.add(VariableCosts1);suntotal=BigDecimal.ZERO;
         tr++;
         titleBoldRed.add((int) tr);
         titles = Arrays.asList("", "%age on Oper.Expenses", "", "", "", "", "", "", "", "", "", "");
@@ -9032,20 +9059,22 @@ public class BudgetReportsView extends Div {
         listCoas.add(coa1);
         MonthlySumResponseFreight mon101A = sampleBudgetItemsService.getTotals(comboBox.getValue(), sampleCoaService.findByCodeAndBudget("224002", comboBox.getValue()));
         Row Q84 = createHeaderRow(sheet, tr, "224002", "Passenger Services Expenses",
-                sampleUrcBSalfldgService.findTotalAmountByAccntCode(coa1.getCode().trim()).doubleValue(),
+                sampleUrcBSalfldgService.findTotalAmountByAccntCode("224002").doubleValue(),
                 getQtrs("224002", Quarters.Qtr1).doubleValue(),
                 getQtrs("224002", Quarters.Qtr2).doubleValue(),
                 getQtrs("224002", Quarters.Qtr3).doubleValue(),
                 getQtrs("224002", Quarters.Qtr4).doubleValue(),
                 mon101A.getTotal().doubleValue(), mon101A.getQtr1().doubleValue(), mon101A.getQtr2().doubleValue(),
                 mon101A.getQtr3().doubleValue(), mon101A.getQtr4().doubleValue());
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode("224002"));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode("224002"));
 
         tr++;
         titleBoldTotal.add((int) tr);
         listIncomeTotals.add(mon101A);
         listIncomeTotals4.add(mon101A);
         Row Q85 = createHeaderRow(sheet, tr, "", "Total passenger services expenses",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 getQtrs("224002", Quarters.Qtr1).doubleValue(),
                 getQtrs("224002", Quarters.Qtr2).doubleValue(),
                 getQtrs("224002", Quarters.Qtr3).doubleValue(),
@@ -9058,6 +9087,7 @@ public class BudgetReportsView extends Div {
         VariableCosts2.setQtr3(samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods("224002", Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())));
         VariableCosts2.setQtr4(samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods("224002", Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())));
         listVariableCosts.add(VariableCosts2);
+        suntotal=BigDecimal.ZERO;
         tr++;
         titleBoldRed.add((int) tr);
         titles = Arrays.asList("", "%age on Oper.Expenses", "", "", "", "", "", "", "", "", "", "");
@@ -9084,7 +9114,8 @@ public class BudgetReportsView extends Div {
                     MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                     ptot = pmon101.getTotal();
                 }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
                 Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                         sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                         getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -9093,6 +9124,7 @@ public class BudgetReportsView extends Div {
                         getQtrs(coa.getCode(), Quarters.Qtr4).doubleValue(),
                         mon101.getTotal().doubleValue(), mon101.getQtr1().doubleValue(), mon101.getQtr2().doubleValue(),
                         mon101.getQtr3().doubleValue(), mon101.getQtr4().doubleValue());
+                suntotal=BigDecimal.ZERO;
 
             }
 
@@ -9108,7 +9140,7 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q88 = createHeaderRow(sheet, tr, "", "Total Maintenance",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
@@ -9152,7 +9184,8 @@ public class BudgetReportsView extends Div {
                 MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                 ptot = pmon101.getTotal();
             }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
             Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                     sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                     getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -9175,7 +9208,7 @@ public class BudgetReportsView extends Div {
         listIncomeTotals4.add(mon101T11);
 
         Row Q90 = createHeaderRow(sheet, tr, "", "Total Property Expenses",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
@@ -9187,8 +9220,7 @@ public class BudgetReportsView extends Div {
         VariableCosts4.setQtr2(samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())));
         VariableCosts4.setQtr3(samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())));
         VariableCosts4.setQtr4(samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())));
-        listVariableCosts.add(VariableCosts4);
-        System.out.print(VariableCosts4.getQtr1());
+        listVariableCosts.add(VariableCosts4);suntotal=BigDecimal.ZERO;
         tr++;
         titleBoldRed.add((int) tr);
         titles = Arrays.asList("", "%age on Oper.Expenses", "", "", "", "", "", "", "", "", "", "");
@@ -9206,11 +9238,10 @@ public class BudgetReportsView extends Div {
             aa.setQtr3(b.getQtr3());
             aa.setQtr4(b.getQtr4());
             listqtr.add(aa);
-            System.out.println(b.toString() + " QQ2");
         }
         Qtr thisQtr = sumQuarterTotals(listqtr);
         Row Q92 = createHeaderRow(sheet, tr, "", "Total variable costs",
-                BigDecimal.ZERO.doubleValue(),
+                suntotalT.doubleValue(),
                 thisQtr.getQtr1().doubleValue(),
                 thisQtr.getQtr2().doubleValue(),
                 thisQtr.getQtr3().doubleValue(),
@@ -9227,6 +9258,7 @@ public class BudgetReportsView extends Div {
         totalExpenditure.add(thisQtr);
         listVariableCosts.clear();
         listVariableCosts.add(varcosts);
+        BigDecimal VariableCost=suntotalT;
 
         tr++;
         titleBoldRed.add((int) tr);
@@ -9273,7 +9305,8 @@ public class BudgetReportsView extends Div {
                 MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                 ptot = pmon101.getTotal();
             }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
             Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                     sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                     getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -9295,7 +9328,7 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q941 = createHeaderRow(sheet, tr, "", "Total Personnel Cost",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
@@ -9313,7 +9346,8 @@ public class BudgetReportsView extends Div {
         thisQtr2.setBqtr4(mon101T11W.getQtr4());
         thisQtr2.setCbudget(mon101T11W.getTotal());
         thisQtr2.setPbudget(ptotal);
-        totalExpenditure.add(thisQtr2);
+        totalExpenditure.add(thisQtr2);suntotal=BigDecimal.ZERO;
+        BigDecimal totalPersonalCost=suntotal;
         tr++;
         titleBoldRed.add((int) tr);
         titles = Arrays.asList("", "%age on Oper.exp.", "", "", "", "", "", "", "", "", "", "");
@@ -9350,7 +9384,8 @@ public class BudgetReportsView extends Div {
                 MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                 ptot = pmon101.getTotal();
             }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
             Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                     sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                     getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -9371,7 +9406,7 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q95 = createHeaderRow(sheet, tr, "", "Total Administration Expenses",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
@@ -9390,7 +9425,8 @@ public class BudgetReportsView extends Div {
         thisQtr3.setBqtr4(mon101T13.getQtr4());
         thisQtr3.setCbudget(mon101T13.getTotal());
         thisQtr3.setPbudget(ptotal);
-        totalExpenditure.add(thisQtr3);
+        totalExpenditure.add(thisQtr3);suntotal=BigDecimal.ZERO;
+        BigDecimal totalAminCost=suntotal;
 
         tr++;
         titleBoldRed.add((int) tr);
@@ -9407,6 +9443,7 @@ public class BudgetReportsView extends Div {
         titles = Arrays.asList("221", "Board and Legal Expenses", "", "", "", "", "", "", "", "", "", "");
         Row Q98 = createHeaderRow(sheet, tr, titles);
 
+        tt=BigDecimal.ZERO;
         findByAcntCodeStartingWith = urcAcntService.findByAcntCode("221019");
         ss.clear();
         List<URC_ACNT> findByAcntCodeStartingWith601 = urcAcntService.findByAcntCode("221020");
@@ -9429,7 +9466,9 @@ public class BudgetReportsView extends Div {
                 MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                 ptot = pmon101.getTotal();
             }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            tt=tt.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
             Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                     sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                     getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -9450,13 +9489,14 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q99 = createHeaderRow(sheet, tr, "", "Total Board & Legal Expenses",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 mon101T14.getTotal().doubleValue(), mon101T14.getQtr1().doubleValue(),
                 mon101T14.getQtr2().doubleValue(), mon101T14.getQtr3().doubleValue(), mon101T14.getQtr4().doubleValue());
+        suntotal=BigDecimal.ZERO;
 
         findByAcntCodeStartingWith = urcAcntService.findByAcntCodeStartingWith("222");
         listCoas.clear();
@@ -9475,7 +9515,9 @@ public class BudgetReportsView extends Div {
                     MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                     ptot = pmon101.getTotal();
                 }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            tt=tt.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
                 Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                         sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                         getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -9498,13 +9540,14 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q100 = createHeaderRow(sheet, tr, "", "Total Communications",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 mon101T15.getTotal().doubleValue(), mon101T15.getQtr1().doubleValue(),
                 mon101T15.getQtr2().doubleValue(), mon101T15.getQtr3().doubleValue(), mon101T15.getQtr4().doubleValue());
+        suntotal=BigDecimal.ZERO;
 
         tr++;
         titleJustBold.add((int) tr);
@@ -9530,7 +9573,9 @@ public class BudgetReportsView extends Div {
                     MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                     ptot = pmon101.getTotal();
                 }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            tt=tt.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
                 Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                         sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                         getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -9553,13 +9598,14 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q102 = createHeaderRow(sheet, tr, "", "Total Utility Expenses",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 mon101T16.getTotal().doubleValue(), mon101T16.getQtr1().doubleValue(),
                 mon101T16.getQtr2().doubleValue(), mon101T16.getQtr3().doubleValue(), mon101T16.getQtr4().doubleValue());
+        suntotal=BigDecimal.ZERO;
 
         tr++;
         titleJustBold.add((int) tr);
@@ -9584,7 +9630,9 @@ public class BudgetReportsView extends Div {
                     MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                     ptot = pmon101.getTotal();
                 }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            tt=tt.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
                 Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                         sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                         getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -9607,14 +9655,16 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q103 = createHeaderRow(sheet, tr, "", "Total Supplies and Services",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 mon101T17.getTotal().doubleValue(), mon101T17.getQtr1().doubleValue(), mon101T17.getQtr2().doubleValue(),
                 mon101T17.getQtr3().doubleValue(), mon101T17.getQtr4().doubleValue()
+                
         );
+        suntotal=BigDecimal.ZERO;
 
         tr++;
         titleJustBold.add((int) tr);
@@ -9623,6 +9673,9 @@ public class BudgetReportsView extends Div {
 
         ss.addAll(Arrays.asList("1", "2", "3"));
         findByAcntCodeStartingWith = urcAcntService.findByAcntCodeStartingWith11110AndNextDigitIn123("22500", ss);
+        ss.clear();
+        ss.add("3");
+        findByAcntCodeStartingWith.addAll(urcAcntService.findByAcntCodeStartingWith11110AndNextDigitIn123("24200", ss));
         listCoas.clear();
         listCOACodes.clear();
         for (URC_ACNT k : findByAcntCodeStartingWith) {
@@ -9639,7 +9692,9 @@ public class BudgetReportsView extends Div {
                     MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                     ptot = pmon101.getTotal();
                 }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            tt=tt.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
                 Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                         sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                         getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -9662,13 +9717,14 @@ public class BudgetReportsView extends Div {
         }
 
         Row Q105 = createHeaderRow(sheet, tr, "", "Total Professional Services",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 mon101T18.getTotal().doubleValue(), mon101T18.getQtr1().doubleValue(), mon101T18.getQtr2().doubleValue(),
                 mon101T18.getQtr3().doubleValue(), mon101T18.getQtr4().doubleValue());
+        suntotal=BigDecimal.ZERO;
 
         tr++;
         titleJustBold.add((int) tr);
@@ -9693,7 +9749,9 @@ public class BudgetReportsView extends Div {
                     MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                     ptot = pmon101.getTotal();
                 }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            tt=tt.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
                 Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                         sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                         getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -9716,13 +9774,14 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q107 = createHeaderRow(sheet, tr, "", "Total Insurances and Licenses",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 mon101T19.getTotal().doubleValue(), mon101T19.getQtr1().doubleValue(), mon101T19.getQtr2().doubleValue(),
                 mon101T19.getQtr3().doubleValue(), mon101T19.getQtr4().doubleValue());
+        suntotal=BigDecimal.ZERO;
 
         tr++;
         titleJustBold.add((int) tr);
@@ -9748,7 +9807,9 @@ public class BudgetReportsView extends Div {
                     MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                     ptot = pmon101.getTotal();
                 }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            tt=tt.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
                 Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                         sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                         getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -9771,13 +9832,14 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q109 = createHeaderRow(sheet, tr, "", "Total Travel and Transport",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 mon101T191.getTotal().doubleValue(), mon101T191.getQtr1().doubleValue(), mon101T191.getQtr2().doubleValue(),
                 mon101T191.getQtr3().doubleValue(), mon101T191.getQtr4().doubleValue());
+        suntotal=BigDecimal.ZERO;
 
         tr++;
         titleJustBold.add((int) tr);
@@ -9803,7 +9865,9 @@ public class BudgetReportsView extends Div {
                     MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                     ptot = pmon101.getTotal();
                 }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            tt=tt.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
                 Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                         sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                         getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -9826,13 +9890,14 @@ public class BudgetReportsView extends Div {
             ptotal = pmon101.getTotal();
         }
         Row Q111 = createHeaderRow(sheet, tr, "", "Total Miscellaneous Other Expenses",
-                ptotal.doubleValue(),
+                suntotal.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodes, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 mon101T1912.getTotal().doubleValue(), mon101T1912.getQtr1().doubleValue(),
                 mon101T1912.getQtr2().doubleValue(), mon101T1912.getQtr3().doubleValue(), mon101T1912.getQtr4().doubleValue());
+        suntotal=BigDecimal.ZERO;
 
         tr++;
         titleBoldTotal.add((int) tr);
@@ -9843,14 +9908,19 @@ public class BudgetReportsView extends Div {
             MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), listCoas);
             ptotal = pmon101.getTotal();
         }
+                BigDecimal totalOtherAminCost=suntotalT.subtract(VariableCost)
+                .subtract(totalPersonalCost)
+                .subtract(totalAminCost);
         Row Q112 = createHeaderRow(sheet, tr, "", "Total Other Administration Expenses",
-                ptotal.doubleValue(),
+                tt.doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesTT, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesTT, Quarters.Qtr2, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesTT, Quarters.Qtr3, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesTT, Quarters.Qtr4, gen.getPreviousFy(comboBox.getValue().getFinancialYear())).doubleValue(),
                 calculateTotal10.getTotal().doubleValue(), calculateTotal10.getQtr1().doubleValue(),
                 calculateTotal10.getQtr2().doubleValue(), calculateTotal10.getQtr3().doubleValue(), calculateTotal10.getQtr4().doubleValue());
+        
+
 
         Qtr thisQtr4 = new Qtr(null, null, null, null, null, null, null, null, null, null);
         thisQtr4.setQtr1(samopleSALFLDGService.findSumOfAmountByAccntCodeAndPeriods(listCOACodesTT, Quarters.Qtr1, gen.getPreviousFy(comboBox.getValue().getFinancialYear())));
@@ -9886,7 +9956,7 @@ public class BudgetReportsView extends Div {
         Qtr totalE = sumQuarterTotals(totalExpenditure);
         Q114.createCell((short) 0).setCellValue("");
         Q114.createCell((short) 1).setCellValue("Total Operating Expenses");
-        Q114.createCell((short) 2).setCellValue(totalE.getPbudget().doubleValue());
+        Q114.createCell((short) 2).setCellValue(suntotalT.doubleValue());
         Q114.createCell((short) 3).setCellValue(totalE.getQtr1().doubleValue());
         Q114.createCell((short) 4).setCellValue(totalE.getQtr2().doubleValue());
         Q114.createCell((short) 5).setCellValue(totalE.getQtr3().doubleValue());
@@ -9999,7 +10069,8 @@ public class BudgetReportsView extends Div {
                     MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                     ptot = pmon101.getTotal();
                 }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
                 Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                         sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                         getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -10016,14 +10087,14 @@ public class BudgetReportsView extends Div {
         MonthlySumResponseFreight calculateTotal101 = calculateTotal(listIncomeTotals5);
         listIncomeTotals5.add(calculateTotal101);//Total Other Administration Expenses
         Row Q121 = createHeaderRow(sheet, tr, "", "Total Depreciation",
-                BigDecimal.ZERO.doubleValue(),
+                suntotal.doubleValue(),
                 BigDecimal.ZERO.doubleValue(),
                 BigDecimal.ZERO.doubleValue(),
                 BigDecimal.ZERO.doubleValue(),
                 BigDecimal.ZERO.doubleValue(),
                 calculateTotal101.getTotal().doubleValue(), calculateTotal101.getQtr1().doubleValue(),
                 calculateTotal101.getQtr2().doubleValue(), calculateTotal101.getQtr3().doubleValue(), calculateTotal101.getQtr4().doubleValue());
-        listIncomeTotals5.clear();
+        listIncomeTotals5.clear();suntotal=BigDecimal.ZERO;
 
         tr++;
         titleJustBold.add((int) tr);
@@ -10131,7 +10202,8 @@ public class BudgetReportsView extends Div {
                     MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                     ptot = pmon101.getTotal();
                 }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
                 Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                         sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                         getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -10148,7 +10220,7 @@ public class BudgetReportsView extends Div {
         MonthlySumResponseFreight calculateTotal1011 = calculateTotal(listIncomeTotals5);
         listIncomeTotals5.add(calculateTotal1011);//Total Other Administration Expenses
         Row Q128 = createHeaderRow(sheet, tr, "", "Total Finance Cost",
-                BigDecimal.ZERO.doubleValue(),
+                suntotal.doubleValue(),
                 BigDecimal.ZERO.doubleValue(),
                 BigDecimal.ZERO.doubleValue(),
                 BigDecimal.ZERO.doubleValue(),
@@ -10156,14 +10228,14 @@ public class BudgetReportsView extends Div {
                 calculateTotal1011.getTotal().doubleValue(), calculateTotal1011.getQtr1().doubleValue(),
                 calculateTotal1011.getQtr2().doubleValue(), calculateTotal1011.getQtr3().doubleValue(), calculateTotal1011.getQtr4().doubleValue()
         );
-        listIncomeTotals5.clear();
+        listIncomeTotals5.clear();suntotal=BigDecimal.ZERO;
 
         tr++;
         titleBoldTotal.add((int) tr);
         Row Q129 = sheet.createRow((short) tr);
         Q129.createCell((short) 0).setCellValue("");
         Q129.createCell((short) 1).setCellValue("Total Expenditure");
-        Q129.createCell((short) 2).setCellValue("");
+        Q129.createCell((short) 2).setCellValue(suntotalT.doubleValue());
         Q129.createCell((short) 3).setCellValue("");
         Q129.createCell((short) 4).setCellValue("");
         Q129.createCell((short) 5).setCellValue("");
@@ -10318,7 +10390,8 @@ public class BudgetReportsView extends Div {
         Q139.createCell((short) 10).setCellValue("");
         Q139.createCell((short) 11).setCellValue("");
 
-        findByAcntCodeStartingWith = urcAcntService.findByAcntCodeStartingWith("312");
+        findByAcntCodeStartingWith = urcAcntService.findByAcntCodeStartingWith("311");
+        findByAcntCodeStartingWith.addAll(urcAcntService.findByAcntCodeStartingWith("312"));
         listCoas.clear();
         listIncomeTotals5.clear();
         for (URC_ACNT k : findByAcntCodeStartingWith) {
@@ -10333,7 +10406,8 @@ public class BudgetReportsView extends Div {
                     MonthlySumResponseFreight pmon101 = sampleBudgetItemsService.getTotals(gen.getPreviousBudget(comboBox.getValue().getFinancialYear()), sampleCoaService.findByCodeAndBudget(k.getAcntCode().trim(), comboBox.getValue()));
                     ptot = pmon101.getTotal();
                 }
-
+            suntotal = suntotal.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
+            suntotalT = suntotalT.add(sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()));
                 Row Q53 = createHeaderRow(sheet, tr, k.getAcntCode().trim(), k.getDescr(),
                         sampleUrcBSalfldgService.findTotalAmountByAccntCode(k.getAcntCode().trim()).doubleValue(),
                         getQtrs(coa.getCode(), Quarters.Qtr1).doubleValue(),
@@ -10350,14 +10424,14 @@ public class BudgetReportsView extends Div {
         MonthlySumResponseFreight calculateTotal1012 = calculateTotal(listIncomeTotals5);
         listIncomeTotals5.add(calculateTotal1012);//Total Other Administration Expenses
         Row Q140 = createHeaderRow(sheet, tr, "", "Total Fixed Assets",
-                BigDecimal.ZERO.doubleValue(),
+                suntotal.doubleValue(),
                 BigDecimal.ZERO.doubleValue(),
                 BigDecimal.ZERO.doubleValue(),
                 BigDecimal.ZERO.doubleValue(),
                 BigDecimal.ZERO.doubleValue(),
                 calculateTotal1012.getTotal().doubleValue(), calculateTotal1012.getQtr1().doubleValue(),
                 calculateTotal1012.getQtr2().doubleValue(), calculateTotal1012.getQtr3().doubleValue(), calculateTotal1012.getQtr4().doubleValue());
-        listIncomeTotals5.clear();
+        listIncomeTotals5.clear();suntotal=BigDecimal.ZERO;
 
         tr++;
         titleJustBold.add((int) tr);
@@ -10731,7 +10805,8 @@ public class BudgetReportsView extends Div {
         double qtr2Value = totalIncome.getQtr2() != null ? totalIncome.getQtr2().doubleValue() : 0.0;
         double qtr3Value = totalIncome.getQtr3() != null ? totalIncome.getQtr3().doubleValue() : 0.0;
         double qtr4Value = totalIncome.getQtr4() != null ? totalIncome.getQtr4().doubleValue() : 0.0;
-        Q166.createCell((short) 2).setCellValue(totalIncomeValueActuals);
+       // Q166.createCell((short) 2).setCellValue(totalIncomeValueActuals);
+        Q166.createCell((short) 2).setCellValue("");
         Q166.createCell((short) 3).setCellValue(qtr1ValueActuals);
         Q166.createCell((short) 4).setCellValue(qtr2ValueActuals);
         Q166.createCell((short) 5).setCellValue(qtr3ValueActuals);
@@ -11320,6 +11395,7 @@ public class BudgetReportsView extends Div {
         for (int i = 0; i < sheet.getRow(0).getLastCellNum(); i++) {
             sheet.autoSizeColumn(i);
         }
+
     }
 
     public void createTitleStyle(Workbook workbook, Sheet sheet, List<Integer> title) {
@@ -11493,7 +11569,7 @@ public class BudgetReportsView extends Div {
         }
 
     }
-    
+
     /*    private BigDecimal getQtrsSun(String coa, Quarters quarters) {
     BigDecimal qtrTotal = BigDecimal.ZERO;
     switch (quarters) {
@@ -11521,5 +11597,5 @@ public class BudgetReportsView extends Div {
     return BigDecimal.ZERO;
     }
     
-    } */   
+    } */
 }

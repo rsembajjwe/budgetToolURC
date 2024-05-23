@@ -1959,6 +1959,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         cancelCoalevel11.addClickListener(e -> {
             gridCoalevel11.deselectAll();
             Coalevel11NameField.clear();
+
         });
 
         refresh.addClickListener(e -> {
@@ -2000,6 +2001,16 @@ public class BudgetView extends Div implements BeforeEnterObserver {
                 UI.getCurrent().navigate(BudgetView.class);
 
             }
+        });
+        saveCoalevel11.addSingleClickListener(e -> {
+            Coalevel11 coalevel11 = gridCoalevel11.asSingleSelect().getValue();
+            if (coalevel11 == null) {
+                coalevel11 = new Coalevel11();
+            }
+
+            coalevel11.setName(Coalevel11NameField.getValue());
+            sampleCoalevel11Service.save(coalevel11);
+
         });
         H1 title = new H1("CHART OF ACCOUNT LEVEL 2");
         title.getStyle().set("font-size", "var(--lumo-font-size-l)")
@@ -7247,16 +7258,16 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             String anal_t3, String anal_t4, String anal_t5, String anal_t6,
             String anal_t7, String anal_t8, String anal_t9, String anal_t10) {
         // Define start positions and lengths
-        
-        if(anal_t7 == null||anal_t7.isBlank()||anal_t7.isEmpty()){
-            anal_t7="ZBT00";
+
+        if (anal_t7 == null || anal_t7.isBlank() || anal_t7.isEmpty()) {
+            anal_t7 = "ZBT00";
         }
-        if(anal_t8 == null||anal_t8.isBlank()||anal_t8.isEmpty()){
-            anal_t8="ZBFS00";
+        if (anal_t8 == null || anal_t8.isBlank() || anal_t8.isEmpty()) {
+            anal_t8 = "ZBFS00";
         }
-        if(anal_t9 == null||anal_t9.isBlank()||anal_t9.isEmpty()){
-            anal_t9="ZBAS0200000000";
-        }        
+        if (anal_t9 == null || anal_t9.isBlank() || anal_t9.isEmpty()) {
+            anal_t9 = "ZBAS0200000000";
+        }
         int accCodeLength = 15;
 
         int periodLength = 7;
@@ -7297,9 +7308,9 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         fixedWidthTextBuilder.append(String.format("%-" + analLength + "s", anal_t9).substring(0, analLength));
         fixedWidthTextBuilder.append(String.format("%-" + analLength + "s", anal_t10).substring(0, analLength));
         if (accCode.startsWith("1")) {
-            return fixedWidthTextBuilder.toString().trim()+" ";
+            return fixedWidthTextBuilder.toString().trim() + " ";
         } else {
-            return fixedWidthTextBuilder.toString().trim()+" ";
+            return fixedWidthTextBuilder.toString().trim() + " ";
         }
 
     }

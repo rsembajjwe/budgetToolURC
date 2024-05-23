@@ -826,33 +826,33 @@ public class staffSalaryView extends Div {
         SubMenu shareSubMenu = share.getSubMenu();
         shareSubMenu.addItem("Upload Staff Data");
         shareSubMenu.addItem("Download Staff Data");
-        shareSubMenu.addItem("Import Staff Data").addClickListener(e -> {
-            if (!comboBoxBudget.isEmpty()) {
-                if (sampleStaffSalaryService.findByBudget(comboBoxBudget.getValue()).size() == 0) {
-                    List<OldStaffPojo> getStaffByFiscalYear = oldStaffPojoService.getStaffByFiscalYear(comboBoxBudget.getValue().getFinancialYear());
-                    for (OldStaffPojo s : getStaffByFiscalYear) {
-                        StaffSalary salary = new StaffSalary();
-                        salary.setFname(s.getFirstName());
-                        salary.setLname(s.getLastName());
-                        salary.setTel(s.getTelephone());
-                        salary.setMob(s.getMobile());
-                        salary.setAddress(s.getAddress());
-                        salary.setAddress2(s.getAddress2());
-                        salary.setPosition(s.getPosition());
-                        salary.setCode(s.getCode());
-                        salary.setGrade(GetScale(s.getGrade()));
-                        salary.setBudget(comboBoxBudget.getValue());
-                        salary.setSalary(s.getSalary());
-                        sampleStaffSalaryService.saveStaffSalary(salary);
-                    }
-                } else {
-                    warningNotification("Items Found: " + sampleStaffSalaryService.findByBudget(comboBoxBudget.getValue()).size());
-                }
-                setSalaryGrid2();
-            } else {
-                warningNotification("Select Budget");
-            }
-        });
+        /*        shareSubMenu.addItem("Import Staff Data").addClickListener(e -> {
+        if (!comboBoxBudget.isEmpty()||!comboBoxBudget.getValue().isActive()) {
+        if (sampleStaffSalaryService.findByBudget(comboBoxBudget.getValue()).size() == 0) {
+        List<OldStaffPojo> getStaffByFiscalYear = oldStaffPojoService.getStaffByFiscalYear(comboBoxBudget.getValue().getFinancialYear());
+        for (OldStaffPojo s : getStaffByFiscalYear) {
+        StaffSalary salary = new StaffSalary();
+        salary.setFname(s.getFirstName());
+        salary.setLname(s.getLastName());
+        salary.setTel(s.getTelephone());
+        salary.setMob(s.getMobile());
+        salary.setAddress(s.getAddress());
+        salary.setAddress2(s.getAddress2());
+        salary.setPosition(s.getPosition());
+        salary.setCode(s.getCode());
+        salary.setGrade(GetScale(s.getGrade()));
+        salary.setBudget(comboBoxBudget.getValue());
+        salary.setSalary(s.getSalary());
+        sampleStaffSalaryService.saveStaffSalary(salary);
+        }
+        } else {
+        warningNotification("Items Found: " + sampleStaffSalaryService.findByBudget(comboBoxBudget.getValue()).size());
+        }
+        setSalaryGrid2();
+        } else {
+        warningNotification("Select Budget");
+        }
+        });*/
         MultiFileMemoryBuffer buffer = new MultiFileMemoryBuffer();
         upload = new Upload(buffer);
         upload.setAcceptedFileTypes(

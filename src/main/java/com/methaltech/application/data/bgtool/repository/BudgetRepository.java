@@ -18,10 +18,12 @@ public interface BudgetRepository extends JpaRepository<Budget, Integer> {
 
     /*    @Query(value = "SELECT TOP 1 * FROM budget ORDER BY closeDate DESC", nativeQuery = true)
     Budget findLastSavedBudget();*/
-    
     @Query("SELECT b FROM Budget b WHERE b.financialYear = :financialYear")
-    Optional<Budget> findByFY(@Param("financialYear") String financialYear);  
-    
+    Optional<Budget> findByFY(@Param("financialYear") String financialYear);
+
     @Query("SELECT b FROM Budget b ORDER BY b.id DESC")
     List<Budget> findLastSavedBudget();
+
+    @Query("SELECT b FROM Budget b ORDER BY b.id DESC")
+    Optional<Budget> findTopByOrderByIdDesc();
 }

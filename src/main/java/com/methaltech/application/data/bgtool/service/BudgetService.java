@@ -1,6 +1,5 @@
 package com.methaltech.application.data.bgtool.service;
 
-
 import com.methaltech.application.data.entity.bgtool.Coalevel11;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.Department;
@@ -77,17 +76,19 @@ public class BudgetService {
         //UUID myUUID = intToUUID(id);
         return repository.findById(id);
     }
+
     public Optional<Budget> getByFY(String fy) {
         //UUID myUUID = intToUUID(id);
         return repository.findByFY(fy);
-    }    
+    }
+
     public static UUID intToUUID(int value) {
         // Convert the integer to a long to prevent data loss for negative integers
         long longValue = value & 0xFFFFFFFFL;
-        
+
         // Create a UUID from the long value (treat it as the most significant bits)
         return new UUID(longValue << 32, 0L);
-    }    
+    }
 
     public boolean getBudget(String fy) {
         return repository.findByFinancialYear(fy) != null;
@@ -105,12 +106,15 @@ public class BudgetService {
     public Page<Budget> list(Pageable pageable) {
         return repository.findAll(pageable);
     }
+
     public List<Budget> getBudgets() {
         return repository.findAll();
-    }    
+    }
+
     public List<Budget> getLastSavedBudget() {
         return repository.findLastSavedBudget();
     }
+
     public int count() {
         return (int) repository.count();
     }
@@ -122,7 +126,6 @@ public class BudgetService {
     /*    public Budget getLastSavedBudget() {
     return repository.findLastSavedBudget();
     }*/
-
     public void savenewBudget(Budget sourceBudget, Budget targetBudget) {
         repository.save(targetBudget);
         copyDataToNewFinancialYear(sourceBudget, targetBudget);
@@ -278,7 +281,7 @@ public class BudgetService {
             Set<Section> unitnew = new HashSet<>();
             for (Section units : sourceCOA.getDsections()) {
                 //D_Unit unit = unitRepository.findByBudgetAndUnit(newBudget, units.getUnit());
-               // unitnew.add(unit);
+                // unitnew.add(unit);
 
             }
             targetCOA.setDsections(unitnew);
@@ -290,4 +293,7 @@ public class BudgetService {
         return num;
     }
 
+    public Optional<Budget> getLastSavedBudget2() {
+        return repository.findTopByOrderByIdDesc();
+    }
 }

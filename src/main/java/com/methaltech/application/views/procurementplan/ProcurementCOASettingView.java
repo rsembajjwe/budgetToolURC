@@ -107,8 +107,8 @@ public class ProcurementCOASettingView extends Div {
     private TextArea description;
     private Checkbox important;
 
-    private  Button cancel = new Button("Cancel");
-    private  Button save = new Button("Save");
+    private  Button cancel = new Button("Cancel 22");
+    private  Button save = new Button("Save ee");
 
     private final Button cancelCurrencyData = new Button("Cancel");
     private final Button saveCurrencyData = new Button("Save");
@@ -268,6 +268,7 @@ public class ProcurementCOASettingView extends Div {
     private final BudgetService chosenBudgetService;
 
     Checkbox checkbox = new Checkbox("Active");
+    Upload upload=null;
 
     @Autowired
     public ProcurementCOASettingView(Coalevel1Service sampleCoalevel1Service,
@@ -313,10 +314,11 @@ public class ProcurementCOASettingView extends Div {
 
         });
         comboBoxBudget.addValueChangeListener(e -> {
-            Notification.show("YYYYYY");
+
             if (!e.getValue().isActive()) {
-                save.setEnabled(false);
-                cancel.setEnabled(false);
+                saveCOA.setEnabled(false);
+                cancelCOA.setEnabled(false);
+                upload.setVisible(false);
             }
         });
 
@@ -376,7 +378,7 @@ public class ProcurementCOASettingView extends Div {
 
     private VerticalLayout createCOADialogLayout() {
         MultiFileMemoryBuffer buffer = new MultiFileMemoryBuffer();
-        Upload upload = new Upload(buffer);
+        upload = new Upload(buffer);
         upload.setAcceptedFileTypes(
                 // Microsoft Excel (OpenXML, .xlsx)
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
