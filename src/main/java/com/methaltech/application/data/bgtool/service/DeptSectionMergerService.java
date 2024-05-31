@@ -5,6 +5,7 @@ import com.methaltech.application.data.bgtool.repository.DeptSectionMergerReposi
 import com.methaltech.application.data.bgtool.repository.UrcDeptSectionAnlDimbgtRepository;
 import com.methaltech.application.data.entity.bgtool.Department;
 import com.methaltech.application.data.entity.bgtool.DeptSectionMerger;
+import com.methaltech.application.data.entity.bgtool.UrDepartmentsAnlDim2;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.livedata.UrcDepartmentAnlDim;
 import com.methaltech.application.data.livedata.repository.UrcDepartmentAnlDimRepository;
@@ -36,7 +37,9 @@ public class DeptSectionMergerService {
     public List<DeptSectionMerger> getAllUrcDeptAndSections() {
         return repository.findAll();
     }
-
+    public Optional<DeptSectionMerger> findBySectionCode(String sectioncode) {
+        return repository.findBySectionCode2(sectioncode);
+    }
     public String getDeptCode(String sectCode) {
         List<DeptSectionMerger> listAll = repository.findAll();
         Set<String> listesction = new HashSet<>();
@@ -72,10 +75,10 @@ public class DeptSectionMergerService {
         return deptrepository.findByANL_CODEIn(deptCode);
     }
 
-    public Set<UrcDeptSectionAnlDimbgt> getSections(Set<UrcDepartmentAnlDim> depts) {
+    public Set<UrcDeptSectionAnlDimbgt> getSections(Set<UrDepartmentsAnlDim2> depts) {
         // Extracting trimmed ANL_CODE values from sections
         List<String> trimmedANL_CODEList = depts.stream()
-                .map(UrcDepartmentAnlDim::getANL_CODE) // Extract ANL_CODE
+                .map(UrDepartmentsAnlDim2::getAnlCode) // Extract ANL_CODE
                 .map(String::trim) // Trim the ANL_CODE
                 .collect(Collectors.toList()); // Collect as a List
 
@@ -111,6 +114,10 @@ public class DeptSectionMergerService {
     public String findDepartment(String sectcode) {
         String deptString = repository.findDeptcodeBySectioncode(sectcode);
         UrcDepartmentAnlDim dept = deptrepository.findByANL_CODE(deptString);
+        return dept.getNAME();
+    }
+        public String findDepartmentByDeptCode(String deptCode) {
+        UrcDepartmentAnlDim dept = deptrepository.findByANL_CODE(deptCode);
         return dept.getNAME();
     }
 

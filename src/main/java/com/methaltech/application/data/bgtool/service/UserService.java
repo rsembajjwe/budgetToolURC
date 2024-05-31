@@ -3,10 +3,12 @@ package com.methaltech.application.data.bgtool.service;
 import com.methaltech.application.data.bgtool.repository.UserRepository;
 import com.methaltech.application.data.entity.bgtool.User;
 import java.util.Optional;
+import org.hibernate.Hibernate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
@@ -25,8 +27,11 @@ public class UserService {
         return repository.save(entity);
     }
 
+    @Transactional
     public User getUserByEmail(String email) {
-        return repository.findByEmail(email);
+        User user = repository.findByEmail(email);
+        Hibernate.initialize(user.getDepartment());  // Initialize the collection
+        return user;
     }
 
     public void delete(Integer id) {
@@ -44,6 +49,7 @@ public class UserService {
     public int count() {
         return (int) repository.count();
     }
+
 
     public boolean getUsername(String username) {
         return repository.findByEmail(username) != null;

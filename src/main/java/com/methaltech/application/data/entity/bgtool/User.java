@@ -2,8 +2,6 @@ package com.methaltech.application.data.entity.bgtool;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.methaltech.application.data.Role;
-import com.methaltech.application.data.entity.livedata.UrcDepartmentAnlDim;
-import com.methaltech.application.data.entity.livedata.UrcDeptSectionAnlDim;
 import java.util.Set;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -22,14 +20,19 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedAttributeNode;
+import jakarta.persistence.NamedEntityGraph;
+import jakarta.persistence.OneToMany;
 import java.util.List;
+import org.hibernate.annotations.BatchSize;
 
 @Entity
 @Table(name = "URC_USER")
 @NoArgsConstructor
-//@ToString(exclude = {"units", "roles"})
-public @Data
-class User {
+@Data
+
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -88,11 +91,11 @@ class User {
     @ManyToMany(fetch = FetchType.EAGER)
     private Set<UnitsBudget> unitsbudget;
 
-        @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
-    name = "user_section",
-    joinColumns = @JoinColumn(name = "user_id"),
-    inverseJoinColumns = @JoinColumn(name = "ANL_CODE_id")
+            name = "user_section",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "ANL_CODE_id")
     )
     private Set<UrcDeptSectionAnlDimbgt> deptsection;
 
@@ -103,4 +106,13 @@ class User {
             inverseJoinColumns = @JoinColumn(name = "unit_id")
     )
     private Set<D_Unit> units;
+
+    /*    @ManyToOne
+    @JoinColumn(name = "department_id")*/
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_department",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "userdepartment_id"))
+    private Set<UrDepartmentsAnlDim2> department;
 }

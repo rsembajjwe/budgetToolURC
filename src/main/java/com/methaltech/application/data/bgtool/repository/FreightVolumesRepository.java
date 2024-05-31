@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface FreightVolumesRepository extends JpaRepository<FreightVolumes, Long> {
    List<FreightVolumes> findByBudgetAndCoacode(Budget budget, COA coacode);
+   List<FreightVolumes> findByBudget(Budget budget);
 @Query("SELECT COALESCE(SUM(COALESCE(fv.jan, 0) + COALESCE(fv.feb, 0) + COALESCE(fv.mar, 0) + COALESCE(fv.apr, 0) + " +
        "COALESCE(fv.may, 0) + COALESCE(fv.jun, 0) + COALESCE(fv.jul, 0) + COALESCE(fv.aug, 0) + " +
        "COALESCE(fv.sep, 0) + COALESCE(fv.oct, 0) + COALESCE(fv.nov, 0) + COALESCE(fv.dec, 0)), 0) " +

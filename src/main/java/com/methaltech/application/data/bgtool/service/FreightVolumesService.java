@@ -29,6 +29,10 @@ public class FreightVolumesService {
         return freightVolumesRepository.findByBudgetAndCoacode(budget, coacode);
     }
 
+    public List<FreightVolumes> getAllFreightVolumesByBudget(Budget budget) {
+        return freightVolumesRepository.findByBudget(budget);
+    }
+    
     public Optional<FreightVolumes> getFreightVolumeById(Long id) {
         return freightVolumesRepository.findById(id);
     }

@@ -86,6 +86,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.util.ArrayList;
+import static java.util.Collections.list;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -222,6 +223,8 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     private MenuItem SunFile;
     private SubMenu sunFileJul;
     private SubMenu sunFileJan;
+    private SubMenu sunStatFileJul;
+    private SubMenu sunStatFileJan;
     private SubMenu parameterFile;
 
     private BeanValidationBinder<Budget> binder = new BeanValidationBinder<>(Budget.class);
@@ -284,6 +287,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     private final Urc_ActivitiesService sampleUrc_ActivitiesService;
     private final UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService;
     private final DeptSectionMergerService sampleDeptSectionMergerService;
+    private final FreightVolumesService sampleFreightVolumesService;
 
     private TextField currencyDataNameField = new TextField("Currency");
     private TextField currencyAbrField = new TextField("Currency Abr");
@@ -324,9 +328,6 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     private MultiSelectComboBox<Section> coaunits = new MultiSelectComboBox<>();
     private ComboBox<ProcClass> procclass = new ComboBox<>("Procurement Category");
     private MultiSelectComboBox<UrcDeptSectionAnlDimbgt> sections = new MultiSelectComboBox("Attach Sections");
-
-    //private ComboBox<Coalevel12> Coalevel12Box = new ComboBox<>("Class 2");
-    // private ComboBox<Coalevel13> Coalevel13Box = new ComboBox<>("COA Sub Category 2");
     private Span status;
     private TextField COASearchField = new TextField("Search");
     private TextField COASearchField1 = new TextField("Search");
@@ -379,7 +380,8 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             URC_Priority_AreasService sampleURC_Priority_AreasService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService,
             OldBudgetService oldbudgetRepository, BudgetItemsService budgetItemsService,
             ProcurementTypeService sampleProcurementTypeService, FundsourceService fundsourceService,
-            UrcDepartmentAnlDimService sampleUrcAnlCodeService, DeptSectionMergerService sampleDeptSectionMergerService) {
+            UrcDepartmentAnlDimService sampleUrcAnlCodeService, DeptSectionMergerService sampleDeptSectionMergerService,
+            FreightVolumesService sampleFreightVolumesService) {
         this.sampleBudgetService = sampleBudgetService;
         this.sampleCurrencyDataService = sampleCurrencyDataService;
         this.sampleCurrencyService = sampleCurrencyService;
@@ -400,6 +402,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         this.sampleURC_Strategic_PlanService = sampleURC_Strategic_PlanService;
         this.sampleURC_Priority_AreasService = sampleURC_Priority_AreasService;
         this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
+        this.sampleFreightVolumesService = sampleFreightVolumesService;
         this.currentPage = 0;
         this.pageSize = 10;
         this.filter = "";
@@ -531,20 +534,8 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         });
 
         Coalevel1Box1.addValueChangeListener(event -> {
-            //Coalevel11Box.setItems(sampleCoalevel11Service.findCoalevel11ByClass1Id(event.getValue()));
-            // Coalevel11Box.setItemLabelGenerator(Coalevel11::getName);
             sampleCoalevel1COA = event.getValue();
-            // Coalevel12Box.setItems(sampleCoalevel12Service.findByCoalevel1(event.getValue()));
-            //Coalevel12Box.setItemLabelGenerator(Coalevel12::getName);
-
-            // gridCOA.setItems(sampleCoaService.findByBudgetAndCoalevel1(sampleBudget, Coalevel1Box.getValue()));
-            // gridCOA.setItems(sampleCoaService.findByBudgetAndCoalevel1(sampleBudget, Coalevel1Box.getValue()));
         });
-        /*        Coalevel11Box.addValueChangeListener(event -> {
-        Coalevel13Box.setItems(sampleCoalevel13Service.findCoalevel13ByClass1Id(event.getValue()));
-        Coalevel13Box.setItemLabelGenerator(Coalevel13::getName);
-        
-        });*/
 
         createIconItem(edit_currency, VaadinIcon.MONEY_EXCHANGE, "Edit Currencies", null, true).addClickListener(e -> {
 
@@ -677,7 +668,12 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         createIconItem(sunFileJan, VaadinIcon.BRIEFCASE, "Extract Sun Budget (JAN-JUN) File", null, true).addClickListener(e -> {
             exportAndDownloadSunFile5();
         });
-
+        createIconItem(sunStatFileJul, VaadinIcon.BRIEFCASE, "Extract Sun Statistics (JUL-DEC) File", null, true).addClickListener(e -> {
+            exportAndDownloadSunFile3StatisticsJD();
+        });
+        createIconItem(sunStatFileJan, VaadinIcon.BRIEFCASE, "Extract Sun Statistics (JAN-JUN) File", null, true).addClickListener(e -> {
+            exportAndDownloadSunFile5StatisticsJJ();
+        });
         createIconItem(parameterFile, VaadinIcon.BRIEFCASE, "Extract Budget Parameters", null, true).addClickListener(e -> {
             extractFundsourcesAndActvities();
 
@@ -1729,6 +1725,8 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         SunFile = menuBar.addItem("Sun Setting");
         sunFileJul = SunFile.getSubMenu();
         sunFileJan = SunFile.getSubMenu();
+        sunStatFileJul = SunFile.getSubMenu();
+        sunStatFileJan = SunFile.getSubMenu();
         parameterFile = SunFile.getSubMenu();
         return menuBar;
     }
@@ -6979,6 +6977,254 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
     }
 
+    private void exportAndDownloadSunFile3StatisticsJD() {
+        List<String> recordsJul = new ArrayList<>();
+        List<String> recordsAug = new ArrayList<>();
+        List<String> recordsSep = new ArrayList<>();
+        List<String> recordsOct = new ArrayList<>();
+        List<String> recordsNov = new ArrayList<>();
+        List<String> recordsDec = new ArrayList<>();
+
+        int i = 0;
+
+        List<FreightVolumes> budgetItems = sampleFreightVolumesService.getAllFreightVolumesByBudget(sampleBudget);
+
+        for (FreightVolumes k : budgetItems) {
+            String deptCode = "S020";
+
+            String d_c = "D";
+
+            /*                if (list.getCode() == 1) {
+                d_c = "C";
+                } else if (list.getCode() == 2) {
+                d_c = "D";
+                } else if (list.getCode() == 3) {
+                d_c = "D";
+                }*/
+            String fundsource = "";
+
+            String activity = "";
+
+            String budgetType = "";
+            BigDecimal jul = BigDecimal.ZERO;
+            BigDecimal aug = BigDecimal.ZERO;
+            BigDecimal sep = BigDecimal.ZERO;
+            BigDecimal oct = BigDecimal.ZERO;
+            BigDecimal nov = BigDecimal.ZERO;
+            BigDecimal dec = BigDecimal.ZERO;
+            BigDecimal jan = BigDecimal.ZERO;
+            BigDecimal feb = BigDecimal.ZERO;
+            BigDecimal mar = BigDecimal.ZERO;
+            BigDecimal apr = BigDecimal.ZERO;
+            BigDecimal may = BigDecimal.ZERO;
+            BigDecimal jun = BigDecimal.ZERO;
+
+            if (k.getJul().doubleValue() > 0) {
+
+                jul = k.getJul();
+                String record = generateFixedWidthText(k.getCoacode().getStatCode(), generateAccPeriod2(sampleBudget.getFinancialYear(), "Jul"),
+                        "0107" + periodExtractor.extYears(sampleBudget.getFinancialYear()).get(0), jul, d_c, "BUD01",
+                        generateTReference(sampleBudget.getFinancialYear(), "Jul"),
+                        getFirstCharacters(k.getName()), "UGX", deptCode, "S020",
+                        "", "", "", "",
+                        budgetType, fundsource, activity, "");
+                recordsJul.add(record);
+            }
+            if (k.getAug().doubleValue() > 0) {
+
+                aug = k.getAug();
+                String record = generateFixedWidthText(k.getCoacode().getStatCode(), generateAccPeriod2(sampleBudget.getFinancialYear(), "Aug"),
+                        "0108" + periodExtractor.extYears(sampleBudget.getFinancialYear()).get(0), aug, d_c, "BUD01",
+                        generateTReference(sampleBudget.getFinancialYear(), "Aug"),
+                        getFirstCharacters(k.getName()), "UGX", deptCode, "S020",
+                        "", "", "", "",
+                        budgetType, fundsource, activity, "");
+                recordsAug.add(record);
+            }
+
+            if (k.getSep().doubleValue() > 0) {
+
+                sep = k.getSep();
+                String record = generateFixedWidthText(k.getCoacode().getStatCode(), generateAccPeriod2(sampleBudget.getFinancialYear(), "Sep"),
+                        "0109" + periodExtractor.extYears(sampleBudget.getFinancialYear()).get(0), sep, d_c, "BUD01",
+                        generateTReference(sampleBudget.getFinancialYear(), "Sep"),
+                        getFirstCharacters(k.getName()), "UGX", deptCode, "S020",
+                        "", "", "", "",
+                        budgetType, fundsource, activity, "");
+                recordsSep.add(record);
+            }
+
+            if (k.getOct().doubleValue() > 0) {
+
+                oct = k.getOct();
+                String record = generateFixedWidthText(k.getCoacode().getStatCode(), generateAccPeriod2(sampleBudget.getFinancialYear(), "Oct"),
+                        "0110" + periodExtractor.extYears(sampleBudget.getFinancialYear()).get(0), oct, d_c, "BUD01",
+                        generateTReference(sampleBudget.getFinancialYear(), "Oct"),
+                        getFirstCharacters(k.getName()), "UGX", deptCode, "S020",
+                        "", "", "", "",
+                        budgetType, fundsource, activity, "");
+                recordsOct.add(record);
+            }
+
+            if (k.getNov().doubleValue() > 0) {
+
+                nov = k.getNov();
+                String record = generateFixedWidthText(k.getCoacode().getStatCode(), generateAccPeriod2(sampleBudget.getFinancialYear(), "Nov"),
+                        "0111" + periodExtractor.extYears(sampleBudget.getFinancialYear()).get(0), nov, d_c, "BUD01",
+                        generateTReference(sampleBudget.getFinancialYear(), "Nov"),
+                        getFirstCharacters(k.getName()), "UGX", deptCode, "S020",
+                        "", "", "", "",
+                        budgetType, fundsource, activity, "");
+                recordsNov.add(record);
+            }
+
+            if (k.getDec().doubleValue() > 0) {
+
+                dec = k.getDec();
+                String record = generateFixedWidthText(k.getCoacode().getStatCode(), generateAccPeriod2(sampleBudget.getFinancialYear(), "Dec"),
+                        "0112" + periodExtractor.extYears(sampleBudget.getFinancialYear()).get(0), dec, d_c, "BUD01",
+                        generateTReference(sampleBudget.getFinancialYear(), "Dec"),
+                        getFirstCharacters(k.getName()), "UGX", deptCode, "S020",
+                        "", "", "", "",
+                        budgetType, fundsource, activity, "");
+                recordsDec.add(record);
+            }
+
+        }
+
+        // Generate fixed-width text
+        StringBuilder fixedWidthTextJul = new StringBuilder();
+
+        for (String record : recordsJul) {
+            i++;
+            if (!record.isBlank()) {
+                fixedWidthTextJul.append(record).append("\n");
+            }
+
+        }
+
+        StringBuilder fixedWidthTextAug = new StringBuilder();
+
+        for (String record : recordsAug) {
+            i++;
+            if (!record.isBlank()) {
+                fixedWidthTextAug.append(record).append("\n");
+            }
+
+        }
+
+        StringBuilder fixedWidthTextSep = new StringBuilder();
+
+        for (String record : recordsSep) {
+            i++;
+            if (!record.isBlank()) {
+                fixedWidthTextSep.append(record).append("\n");
+            }
+
+        }
+
+        StringBuilder fixedWidthTextOct = new StringBuilder();
+
+        for (String record : recordsOct) {
+            i++;
+            if (!record.isBlank()) {
+                fixedWidthTextOct.append(record).append("\n");
+            }
+
+        }
+
+        StringBuilder fixedWidthTextNov = new StringBuilder();
+
+        for (String record : recordsNov) {
+            i++;
+            if (!record.isBlank()) {
+                fixedWidthTextNov.append(record).append("\n");
+            }
+
+        }
+
+        StringBuilder fixedWidthTextDec = new StringBuilder();
+
+        for (String record : recordsDec) {
+            i++;
+            if (!record.isBlank()) {
+                fixedWidthTextDec.append(record).append("\n");
+            }
+
+        }
+
+        int delayBetweenDownloadsMillis = 1000;
+        // Download text file
+        StreamResource resourceJul = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Jul").replace("/", "") + " Stat.txt",
+                () -> new ByteArrayInputStream(fixedWidthTextJul.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
+        resourceJul.setContentType("text/plain");
+        resourceJul.setCacheTime(0);
+
+        Anchor downloadLinkJul = new Anchor(resourceJul, "");
+        downloadLinkJul.getElement().setAttribute("download", true);
+        add(downloadLinkJul);
+
+        downloadLinkJul.getElement().executeJs(
+                "setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")"
+        );
+
+        StreamResource resourceAug = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Aug").replace("/", "") + " Stat.txt",
+                () -> new ByteArrayInputStream(fixedWidthTextAug.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
+        resourceAug.setContentType("text/plain");
+        resourceAug.setCacheTime(0);
+
+        Anchor downloadLinkAug = new Anchor(resourceAug, "");
+        downloadLinkAug.getElement().setAttribute("download", true);
+        add(downloadLinkAug);
+        // Programmatically click the download link to initiate the download
+        downloadLinkAug.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
+
+        StreamResource resourceSep = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Sep").replace("/", "") + " Stat.txt",
+                () -> new ByteArrayInputStream(fixedWidthTextSep.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
+        resourceSep.setContentType("text/plain");
+        resourceSep.setCacheTime(0);
+
+        Anchor downloadLinkSep = new Anchor(resourceSep, "");
+        downloadLinkSep.getElement().setAttribute("download", true);
+        add(downloadLinkSep);
+        // Programmatically click the download link to initiate the download
+        downloadLinkSep.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
+        // Download text file
+        StreamResource resourceOct = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Oct").replace("/", "") + " Stat.txt",
+                () -> new ByteArrayInputStream(fixedWidthTextOct.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
+        resourceOct.setContentType("text/plain");
+        resourceOct.setCacheTime(0);
+
+        Anchor downloadLinkOct = new Anchor(resourceOct, "");
+        downloadLinkOct.getElement().setAttribute("download", true);
+        add(downloadLinkOct);
+
+        downloadLinkOct.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
+
+        StreamResource resourceNov = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Nov").replace("/", "") + " Stat.txt",
+                () -> new ByteArrayInputStream(fixedWidthTextNov.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
+        resourceNov.setContentType("text/plain");
+        resourceNov.setCacheTime(0);
+
+        Anchor downloadLinkNov = new Anchor(resourceNov, "");
+        downloadLinkNov.getElement().setAttribute("download", true);
+        add(downloadLinkNov);
+
+        downloadLinkNov.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
+
+        StreamResource resourceDec = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Dec").replace("/", "") + " Stat.txt",
+                () -> new ByteArrayInputStream(fixedWidthTextDec.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
+        resourceDec.setContentType("text/plain");
+        resourceDec.setCacheTime(0);
+
+        Anchor downloadLinkDec = new Anchor(resourceDec, "");
+        downloadLinkDec.getElement().setAttribute("download", true);
+        add(downloadLinkDec);
+
+        downloadLinkDec.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
+
+    }
+
     private void exportAndDownloadSunFile5() {
         List<Coalevel1> Coalevel1List = sampleCoalevel1Service.findByBudget();
 
@@ -7241,6 +7487,236 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         downloadLinkMay.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
 
         StreamResource resourceJun = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Jun").replace("/", "") + ".txt",
+                () -> new ByteArrayInputStream(fixedWidthTextJun.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
+        resourceJun.setContentType("text/plain");
+        resourceJun.setCacheTime(0);
+
+        Anchor downloadLinkJun = new Anchor(resourceJun, "");
+        downloadLinkJun.getElement().setAttribute("download", true);
+        add(downloadLinkJun);
+        downloadLinkJun.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
+
+    }
+
+    private void exportAndDownloadSunFile5StatisticsJJ() {
+
+        List<String> recordsJan = new ArrayList<>();
+        List<String> recordsFeb = new ArrayList<>();
+        List<String> recordsMar = new ArrayList<>();
+        List<String> recordsApr = new ArrayList<>();
+        List<String> recordsMay = new ArrayList<>();
+        List<String> recordsJun = new ArrayList<>();
+        int i = 0;
+
+        List<FreightVolumes> budgetItems = sampleFreightVolumesService.getAllFreightVolumesByBudget(sampleBudget);
+
+        for (FreightVolumes k : budgetItems) {
+            String deptCode = "S020";
+
+            String d_c = "D";
+            String fundsource = "";
+
+            String activity = "";
+
+            String budgetType = "";
+            BigDecimal jul = BigDecimal.ZERO;
+            BigDecimal aug = BigDecimal.ZERO;
+            BigDecimal sep = BigDecimal.ZERO;
+            BigDecimal oct = BigDecimal.ZERO;
+            BigDecimal nov = BigDecimal.ZERO;
+            BigDecimal dec = BigDecimal.ZERO;
+            BigDecimal jan = BigDecimal.ZERO;
+            BigDecimal feb = BigDecimal.ZERO;
+            BigDecimal mar = BigDecimal.ZERO;
+            BigDecimal apr = BigDecimal.ZERO;
+            BigDecimal may = BigDecimal.ZERO;
+            BigDecimal jun = BigDecimal.ZERO;
+
+            if (k.getJan().doubleValue() > 0) {
+
+                jan = k.getJan();
+                String record = generateFixedWidthText(k.getCoacode().getStatCode(), generateAccPeriod2(sampleBudget.getFinancialYear(), "Jan"),
+                        "0101" + periodExtractor.extYears(sampleBudget.getFinancialYear()).get(0), jan, d_c, "BUD01",
+                        generateTReference(sampleBudget.getFinancialYear(), "Jan"),
+                        getFirstCharacters(k.getName()), "UGX", deptCode, "S020",
+                        "", "", "", "",
+                        budgetType, fundsource, activity, "");
+                recordsJan.add(record);
+            }
+
+            if (k.getFeb().doubleValue() > 0) {
+
+                feb = k.getFeb();
+                String record = generateFixedWidthText(k.getCoacode().getStatCode(), generateAccPeriod2(sampleBudget.getFinancialYear(), "Feb"),
+                        "0102" + periodExtractor.extYears(sampleBudget.getFinancialYear()).get(0), feb, d_c, "BUD01",
+                        generateTReference(sampleBudget.getFinancialYear(), "Feb"),
+                        getFirstCharacters(k.getName()), "UGX", deptCode, "S020",
+                        "", "", "", "",
+                        budgetType, fundsource, activity, "");
+                recordsFeb.add(record);
+            }
+            if (k.getMar().doubleValue() > 0) {
+
+                mar = k.getMar();
+                String record = generateFixedWidthText(k.getCoacode().getStatCode(), generateAccPeriod2(sampleBudget.getFinancialYear(), "Mar"),
+                        "0103" + periodExtractor.extYears(sampleBudget.getFinancialYear()).get(0), mar, d_c, "BUD01",
+                        generateTReference(sampleBudget.getFinancialYear(), "Mar"),
+                        getFirstCharacters(k.getName()), "UGX", deptCode, "S020",
+                        "", "", "", "",
+                        budgetType, fundsource, activity, "");
+                recordsMar.add(record);
+            }
+
+            if (k.getApr().doubleValue() > 0) {
+
+                apr = k.getApr();
+                String record = generateFixedWidthText(k.getCoacode().getStatCode(), generateAccPeriod2(sampleBudget.getFinancialYear(), "Apr"),
+                        "0104" + periodExtractor.extYears(sampleBudget.getFinancialYear()).get(0), apr, d_c, "BUD01",
+                        generateTReference(sampleBudget.getFinancialYear(), "Apr"),
+                        getFirstCharacters(k.getName()), "UGX", deptCode, "S020",
+                        "", "", "", "",
+                        budgetType, fundsource, activity, "");
+                recordsApr.add(record);
+            }
+
+            if (k.getMay().doubleValue() > 0) {
+
+                may = k.getMay();
+                String record = generateFixedWidthText(k.getCoacode().getStatCode(), generateAccPeriod2(sampleBudget.getFinancialYear(), "May"),
+                        "0105" + periodExtractor.extYears(sampleBudget.getFinancialYear()).get(0), may, d_c, "BUD01",
+                        generateTReference(sampleBudget.getFinancialYear(), "May"),
+                        getFirstCharacters(k.getName()), "UGX", deptCode, "S020",
+                        "", "", "", "",
+                        budgetType, fundsource, activity, "");
+                recordsMay.add(record);
+            }
+
+            if (k.getJun().doubleValue() > 0) {
+
+                jun = k.getJun();
+                String record = generateFixedWidthText(k.getCoacode().getStatCode(), generateAccPeriod2(sampleBudget.getFinancialYear(), "Jun"),
+                        "0106" + periodExtractor.extYears(sampleBudget.getFinancialYear()).get(0), jun, d_c, "BUD01",
+                        generateTReference(sampleBudget.getFinancialYear(), "Jun"),
+                        getFirstCharacters(k.getName()), "UGX", deptCode, "S020",
+                        "", "", "", "",
+                        budgetType, fundsource, activity, "");
+                recordsJun.add(record);
+            }
+        }
+
+        StringBuilder fixedWidthTextJan = new StringBuilder();
+
+        for (String record : recordsJan) {
+            i++;
+            if (!record.isBlank()) {
+                fixedWidthTextJan.append(record).append("\n");
+            }
+
+        }
+        StringBuilder fixedWidthTextFeb = new StringBuilder();
+
+        for (String record : recordsFeb) {
+            i++;
+            if (!record.isBlank()) {
+                fixedWidthTextFeb.append(record).append("\n");
+            }
+
+        }
+        StringBuilder fixedWidthTextMar = new StringBuilder();
+
+        for (String record : recordsMar) {
+            i++;
+            if (!record.isBlank()) {
+                fixedWidthTextMar.append(record).append("\n");
+            }
+
+        }
+        StringBuilder fixedWidthTextApr = new StringBuilder();
+
+        for (String record : recordsApr) {
+            i++;
+            if (!record.isBlank()) {
+                fixedWidthTextApr.append(record).append("\n");
+            }
+
+        }
+        StringBuilder fixedWidthTextMay = new StringBuilder();
+
+        for (String record : recordsMay) {
+            i++;
+            if (!record.isBlank()) {
+                fixedWidthTextMay.append(record).append("\n");
+            }
+
+        }
+        StringBuilder fixedWidthTextJun = new StringBuilder();
+
+        for (String record : recordsJun) {
+            i++;
+            if (!record.isBlank()) {
+                fixedWidthTextJun.append(record).append("\n");
+            }
+
+        }
+
+        int delayBetweenDownloadsMillis = 1000;
+
+        StreamResource resourceJan = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Jan").replace("/", "") + " Stat.txt",
+                () -> new ByteArrayInputStream(fixedWidthTextJan.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
+        resourceJan.setContentType("text/plain");
+        resourceJan.setCacheTime(0);
+
+        Anchor downloadLinkJan = new Anchor(resourceJan, "");
+        downloadLinkJan.getElement().setAttribute("download", true);
+        add(downloadLinkJan);
+
+        downloadLinkJan.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
+
+        StreamResource resourceFeb = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Feb").replace("/", "") + " Stat.txt",
+                () -> new ByteArrayInputStream(fixedWidthTextFeb.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
+        resourceFeb.setContentType("text/plain");
+        resourceFeb.setCacheTime(0);
+
+        Anchor downloadLinkFeb = new Anchor(resourceFeb, "");
+        downloadLinkFeb.getElement().setAttribute("download", true);
+        add(downloadLinkFeb);
+
+        downloadLinkFeb.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
+
+        StreamResource resourceMar = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Mar").replace("/", "") + " Stat.txt",
+                () -> new ByteArrayInputStream(fixedWidthTextMar.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
+        resourceMar.setContentType("text/plain");
+        resourceMar.setCacheTime(0);
+
+        Anchor downloadLinkMar = new Anchor(resourceMar, "");
+        downloadLinkMar.getElement().setAttribute("download", true);
+        add(downloadLinkMar);
+
+        downloadLinkMar.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
+
+        StreamResource resourceApr = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Apr").replace("/", "") + " Stat.txt",
+                () -> new ByteArrayInputStream(fixedWidthTextApr.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
+        resourceApr.setContentType("text/plain");
+        resourceApr.setCacheTime(0);
+
+        Anchor downloadLinkApr = new Anchor(resourceApr, "");
+        downloadLinkApr.getElement().setAttribute("download", true);
+        add(downloadLinkApr);
+
+        downloadLinkApr.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
+
+        StreamResource resourceMay = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "May").replace("/", "") + " Stat.txt",
+                () -> new ByteArrayInputStream(fixedWidthTextMay.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
+        resourceMay.setContentType("text/plain");
+        resourceMay.setCacheTime(0);
+
+        Anchor downloadLinkMay = new Anchor(resourceMay, "");
+        downloadLinkMay.getElement().setAttribute("download", true);
+        add(downloadLinkMay);
+
+        downloadLinkMay.getElement().executeJs("setTimeout(() => { this.click(); }, " + delayBetweenDownloadsMillis + ")");
+
+        StreamResource resourceJun = new StreamResource(generateAccPeriod(sampleBudget.getFinancialYear(), "Jun").replace("/", "") + " Stat.txt",
                 () -> new ByteArrayInputStream(fixedWidthTextJun.toString().replace("\n", System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));
         resourceJun.setContentType("text/plain");
         resourceJun.setCacheTime(0);

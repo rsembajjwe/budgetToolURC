@@ -1,8 +1,8 @@
 package com.methaltech.application.views.users;
 
 import com.methaltech.application.data.BCrypt;
-import com.methaltech.application.data.Display;
 import com.methaltech.application.data.EmailSender;
+import com.methaltech.application.data.entity.bgtool.*;
 import com.methaltech.application.data.EmailValidator;
 import com.methaltech.application.data.GlobalConstants;
 import com.methaltech.application.data.Role;
@@ -13,14 +13,18 @@ import com.methaltech.application.data.entity.bgtool.User;
 import com.methaltech.application.data.bgtool.service.UserService;
 import com.methaltech.application.data.bgtool.service.BudgetService;
 import com.methaltech.application.data.bgtool.service.DataDuplicationService;
+import com.methaltech.application.data.bgtool.service.DeptSectionMergerService;
 import com.methaltech.application.data.bgtool.service.UnitService;
 import com.methaltech.application.data.bgtool.service.UnitsBudgetService;
+import com.methaltech.application.data.bgtool.service.UrDepartmentsAnlDimService2;
 import com.methaltech.application.data.bgtool.service.UrcDeptSectionAnlDimbgtService;
+import com.methaltech.application.data.entity.bgtool.DeptSectionMerger;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
+import com.methaltech.application.data.entity.livedata.UrcDepartmentAnlDim;
 import com.methaltech.application.data.entity.oldbgtool.DepartmentUnit;
 import com.methaltech.application.data.entity.oldbgtool.UrcUser;
 import com.methaltech.application.data.entity.oldbgtool.UserUnits;
-import com.methaltech.application.data.entity.livedata.UrcDeptSectionAnlDim;
+import com.methaltech.application.data.livedata.service.UrcDepartmentAnlDimService;
 import com.methaltech.application.data.oldbgtool.service.DepartmentUnitService;
 import com.methaltech.application.data.oldbgtool.service.UrcUserService;
 import com.methaltech.application.data.oldbgtool.service.UserUnitsService;
@@ -40,9 +44,7 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
-import com.vaadin.flow.component.grid.contextmenu.GridMenuItem;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
@@ -62,7 +64,6 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import jakarta.annotation.security.RolesAllowed;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -93,6 +94,7 @@ public class UserView extends Div implements BeforeEnterObserver {
 
     private ComboBox<Budget> budget;
     private MultiSelectComboBox<UrcDeptSectionAnlDimbgt> sections = new MultiSelectComboBox("Sections Responsible for:");
+    private MultiSelectComboBox<UrDepartmentsAnlDim2> departments = new MultiSelectComboBox("Departments Responsible for:");
 
     private final Button cancel = new Button("Cancel");
     private final Button save = new Button("Save");
@@ -112,6 +114,8 @@ public class UserView extends Div implements BeforeEnterObserver {
     private final UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService;
     private final UrcUserService urcUserService;
     private final DepartmentUnitService departmentUnitService;
+    private final UrcDepartmentAnlDimService sampleUrcDepartmentAnlDimService;
+    private final UrDepartmentsAnlDimService2 sampleUrDepartmentsAnlDimService2;
 
     @Autowired
     private EmailSender emailSender;
@@ -121,13 +125,15 @@ public class UserView extends Div implements BeforeEnterObserver {
     public MultiSelectComboBox<D_Unit> unitsList;
     private final UrcDeptSectionAnlDimService sampleSectionService;
     private final UserUnitsService UserUnitsService;
+    private final DeptSectionMergerService sampleDeptSectionMergerService;
 
     @Autowired
     public UserView(UserService samplePersonService, EmailValidator emailValidator,
             BudgetService sampleBudgetService, UnitService sampleUnitService, UnitsBudgetService sampleUnitsBudgetService,
             UrcDeptSectionAnlDimService sampleSectionService, DataDuplicationService sampleDataDuplicationService,
             UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, AuthenticatedUser authenticatedUser,
-            UrcUserService urcUserService, UserUnitsService UserUnitsService, DepartmentUnitService departmentUnitService) {
+            UrcUserService urcUserService, UserUnitsService UserUnitsService, DepartmentUnitService departmentUnitService, UrcDepartmentAnlDimService sampleUrcDepartmentAnlDimService,
+            DeptSectionMergerService sampleDeptSectionMergerService,UrDepartmentsAnlDimService2 sampleUrDepartmentsAnlDimService2) {
         this.samplePersonService = samplePersonService;
         this.emailValidator = emailValidator;
         this.sampleBudgetService = sampleBudgetService;
@@ -140,6 +146,9 @@ public class UserView extends Div implements BeforeEnterObserver {
         this.UserUnitsService = UserUnitsService;
         this.departmentUnitService = departmentUnitService;
         this.authenticatedUser = authenticatedUser;
+        this.sampleUrcDepartmentAnlDimService = sampleUrcDepartmentAnlDimService;
+        this.sampleDeptSectionMergerService = sampleDeptSectionMergerService;
+        this.sampleUrDepartmentsAnlDimService2=sampleUrDepartmentsAnlDimService2;
         addClassNames("user-view");
         this.setHeight("100%");
         // Create UI
@@ -177,6 +186,7 @@ public class UserView extends Div implements BeforeEnterObserver {
                 samplePerson = event.getValue();
                 populateForm(event.getValue());
                 sections.setValue(event.getValue().getDeptsection());
+                departments.setValue(event.getValue().getDepartment());
                 UI.getCurrent().navigate(UserView.class);
                 //UI.getCurrent().navigate(String.format(SAMPLEPERSON_EDIT_ROUTE_TEMPLATE, event.getValue().getUserId()));
             } else {
@@ -188,6 +198,13 @@ public class UserView extends Div implements BeforeEnterObserver {
         });
         sections.setItemLabelGenerator(UrcDeptSectionAnlDimbgt::getNAME);
         sections.setItems(query -> sampleUrcDeptSectionAnlDimbgtService.findByANL_CODEStartingWithD2(PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query))).stream());
+
+        departments.setItemLabelGenerator(UrDepartmentsAnlDim2::getName);
+        /*        departments.setItemLabelGenerator(deptSectionMerger -> {
+        String deptcode = deptSectionMerger.getDeptcode();
+        return sampleDeptSectionMergerService.findDepartmentByDeptCode(deptcode);
+        });*/
+        departments.setItems(sampleUrDepartmentsAnlDimService2.findAll());
 
         // Configure Form
         binder = new BeanValidationBinder<>(User.class);
@@ -215,12 +232,21 @@ public class UserView extends Div implements BeforeEnterObserver {
                 .asRequired("Roles is Required") // Add required validation
                 .bind(User::getRoles, User::setRoles);
 
+        binder.forField(departments)
+                .bind(User::getDepartment, User::setDepartment);
+
+        roles.addSelectionListener(e -> {
+            if (e.getValue().contains(Role.HOD)) {
+                departments.setVisible(true);
+            } else {
+                departments.setVisible(false);
+            }
+        });
         cancel.addClickListener(e -> {
             clearForm();
             // refreshGrid();
             refreshgridUser();
         });
-        
 
         save.addClickListener(e -> {
             CharSequence editorTextFields = validEditorTextFields();
@@ -331,8 +357,8 @@ public class UserView extends Div implements BeforeEnterObserver {
 
             refreshgridUser();
             sampleBudget = ev.getValue();
-            if(!ev.getValue().isActive()){
-               save.setEnabled(false);
+            if (!ev.getValue().isActive()) {
+                save.setEnabled(false);
             }
         });
         return div;
@@ -387,8 +413,8 @@ public class UserView extends Div implements BeforeEnterObserver {
         roles.setErrorMessage("Required");
 
         // Populate combo with roles
-        roles.setItems(Role.ADMIN, Role.USER, Role.BLO, Role.HR, Role.FREIGHT, Role.HOD,Role.PROCUREMENT,Role.MD);
-        formLayout.add(fname, lname, username, tel, roles, sections);
+        roles.setItems(Role.ADMIN, Role.USER, Role.BLO, Role.HR, Role.FREIGHT, Role.HOD, Role.PROCUREMENT, Role.MD,Role.CFO);
+        formLayout.add(fname, lname, username, tel, roles, departments, sections);
 
         editorDiv.add(formLayout);
         createButtonLayout(editorLayoutDiv);
@@ -487,7 +513,7 @@ public class UserView extends Div implements BeforeEnterObserver {
             User user = maybeUser.get();
             Set<Role> roles = user.getRoles();
             if (roles.contains(Role.ADMIN)) {
-               // buttonLayout.add(but);
+                // buttonLayout.add(but);
                 //buttonLayout.add(but, importUsers);
             }
         }

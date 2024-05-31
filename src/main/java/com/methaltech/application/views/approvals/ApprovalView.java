@@ -1,6 +1,7 @@
 package com.methaltech.application.views.approvals;
 
 import com.methaltech.application.data.Role;
+import com.methaltech.application.data.bgtool.service.BudgetApprovalMessagesServiceImpl;
 import com.methaltech.application.data.bgtool.service.BudgetApprovalService;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
 import com.methaltech.application.data.bgtool.service.BudgetService;
@@ -8,6 +9,7 @@ import com.methaltech.application.data.bgtool.service.CoaService;
 import com.methaltech.application.data.bgtool.service.Coalevel1Service;
 import com.methaltech.application.data.bgtool.service.DeptSectionMergerService;
 import com.methaltech.application.data.bgtool.service.OrganisationService;
+import com.methaltech.application.data.bgtool.service.UrDepartmentsAnlDimService2;
 import com.methaltech.application.data.bgtool.service.UrcDeptSectionAnlDimbgtService;
 import com.methaltech.application.data.bgtool.service.UserService;
 import com.methaltech.application.data.entity.bgtool.Budget;
@@ -16,7 +18,9 @@ import com.methaltech.application.data.entity.bgtool.BudgetApprovalMessages;
 import com.methaltech.application.data.entity.bgtool.BudgetItems;
 import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
+import com.methaltech.application.data.entity.bgtool.DeptSectionMerger;
 import com.methaltech.application.data.entity.bgtool.Organisation;
+import com.methaltech.application.data.entity.bgtool.UrDepartmentsAnlDim2;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import com.methaltech.application.data.entity.bgtool.User;
@@ -28,6 +32,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
@@ -44,6 +49,7 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayoutVariant;
 import com.vaadin.flow.component.tabs.TabSheet;
@@ -81,7 +87,7 @@ public final class ApprovalView extends Div {
     private AuthenticatedUser authenticatedUser;
     private ComboBox<Budget> comboBoxBudget = new ComboBox<>("Budget");
     private MultiSelectComboBox<UrcDeptSectionAnlDimbgt> comboBoxD_Section = new MultiSelectComboBox<>("Cost Centre");
-    private MultiSelectComboBox<UrcDepartmentAnlDim> comboBoxDepartment = new MultiSelectComboBox<>("Department");
+    private MultiSelectComboBox<UrDepartmentsAnlDim2> comboBoxDepartment = new MultiSelectComboBox<>("Department");
     private final BudgetService chosenBudgetService;
     private final DeptSectionMergerService sampleDeptSectionMergerService;
     private ComboBox<Coalevel1> comboBoxCoalevel1;
@@ -95,6 +101,8 @@ public final class ApprovalView extends Div {
     private final BudgetItemsService budgetItemsService;
     private final BudgetApprovalService sampleBudgetApprovalService;
     private final UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService;
+    private final UrDepartmentsAnlDimService2 sampleUrDepartmentsAnlDimService2;
+    private final BudgetApprovalMessagesServiceImpl sampleBudgetApprovalMessagesServiceImpl;
     private Span footerTotal = new Span("");
     Footer footer = new Footer();
     private Grid<BudgetItems> gridBudgetItems = new Grid<>(BudgetItems.class, false);
@@ -104,7 +112,8 @@ public final class ApprovalView extends Div {
     public ApprovalView(UserService userService, AuthenticatedUser authenticatedUser, BudgetService chosenBudgetService,
             DeptSectionMergerService sampleDeptSectionMergerService, Coalevel1Service coalevel1Service,
             CoaService coaService, OrganisationService organisationService, BudgetItemsService budgetItemsService,
-            BudgetApprovalService sampleBudgetApprovalService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService) {
+            BudgetApprovalService sampleBudgetApprovalService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService,
+            UrDepartmentsAnlDimService2 sampleUrDepartmentsAnlDimService2, BudgetApprovalMessagesServiceImpl sampleBudgetApprovalMessagesServiceImpl) {
         this.userService = userService;
         this.authenticatedUser = authenticatedUser;
         this.chosenBudgetService = chosenBudgetService;
@@ -115,8 +124,10 @@ public final class ApprovalView extends Div {
         this.budgetItemsService = budgetItemsService;
         this.sampleBudgetApprovalService = sampleBudgetApprovalService;
         this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
+        this.sampleUrDepartmentsAnlDimService2 = sampleUrDepartmentsAnlDimService2;
+        this.sampleBudgetApprovalMessagesServiceImpl = sampleBudgetApprovalMessagesServiceImpl;
         this.setHeightFull();
-
+//VerticalLayout dialogLayout = VerticalLayout();
         addClassNames("approval-view");
         footerTotal.getElement().getThemeList().add("badge success");
 
@@ -150,7 +161,7 @@ public final class ApprovalView extends Div {
 
         comboBoxD_Section.setItemLabelGenerator(UrcDeptSectionAnlDimbgt::getNAME);
 
-        comboBoxDepartment.setItemLabelGenerator(UrcDepartmentAnlDim::getNAME);
+        comboBoxDepartment.setItemLabelGenerator(UrDepartmentsAnlDim2::getName);
         comboBoxDepartment.addValueChangeListener(e -> {
             comboBoxD_Section.clear();
             comboBoxDepartment.setValue(e.getValue());
@@ -159,7 +170,7 @@ public final class ApprovalView extends Div {
         if (user.getDeptsection() != null) {
             comboBoxD_Section.setItems(user.getDeptsection());
             if (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.CFO) || user.getRoles().contains(Role.MD)) {
-                comboBoxDepartment.setItems(sampleDeptSectionMergerService.getDeptCodes(user.getDeptsection().stream().toList()));
+                comboBoxDepartment.setItems(sampleUrDepartmentsAnlDimService2.findAll());
             }
 
         }
@@ -501,7 +512,10 @@ public final class ApprovalView extends Div {
             sections = comboBoxD_Section.getValue();
         } else if (!comboBoxDepartment.isEmpty()) {
             sections = sampleDeptSectionMergerService.getSections(comboBoxDepartment.getValue());
-            System.out.println(sections.size());
+            if (!sections.isEmpty()) {
+                System.out.println("......." + sections.size());
+            }
+
         }
         if (!comboBoxBudget.isEmpty() && !sections.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxCoalevel1.isEmpty()) {
             List<BudgetItems> lists = budgetItemsService.findDistictCodeAndNames(comboBoxOrganisation.getValue(), comboBoxBudget.getValue(), sections, comboBoxCoalevel1.getValue());
@@ -619,63 +633,75 @@ public final class ApprovalView extends Div {
     }
 
     private void refreshGrid() {
-        gridBudgetApproval.setItems(sampleBudgetApprovalService.getBudgetApprovalsByBudgetAndSections(comboBoxBudget.getValue(), user.getDeptsection()));
-        List<BudgetApproval> listB = gridBudgetApproval.getListDataView().getItems().toList();
-        Set<BudgetApprovalMessages> messages = new HashSet<>();
-        int r = 0;
-        for (BudgetApproval budgetApproval : listB) {
-            messages.addAll(budgetApproval.getMessages());
+        long startTime, endTime;
 
-        }
-        /*        List<BudgetApprovalMessages> sortedMessages = messages.stream()
-        .sorted(Comparator.comparing(BudgetApprovalMessages::getSentDate))
-        .collect(Collectors.toList());*/
-        List<BudgetApprovalMessages> sortedMessages = messages.stream()
-        .sorted(Comparator.comparing(BudgetApprovalMessages::getSentDate).reversed())
-        .collect(Collectors.toList());
+        // Fetch and set items
+        startTime = System.nanoTime();
+        List<BudgetApproval> budgetApprovals = sampleBudgetApprovalService.getBudgetApprovalsByBudgetAndSections(comboBoxBudget.getValue(), user.getDeptsection());
+        endTime = System.nanoTime();
+        System.out.println("Time to fetch budget approvals: " + (endTime - startTime) / 1_000_000 + " ms");
 
+        startTime = System.nanoTime();
+        gridBudgetApproval.setItems(budgetApprovals);
+        endTime = System.nanoTime();
+        System.out.println("Time to set grid items: " + (endTime - startTime) / 1_000_000 + " ms");
+
+        // Sort messages
+        startTime = System.nanoTime();
+        List<BudgetApprovalMessages> sortedMessages = sampleBudgetApprovalMessagesServiceImpl.getMessagesByBudgetAndSections(comboBoxBudget.getValue(), user.getDeptsection()).stream()
+                .sorted(Comparator.comparing(BudgetApprovalMessages::getSentDate).reversed())
+                .collect(Collectors.toList());
+
+        endTime = System.nanoTime();
+        System.out.println("Time to sort messages: " + (endTime - startTime) / 1_000_000 + " ms");
+
+        // Create message list items
+        startTime = System.nanoTime();
         List<MessageListItem> messageListItem = new ArrayList<>();
+        int userColorIndex = 1;
         for (BudgetApprovalMessages sortM : sortedMessages) {
-            r++;
-            LocalDateTime ldate = sortM.getSentDate();
-            ZoneId zoneId = ZoneId.systemDefault();
-            //LocalDateTime localDateTime = ldate.atStartOfDay();
-            //LocalDateTime localDateTime2 = ldate.
-            ZonedDateTime zonedDateTime = ldate.atZone(zoneId);
-            Instant instant = zonedDateTime.toInstant();
+            Instant instant = sortM.getSentDate().atZone(ZoneId.systemDefault()).toInstant();
             MessageListItem mm = new MessageListItem(sortM.getMessage(), instant, sortM.getApprover().getFirstName() + " " + sortM.getApprover().getLastName());
+            mm.setUserColorIndex(userColorIndex);
 
-            if (r % 2 == 0) {
-                mm.setUserColorIndex(1);
-
-            } else {
-                mm.setUserColorIndex(2);
-            }
+            // Alternate user color index
+            userColorIndex = userColorIndex == 1 ? 2 : 1;
 
             messageListItem.add(mm);
-
         }
+        endTime = System.nanoTime();
+        System.out.println("Time to create message list items: " + (endTime - startTime) / 1_000_000 + " ms");
+
+        // Set all items at once
+        startTime = System.nanoTime();
         messageList.setItems(messageListItem);
+        endTime = System.nanoTime();
+        System.out.println("Time to set message list items: " + (endTime - startTime) / 1_000_000 + " ms");
     }
 
     private void setApprovalData() {
         Optional<Budget> budget = chosenBudgetService.getLastSavedBudget2();
         if (budget.isPresent()) {
-            List<BudgetApproval> approvals = sampleBudgetApprovalService.getBudgetApprovalsByBudget(budget.get());
-            List<UrcDeptSectionAnlDimbgt> getAllUrcSectionsAnlDims = sampleUrcDeptSectionAnlDimbgtService.getAllUrcSectionsAnlDims();
-            for (UrcDeptSectionAnlDimbgt ser : getAllUrcSectionsAnlDims) {
-                boolean exists = false;
-                for (BudgetApproval approval : approvals) {
-                    if (approval.getSection().equals(ser)) {
-                        exists = true;
-                        break;
+            if (budget.get().isActive()) {
+                List<BudgetApproval> approvals = sampleBudgetApprovalService.getBudgetApprovalsByBudget(budget.get());
+                List<UrcDeptSectionAnlDimbgt> getAllUrcSectionsAnlDims = sampleUrcDeptSectionAnlDimbgtService.getAllUrcSectionsAnlDims();
+                for (UrcDeptSectionAnlDimbgt ser : getAllUrcSectionsAnlDims) {
+                    boolean exists = false;
+                    for (BudgetApproval approval : approvals) {
+                        if (approval.getSection().equals(ser)) {
+                            exists = true;
+                            break;
+                        }
                     }
-                }
-                if (exists == false) {
-                    BudgetApproval app = new BudgetApproval();
-                    app.setBudget(budget.get());
-                    app.setSection(ser);
-                    sampleBudgetApprovalService.saveBudgetApproval(app);
+                    if (exists == false) {
+                        if (!ser.getANL_CODE().startsWith("S019")) {
+                            BudgetApproval app = new BudgetApproval();
+                            app.setBudget(budget.get());
+                            app.setSection(ser);
+                            sampleBudgetApprovalService.saveBudgetApproval(app);
+                        }
+
+                    }
                 }
             }
         }
@@ -686,18 +712,18 @@ public final class ApprovalView extends Div {
 
         public BudgetApprovalContextMenu(Grid<BudgetApproval> target) {
             super(target);
-            boolean blo = false;
+            boolean status = false;
             if (user.getRoles().contains(Role.BLO)) {
-                if (!gridBudgetApproval.asSingleSelect().isEmpty()) {
+                if (!gridBudgetApproval.asSingleSelect().isEmpty() && comboBoxBudget.getValue().isActive()) {
                     BudgetApproval pp = gridBudgetApproval.asSingleSelect().getValue();
                     if (pp.getBloSubmission() == null) {
-                        blo = true;
+                        status = true;
                     } else if (pp.getBloSubmission() == false) {
-                        blo = true;
+                        status = true;
                     } else {
-                        blo = false;
+                        status = false;
                     }
-                    addItem("Submit to HOD", e -> e.getItem().ifPresent(person -> {
+                    addItem("Submit to HOD (BLO)", e -> e.getItem().ifPresent(person -> {
 
                         Optional<BudgetApproval> bgtOptional = e.getItem();
 
@@ -705,97 +731,287 @@ public final class ApprovalView extends Div {
                             BudgetApproval appBud = bgtOptional.get();
                             appBud.setBloSubmission(Boolean.TRUE);
                             appBud.setBloSubmissionDate(LocalDateTime.now());
-                            Set<BudgetApprovalMessages> setM = appBud.getMessages();
 
                             BudgetApprovalMessages newMessage = new BudgetApprovalMessages();
                             newMessage.setApprover(user);
                             newMessage.setSentDate(LocalDateTime.now());
                             newMessage.setMessage(appBud.getSection().getNAME() + " Budget Submitted to HOD");
-                            setM.add(newMessage);
+                            newMessage.setBudgetApproval(appBud);
                             sampleBudgetApprovalService.saveBudgetApproval(appBud);
+                            sampleBudgetApprovalMessagesServiceImpl.saveMessage(newMessage);
                             refreshGrid();
 
                         } else {
                             Notificationwarning("Now Cost Centre Selected");
                         }
 
-                    })).setEnabled(blo);
+                    })).setEnabled(status);
                 }
 
             }
 
             if (user.getRoles().contains(Role.HOD)) {
-                if (!gridBudgetApproval.asSingleSelect().isEmpty()) {
+                if (!gridBudgetApproval.asSingleSelect().isEmpty() && comboBoxBudget.getValue().isActive()) {
                     BudgetApproval pp = gridBudgetApproval.asSingleSelect().getValue();
+
                     if (pp.getHodSubmission() == null) {
-                        blo = true;
+                        status = true;
                     } else if (pp.getHodSubmission() == false) {
-                        blo = true;
+                        status = true;
                     } else {
-                        blo = false;
+                        status = false;
+                    }
+                    if ((pp.getBloSubmission() == null || pp.getBloSubmission() == false)) {
+                        status = false;
                     }
                     add(new Hr());
-                    addItem("Submit to MA", e -> e.getItem().ifPresent(person -> {
+                    addItem("Submit to MA (HOD)", e -> e.getItem().ifPresent(person -> {
                         // System.out.printf("Edit: %s%n", person.getFullName());
-                    })).setEnabled(blo);
+                        if (user.getDepartment() != null) {
+
+                            Optional<BudgetApproval> bgtOptional = e.getItem();
+
+                            if (bgtOptional.isPresent()) {
+                                Dialog dialog = new Dialog();
+                                dialog.setHeaderTitle("Submit Department Budget to Management Accounts");
+                                Button closeButton = new Button(new Icon("lumo", "cross"),
+                                        (ex) -> dialog.close());
+                                closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+                                dialog.getHeader().add(closeButton);
+                                dialog.setModal(true);
+                                VerticalLayout kk = new VerticalLayout();
+
+                                //Check if the sections under the department have all been submitted by BLO
+                                Set<UrDepartmentsAnlDim2> sorteDepartmentsAnlDim2s = new HashSet<>();
+                                for (UrDepartmentsAnlDim2 f : user.getDepartment()) {
+                                    Optional<DeptSectionMerger> samOptional = sampleDeptSectionMergerService.findByDeptcodeCustom(f.getAnlCode());
+                                    if (samOptional.isPresent()) {
+                                        DeptSectionMerger ff = samOptional.get();
+                                        boolean stat = true;
+                                        for (String fe : ff.getSectioncodes()) {
+                                            BudgetApproval b = sampleBudgetApprovalService.findTopByBudgetAndSectionOrderByBloSubmissionDateDesc(comboBoxBudget.getValue(), sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE(fe));
+                                            if (b != null) {
+                                                if (b.getBloSubmission() == null || b.getBloSubmission() == false) {
+                                                    stat = false;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        if (stat = true) {
+                                            sorteDepartmentsAnlDim2s.add(f);
+                                        }
+
+                                    }
+                                }
+                                Grid<UrDepartmentsAnlDim2> grid = new Grid<>(UrDepartmentsAnlDim2.class, false);
+                                grid.addColumn(UrDepartmentsAnlDim2::getName).setHeader("Department");
+                                grid.addColumn(createActionRenderer()).setFrozenToEnd(true)
+                                        .setAutoWidth(true).setFlexGrow(0);
+                                grid.setItems(sorteDepartmentsAnlDim2s);
+
+                                dialog.add(grid);
+                                dialog.open();
+
+                            } else {
+                                Notificationwarning("Now Cost Centre Selected");
+                            }
+
+                        } else {
+                            Notificationwarning("User not attached to Department");
+                        }
+                    })).setEnabled(status);
+
                 }
 
             }
-
             if (user.getRoles().contains(Role.ADMIN)) {
-
                 if (!gridBudgetApproval.asSingleSelect().isEmpty()) {
                     BudgetApproval pp = gridBudgetApproval.asSingleSelect().getValue();
+
                     if (pp.getMaSubmission() == null) {
-                        blo = true;
+                        status = true;
                     } else if (pp.getMaSubmission() == false) {
-                        blo = true;
+                        status = true;
                     } else {
-                        blo = false;
-                    }                    
+                        status = false;
+                    }
+                    if ((pp.getHodSubmission() == null || pp.getHodSubmission() == false)) {
+                        status = false;
+                    }
                     add(new Hr());
-                    addItem("Submit to CFO", e -> e.getItem().ifPresent(person -> {
+                    addItem("Submit to CFO (MA)", e -> e.getItem().ifPresent(person -> {
                         // System.out.printf("Edit: %s%n", person.getFullName());
-                    })).setEnabled(blo);
+                        if (user.getDepartment() != null && !comboBoxBudget.isEmpty() && comboBoxBudget.getValue().isActive()) {
+                            List<BudgetApproval> b = sampleBudgetApprovalService.getBudgetApprovalsByBudget(comboBoxBudget.getValue());
+                            if (sampleBudgetApprovalService.allHodSubmissionsTrue(comboBoxBudget.getValue())) {
+                                sampleBudgetApprovalService.sunmitToCFO(comboBoxBudget.getValue(), user);
+                            } else {
+                                Notificationwarning("Budgeting ongoing");
+                            }
+
+                        } else {
+                            Notificationwarning("User not attached to Department");
+                        }
+                        refreshGrid();
+                    })).setEnabled(status);
+
                 }
 
             }
+            if (user.getRoles().contains(Role.ADMIN)) {
+                if (!gridBudgetApproval.asSingleSelect().isEmpty()) {
+                    BudgetApproval pp = gridBudgetApproval.asSingleSelect().getValue();
+
+                    if (pp.getMaSubmission() == null) {
+                        status = true;
+                    } else if (pp.getMaSubmission() == false) {
+                        status = true;
+                    } else {
+                        status = false;
+                    }
+                    if ((pp.getHodSubmission() == null || pp.getHodSubmission() == false)) {
+                        status = false;
+                    } else if(pp.getMaApproval()==null||pp.getMaApproval()==true){
+                        status = false;
+                    }else if(pp.getCfoSubmission()==null||pp.getCfoSubmission()==true){
+                        status = false;
+                    }
+                    add(new Hr());
+                    addItem("Withdraw Submission (MA)", e -> e.getItem().ifPresent(person -> {
+                        // System.out.printf("Edit: %s%n", person.getFullName());
+                        if (user.getDepartment() != null && !comboBoxBudget.isEmpty() && comboBoxBudget.getValue().isActive()) {
+                            List<BudgetApproval> b = sampleBudgetApprovalService.getBudgetApprovalsByBudget(comboBoxBudget.getValue());
+                            if (sampleBudgetApprovalService.allHodSubmissionsTrue(comboBoxBudget.getValue())) {
+                                sampleBudgetApprovalService.UnsunmitToCFO(comboBoxBudget.getValue(), user);
+                            } else {
+                                Notificationwarning("Budgeting ongoing");
+                            }
+
+                        } else {
+                            Notificationwarning("User not attached to Department");
+                        }
+                        refreshGrid();
+                    })).setEnabled(status);
+
+                }
+
+            }            
 
             if (user.getRoles().contains(Role.CFO)) {
-
                 if (!gridBudgetApproval.asSingleSelect().isEmpty()) {
                     BudgetApproval pp = gridBudgetApproval.asSingleSelect().getValue();
                     if (pp.getCfoSubmission() == null) {
-                        blo = true;
+                        status = true;
                     } else if (pp.getCfoSubmission() == false) {
-                        blo = true;
+                        status = true;
                     } else {
-                        blo = false;
-                    }                    
+                        status = false;
+                    }
                     add(new Hr());
-                    addItem("Submit to MD", e -> e.getItem().ifPresent(person -> {
+                    addItem("Submit to MD (CFO)", e -> e.getItem().ifPresent(person -> {
                         // System.out.printf("Edit: %s%n", person.getFullName());
-                    })).setEnabled(blo);
-                }
+                        if (user.getDepartment() != null && !comboBoxBudget.isEmpty() && comboBoxBudget.getValue().isActive()) {
+                            List<BudgetApproval> b = sampleBudgetApprovalService.getBudgetApprovalsByBudget(comboBoxBudget.getValue());
+                            if (sampleBudgetApprovalService.allCfoSubmissionsTrue(comboBoxBudget.getValue())) {
+                                sampleBudgetApprovalService.sunmitToMD(comboBoxBudget.getValue(), user);
+                            } else {
+                                Notificationwarning("Budgeting ongoing");
+                            }
 
+                        } else {
+                            Notificationwarning("User not attached to Department");
+                        }
+                        refreshGrid();
+                    })).setEnabled(status);
+                }
+            }
+
+            if (user.getRoles().contains(Role.CFO)) {
+                if (!gridBudgetApproval.asSingleSelect().isEmpty()) {
+                    BudgetApproval pp = gridBudgetApproval.asSingleSelect().getValue();
+
+                    if ((pp.getCfoSubmission() == null || pp.getCfoSubmission() == false) && (pp.getBudget().isActive())) {
+                        status = false;
+                    } else if(pp.getMaApproval()==true){
+                        status = false;
+                    }else{
+                       status = true; 
+                    }
+                    add(new Hr());
+                    addItem("Withdraw Budget to make changes (CFO)", e -> e.getItem().ifPresent(person -> {
+                        // System.out.printf("Edit: %s%n", person.getFullName());
+                        if (user.getDepartment() != null && !comboBoxBudget.isEmpty() && comboBoxBudget.getValue().isActive()&&pp.getMaApproval()==false) {
+                            List<BudgetApproval> b = sampleBudgetApprovalService.getBudgetApprovalsByBudget(comboBoxBudget.getValue());
+                            if (sampleBudgetApprovalService.findIfMDUnapproved(comboBoxBudget.getValue()) == true) {
+                                sampleBudgetApprovalService.UnsunmitToMD(comboBoxBudget.getValue(), user);
+                            } else {
+                                Notificationwarning("Budgeting Stopped");
+                            }
+
+                        } else {
+                            Notificationwarning("User not attached to Department");
+                        }
+                        refreshGrid();
+                    })
+                    ).setEnabled(status);
+                }
             }
 
             if (user.getRoles().contains(Role.MD)) {
                 if (!gridBudgetApproval.asSingleSelect().isEmpty()) {
                     BudgetApproval pp = gridBudgetApproval.asSingleSelect().getValue();
                     if (pp.getMaApproval() == null) {
-                        blo = true;
+                        status = true;
                     } else if (pp.getMaApproval() == false) {
-                        blo = true;
+                        status = true;
                     } else {
-                        blo = false;
-                    }                    
+                        status = false;
+                    }
+                    if(pp.getCfoSubmission()==null||pp.getCfoSubmission()==false){
+                        status = false;
+                    }
                     add(new Hr());
-                    addItem("Approve Budget", e -> e.getItem().ifPresent(person -> {
+                    addItem("Approve Budget (MD)", e -> e.getItem().ifPresent(person -> {
                         // System.out.printf("Edit: %s%n", person.getFullName());
-                    })).setEnabled(blo);
-                }
+                        if (user.getDepartment() != null && !comboBoxBudget.isEmpty() && comboBoxBudget.getValue().isActive()) {
+                            List<BudgetApproval> b = sampleBudgetApprovalService.getBudgetApprovalsByBudget(comboBoxBudget.getValue());
+                            if (sampleBudgetApprovalService.allMdApproveTrue(comboBoxBudget.getValue())) {
+                                sampleBudgetApprovalService.Approve(comboBoxBudget.getValue(), user);
+                            } else {
+                                Notificationwarning("Budgeting ongoing");
+                            }
 
+                        } else {
+                            Notificationwarning("User not attached to Department");
+                        }
+                        refreshGrid();
+                    })).setEnabled(status);
+                }
+            }
+
+            if (user.getRoles().contains(Role.MD)) {
+                if (!gridBudgetApproval.asSingleSelect().isEmpty()) {
+                    BudgetApproval pp = gridBudgetApproval.asSingleSelect().getValue();
+
+                    /*                    if (pp.getBudget().isActive()) {
+                    status = false;
+                    }else*/ if ((pp.getMaApproval() == null || pp.getMaApproval() == false) && (pp.getBudget().isActive())) {
+                        status = false;
+                    } else {
+                        status = true;
+                    }
+                    add(new Hr());
+                    addItem("Un Approve Budget (MD)", e -> e.getItem().ifPresent(person -> {
+                        // System.out.printf("Edit: %s%n", person.getFullName());
+                        if (user.getDepartment() != null && !comboBoxBudget.isEmpty() && comboBoxBudget.getValue().isActive()) {
+                            sampleBudgetApprovalService.UnApprove(comboBoxBudget.getValue(), user);
+
+                        } else {
+                            Notificationwarning("User not attached to Department");
+                        }
+                        refreshGrid();
+                    })).setEnabled(status);
+                }
             }
 
         }
@@ -808,6 +1024,75 @@ public final class ApprovalView extends Div {
             }
 
         }
+
+        private ComponentRenderer<Button, UrDepartmentsAnlDim2> createActionRenderer() {
+            return new ComponentRenderer<>(person -> {
+
+                Button editButton = new Button("Submit");
+                Set<UrDepartmentsAnlDim2> sorteDepartmentsAnlDim2s = new HashSet<>();
+                Optional<DeptSectionMerger> samOptional = sampleDeptSectionMergerService.findByDeptcodeCustom(person.getAnlCode());
+                if (samOptional.isPresent()) {
+                    DeptSectionMerger ff = samOptional.get();
+                    boolean stat = true;
+                    for (String fe : ff.getSectioncodes()) {
+                        BudgetApproval b = sampleBudgetApprovalService.findTopByBudgetAndSectionOrderByBloSubmissionDateDesc(comboBoxBudget.getValue(), sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE(fe));
+                        if (b != null) {
+                            if (b.getBloSubmission() == null || b.getBloSubmission() == false) {
+                                stat = false;
+                                break;
+                            }
+                        }
+                    }
+                    boolean stat2 = true;
+                    for (String fe : ff.getSectioncodes()) {
+                        BudgetApproval b = sampleBudgetApprovalService.findTopByBudgetAndSectionOrderByBloSubmissionDateDesc(comboBoxBudget.getValue(), sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE(fe));
+                        if (b != null) {
+                            Boolean hodSubmission = b.getHodSubmission();
+                            if (hodSubmission == null || !hodSubmission) {
+                                stat2 = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (!stat) {
+                        editButton.setText("BLO Submission Pending");
+                        editButton.setEnabled(false);
+                    }
+                    if (stat2) {
+                        editButton.setText("Already Submitted");
+                        editButton.setEnabled(false);
+                    }
+
+                }
+
+                editButton.addSingleClickListener(event -> {
+                    if (samOptional.isPresent()) {
+                        DeptSectionMerger ff = samOptional.get();
+                        for (String fe : ff.getSectioncodes()) {
+                            //UrcDeptSectionAnlDimbgt sec = sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE(fe);
+                            BudgetApproval b = sampleBudgetApprovalService.findTopByBudgetAndSectionOrderByBloSubmissionDateDesc(comboBoxBudget.getValue(), sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE(fe));
+
+                            b.setHodSubmission(Boolean.TRUE);
+                            b.setHodSubmissionDate(LocalDateTime.now());
+
+                            BudgetApprovalMessages newMessage = new BudgetApprovalMessages();
+                            newMessage.setApprover(user);
+                            newMessage.setBudgetApproval(b);
+                            newMessage.setSentDate(LocalDateTime.now());
+                            newMessage.setMessage(b.getSection().getNAME() + " Budget Submitted to HOD");
+                            sampleBudgetApprovalService.saveBudgetApproval(b);
+                            sampleBudgetApprovalMessagesServiceImpl.saveMessage(newMessage);
+                        }
+                    }
+
+                    refreshGrid();
+                    event.getSource().setEnabled(false);
+                    event.getSource().setText("Already Submitted");
+                });
+                return editButton;
+            });
+        }
+
     }
 
 }

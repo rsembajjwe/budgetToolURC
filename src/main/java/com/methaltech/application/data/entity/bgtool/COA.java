@@ -75,5 +75,6 @@ class COA {
     @ManyToMany(cascade = CascadeType.MERGE, fetch = FetchType.EAGER)
     @JoinTable(name = "coa_deptsection")
     private Set<UrcDeptSectionAnlDimbgt> deptsection;
+    String statCode;
    
 }

@@ -28,8 +28,15 @@ public interface DeptSectionMergerRepository extends JpaRepository<DeptSectionMe
 
     @Query("SELECT d.deptcode FROM DeptSectionMerger d WHERE EXISTS (SELECT 1 FROM d.sectioncodes s WHERE s = :sectioncode)")
     String findDeptcodeBySectioncode3(@Param("sectioncode") String sectioncode);
-   // List<DeptSectionMerger> findBySectioncodesContaining(String sectionCode);
+    // List<DeptSectionMerger> findBySectioncodesContaining(String sectionCode);
     //List<DeptSectionMerger> findBySectioncodesIn(String sectionCode);
+
     List<DeptSectionMerger> findBySectioncodesIn(List<String> sectionCodes);
+
+    @Query("SELECT dsm FROM DeptSectionMerger dsm JOIN dsm.sectioncodes sc WHERE sc = :sectioncode")
+    List<DeptSectionMerger> findBySectionCode(@Param("sectioncode") String sectioncode);
+
+    @Query("SELECT dsm FROM DeptSectionMerger dsm JOIN dsm.sectioncodes sc WHERE sc = :sectioncode")
+    Optional<DeptSectionMerger> findBySectionCode2(@Param("sectioncode") String sectioncode);
 
 }

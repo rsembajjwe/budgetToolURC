@@ -322,8 +322,10 @@ public class BudgetFormView extends Div {
         uploadBudget = new Upload(buffer2);
         Button uploadButtonButton = new Button("Upload Budget...");
         uploadButtonButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        //rectify.setVisible(false);
         rectify.addClickListener(e -> {
-            fixCOA();
+            setStatisticsCode();
+            //fixCOA();
         });
         uploadBudget.setUploadButton(uploadButtonButton);
 
@@ -1415,6 +1417,7 @@ public class BudgetFormView extends Div {
             }
 
         });
+        button.setVisible(false);
         button.addClickListener(e -> {
             fixCOA();
             //fixFundsource();
@@ -4488,6 +4491,31 @@ public class BudgetFormView extends Div {
         } else {
             // Handle the case where cost or qty is null
             System.out.println("Cannot calculate monthly values. Cost or qty is null.");
+        }
+    }
+    public void setStatisticsCode(){
+        List<COA> list=coaService.findAll();
+        for(COA coa:list){
+            if(coa.getCode().trim().equals("111101")){
+                coa.setStatCode("ZFVNR-IMP");
+                coaService.saveCOA(coa);
+            }else if(coa.getCode().trim().equals("111102")){
+                coa.setStatCode("ZFVNR -EXP");
+                coaService.saveCOA(coa);
+            }else if(coa.getCode().trim().equals("111103")){
+                coa.setStatCode("ZFVTN-LC"); 
+                coaService.saveCOA(coa);
+            }else if(coa.getCode().trim().equals("111104")){
+                coa.setStatCode("ZFVSR-IMP");
+                coaService.saveCOA(coa);
+            }else if(coa.getCode().trim().equals("111105")){
+                coa.setStatCode("ZFVSR -EXP"); 
+                coaService.saveCOA(coa);
+            }else if(coa.getCode().trim().equals("111106")){
+                coa.setStatCode("ZFVTSR-LC");  
+                coaService.saveCOA(coa);
+            }
+            
         }
     }
 

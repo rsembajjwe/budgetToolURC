@@ -24,4 +24,8 @@ class BudgetApprovalMessages {
     @ManyToOne
     @JoinColumn(name = "approver_id")
     private User approver;
+        @ManyToOne
+    @JoinColumn(name = "budgetApproval_id")
+    private BudgetApproval budgetApproval;
+
 }
