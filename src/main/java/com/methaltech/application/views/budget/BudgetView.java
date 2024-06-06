@@ -6990,7 +6990,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         List<FreightVolumes> budgetItems = sampleFreightVolumesService.getAllFreightVolumesByBudget(sampleBudget);
 
         for (FreightVolumes k : budgetItems) {
-            String deptCode = "S020";
+            String deptCode = "D0001";
 
             String d_c = "D";
 
@@ -7511,7 +7511,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         List<FreightVolumes> budgetItems = sampleFreightVolumesService.getAllFreightVolumesByBudget(sampleBudget);
 
         for (FreightVolumes k : budgetItems) {
-            String deptCode = "S020";
+            String deptCode = "D0001";
 
             String d_c = "D";
             String fundsource = "";
