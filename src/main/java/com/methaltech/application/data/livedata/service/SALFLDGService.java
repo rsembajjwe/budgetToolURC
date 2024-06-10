@@ -6,6 +6,8 @@ import com.methaltech.application.data.bgtool.repository.BudgetItemsRepository;
 import com.methaltech.application.data.bgtool.repository.CoaRepository;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.COA;
+import com.methaltech.application.data.entity.livedata.SALFLDG;
+import com.methaltech.application.data.livedata.repository.SALFLDGProjection;
 import com.methaltech.application.data.livedata.repository.SALFLDGRepository;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -75,5 +77,49 @@ public class SALFLDGService {
             listcoaList.add(coa);
         }
         return listcoaList;
+    }
+
+    public List<SALFLDG> findByPeriodAndAccntCodeAndAnalT1In(int period, String accntCode, List<String> analT1List) {
+        System.out.println(period + ": Period | " + accntCode + " Account Code | " + analT1List + " Sections");
+        List<SALFLDG> nn = salfldgRepository.findByPeriodAndAccntCodeAndAnalT1In(period, accntCode, analT1List);
+        System.out.println(nn.size());
+        for (SALFLDG item : nn) {
+            System.out.println(item.getAccntCode() + " | " + item.getDescriptn() + ": | " + item.getAmount() + " | " + item.getJrnalNo());
+        }
+        return nn;
+    }
+
+    public List<SALFLDG> findByPeriodAndAccntCodeAndAnalT1InZ(int period, String accntCode, List<String> analT1List) {
+        System.out.println(period + ": Period | " + accntCode + " Account Code | " + analT1List + " Sections");
+        List<SALFLDG> nn = salfldgRepository.findByPeriodAndAccntCodeAndAnalT1InZ(period, accntCode, analT1List);
+        System.out.println(nn.size());
+        for (SALFLDG item : nn) {
+            System.out.println(item.getAccntCode() + " | " + item.getDescriptn() + ": | " + item.getAmount() + " | " + item.getJrnalNo());
+        }
+        return nn;
+    }
+
+    public List<SALFLDG> findByPeriodAndAccntCodeAndAnalT1In() {
+        List<SALFLDG> nn = salfldgRepository.findFixedEntries();
+        System.out.println(nn.size());
+        for (SALFLDG item : nn) {
+            System.out.println(item.getAccntCode() + " | " + item.getDescriptn() + ": | " + item.getAmount() + " | " + item.getJrnalNo());
+        }
+        return nn;
+    }
+
+    public List<SALFLDG> findByPeriodAndAccntCodeAndAnalT1InAll() {
+        List<SALFLDG> nn = salfldgRepository.findAll();
+        /*        System.out.println(nn.size());
+        for(SALFLDG item:nn){
+        System.out.println(item.getAccntCode()+" | "+item.getDescriptn()+": | "+item.getAmount()+" | "+item.getJrnalNo());
+        }*/
+        return nn;
+    }
+
+    public List<SALFLDGProjection> findByPeriodAndAccntCodeAndAnalT1InAllS(int period, String accntCode, List<String> analT1List) {
+        List<SALFLDGProjection> nn = salfldgRepository.findByPeriodAndAccntCodeAndAnalT1InS(period, accntCode, analT1List);
+
+        return nn;
     }
 }
