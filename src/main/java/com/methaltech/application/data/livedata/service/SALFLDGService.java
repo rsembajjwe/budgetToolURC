@@ -122,4 +122,20 @@ public class SALFLDGService {
 
         return nn;
     }
+        public List<SALFLDGProjection> findByPeriodAndAccntCode(int period, String accntCode) {
+        List<SALFLDGProjection> nn = salfldgRepository.findByPeriodAndAccntCode(period, accntCode);
+
+        return nn;
+    }
+        
+    public List<SALFLDGProjection> findByPeriodAndAccntCodeAndAnalT1InAllS2(List<Integer> period, String accntCode, List<String> analT1List) {
+        List<SALFLDGProjection> nn = salfldgRepository.findByPeriodAndAccntCodeAndAnalT1InS2(period, accntCode, analT1List);
+
+        return nn;
+    }
+        public List<SALFLDGProjection> findByPeriodAndAccntCode2(List<Integer> period, String accntCode) {
+        List<SALFLDGProjection> nn = salfldgRepository.findByPeriodAndAccntCode2(period, accntCode);
+
+        return nn;
+    }        
 }

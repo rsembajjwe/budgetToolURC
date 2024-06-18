@@ -135,6 +135,7 @@ public class UrcProgrammesView extends Div {
     Button deleteA = new Button("Delete");
     Button rectifyA = new Button("Rectify");
     Button saveButton = new Button("Change Programme");
+    Button uploadProgrammeButton = new Button("Upload Programmes...");
 
     public UrcProgrammesView(BudgetService chosenBudgetService, AuthenticatedUser authenticatedUser, UserService userService, URC_Priority_AreasService uRC_Priority_AreasService,
             BudgetItemsService budgetItemsService, Urc_ActivitiesService sampleUrc_ActivitiesService, UrcDeptSectionAnlDimbgtService urcDeptSectionAnlDimbgtService,
@@ -196,6 +197,17 @@ public class UrcProgrammesView extends Div {
                 refreshActGrid(budgetComboBox.getValue(), gridView.asSingleSelect().getValue(), comboBoxD_Section.getSelectedItems().stream().toList());
             }
         });
+        if(user.getRoles().contains(Role.ADMIN)){
+            uploadProgrammeButton.setEnabled(true);
+            uploadProgrammeButton.setVisible(true);
+            save.setEnabled(true);
+            delete.setEnabled(true);
+        }else{
+            uploadProgrammeButton.setEnabled(false);
+            uploadProgrammeButton.setVisible(false);  
+            save.setEnabled(false);
+            delete.setEnabled(false);            
+        }
 
         budgetComboBox.setItems(query -> chosenBudgetService.list(
                 PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
@@ -270,7 +282,7 @@ public class UrcProgrammesView extends Div {
         });
         MultiFileMemoryBuffer buffer = new MultiFileMemoryBuffer();
         uploadProgrammeTemplate = new Upload(buffer);
-        Button uploadProgrammeButton = new Button("Upload Programmes...");
+        
         uploadProgrammeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         uploadProgrammeTemplate.setUploadButton(uploadProgrammeButton);

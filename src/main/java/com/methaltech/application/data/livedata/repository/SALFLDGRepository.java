@@ -73,5 +73,34 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
             @Param("period") int period, 
             @Param("accntCode") String accntCode, 
             @Param("analT1") List<String> analT1);
+    
+    @Query(value = "SELECT ACCNT_CODE AS accntCode, JRNAL_NO AS jrnalNo, AMOUNT AS amount, DESCRIPTN AS descriptn, " +
+                   "TRANS_DATETIME AS transDatetime, ANAL_T1 AS analT1 " +
+                   "FROM URC_A_SALFLDG_View " +
+                   "WHERE PERIOD IN :period " +
+                   "AND ACCNT_CODE = :accntCode " +
+                   "AND ANAL_T1 IN (:analT1)", nativeQuery = true)
+    List<SALFLDGProjection> findByPeriodAndAccntCodeAndAnalT1InS2(
+            @Param("period") List<Integer> period, 
+            @Param("accntCode") String accntCode, 
+            @Param("analT1") List<String> analT1);    
+    
+    @Query(value = "SELECT ACCNT_CODE AS accntCode, JRNAL_NO AS jrnalNo, AMOUNT AS amount, DESCRIPTN AS descriptn, " +
+                   "TRANS_DATETIME AS transDatetime, ANAL_T1 AS analT1 " +
+                   "FROM URC_A_SALFLDG_View " +
+                   "WHERE PERIOD = :period " +
+                   "AND ACCNT_CODE = :accntCode ", nativeQuery = true)
+    List<SALFLDGProjection> findByPeriodAndAccntCode(
+            @Param("period") int period, 
+            @Param("accntCode") String accntCode);    
+    
+    @Query(value = "SELECT ACCNT_CODE AS accntCode, JRNAL_NO AS jrnalNo, AMOUNT AS amount, DESCRIPTN AS descriptn, " +
+                   "TRANS_DATETIME AS transDatetime, ANAL_T1 AS analT1 " +
+                   "FROM URC_A_SALFLDG_View " +
+                   "WHERE PERIOD IN :period " +
+                   "AND ACCNT_CODE = :accntCode ", nativeQuery = true)
+    List<SALFLDGProjection> findByPeriodAndAccntCode2(
+            @Param("period") List<Integer> period, 
+            @Param("accntCode") String accntCode);     
 
 }

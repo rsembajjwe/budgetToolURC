@@ -1,16 +1,20 @@
 package com.methaltech.application.views.actual;
 
+import com.methaltech.application.data.Display;
 import com.methaltech.application.data.PeriodExtractor;
 import com.methaltech.application.data.Role;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
 import com.methaltech.application.data.bgtool.service.BudgetService;
+import com.methaltech.application.data.bgtool.service.CoaService;
 import com.methaltech.application.data.bgtool.service.UrcDeptSectionAnlDimbgtService;
 import com.methaltech.application.data.bgtool.service.UserService;
 import com.methaltech.application.data.entity.bgtool.Budget;
+import com.methaltech.application.data.entity.bgtool.BudgetItems;
 import com.methaltech.application.data.entity.bgtool.BudgetItemsActuals;
 import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.User;
+import com.methaltech.application.data.livedata.repository.SALFLDGProjection;
 import com.methaltech.application.data.livedata.service.SALFLDGService;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.MainLayout;
@@ -22,7 +26,10 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.dependency.Uses;
+import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.dialog.DialogVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -49,16 +56,21 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
@@ -177,17 +189,22 @@ public class ActualView extends Div {
     Button downloadWorkplan = new Button("Download Annual", new Icon(VaadinIcon.DOWNLOAD));
     Button downloadWorkplan2 = new Button("Download Qtr", new Icon(VaadinIcon.DOWNLOAD));
     PeriodExtractor gen = new PeriodExtractor();
+    private final CoaService sampleCoaService;
+    private Span footerTotal = new Span("");
 
     @Autowired
 
     public ActualView(SALFLDGService sampleSALFLDGService, BudgetItemsService budgetItemsService, AuthenticatedUser authenticatedUser,
-            UserService samplePersonService, BudgetService sampleBudgetService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService) {
+            UserService samplePersonService, BudgetService sampleBudgetService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService,
+            CoaService sampleCoaService) {
         this.sampleSALFLDGService = sampleSALFLDGService;
         this.budgetItemsService = budgetItemsService;
         this.authenticatedUser = authenticatedUser;
         this.samplePersonService = samplePersonService;
         this.sampleBudgetService = sampleBudgetService;
         this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
+        this.sampleCoaService = sampleCoaService;
+
         //this.setSizeFull();
         gridBudgetItems.setHeightFull();
 
@@ -334,7 +351,10 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getJulA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.addItem(yearString2(setFY(urcActivity.getBudget()), "Jul Actual ") + "Transactions", e -> {
+                createTransactionsDialog(urcActivity, "July", "Jul");
+            });
             return span;
 
         })).setHeader(julActualSpan).setWidth("150px");
@@ -361,7 +381,10 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getAugA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.addItem(yearString2(setFY(urcActivity.getBudget()), "Aug Actual ") + "Transactions", e -> {
+                createTransactionsDialog(urcActivity, "August", "Aug");
+            });
             return span;
 
         })).setHeader(augActualSpan).setWidth("150px");
@@ -378,7 +401,10 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getSepA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.addItem(yearString2(setFY(urcActivity.getBudget()), "Sep Actual ") + "Transactions", e -> {
+                createTransactionsDialog(urcActivity, "September", "Sep");
+            });
             return span;
 
         })).setHeader(sepActualSpan).setWidth("150px");
@@ -395,7 +421,10 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getOctA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.addItem(yearString2(setFY(urcActivity.getBudget()), "Oct Actual ") + "Transactions", e -> {
+                createTransactionsDialog(urcActivity, "October", "Oct");
+            });
             return span;
 
         })).setHeader(octActualSpan).setWidth("150px");
@@ -413,7 +442,10 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getNovA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.addItem(yearString2(setFY(urcActivity.getBudget()), "Nov Actual ") + "Transactions", e -> {
+                createTransactionsDialog(urcActivity, "November", "Nov");
+            });
             return span;
 
         })).setHeader(novActualSpan).setWidth("150px");
@@ -431,7 +463,10 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getDecA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.addItem(yearString2(setFY(urcActivity.getBudget()), "Dec Actual ") + "Transactions", e -> {
+                createTransactionsDialog(urcActivity, "December", "Dec");
+            });
             return span;
 
         })).setHeader(decActualSpan).setWidth("150px");
@@ -449,7 +484,10 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getJanA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.addItem(yearString2(setFY(urcActivity.getBudget()), "Jan Actual ") + "Transactions", e -> {
+                createTransactionsDialog(urcActivity, "January", "Jan");
+            });
             return span;
 
         })).setHeader(janActualSpan).setWidth("150px");
@@ -467,7 +505,10 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getFebA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.addItem(yearString2(setFY(urcActivity.getBudget()), "Feb Actual ") + "Transactions", e -> {
+                createTransactionsDialog(urcActivity, "Febuary", "Feb");
+            });
             return span;
 
         })).setHeader(febActualSpan).setWidth("150px");
@@ -485,7 +526,10 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getMarA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.addItem(yearString2(setFY(urcActivity.getBudget()), "Mar Actual ") + "Transactions", e -> {
+                createTransactionsDialog(urcActivity, "March", "Mar");
+            });
             return span;
 
         })).setHeader(marActualSpan).setWidth("150px");
@@ -503,7 +547,10 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getAprA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.addItem(yearString2(setFY(urcActivity.getBudget()), "Apr Actual ") + "Transactions", e -> {
+                createTransactionsDialog(urcActivity, "April", "Apr");
+            });
             return span;
 
         })).setHeader(aprActualSpan).setWidth("150px");
@@ -521,7 +568,10 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getMayA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.addItem(yearString2(setFY(urcActivity.getBudget()), "May Actual ") + "Transactions", e -> {
+                createTransactionsDialog(urcActivity, "May", "May");
+            });
             return span;
 
         })).setHeader(mayActualSpan).setWidth("150px");
@@ -539,7 +589,10 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getJunA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge");
-
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.addItem(yearString2(setFY(urcActivity.getBudget()), "Jun Actual ") + "Transactions", e -> {
+                createTransactionsDialog(urcActivity, "June", "Jun");
+            });
             return span;
 
         })).setHeader(junActualSpan).setWidth("150px");
@@ -548,7 +601,10 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getTotal();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge success");
-
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.addItem("Total " + " Budget", e -> {
+                createBudgetDialogTotal(urcActivity, "Total", "Total");
+            });
             return span;
 
         })).setHeader("Total").setFlexGrow(0).setWidth("150px");
@@ -558,7 +614,11 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getTotalA();
             Span span = createSpan(value);
             span.getElement().getThemeList().add("badge success");
+            ContextMenu contextMenu = new ContextMenu(span);
 
+            contextMenu.addItem("Total Transactions", e -> {
+                createTransactionsDialog2(urcActivity, "Total");
+            });
             return span;
 
         })).setHeader("Total Actual").setFlexGrow(0).setWidth("150px");
@@ -716,7 +776,7 @@ public class ActualView extends Div {
         if (budget.isEmpty()) {
             return month;
         } else {
-            int y = extra.generateYear(fy, month.substring(0, 3)) - 1;
+            int y = extra.generateYear(fy, month.substring(0, 3));
             return month + " (" + y + ")";
         }
     }
@@ -1503,6 +1563,1055 @@ public class ActualView extends Div {
             ((XSSFSheet) sheet).addMergedRegion(region);
         } else if (sheet instanceof HSSFSheet) {
             ((HSSFSheet) sheet).addMergedRegion(region);
+        }
+    }
+
+    public Dialog createTransactionsDialog(BudgetItemsActuals target, String month, String month2) {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle(target.getCoacode().getCode() + " " + month + " Transactions " + extra.getPreviousFy(target.getBudget().getFinancialYear()));
+
+        Grid<SALFLDGProjection> gridTransactions = new Grid<>(SALFLDGProjection.class, false);
+        gridTransactions.setSelectionMode(Grid.SelectionMode.SINGLE);
+        gridTransactions.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
+
+        // Columns
+        gridTransactions.addColumn(SALFLDGProjection::getAccntCode)
+                .setHeader("Code")
+                .setWidth("80px")
+                .setFlexGrow(0)
+                .setSortable(true).setTooltipGenerator(trans -> {
+            COA coa = sampleCoaService.findByCodeAndBudget(trans.getAccntCode(), budget.getValue());
+            return coa.getName();
+        });
+
+        gridTransactions.addColumn(SALFLDGProjection::getDescriptn).setHeader("Name").setFrozenToEnd(true);
+
+        gridTransactions.addColumn(SALFLDGProjection::getJrnalNo)
+                .setHeader("Journal No.")
+                .setWidth("80px")
+                .setFlexGrow(0);
+
+        List<SALFLDGProjection> items = refreshgridTransactions(target.getBudget().getFinancialYear(), target.getCoacode().getCode(), month2);
+        footerTotal.setText("Total: " + sumAmounts(items));
+        footerTotal.getStyle().set("text-align", "right").set("font-weight", "bold");
+
+        gridTransactions.addColumn(salfldg -> {
+            BigDecimal amount = salfldg.getAmount();
+            return amount != null ? formatAmount(amount) : "";
+        }).setHeader("Amount").setAutoWidth(true).setFooter(footerTotal);
+        gridTransactions.addColumn(SALFLDGProjection::getTransDatetime).setHeader("Trans Date");
+        gridTransactions.addColumn(SALFLDGProjection::getAnalT1).setHeader("Section").setTooltipGenerator(trans -> {
+            String sectcode = trans.getAnalT1();
+            if (sectcode == null || sectcode.trim() == "") {
+                return "_";
+            } else {
+                // return sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE(trans.getAnalT1()).getNAME();
+
+                return sectcode;
+            }
+
+        });
+
+        gridTransactions.getStyle().set("width", "100%").set("max-width", "100%");
+        gridTransactions.setSelectionMode(Grid.SelectionMode.SINGLE);
+        gridTransactions.setItems(items);
+
+        // Buttons
+        Button filterButton = new Button("Close", new Icon(VaadinIcon.CLOSE), ef -> dialog.close());
+        filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button downloadButton = new Button("Download", new Icon(VaadinIcon.ENVELOPE_O), ef
+                -> {
+            // List<SALFLDGProjection>  items2 = refreshgridTransactions(target.getBudget().getFinancialYear(), target.getCoacode().getCode(), month2);
+            exportAndDownloadExcelTransactionDetails(budget.getValue(), target.getCoacode(), items, month);
+            dialog.close();
+        });
+        dialog.getFooter().add(filterButton, downloadButton);
+
+        dialog.addThemeVariants(DialogVariant.LUMO_NO_PADDING);
+        dialog.add(gridTransactions);
+        dialog.setWidth("80%");
+        dialog.open();
+
+        return dialog;
+    }
+
+    public Dialog createTransactionsDialog2(BudgetItemsActuals target, String month) {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle(target.getCoacode().getCode() + " Total Transactions " + extra.getPreviousFy(target.getBudget().getFinancialYear()));
+
+        Grid<SALFLDGProjection> gridTransactions = new Grid<>(SALFLDGProjection.class, false);
+        gridTransactions.setSelectionMode(Grid.SelectionMode.SINGLE);
+        gridTransactions.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
+
+        // Columns
+        gridTransactions.addColumn(SALFLDGProjection::getAccntCode)
+                .setHeader("Code")
+                .setWidth("80px")
+                .setFlexGrow(0)
+                .setSortable(true).setTooltipGenerator(trans -> {
+            COA coa = sampleCoaService.findByCodeAndBudget(trans.getAccntCode(), budget.getValue());
+            return coa.getName();
+        });
+
+        gridTransactions.addColumn(SALFLDGProjection::getDescriptn).setHeader("Name").setFrozenToEnd(true);
+
+        gridTransactions.addColumn(SALFLDGProjection::getJrnalNo)
+                .setHeader("Journal No.")
+                .setWidth("80px")
+                .setFlexGrow(0);
+
+        List<SALFLDGProjection> items = refreshgridTransactions2(target.getBudget().getFinancialYear(), target.getCoacode().getCode());
+        footerTotal.setText("Total: " + sumAmounts(items));
+        footerTotal.getStyle().set("text-align", "right").set("font-weight", "bold");
+
+        gridTransactions.addColumn(salfldg -> {
+            BigDecimal amount = salfldg.getAmount();
+            return amount != null ? formatAmount(amount) : "";
+        }).setHeader("Amount").setAutoWidth(true).setFooter(footerTotal);
+        gridTransactions.addColumn(SALFLDGProjection::getTransDatetime).setHeader("Trans Date");
+        gridTransactions.addColumn(SALFLDGProjection::getAnalT1).setHeader("Section").setTooltipGenerator(trans -> {
+            String sectcode = trans.getAnalT1();
+            if (sectcode == null || sectcode.trim() == "") {
+                return "_";
+            } else {
+                // return sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE(trans.getAnalT1()).getNAME();
+
+                return sectcode;
+            }
+
+        });
+
+        gridTransactions.getStyle().set("width", "100%").set("max-width", "100%");
+        gridTransactions.setSelectionMode(Grid.SelectionMode.SINGLE);
+        gridTransactions.setItems(items);
+
+        // Buttons
+        Button filterButton = new Button("Close", new Icon(VaadinIcon.CLOSE), ef -> dialog.close());
+        filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button downloadButton = new Button("Download", new Icon(VaadinIcon.ENVELOPE_O), ef
+                -> {
+            // List<SALFLDGProjection>  items2 = refreshgridTransactions(target.getBudget().getFinancialYear(), target.getCoacode().getCode(), month2);
+            exportAndDownloadExcelTransactionDetails(budget.getValue(), target.getCoacode(), items, month);
+            dialog.close();
+        });
+        dialog.getFooter().add(filterButton, downloadButton);
+
+        dialog.addThemeVariants(DialogVariant.LUMO_NO_PADDING);
+        dialog.add(gridTransactions);
+        dialog.setWidth("80%");
+        dialog.open();
+
+        return dialog;
+    }
+
+    // Define a method to format the amount
+    public List<SALFLDGProjection> refreshgridTransactions(String financialYear, String coacode, String month) {
+        UrcDeptSectionAnlDimbgt freightAnlDimbgt = sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE("S020");
+        UrcDeptSectionAnlDimbgt propertymgt = sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE("S004");
+
+        System.out.println(freightAnlDimbgt + " | " + propertymgt);
+
+        COA coa = sampleCoaService.findByCodeAndBudget(coacode, budget.getValue());
+        List<String> selectedAnlCodes = comboBoxD_Section.getSelectedItems().stream()
+                .map(UrcDeptSectionAnlDimbgt::getANL_CODE)
+                .map(String::trim)
+                .collect(Collectors.toList());
+
+        int period = extra.generateCurrentPeriod(financialYear, month);
+        //  period = extra.generateCurrentPeriod(month, month).generatePreviousPeriod(financialYear, month);
+        List<SALFLDGProjection> lis = new ArrayList<>();
+
+        if (comboBoxD_Section.getValue().contains(freightAnlDimbgt) && (coa.getDisplay() == Display.FREIGHT || coa.getCode().contains("111109") || coa.getCode().contains("111110"))) {
+            lis = sampleSALFLDGService.findByPeriodAndAccntCode(period, coacode.trim());
+        } else if (comboBoxD_Section.getValue().contains(propertymgt) && (coa.getCode().contains("111401") || coa.getCode().contains("111402") || coa.getCode().contains("111403") || coa.getCode().contains("111404") || coa.getCode().contains("111406") || coa.getCode().contains("111407"))) {
+            lis = sampleSALFLDGService.findByPeriodAndAccntCode(period, coacode.trim());
+        } else {
+            lis = sampleSALFLDGService.findByPeriodAndAccntCodeAndAnalT1InAllS(period, coacode.trim(), selectedAnlCodes);
+        }
+
+        return lis;
+    }
+
+    public List<SALFLDGProjection> refreshgridTransactions2(String financialYear, String coacode) {
+        UrcDeptSectionAnlDimbgt freightAnlDimbgt = sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE("S020");
+        UrcDeptSectionAnlDimbgt propertymgt = sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE("S004");
+
+        System.out.println(freightAnlDimbgt + " | " + propertymgt);
+
+        COA coa = sampleCoaService.findByCodeAndBudget(coacode, budget.getValue());
+        List<String> selectedAnlCodes = comboBoxD_Section.getSelectedItems().stream()
+                .map(UrcDeptSectionAnlDimbgt::getANL_CODE)
+                .map(String::trim)
+                .collect(Collectors.toList());
+
+        // int period = extra.generateCurrentPeriod(financialYear, month);
+        List<Integer> period = extra.getListOfCurrentPeriodByFY(financialYear);
+        //  period = extra.generateCurrentPeriod(month, month).generatePreviousPeriod(financialYear, month);
+        List<SALFLDGProjection> lis = new ArrayList<>();
+
+        if (comboBoxD_Section.getValue().contains(freightAnlDimbgt) && (coa.getDisplay() == Display.FREIGHT || coa.getCode().contains("111109") || coa.getCode().contains("111110"))) {
+            lis = sampleSALFLDGService.findByPeriodAndAccntCode2(period, coacode.trim());
+        } else if (comboBoxD_Section.getValue().contains(propertymgt) && (coa.getCode().contains("111401") || coa.getCode().contains("111402") || coa.getCode().contains("111403") || coa.getCode().contains("111404") || coa.getCode().contains("111406") || coa.getCode().contains("111407"))) {
+            lis = sampleSALFLDGService.findByPeriodAndAccntCode2(period, coacode.trim());
+        } else {
+            lis = sampleSALFLDGService.findByPeriodAndAccntCodeAndAnalT1InAllS2(period, coacode.trim(), selectedAnlCodes);
+        }
+
+        return lis;
+    }
+
+    private void exportAndDownloadExcelTransactionDetails(Budget budget, COA coa, List<SALFLDGProjection> list, String month) {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet(coa.getCode() + " " + month + " Transactions " + budget.getFinancialYear());
+            // Set the paper size to A3 Landscape
+            sheet.getPrintSetup().setPaperSize(PrintSetup.A3_PAPERSIZE);
+            sheet.getPrintSetup().setLandscape(true);
+            createTransactionDetails(workbook, sheet, coa, list);
+            //createDataRows(sheet, people);
+
+            // Write the workbook to a byte array
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+
+            // Create a StreamResource with the Excel data
+            StreamResource resource = new StreamResource(coa.getCode() + " " + month + " Transactions " + budget.getFinancialYear() + ".xlsx", ()
+                    -> new ByteArrayInputStream(outputStream.toByteArray()));
+
+            // Create an Anchor component with the StreamResource
+            Anchor downloadLink = new Anchor(resource, "");
+            downloadLink.getElement().setAttribute("download", true);
+            add(downloadLink);
+            // Programmatically click the download link to initiate the download
+            downloadLink.getElement().callJsFunction("click");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createTransactionDetails(Workbook workbook, Sheet sheet, COA coa, List<SALFLDGProjection> list) {
+        short rowHeight = 500;
+        short tr = 0;
+        Font fontBold2 = workbook.createFont();
+        fontBold2.setFontName("Arial");
+        fontBold2.setFontHeightInPoints((short) 10);
+        fontBold2.setBold(false);
+
+        Font fontBold = workbook.createFont();
+        fontBold.setFontName("Arial");
+        fontBold.setFontHeightInPoints((short) 10);
+        fontBold.setBold(true);
+
+        CellStyle style = workbook.createCellStyle();
+        style.setFillForegroundColor(IndexedColors.RED.index);
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setWrapText(true);
+        style.setFont(fontBold);
+
+        CellStyle styleq = workbook.createCellStyle();
+        styleq.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.index);
+        styleq.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        styleq.setAlignment(HorizontalAlignment.CENTER);
+        styleq.setVerticalAlignment(VerticalAlignment.CENTER);
+        styleq.setWrapText(true);
+        styleq.setFont(fontBold);
+
+        CellStyle styleq2 = workbook.createCellStyle();
+        styleq2.setFillForegroundColor(IndexedColors.LIGHT_CORNFLOWER_BLUE.index);
+        styleq2.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        styleq2.setAlignment(HorizontalAlignment.CENTER);
+        styleq2.setVerticalAlignment(VerticalAlignment.CENTER);
+        styleq2.setWrapText(true);
+        styleq2.setFont(fontBold);
+
+        CellStyle styleq31 = workbook.createCellStyle();
+        styleq31.setAlignment(HorizontalAlignment.CENTER);
+        styleq31.setVerticalAlignment(VerticalAlignment.CENTER);
+        styleq31.setWrapText(true);
+        styleq31.setFont(fontBold);
+
+        CellStyle styleq3 = workbook.createCellStyle();
+        styleq3.setFillForegroundColor(IndexedColors.VIOLET.index);
+        styleq3.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        styleq3.setAlignment(HorizontalAlignment.CENTER);
+        styleq3.setVerticalAlignment(VerticalAlignment.CENTER);
+        styleq3.setWrapText(true);
+        styleq3.setFont(fontBold);
+
+        CellStyle styleq4 = workbook.createCellStyle();
+        styleq4.setFillForegroundColor(IndexedColors.TAN.index);
+        styleq4.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        styleq4.setAlignment(HorizontalAlignment.CENTER);
+        styleq4.setVerticalAlignment(VerticalAlignment.CENTER);
+        styleq4.setWrapText(true);
+        styleq4.setFont(fontBold);
+
+        CellStyle styley = workbook.createCellStyle();
+        styley.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.index);
+        styley.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        styley.setAlignment(HorizontalAlignment.LEFT);
+        styley.setVerticalAlignment(VerticalAlignment.CENTER);
+        styley.setWrapText(true);//styley.setFont(fontBold);
+
+        CellStyle stylegreen = workbook.createCellStyle();
+        stylegreen.setFillForegroundColor(IndexedColors.GREEN.index);
+        stylegreen.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        stylegreen.setAlignment(HorizontalAlignment.CENTER);
+        stylegreen.setVerticalAlignment(VerticalAlignment.CENTER);
+        stylegreen.setFont(fontBold);
+        stylegreen.setWrapText(true);
+        stylegreen.setFont(fontBold);
+
+        CellStyle stylec = workbook.createCellStyle();
+        stylec.setAlignment(HorizontalAlignment.LEFT);
+        stylec.setVerticalAlignment(VerticalAlignment.CENTER);
+        stylec.setWrapText(true);//stylec.setFont(fontBold);
+        stylec.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
+
+        CellStyle stylec2 = workbook.createCellStyle();
+        stylec2.setAlignment(HorizontalAlignment.CENTER);
+        stylec2.setVerticalAlignment(VerticalAlignment.CENTER);
+        stylec2.setWrapText(true);
+        stylec2.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.index);
+        stylec2.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        stylec2.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
+
+        CellStyle stylec1 = workbook.createCellStyle();
+        stylec1.setAlignment(HorizontalAlignment.CENTER);
+        stylec1.setVerticalAlignment(VerticalAlignment.CENTER);
+        stylec1.setWrapText(true);
+        stylec1.setFont(fontBold);
+
+        CellStyle borderedStyle = workbook.createCellStyle();
+        borderedStyle.setBorderTop(BorderStyle.THIN);
+        borderedStyle.setBorderBottom(BorderStyle.THIN);
+        borderedStyle.setBorderLeft(BorderStyle.THIN);
+        borderedStyle.setBorderRight(BorderStyle.THIN);
+        borderedStyle.setAlignment(HorizontalAlignment.CENTER);
+        borderedStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+
+        CellStyle borderedStyleWithColor = workbook.createCellStyle();
+        borderedStyleWithColor.cloneStyleFrom(borderedStyle); // Copy styles from the borderedStyle
+        borderedStyleWithColor.setFillForegroundColor(IndexedColors.RED.index);
+        borderedStyleWithColor.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle style11 = workbook.createCellStyle();
+        style11.setAlignment(HorizontalAlignment.LEFT);
+        style11.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style11.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
+        List<Integer> rowBoldcount = new ArrayList();
+        Row headerRow = sheet.createRow(tr);
+
+        try {
+
+            headerRow.setHeight(rowHeight);
+
+            addImageToHeader(sheet, "/META-INF/resources/images/urclogo.png");
+
+        } catch (IOException ex) {
+            Logger.getLogger(BudgetReportsView.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        // Create a cell for the header
+        // Row headerRow = sheet.createRow(0);
+        Cell headerCell = headerRow.createCell(1);
+        headerCell.setCellValue("UGANDA RAILWAYS CORPORATION");
+        headerCell.setCellStyle(styleq31);
+        CellRangeAddress cellRange3 = new CellRangeAddress(tr, tr, 1, 5);
+        sheet.addMergedRegion(cellRange3);
+        setBottomBorderForRegion(sheet, cellRange3);
+        tr++;
+        Row row0 = sheet.createRow(tr);
+        Cell cellq = row0.createCell((short) 0);
+        row0.getCell(0).setCellStyle(styleq31);
+        cellq.setCellValue("TRANSACTION DETAILS " + budget.getValue().getFinancialYear() + " " + coa.getCode().trim() + " " + coa.getName());
+        CellRangeAddress cellRange4 = new CellRangeAddress(tr, tr, 0, 5);
+        sheet.addMergedRegion(cellRange4);
+        rowBoldcount.add((int) 0);
+        tr++;
+
+        Row row = sheet.createRow(tr);
+        Cell cell = row.createCell((short) 0);
+        row.getCell(0).setCellStyle(styleq31);
+        cell.setCellValue("Code");
+        Cell cell2 = row.createCell((short) 1);
+        row.getCell(1).setCellStyle(styleq31);
+        cell2.setCellValue("Description");
+        Cell cell3 = row.createCell((short) 2);
+        row.getCell(2).setCellStyle(styleq31);
+        cell3.setCellValue("Journal No.");
+        Cell cell4 = row.createCell((short) 3);
+        row.getCell(3).setCellStyle(styleq31);
+        cell4.setCellValue("Amount");
+        Cell cell5 = row.createCell((short) 4);
+        row.getCell(4).setCellStyle(styleq31);
+        cell5.setCellValue("Date");
+
+        Cell cell6 = row.createCell((short) 5);
+        row.getCell(5).setCellStyle(styleq31);
+        cell6.setCellValue("Section");
+
+        rowBoldcount.add((int) 1);
+        CreationHelper createHelper = workbook.getCreationHelper();
+        CellStyle dateCellStyle = workbook.createCellStyle();
+        dateCellStyle.setDataFormat(createHelper.createDataFormat().getFormat("yyyy-MM-dd"));
+
+// Format for dates, e.g., "yyyy-MM-dd" or any other format you need
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+        for (SALFLDGProjection h : list) {
+            tr++;
+            short tc = 0;
+            Row rowx1 = sheet.createRow(tr);
+            rowx1.createCell((short) tc).setCellValue(h.getAccntCode());
+            rowx1.getCell(tc).setCellStyle(stylec);
+            tc++;
+            rowx1.createCell((short) tc).setCellValue(h.getDescriptn());
+
+            rowx1.getCell(tc).setCellStyle(stylec);
+            tc++;
+            rowx1.createCell((short) tc).setCellValue(h.getJrnalNo() + " ");
+            rowx1.getCell(tc).setCellStyle(stylec);
+            tc++;
+            rowx1.createCell((short) tc).setCellValue(h.getAmount().doubleValue());
+            rowx1.getCell(tc).setCellStyle(stylec);
+            tc++;
+
+            if (h.getTransDatetime() != null) {
+                rowx1.createCell(tc).setCellValue(h.getTransDatetime());
+                rowx1.getCell(tc).setCellStyle(dateCellStyle);
+            } else {
+                rowx1.createCell(tc).setCellValue("");
+                rowx1.getCell(tc).setCellStyle(stylec);
+            }
+            /*            rowx1.createCell((short) tc).setCellValue(h.getTransDatetime());
+                rowx1.getCell(tc).setCellStyle(stylec);*/
+            tc++;
+            rowx1.createCell((short) tc).setCellValue(h.getAnalT1() + " ");
+            rowx1.getCell(tc).setCellStyle(stylec);
+
+        }
+        // Add a row for the total amount using a formula
+        Row totalRow = sheet.createRow(++tr);
+        short tc = 0;
+        totalRow.createCell(tc).setCellValue("Total");
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        totalRow.createCell(tc).setCellValue("");
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        totalRow.createCell(tc).setCellValue("");
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+
+        // Set the formula for summing up the amount column
+        String amountColumnRange = String.format("D2:D%d", tr); // Assuming the Amount column is the 4th column (index 3)
+        totalRow.createCell(tc).setCellFormula(String.format("SUM(%s)", amountColumnRange));
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        totalRow.createCell(tc).setCellValue("");
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        totalRow.createCell(tc).setCellValue("");
+        totalRow.getCell(tc).setCellStyle(stylec);
+
+        for (int i = 0; i < sheet.getRow(0).getLastCellNum(); i++) {
+            sheet.autoSizeColumn(i);
+        }
+        int y = 0;
+        for (Row currentRow : sheet) {
+            y++;
+            if (currentRow == null) {
+                continue;
+            }
+
+            for (Cell currentCell : currentRow) {
+                if (currentCell == null) {
+                    continue;
+                }
+                if (y > 1) {
+// Get the existing cell style
+                    CellStyle existingStyle = currentCell.getCellStyle();
+
+// Create a new style that combines the existing style with the border style
+                    CellStyle newStyle = sheet.getWorkbook().createCellStyle();
+                    newStyle.cloneStyleFrom(existingStyle);
+                    newStyle.setBorderTop(BorderStyle.THIN);
+                    newStyle.setBorderBottom(BorderStyle.THIN);
+                    newStyle.setBorderLeft(BorderStyle.THIN);
+                    newStyle.setBorderRight(BorderStyle.THIN);
+                    newStyle.setTopBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setBottomBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setLeftBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setRightBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setWrapText(true);
+
+                    currentCell.setCellStyle(newStyle);
+                }
+
+            }
+        }
+    }
+
+    public String sumAmounts(List<SALFLDGProjection> projections) {
+        BigDecimal sum = BigDecimal.ZERO;
+        for (SALFLDGProjection projection : projections) {
+            sum = sum.add(projection.getAmount());
+        }
+        String sums = decimalFormat.format(sum);
+        if (sum == null) {
+            return "";
+        }
+        if (sum.compareTo(BigDecimal.ZERO) < 0) {
+            sums = decimalFormat.format(sum.abs());
+            return "(" + sums + ")";
+        } else {
+            sums = decimalFormat.format(sum);
+            return "(" + sums + ")";
+        }
+
+    }
+
+    private String formatAmount(BigDecimal amount) {
+        if (amount == null) {
+            return ""; // Return an empty string if amount is null
+        }
+        DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance();
+        symbols.setGroupingSeparator(',');
+        DecimalFormat df = new DecimalFormat("#,##0.00", symbols);
+        return df.format(amount.doubleValue());
+    }
+
+    public Dialog createBudgetDialogTotal(BudgetItemsActuals target, String month, String month2) {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle(target.getCoacode().getCode() + " " + month + " Budget " + extra.getCurrentFy(target.getBudget().getFinancialYear()));
+
+        Grid<BudgetItems> gridTransactions = new Grid<>(BudgetItems.class, false);
+        gridTransactions.setSelectionMode(Grid.SelectionMode.SINGLE);
+        gridTransactions.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
+
+        // Columns
+        gridTransactions.addColumn(budgetItem -> {
+            COA coacode = budgetItem.getCoacode();
+            Text label = new Text(coacode != null ? coacode.getCode() : "");
+            return label.getText(); // Get the text content
+        })
+                .setHeader("Code").setWidth("80px").setFlexGrow(0).setFrozen(true)
+                .setSortable(true) // Make the column sortable
+                .setComparator((budgetItem1, budgetItem2) -> {
+                    // Implement your custom comparator logic here
+                    String name1 = budgetItem1.getCoacode() != null ? budgetItem1.getCoacode().getName() : "";
+                    String name2 = budgetItem2.getCoacode() != null ? budgetItem2.getCoacode().getName() : "";
+                    return name1.compareTo(name2);
+                }).setFrozen(true).setTooltipGenerator(trans -> {
+            return trans.getCoacode().getName();
+        });
+
+        gridTransactions.addColumn(BudgetItems::getItem).setHeader("Name").setFrozen(true).setWidth("200px");
+
+        List<BudgetItems> list = budgetItemsService.findBudgetItemsByBudgetAndCoaAndSectios(target.getBudget(), target.getCoacode(), target.getDeptUnit(), month2);
+        System.out.println(list.size()+" "+target.getBudget().getFinancialYear()+" "+target.getCoacode().getCode()+" "+target.getDeptUnit().size()+" "+month2);
+        //footerTotal.setText("Total: " + sumBudgetAmountsByMonth(list, month2));
+        // footerTotal.getStyle().set("text-align", "right").set("font-weight", "bold");
+        gridTransactions.addColumn(salfldg -> {
+
+            return formatAmount(salfldg.getJul()) + "";
+        }).setHeader("Jul").setAutoWidth(true);
+
+        gridTransactions.addColumn(salfldg -> {
+            return formatAmount(salfldg.getAug()) + "";
+        }).setHeader("Aug").setAutoWidth(true);
+
+        gridTransactions.addColumn(salfldg -> {
+            return formatAmount(salfldg.getSep()) + "";
+        }).setHeader("Sep").setAutoWidth(true);
+
+        gridTransactions.addColumn(salfldg -> {
+            return formatAmount(salfldg.getOct()) + "";
+        }).setHeader("Oct").setAutoWidth(true);
+
+        gridTransactions.addColumn(salfldg -> {
+            return formatAmount(salfldg.getNov()) + "";
+        }).setHeader("Nov").setAutoWidth(true);
+
+        gridTransactions.addColumn(salfldg -> {
+            return formatAmount(salfldg.getDec()) + "";
+        }).setHeader("Dec").setAutoWidth(true);
+
+        gridTransactions.addColumn(salfldg -> {
+            return formatAmount(salfldg.getJan()) + "";
+        }).setHeader("Jan").setAutoWidth(true);
+
+        gridTransactions.addColumn(salfldg -> {
+            return formatAmount(salfldg.getFeb()) + "";
+        }).setHeader("Feb").setAutoWidth(true);
+
+        gridTransactions.addColumn(salfldg -> {
+            return formatAmount(salfldg.getMar()) + "";
+        }).setHeader("Mar").setAutoWidth(true);
+
+        gridTransactions.addColumn(salfldg -> {
+            return formatAmount(salfldg.getApr()) + "";
+        }).setHeader("Apr").setAutoWidth(true);
+
+        gridTransactions.addColumn(salfldg -> {
+            return formatAmount(salfldg.getMay()) + "";
+        }).setHeader("May").setAutoWidth(true);
+
+        gridTransactions.addColumn(salfldg -> {
+            return formatAmount(salfldg.getJun()) + "";
+        }).setHeader("Jun").setAutoWidth(true);
+
+        gridTransactions.addColumn(budgetItem -> {
+            UrcDeptSectionAnlDimbgt coacode = budgetItem.getDeptUnit();
+            Text label = new Text(coacode != null ? coacode.getNAME() : "");
+            return label.getText(); // Get the text content
+        })
+                .setHeader("Code").setWidth("150px").setFlexGrow(0)
+                .setSortable(true) // Make the column sortable
+                .setComparator((budgetItem1, budgetItem2) -> {
+                    // Implement your custom comparator logic here
+                    String name1 = budgetItem1.getCoacode() != null ? budgetItem1.getCoacode().getName() : "";
+                    String name2 = budgetItem2.getCoacode() != null ? budgetItem2.getCoacode().getName() : "";
+                    return name1.compareTo(name2);
+                }).setFrozen(true).setTooltipGenerator(trans -> {
+            return trans.getCoacode().getCode();
+        });
+
+        gridTransactions.getStyle().set("width", "100%").set("max-width", "100%");
+        gridTransactions.setSelectionMode(Grid.SelectionMode.SINGLE);
+        gridTransactions.setItems(list);
+
+        // Buttons
+        Button filterButton = new Button("Close", new Icon(VaadinIcon.CLOSE), ef -> dialog.close());
+        filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button downloadButton = new Button("Download", new Icon(VaadinIcon.ENVELOPE_O), ef
+                -> {
+            List<BudgetItems> list2 = budgetItemsService.findBudgetItemsByBudgetAndCoaAndSectios(target.getBudget(), target.getCoacode(), target.getDeptUnit(), month2);
+
+            exportAndDownloadExcelBudgetDetailsTotal(budget.getValue(), target.getCoacode(), list2, month);
+            dialog.close();
+        });
+        dialog.getFooter().add(filterButton, downloadButton);
+
+        dialog.addThemeVariants(DialogVariant.LUMO_NO_PADDING);
+        dialog.add(gridTransactions);
+        dialog.setWidth("80%");
+        dialog.open();
+
+        return dialog;
+    }
+
+    private void exportAndDownloadExcelBudgetDetailsTotal(Budget budget, COA coa, List<BudgetItems> list, String month) {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet(coa.getCode() + " " + month + " Budget " + budget.getFinancialYear());
+            // Set the paper size to A3 Landscape
+            sheet.getPrintSetup().setPaperSize(PrintSetup.A3_PAPERSIZE);
+            sheet.getPrintSetup().setLandscape(true);
+            createBudgetDetailsTotal(workbook, sheet, coa, list, month);
+            //createDataRows(sheet, people);
+
+            // Write the workbook to a byte array
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+
+            // Create a StreamResource with the Excel data
+            StreamResource resource = new StreamResource(coa.getCode() + " " + month + " Budget " + budget.getFinancialYear() + ".xlsx", ()
+                    -> new ByteArrayInputStream(outputStream.toByteArray()));
+
+            // Create an Anchor component with the StreamResource
+            Anchor downloadLink = new Anchor(resource, "");
+            downloadLink.getElement().setAttribute("download", true);
+            add(downloadLink);
+            // Programmatically click the download link to initiate the download
+            downloadLink.getElement().callJsFunction("click");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createBudgetDetailsTotal(Workbook workbook, Sheet sheet, COA coa, List<BudgetItems> list, String month) {
+
+        short rowHeight = 500;
+        short tr = 0;
+        Font fontBold2 = workbook.createFont();
+        fontBold2.setFontName("Arial");
+        fontBold2.setFontHeightInPoints((short) 10);
+        fontBold2.setBold(false);
+
+        Font fontBold = workbook.createFont();
+        fontBold.setFontName("Arial");
+        fontBold.setFontHeightInPoints((short) 10);
+        fontBold.setBold(true);
+
+        CellStyle style = workbook.createCellStyle();
+        style.setFillForegroundColor(IndexedColors.RED.index);
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setWrapText(true);
+        style.setFont(fontBold);
+
+        CellStyle styleq = workbook.createCellStyle();
+        // styleq.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.index);
+        //styleq.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        styleq.setAlignment(HorizontalAlignment.LEFT);
+        styleq.setVerticalAlignment(VerticalAlignment.BOTTOM);
+        styleq.setWrapText(true);
+        styleq.setFont(fontBold2);
+
+        CellStyle styleq2 = workbook.createCellStyle();
+        styleq2.setFillForegroundColor(IndexedColors.LIGHT_CORNFLOWER_BLUE.index);
+        styleq2.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        styleq2.setAlignment(HorizontalAlignment.CENTER);
+        styleq2.setVerticalAlignment(VerticalAlignment.CENTER);
+        styleq2.setWrapText(true);
+        styleq2.setFont(fontBold);
+
+        CellStyle styleq31 = workbook.createCellStyle();
+        styleq31.setAlignment(HorizontalAlignment.CENTER);
+        styleq31.setVerticalAlignment(VerticalAlignment.CENTER);
+        styleq31.setWrapText(true);
+        styleq31.setFont(fontBold);
+
+        CellStyle styleq3 = workbook.createCellStyle();
+        styleq3.setFillForegroundColor(IndexedColors.VIOLET.index);
+        styleq3.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        styleq3.setAlignment(HorizontalAlignment.CENTER);
+        styleq3.setVerticalAlignment(VerticalAlignment.CENTER);
+        styleq3.setWrapText(true);
+        styleq3.setFont(fontBold);
+
+        CellStyle styleq4 = workbook.createCellStyle();
+        styleq4.setFillForegroundColor(IndexedColors.TAN.index);
+        styleq4.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        styleq4.setAlignment(HorizontalAlignment.CENTER);
+        styleq4.setVerticalAlignment(VerticalAlignment.CENTER);
+        styleq4.setWrapText(true);
+        styleq4.setFont(fontBold);
+
+        CellStyle styley = workbook.createCellStyle();
+        styley.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.index);
+        styley.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        styley.setAlignment(HorizontalAlignment.LEFT);
+        styley.setVerticalAlignment(VerticalAlignment.CENTER);
+        styley.setWrapText(true);//styley.setFont(fontBold);
+
+        CellStyle stylegreen = workbook.createCellStyle();
+        stylegreen.setFillForegroundColor(IndexedColors.GREEN.index);
+        stylegreen.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        stylegreen.setAlignment(HorizontalAlignment.CENTER);
+        stylegreen.setVerticalAlignment(VerticalAlignment.CENTER);
+        stylegreen.setFont(fontBold);
+        stylegreen.setWrapText(true);
+        stylegreen.setFont(fontBold);
+
+        CellStyle stylec = workbook.createCellStyle();
+        stylec.setAlignment(HorizontalAlignment.LEFT);
+        stylec.setVerticalAlignment(VerticalAlignment.CENTER);
+        stylec.setWrapText(true);//stylec.setFont(fontBold);
+        stylec.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
+        Font boldFont = workbook.createFont();
+        boldFont.setBold(true);
+        stylec.setFont(boldFont);
+        stylec.setBorderTop(BorderStyle.THIN);
+        stylec.setBorderBottom(BorderStyle.DOUBLE);
+
+        CellStyle stylec2 = workbook.createCellStyle();
+        stylec2.setAlignment(HorizontalAlignment.CENTER);
+        stylec2.setVerticalAlignment(VerticalAlignment.CENTER);
+        stylec2.setWrapText(true);
+        stylec2.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.index);
+        stylec2.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        stylec2.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
+
+        CellStyle stylec1 = workbook.createCellStyle();
+        stylec1.setAlignment(HorizontalAlignment.CENTER);
+        stylec1.setVerticalAlignment(VerticalAlignment.CENTER);
+        stylec1.setWrapText(true);
+        stylec1.setFont(fontBold);
+
+        CellStyle borderedStyle = workbook.createCellStyle();
+        borderedStyle.setBorderTop(BorderStyle.THIN);
+        borderedStyle.setBorderBottom(BorderStyle.THIN);
+        borderedStyle.setBorderLeft(BorderStyle.THIN);
+        borderedStyle.setBorderRight(BorderStyle.THIN);
+        borderedStyle.setAlignment(HorizontalAlignment.CENTER);
+        borderedStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+
+        CellStyle borderedStyleWithColor = workbook.createCellStyle();
+        borderedStyleWithColor.cloneStyleFrom(borderedStyle); // Copy styles from the borderedStyle
+        borderedStyleWithColor.setFillForegroundColor(IndexedColors.RED.index);
+        borderedStyleWithColor.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle style11 = workbook.createCellStyle();
+        style11.setAlignment(HorizontalAlignment.LEFT);
+        style11.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style11.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("###,###.##"));
+        List<Integer> rowBoldcount = new ArrayList();
+        Row headerRow = sheet.createRow(tr);
+
+        try {
+
+            headerRow.setHeight(rowHeight);
+
+            addImageToHeader(sheet, "/META-INF/resources/images/urclogo.png");
+
+        } catch (IOException ex) {
+            Logger.getLogger(BudgetReportsView.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        // Create a cell for the header
+        // Row headerRow = sheet.createRow(0);
+        Cell headerCell = headerRow.createCell(1);
+        headerCell.setCellValue("UGANDA RAILWAYS CORPORATION");
+        headerCell.setCellStyle(styleq31);
+        CellRangeAddress cellRange3 = new CellRangeAddress(tr, tr, 1, 5);
+        sheet.addMergedRegion(cellRange3);
+        setBottomBorderForRegion(sheet, cellRange3);
+        tr++;
+        Row row0 = sheet.createRow(tr);
+        Cell cellq = row0.createCell((short) 0);
+        row0.getCell(0).setCellStyle(styleq31);
+        cellq.setCellValue("BUDGET DETAILS " + budget.getValue().getFinancialYear() + " " + coa.getCode().trim() + " " + coa.getName());
+        CellRangeAddress cellRange4 = new CellRangeAddress(tr, tr, 0, 5);
+        sheet.addMergedRegion(cellRange4);
+        rowBoldcount.add((int) 0);
+        tr++;
+
+        Row row = sheet.createRow(tr);
+        Cell cell = row.createCell((short) 0);
+        row.getCell(0).setCellStyle(styleq31);
+        cell.setCellValue("Code");
+        Cell cell2 = row.createCell((short) 1);
+        row.getCell(1).setCellStyle(styleq31);
+        cell2.setCellValue("Description");
+        Cell cell3 = row.createCell((short) 2);
+        row.getCell(2).setCellStyle(styleq31);
+        cell3.setCellValue("Jul");
+        Cell cell4 = row.createCell((short) 3);
+        row.getCell(3).setCellStyle(styleq31);
+        cell4.setCellValue("Aug");
+        Cell cell5 = row.createCell((short) 4);
+        row.getCell(4).setCellStyle(styleq31);
+        cell5.setCellValue("Sep");
+
+        Cell cell6 = row.createCell((short) 5);
+        row.getCell(5).setCellStyle(styleq31);
+        cell6.setCellValue("Oct");
+
+        Cell cell7 = row.createCell((short) 6);
+        row.getCell(6).setCellStyle(styleq31);
+        cell7.setCellValue("Nov");
+
+        Cell cell8 = row.createCell((short) 7);
+        row.getCell(7).setCellStyle(styleq31);
+        cell8.setCellValue("Dec");
+
+        Cell cell9 = row.createCell((short) 8);
+        row.getCell(8).setCellStyle(styleq31);
+        cell9.setCellValue("Jan");
+
+        Cell cell10 = row.createCell((short) 9);
+        row.getCell(9).setCellStyle(styleq31);
+        cell10.setCellValue("Feb");
+
+        Cell cell11 = row.createCell((short) 10);
+        row.getCell(10).setCellStyle(styleq31);
+        cell11.setCellValue("Mar");
+
+        Cell cell12 = row.createCell((short) 11);
+        row.getCell(11).setCellStyle(styleq31);
+        cell12.setCellValue("Apr");
+
+        Cell cell13 = row.createCell((short) 12);
+        row.getCell(12).setCellStyle(styleq31);
+        cell13.setCellValue("May");
+
+        Cell cell14 = row.createCell((short) 13);
+        row.getCell(13).setCellStyle(styleq31);
+        cell14.setCellValue("Jun");
+
+        Cell cell15 = row.createCell((short) 14);
+        row.getCell(14).setCellStyle(styleq31);
+        cell15.setCellValue("Section");
+
+        rowBoldcount.add((int) 1);
+        CreationHelper createHelper = workbook.getCreationHelper();
+        CellStyle dateCellStyle = workbook.createCellStyle();
+        dateCellStyle.setDataFormat(createHelper.createDataFormat().getFormat("yyyy-MM-dd"));
+
+// Format for dates, e.g., "yyyy-MM-dd" or any other format you need
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        BigDecimal sumD = BigDecimal.ZERO;
+        for (BudgetItems h : list) {
+            tr++;
+            short tc = 0;
+            Row rowx1 = sheet.createRow(tr);
+            rowx1.createCell((short) tc).setCellValue(h.getCoacode().getCode());
+            rowx1.getCell(tc).setCellStyle(styleq);
+            tc++;
+            rowx1.createCell((short) tc).setCellValue(h.getItem());
+
+            rowx1.getCell(tc).setCellStyle(styleq);
+            tc++;
+            rowx1.createCell((short) tc).setCellValue(h.getJul().doubleValue());
+            rowx1.getCell(tc).setCellStyle(styleq);
+            tc++;
+            rowx1.createCell((short) tc).setCellValue(h.getAug().doubleValue());
+            rowx1.getCell(tc).setCellStyle(styleq);
+            tc++;
+
+            rowx1.createCell(tc).setCellValue(h.getSep().doubleValue());
+            rowx1.getCell(tc).setCellStyle(styleq);
+            tc++;
+            rowx1.createCell((short) tc).setCellValue(h.getOct().doubleValue());
+            rowx1.getCell(tc).setCellStyle(styleq);
+            tc++;
+
+            rowx1.createCell((short) tc).setCellValue(h.getNov().doubleValue());
+            rowx1.getCell(tc).setCellStyle(styleq);
+            tc++;
+
+            rowx1.createCell((short) tc).setCellValue(h.getDec().doubleValue());
+            rowx1.getCell(tc).setCellStyle(styleq);
+            tc++;
+            rowx1.createCell((short) tc).setCellValue(h.getJan().doubleValue());
+            rowx1.getCell(tc).setCellStyle(styleq);
+            tc++;
+
+            rowx1.createCell((short) tc).setCellValue(h.getFeb().doubleValue());
+            rowx1.getCell(tc).setCellStyle(styleq);
+            tc++;
+
+            rowx1.createCell((short) tc).setCellValue(h.getMar().doubleValue());
+            rowx1.getCell(tc).setCellStyle(styleq);
+            tc++;
+
+            rowx1.createCell((short) tc).setCellValue(h.getApr().doubleValue());
+            rowx1.getCell(tc).setCellStyle(styleq);
+            tc++;
+
+            rowx1.createCell((short) tc).setCellValue(h.getMay().doubleValue());
+            rowx1.getCell(tc).setCellStyle(styleq);
+            tc++;
+
+            rowx1.createCell((short) tc).setCellValue(h.getJun().doubleValue());
+            rowx1.getCell(tc).setCellStyle(styleq);
+            tc++;
+            rowx1.createCell((short) tc).setCellValue(h.getDeptUnit().getNAME() + " ");
+            rowx1.getCell(tc).setCellStyle(styleq);
+            sumD = sumD.add(Optional.ofNullable(h.getJul()).orElse(BigDecimal.ZERO))
+                    .add(Optional.ofNullable(h.getAug()).orElse(BigDecimal.ZERO))
+                    .add(Optional.ofNullable(h.getSep()).orElse(BigDecimal.ZERO))
+                    .add(Optional.ofNullable(h.getOct()).orElse(BigDecimal.ZERO))
+                    .add(Optional.ofNullable(h.getNov()).orElse(BigDecimal.ZERO))
+                    .add(Optional.ofNullable(h.getDec()).orElse(BigDecimal.ZERO))
+                    .add(Optional.ofNullable(h.getJan()).orElse(BigDecimal.ZERO))
+                    .add(Optional.ofNullable(h.getFeb()).orElse(BigDecimal.ZERO))
+                    .add(Optional.ofNullable(h.getMar()).orElse(BigDecimal.ZERO))
+                    .add(Optional.ofNullable(h.getApr()).orElse(BigDecimal.ZERO))
+                    .add(Optional.ofNullable(h.getMay()).orElse(BigDecimal.ZERO))
+                    .add(Optional.ofNullable(h.getJun()).orElse(BigDecimal.ZERO));
+
+        }
+        // Add a row for the total amount using a formula
+        Row totalRow = sheet.createRow(++tr);
+        short tc = 0;
+        totalRow.createCell(tc).setCellValue("Total");
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        totalRow.createCell(tc).setCellValue(formatAmount(sumD));
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        String amountColumnRange = "";
+        amountColumnRange = String.format("C2:C%d", tr);
+        totalRow.createCell(tc).setCellFormula(String.format("SUM(%s)", amountColumnRange));
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+
+        // Set the formula for summing up the amount column
+        amountColumnRange = String.format("D2:D%d", tr); // Assuming the Amount column is the 4th column (index 3)
+        totalRow.createCell(tc).setCellFormula(String.format("SUM(%s)", amountColumnRange));
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        amountColumnRange = String.format("E2:E%d", tr);
+        totalRow.createCell(tc).setCellFormula(String.format("SUM(%s)", amountColumnRange));
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        amountColumnRange = String.format("F2:F%d", tr);
+        totalRow.createCell(tc).setCellFormula(String.format("SUM(%s)", amountColumnRange));
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        amountColumnRange = String.format("G2:G%d", tr);
+        totalRow.createCell(tc).setCellFormula(String.format("SUM(%s)", amountColumnRange));
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        amountColumnRange = String.format("H2:H%d", tr);
+        totalRow.createCell(tc).setCellFormula(String.format("SUM(%s)", amountColumnRange));
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        amountColumnRange = String.format("I2:I%d", tr);
+        totalRow.createCell(tc).setCellFormula(String.format("SUM(%s)", amountColumnRange));
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        amountColumnRange = String.format("J2:J%d", tr);
+        totalRow.createCell(tc).setCellFormula(String.format("SUM(%s)", amountColumnRange));
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        amountColumnRange = String.format("K2:K%d", tr);
+        totalRow.createCell(tc).setCellFormula(String.format("SUM(%s)", amountColumnRange));
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        amountColumnRange = String.format("L2:L%d", tr);
+        totalRow.createCell(tc).setCellFormula(String.format("SUM(%s)", amountColumnRange));
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        amountColumnRange = String.format("M2:M%d", tr);
+        totalRow.createCell(tc).setCellFormula(String.format("SUM(%s)", amountColumnRange));
+        totalRow.getCell(tc).setCellStyle(stylec);
+        tc++;
+        amountColumnRange = String.format("N2:N%d", tr);
+        totalRow.createCell(tc).setCellFormula(String.format("SUM(%s)", amountColumnRange));
+        totalRow.getCell(tc).setCellStyle(stylec);
+
+        for (int i = 0; i < sheet.getRow(0).getLastCellNum(); i++) {
+            sheet.autoSizeColumn(i);
+        }
+        int y = 0;
+        for (Row currentRow : sheet) {
+            y++;
+            if (currentRow == null) {
+                continue;
+            }
+
+            for (Cell currentCell : currentRow) {
+                if (currentCell == null) {
+                    continue;
+                }
+                if (y > 1) {
+// Get the existing cell style
+                    CellStyle existingStyle = currentCell.getCellStyle();
+
+// Create a new style that combines the existing style with the border style
+                    CellStyle newStyle = sheet.getWorkbook().createCellStyle();
+                    newStyle.cloneStyleFrom(existingStyle);
+                    newStyle.setBorderTop(BorderStyle.THIN);
+                    newStyle.setBorderBottom(BorderStyle.THIN);
+                    newStyle.setBorderLeft(BorderStyle.THIN);
+                    newStyle.setBorderRight(BorderStyle.THIN);
+                    newStyle.setTopBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setBottomBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setLeftBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setRightBorderColor(IndexedColors.BLACK.getIndex());
+                    newStyle.setWrapText(true);
+
+                    currentCell.setCellStyle(newStyle);
+                }
+
+            }
         }
     }
 }

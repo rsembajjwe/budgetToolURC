@@ -595,7 +595,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         createIconItem(budgetStructure, VaadinIcon.BUILDING, "Budget Categories", null, true).addClickListener(e -> {
 
             Dialog dialog = new Dialog();
-            dialog.setWidth("400px");
+            dialog.setWidth("500px");
             dialog.setHeight(70, Unit.PERCENTAGE);
             dialog.setHeaderTitle("Budget Category");
             Button closeButton = new Button(new Icon("lumo", "cross"),

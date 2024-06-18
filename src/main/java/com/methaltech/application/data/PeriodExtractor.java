@@ -1,5 +1,9 @@
 package com.methaltech.application.data;
 
+import static com.methaltech.application.data.Quarters.Qtr1;
+import static com.methaltech.application.data.Quarters.Qtr2;
+import static com.methaltech.application.data.Quarters.Qtr3;
+import static com.methaltech.application.data.Quarters.Qtr4;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -70,6 +74,54 @@ public class PeriodExtractor {
         }
         return listPeriods;
     }
+    public List<Integer> getListOfCurrentPeriodByFY(String fy) {
+        List<Integer> listPeriods = new ArrayList<>();
+        strings(fy);
+        int year = getYears().get(1);
+
+                listPeriods.add(year * 1000 + 1);
+                listPeriods.add(year * 1000 + 2);
+                listPeriods.add(year * 1000 + 3);
+
+                listPeriods.add(year * 1000 + 4);
+                listPeriods.add(year * 1000 + 5);
+                listPeriods.add(year * 1000 + 6);
+
+                listPeriods.add(year * 1000 + 7);
+                listPeriods.add(year * 1000 + 8);
+                listPeriods.add(year * 1000 + 9);
+
+                listPeriods.add(year * 1000 + 10);
+                listPeriods.add(year * 1000 + 11);
+                listPeriods.add(year * 1000 + 12);
+
+        
+        return listPeriods;
+    } 
+    public List<Integer> getListOfPreviousPeriodByFY(String fy) {
+        List<Integer> listPeriods = new ArrayList<>();
+        strings(fy);
+        int year = getYears().get(0);
+
+                listPeriods.add(year * 1000 + 1);
+                listPeriods.add(year * 1000 + 2);
+                listPeriods.add(year * 1000 + 3);
+
+                listPeriods.add(year * 1000 + 4);
+                listPeriods.add(year * 1000 + 5);
+                listPeriods.add(year * 1000 + 6);
+
+                listPeriods.add(year * 1000 + 7);
+                listPeriods.add(year * 1000 + 8);
+                listPeriods.add(year * 1000 + 9);
+
+                listPeriods.add(year * 1000 + 10);
+                listPeriods.add(year * 1000 + 11);
+                listPeriods.add(year * 1000 + 12);
+
+        
+        return listPeriods;
+    }    
 
     public int generatePreviousPeriod(String yearS, String month) {
         strings(yearS);
@@ -386,6 +438,13 @@ public class PeriodExtractor {
     public String getPreviousFy(String fy) {
         int[] years = extractYears(fy);
         int fy1 = years[0];
+        int newfy1 = fy1 - 1;
+        return String.format("FY%d-%d", newfy1, fy1);
+    }
+    
+        public String getCurrentFy(String fy) {
+        int[] years = extractYears(fy);
+        int fy1 = years[1];
         int newfy1 = fy1 - 1;
         return String.format("FY%d-%d", newfy1, fy1);
     }

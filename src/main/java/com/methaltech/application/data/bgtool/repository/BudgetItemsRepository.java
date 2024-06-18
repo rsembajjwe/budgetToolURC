@@ -70,6 +70,16 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("deptUnit") UrcDeptSectionAnlDimbgt deptUnit
     );
 
+    @Query("SELECT b FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.coacode = :coacode "
+            + "AND b.deptUnit IN :deptUnit")
+    List<BudgetItems> findBudgetItemsByBudgetAndCoaAndSectios(
+            @Param("budget") Budget budget,
+            @Param("coacode") COA coacode,
+            @Param("deptUnit") Set<UrcDeptSectionAnlDimbgt> deptUnit
+    );
+
     @Query("SELECT SUM(COALESCE(b.jul, 0) + COALESCE(b.nov, 0) + COALESCE(b.mar, 0) + COALESCE(b.aug, 0) + COALESCE(b.dec, 0) + COALESCE(b.apr, 0) + COALESCE(b.sep, 0) + COALESCE(b.jan, 0) + COALESCE(b.may, 0) + COALESCE(b.oct, 0) + COALESCE(b.feb, 0) + COALESCE(b.jun, 0)) "
             + "FROM BudgetItems b "
             + "WHERE b.coalevel1 = :coalevel1 "
@@ -282,8 +292,7 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("activity") Urc_Activities activity
     );
 
-    
-        @Query("SELECT DISTINCT b.coacode FROM BudgetItems b "
+    @Query("SELECT DISTINCT b.coacode FROM BudgetItems b "
             + "WHERE b.budgetType IN :budgetType "
             + "AND b.budget = :budget "
             + "AND b.deptUnit IN :deptUnit "
@@ -294,8 +303,7 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("deptUnit") Set<UrcDeptSectionAnlDimbgt> deptUnit,
             @Param("coalevel1") Coalevel1 coalevel1
     );
-    
-    
+
     @Query("SELECT DISTINCT b.coacode FROM BudgetItems b "
             + "WHERE b.budgetType = :budgetType "
             + "AND b.budget = :budget "
@@ -325,7 +333,7 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("deptUnit") UrcDeptSectionAnlDimbgt deptUnit,
             @Param("coacode") COA coacode
     );
-    
+
     @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + "
             + "b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
             + "FROM BudgetItems b "
@@ -340,8 +348,8 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("budget") Budget budget,
             @Param("deptUnit") Set<UrcDeptSectionAnlDimbgt> deptUnit,
             @Param("coacode") COA coacode
-    );    
-    
+    );
+
     @Query("SELECT b "
             + "FROM BudgetItems b "
             + "WHERE b.coalevel1 = :coalevel1 "
@@ -355,7 +363,7 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("budget") Budget budget,
             @Param("deptUnit") Set<UrcDeptSectionAnlDimbgt> deptUnit,
             @Param("coacode") COA coacode
-    );      
+    );
 
     @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + "
             + "b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
@@ -1005,7 +1013,7 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             + "FROM BudgetItems fv "
             + "WHERE fv.budget = :budget AND fv.coacode = :coacode")
     MonthlySumResponseFreight getMonthlySumsByBudgetAndCoacode(@Param("budget") Budget budget, @Param("coacode") COA coacode);
-    
+
     @Query("SELECT NEW com.methaltech.application.data.MonthlySumResponseFreight("
             + "COALESCE(SUM(fv.jul), 0), COALESCE(SUM(fv.aug), 0), COALESCE(SUM(fv.sep), 0), "
             + "COALESCE(SUM(fv.oct), 0), COALESCE(SUM(fv.nov), 0), COALESCE(SUM(fv.dec), 0), "
@@ -1014,7 +1022,7 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             + "COALESCE((SUM(fv.jul)+SUM(fv.aug)+SUM(fv.sep)+SUM(fv.oct)+SUM(fv.nov)+SUM(fv.dec)+SUM(fv.jan)+SUM(fv.feb)+SUM(fv.mar)+SUM(fv.apr)+SUM(fv.may)+SUM(fv.jun)), 0)) "
             + "FROM BudgetItems fv "
             + "WHERE fv.budget = :budget AND fv.coacode IN :coacode")
-    MonthlySumResponseFreight getMonthlySumsByBudgetAndCoacode(@Param("budget") Budget budget, @Param("coacode") List<COA> coacode);    
+    MonthlySumResponseFreight getMonthlySumsByBudgetAndCoacode(@Param("budget") Budget budget, @Param("coacode") List<COA> coacode);
 
     @Query("SELECT NEW com.methaltech.application.data.MonthlySumResponseFreight("
             + "COALESCE(SUM(fv.jul), 0), COALESCE(SUM(fv.aug), 0), COALESCE(SUM(fv.sep), 0), "
@@ -1026,24 +1034,24 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             + "WHERE fv.budget = :budget AND fv.coacode IN :coacodes")
     MonthlySumResponseFreight getMonthlySumsByBudgetAndCoacodes(@Param("budget") Budget budget, @Param("coacodes") List<COA> coacodes);
 
-@Query("SELECT "
-        + "COALESCE(SUM(b.jul), 0) as julSum, "
-        + "COALESCE(SUM(b.aug), 0) as augSum, "
-        + "COALESCE(SUM(b.sep), 0) as sepSum, "
-        + "COALESCE(SUM(b.oct), 0) as octSum, "
-        + "COALESCE(SUM(b.nov), 0) as novSum, "
-        + "COALESCE(SUM(b.dec), 0) as decSum, "
-        + "COALESCE(SUM(b.jan), 0) as janSum, "
-        + "COALESCE(SUM(b.feb), 0) as febSum, "
-        + "COALESCE(SUM(b.mar), 0) as marSum, "
-        + "COALESCE(SUM(b.apr), 0) as aprSum, "
-        + "COALESCE(SUM(b.may), 0) as maySum, "
-        + "COALESCE(SUM(b.jun), 0) as junSum "
-        + "FROM BudgetItems b "
-        + "WHERE b.budget = :budget "
-        + "AND b.coacode.display = :display")
-List<MonthlySumResult> findSumOfIndividualMonthsByBudgetAndCoacodeFreight(@Param("budget") Budget budget,
-        @Param("display") Display display);
+    @Query("SELECT "
+            + "COALESCE(SUM(b.jul), 0) as julSum, "
+            + "COALESCE(SUM(b.aug), 0) as augSum, "
+            + "COALESCE(SUM(b.sep), 0) as sepSum, "
+            + "COALESCE(SUM(b.oct), 0) as octSum, "
+            + "COALESCE(SUM(b.nov), 0) as novSum, "
+            + "COALESCE(SUM(b.dec), 0) as decSum, "
+            + "COALESCE(SUM(b.jan), 0) as janSum, "
+            + "COALESCE(SUM(b.feb), 0) as febSum, "
+            + "COALESCE(SUM(b.mar), 0) as marSum, "
+            + "COALESCE(SUM(b.apr), 0) as aprSum, "
+            + "COALESCE(SUM(b.may), 0) as maySum, "
+            + "COALESCE(SUM(b.jun), 0) as junSum "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.coacode.display = :display")
+    List<MonthlySumResult> findSumOfIndividualMonthsByBudgetAndCoacodeFreight(@Param("budget") Budget budget,
+            @Param("display") Display display);
 
-List<BudgetItems> findByBudgetAndCoalevel1(Budget budget, Coalevel1 coalevel1);
+    List<BudgetItems> findByBudgetAndCoalevel1(Budget budget, Coalevel1 coalevel1);
 }

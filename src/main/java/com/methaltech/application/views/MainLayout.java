@@ -145,44 +145,7 @@ public class MainLayout extends AppLayout {
         userManagementHeader.setClassName("menu-header");
         nav.addItem(userManagementHeader);
 
-        if (accessChecker.hasAccess(UserView.class)) {
-            SideNavItem item = new SideNavItem("System Users", UserView.class, LineAwesomeIcon.USER_FRIENDS_SOLID.create());
-            item.addClassName("menu-item");
-            nav.addItem(item);
 
-        }
-        if (accessChecker.hasAccess(currencyView.class)) {
-
-            SideNavItem item = new SideNavItem("Currency Exchange Rates", currencyView.class, LineAwesomeIcon.MONEY_BILL_ALT.create());
-            item.addClassName("menu-item");
-            nav.addItem(item);
-        }
-        if (accessChecker.hasAccess(UnitsMeasureView.class)) {
-
-            SideNavItem item = new SideNavItem("Units of Measure", UnitsMeasureView.class, LineAwesomeIcon.NODE_JS.create());
-            item.addClassName("menu-item");
-            nav.addItem(item);
-        }
-
-        if (accessChecker.hasAccess(structureView.class)) {
-
-            SideNavItem item = new SideNavItem("URC Cost Centres", structureView.class, LineAwesomeIcon.LAPTOP_SOLID.create());
-            item.addClassName("menu-item");
-            nav.addItem(item);
-        }
-
-        if (accessChecker.hasAccess(ProcurementCOASettingView.class)) {
-
-            SideNavItem item = new SideNavItem("Procurement Plan Chart of Accounts Settings", ProcurementCOASettingView.class, LineAwesomeIcon.PIED_PIPER_HAT.create());
-            item.addClassName("menu-item");
-            nav.addItem(item);
-        }
-
-        if (accessChecker.hasAccess(BudgetView.class)) {
-            SideNavItem item = new SideNavItem("Set Budget", BudgetView.class, LineAwesomeIcon.BRIEFCASE_SOLID.create());
-            item.addClassName("menu-item");
-            nav.addItem(item);
-        }
         if (accessChecker.hasAccess(UrcProgrammesView.class)) {
             SideNavItem item = new SideNavItem("URC Programmes", UrcProgrammesView.class, LineAwesomeIcon.AWARD_SOLID.create());
             item.addClassName("menu-item");
@@ -246,7 +209,7 @@ public class MainLayout extends AppLayout {
         nav.addItem(performanceReportHeader);
 
         if (accessChecker.hasAccess(ActualView.class)) {
-            SideNavItem item = new SideNavItem("Budget Actuals", ActualView.class, LineAwesomeIcon.ALGOLIA.create());
+            SideNavItem item = new SideNavItem("Budget Performance Report", ActualView.class, LineAwesomeIcon.ALGOLIA.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
@@ -255,7 +218,50 @@ public class MainLayout extends AppLayout {
             item.addClassName("menu-item");
             nav.addItem(item);
         }
+        
+        SideNavItem userManagementHeader2 = new SideNavItem("Setting");
+        userManagementHeader2.setClassName("menu-header");
+        nav.addItem(userManagementHeader2);        
 
+        if (accessChecker.hasAccess(UserView.class)) {
+            SideNavItem item = new SideNavItem("System Users", UserView.class, LineAwesomeIcon.USER_FRIENDS_SOLID.create());
+            item.addClassName("menu-item");
+            nav.addItem(item);
+
+        }
+        if (accessChecker.hasAccess(currencyView.class)) {
+
+            SideNavItem item = new SideNavItem("Currency Exchange Rates", currencyView.class, LineAwesomeIcon.MONEY_BILL_ALT.create());
+            item.addClassName("menu-item");
+            nav.addItem(item);
+        }
+        if (accessChecker.hasAccess(UnitsMeasureView.class)) {
+
+            SideNavItem item = new SideNavItem("Units of Measure", UnitsMeasureView.class, LineAwesomeIcon.NODE_JS.create());
+            item.addClassName("menu-item");
+            nav.addItem(item);
+        }
+
+        if (accessChecker.hasAccess(structureView.class)) {
+
+            SideNavItem item = new SideNavItem("URC Cost Centres", structureView.class, LineAwesomeIcon.LAPTOP_SOLID.create());
+            item.addClassName("menu-item");
+            nav.addItem(item);
+        }
+
+        if (accessChecker.hasAccess(ProcurementCOASettingView.class)) {
+
+            SideNavItem item = new SideNavItem("Procurement Plan Chart of Accounts Settings", ProcurementCOASettingView.class, LineAwesomeIcon.PIED_PIPER_HAT.create());
+            item.addClassName("menu-item");
+            nav.addItem(item);
+        }
+
+        if (accessChecker.hasAccess(BudgetView.class)) {
+            SideNavItem item = new SideNavItem("Set Budget", BudgetView.class, LineAwesomeIcon.BRIEFCASE_SOLID.create());
+            item.addClassName("menu-item");
+            nav.addItem(item);
+        }
+        
         return nav;
     }
 

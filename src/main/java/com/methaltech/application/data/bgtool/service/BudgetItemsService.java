@@ -1262,6 +1262,7 @@ public class BudgetItemsService {
             b.setBudget(budget);
             b.setItem(c.getName());
             b.setCoacode(c);
+            b.setDeptUnit(deptUnits);
 
             if (deptUnits.contains(freightAnlDimbgt) && (c.getDisplay() == Display.FREIGHT || c.getCode().contains("111109") || c.getCode().contains("111110"))) {
                 b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Jul")));
@@ -1423,5 +1424,91 @@ public class BudgetItemsService {
         list.add(extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Jun"));
 
         return list;
+    }
+
+    public List<BudgetItems> findBudgetItemsByBudgetAndCoaAndSectios(Budget budget, COA coa, Set<UrcDeptSectionAnlDimbgt> deptUnit, String month) {
+        List<BudgetItems> result = repository.findBudgetItemsByBudgetAndCoaAndSectios(budget, coa, deptUnit);
+        List<BudgetItems> resultList = new ArrayList<>();
+        for (BudgetItems projection : result) {
+            switch (month) {
+                case "Jul":
+                    if (projection.getJul().compareTo(BigDecimal.ZERO) > 0) {
+                       resultList.add(projection);
+                    }
+                    break;
+                case "Aug":
+                    if (projection.getAug().compareTo(BigDecimal.ZERO) > 0) {
+                       resultList.add(projection);
+                    }                    
+                    break;
+                case "Sep":
+                    if (projection.getSep().compareTo(BigDecimal.ZERO) > 0) {
+                       resultList.add(projection);
+                    }                    
+
+                    break;
+                case "Oct":
+                    if (projection.getOct().compareTo(BigDecimal.ZERO) > 0) {
+                       resultList.add(projection);
+                    }                    
+
+                    break;
+                case "Nov":
+                    if (projection.getNov().compareTo(BigDecimal.ZERO) > 0) {
+                       resultList.add(projection);
+                    }                    
+
+                    break;
+                case "Dec":
+                    if (projection.getDec().compareTo(BigDecimal.ZERO) > 0) {
+                       resultList.add(projection);
+                    }                    
+
+                    break;
+                case "Jan":
+                    if (projection.getJan().compareTo(BigDecimal.ZERO) > 0) {
+                       resultList.add(projection);
+                    }                    
+
+                    break;
+                case "Feb":
+                    if (projection.getFeb().compareTo(BigDecimal.ZERO) > 0) {
+                       resultList.add(projection);
+                    }                    
+
+                    break;
+                case "Mar":
+                    if (projection.getMar().compareTo(BigDecimal.ZERO) > 0) {
+                       resultList.add(projection);
+                    }                    
+
+                    break;
+                case "Apr":
+                    if (projection.getApr().compareTo(BigDecimal.ZERO) > 0) {
+                       resultList.add(projection);
+                    }                    
+
+                    break;
+                case "May":
+                    if (projection.getMay().compareTo(BigDecimal.ZERO) > 0) {
+                       resultList.add(projection);
+                    }                    
+
+                    break;
+                case "Jun":
+                    if (projection.getJun().compareTo(BigDecimal.ZERO) > 0) {
+                       resultList.add(projection);
+                    }                    
+                    break;
+            case "Total":
+
+                resultList.add(projection);
+                break;                    
+
+                default:
+                    break;
+            }
+        }
+        return result != null ? resultList : Collections.emptyList();
     }
 }
