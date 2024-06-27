@@ -4,8 +4,8 @@
     <modelVersion>4.0.0</modelVersion>
     <!-- Project from https://start.vaadin.com/project/894f77e2-fca2-41b5-8b4d-97cafce96fe2 -->
     <groupId>com.methaltech.application</groupId>
-    <artifactId>abc4</artifactId>
-    <name>abc4</name>
+    <artifactId>BudgetToolURC</artifactId>
+    <name>BudgetToolURC</name>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 

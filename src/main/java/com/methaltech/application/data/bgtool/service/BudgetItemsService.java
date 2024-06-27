@@ -1043,6 +1043,7 @@ public class BudgetItemsService {
     }
 
     public List<BudgetItemsActuals> findDistinctBudgetItemses(Budget budget, Set<UrcDeptSectionAnlDimbgt> deptUnits) {
+        
         Set<String> sctions = new HashSet<>();
         for (UrcDeptSectionAnlDimbgt sects : deptUnits) {
             sctions.add(sects.getANL_CODE());
@@ -1072,6 +1073,7 @@ public class BudgetItemsService {
             b.setBudget(budget);
             b.setItem(c.getName());
             b.setCoacode(c);
+             b.setDeptUnit(deptUnits);
             if (deptUnits.contains(freightAnlDimbgt) && (c.getDisplay() == Display.FREIGHT || c.getCode().contains("111109") || c.getCode().contains("111110"))) {
                 b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Jul")));
                 b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Aug")));
@@ -1157,6 +1159,7 @@ public class BudgetItemsService {
             b.setBudget(budget);
             b.setItem(c.getName());
             b.setCoacode(c);
+             b.setDeptUnit(deptUnits);
 
             if (deptUnits.contains(freightAnlDimbgt) && (c.getDisplay() == Display.FREIGHT || c.getCode().contains("111109") || c.getCode().contains("111110"))) {
                 b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Jul")));
