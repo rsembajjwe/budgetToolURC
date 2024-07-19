@@ -1,0 +1,21 @@
+vaadin-login-form-wrapper::part(form-title){
+    display: flex;
+    justify-content: center;
+}
+
+vaadin-login-overlay-wrapper::part(brand) {
+    background-image: url("../icons/icon.png") !important;
+    background-repeat: no-repeat;
+    background-position: center;
+    color: lightgreen;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+}
+@media (max-width: 283 px) {
+    vaadin-login-overlay-wrapper::part(brand) {
+        background-image: url("../icons/icon22.png") !important;
+
+    }
+}

@@ -1,0 +1,32 @@
+vaadin-scroller[slot="drawer"] {
+  padding: var(--lumo-space-s);
+}
+
+[slot="drawer"]:is(header, footer) {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  min-height: var(--lumo-size-xl);
+  box-sizing: border-box;
+}
+
+[slot="drawer"]:is(header, footer):is(:empty) {
+  display: none;
+}
+vaadin-app-layout::part(navbar) {
+  background: linear-gradient(to right, #99ccff, #c0d9ff);
+  background: -webkit-radial-gradient(center, ellipse cover, #0ecde9 0%, #025e83 100%);
+  background: radial-gradient(#0ecde9, #025e83);
+}
+vaadin-side-nav-item {
+  margin: 0;
+  padding: 0.01px 0;
+}
+.menu-header {
+    font-weight: bold;
+    font-size: 1em;
+    margin-top: 10px;
+    margin-bottom: 3px;
+    color: red;
+}
