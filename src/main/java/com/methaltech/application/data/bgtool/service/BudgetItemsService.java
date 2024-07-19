@@ -1044,7 +1044,7 @@ public class BudgetItemsService {
     }
 
     public List<BudgetItemsActuals> findDistinctBudgetItemses(Budget budget, Set<UrcDeptSectionAnlDimbgt> deptUnits) {
-        
+
         Set<String> sctions = new HashSet<>();
         for (UrcDeptSectionAnlDimbgt sects : deptUnits) {
             sctions.add(sects.getANL_CODE());
@@ -1063,12 +1063,12 @@ public class BudgetItemsService {
         Set<COA> combinedSet = combinedList.stream().collect(Collectors.toSet());
 
         // Sort the set in ascending order
-        List<COA> finalListWithoutDuplicates = combinedSet.stream().sorted(Comparator.comparing(COA::getCode)).collect(Collectors.toList());
-        /*        List<COA> finalListWithoutDuplicates = combinedSet.stream()
-        .filter(Objects::nonNull) // Filter out null values
-        .sorted(Comparator.comparing(
-        coa -> Optional.ofNullable(coa.getCode()).orElse("")) // Handle null codes
-        ).collect(Collectors.toList());*/
+        //List<COA> finalListWithoutDuplicates = combinedSet.stream().sorted(Comparator.comparing(COA::getCode)).collect(Collectors.toList());
+        List<COA> finalListWithoutDuplicates = combinedSet.stream()
+                .filter(Objects::nonNull) // Filter out null values
+                .sorted(Comparator.comparing(
+                        coa -> Optional.ofNullable(coa.getCode()).orElse("")) // Handle null codes
+                ).collect(Collectors.toList());
         UrcDeptSectionAnlDimbgt freightAnlDimbgt = urcDeptSectionAnlDimRepository.findByCustomANL_CODE("S020");
         UrcDeptSectionAnlDimbgt propertymgt = urcDeptSectionAnlDimRepository.findByCustomANL_CODE("S004");
         List<BudgetItemsActuals> budgetItemses = new ArrayList<>();
@@ -1079,7 +1079,7 @@ public class BudgetItemsService {
             b.setBudget(budget);
             b.setItem(c.getName());
             b.setCoacode(c);
-             b.setDeptUnit(deptUnits);
+            b.setDeptUnit(deptUnits);
             if (deptUnits.contains(freightAnlDimbgt) && (c.getDisplay() == Display.FREIGHT || c.getCode().contains("111109") || c.getCode().contains("111110"))) {
                 b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Jul")));
                 b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Aug")));
@@ -1165,7 +1165,7 @@ public class BudgetItemsService {
             b.setBudget(budget);
             b.setItem(c.getName());
             b.setCoacode(c);
-             b.setDeptUnit(deptUnits);
+            b.setDeptUnit(deptUnits);
 
             if (deptUnits.contains(freightAnlDimbgt) && (c.getDisplay() == Display.FREIGHT || c.getCode().contains("111109") || c.getCode().contains("111110"))) {
                 b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generatePreviousPeriod(budget.getFinancialYear(), "Jul")));
@@ -1442,77 +1442,77 @@ public class BudgetItemsService {
             switch (month) {
                 case "Jul":
                     if (projection.getJul().compareTo(BigDecimal.ZERO) > 0) {
-                       resultList.add(projection);
+                        resultList.add(projection);
                     }
                     break;
                 case "Aug":
                     if (projection.getAug().compareTo(BigDecimal.ZERO) > 0) {
-                       resultList.add(projection);
-                    }                    
+                        resultList.add(projection);
+                    }
                     break;
                 case "Sep":
                     if (projection.getSep().compareTo(BigDecimal.ZERO) > 0) {
-                       resultList.add(projection);
-                    }                    
+                        resultList.add(projection);
+                    }
 
                     break;
                 case "Oct":
                     if (projection.getOct().compareTo(BigDecimal.ZERO) > 0) {
-                       resultList.add(projection);
-                    }                    
+                        resultList.add(projection);
+                    }
 
                     break;
                 case "Nov":
                     if (projection.getNov().compareTo(BigDecimal.ZERO) > 0) {
-                       resultList.add(projection);
-                    }                    
+                        resultList.add(projection);
+                    }
 
                     break;
                 case "Dec":
                     if (projection.getDec().compareTo(BigDecimal.ZERO) > 0) {
-                       resultList.add(projection);
-                    }                    
+                        resultList.add(projection);
+                    }
 
                     break;
                 case "Jan":
                     if (projection.getJan().compareTo(BigDecimal.ZERO) > 0) {
-                       resultList.add(projection);
-                    }                    
+                        resultList.add(projection);
+                    }
 
                     break;
                 case "Feb":
                     if (projection.getFeb().compareTo(BigDecimal.ZERO) > 0) {
-                       resultList.add(projection);
-                    }                    
+                        resultList.add(projection);
+                    }
 
                     break;
                 case "Mar":
                     if (projection.getMar().compareTo(BigDecimal.ZERO) > 0) {
-                       resultList.add(projection);
-                    }                    
+                        resultList.add(projection);
+                    }
 
                     break;
                 case "Apr":
                     if (projection.getApr().compareTo(BigDecimal.ZERO) > 0) {
-                       resultList.add(projection);
-                    }                    
+                        resultList.add(projection);
+                    }
 
                     break;
                 case "May":
                     if (projection.getMay().compareTo(BigDecimal.ZERO) > 0) {
-                       resultList.add(projection);
-                    }                    
+                        resultList.add(projection);
+                    }
 
                     break;
                 case "Jun":
                     if (projection.getJun().compareTo(BigDecimal.ZERO) > 0) {
-                       resultList.add(projection);
-                    }                    
+                        resultList.add(projection);
+                    }
                     break;
-            case "Total":
+                case "Total":
 
-                resultList.add(projection);
-                break;                    
+                    resultList.add(projection);
+                    break;
 
                 default:
                     break;
