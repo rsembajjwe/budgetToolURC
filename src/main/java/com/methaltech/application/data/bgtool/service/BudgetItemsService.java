@@ -1063,12 +1063,12 @@ public class BudgetItemsService {
         Set<COA> combinedSet = combinedList.stream().collect(Collectors.toSet());
 
         // Sort the set in ascending order
-        //List<COA> finalListWithoutDuplicates = combinedSet.stream().sorted(Comparator.comparing(COA::getCode)).collect(Collectors.toList());
-        List<COA> finalListWithoutDuplicates = combinedSet.stream()
-                .filter(Objects::nonNull) // Filter out null values
-                .sorted(Comparator.comparing(
-                        coa -> Optional.ofNullable(coa.getCode()).orElse("")) // Handle null codes
-                ).collect(Collectors.toList());
+        List<COA> finalListWithoutDuplicates = combinedSet.stream().sorted(Comparator.comparing(COA::getCode)).collect(Collectors.toList());
+        /*        List<COA> finalListWithoutDuplicates = combinedSet.stream()
+        .filter(Objects::nonNull) // Filter out null values
+        .sorted(Comparator.comparing(
+        coa -> Optional.ofNullable(coa.getCode()).orElse("")) // Handle null codes
+        ).collect(Collectors.toList());*/
         UrcDeptSectionAnlDimbgt freightAnlDimbgt = urcDeptSectionAnlDimRepository.findByCustomANL_CODE("S020");
         UrcDeptSectionAnlDimbgt propertymgt = urcDeptSectionAnlDimRepository.findByCustomANL_CODE("S004");
         List<BudgetItemsActuals> budgetItemses = new ArrayList<>();
