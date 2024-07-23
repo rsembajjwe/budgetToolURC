@@ -142,52 +142,53 @@ public class BudgetService {
             Organisation targetOrganization = new Organisation();
             targetOrganization.setName(sourceOrganization.getName());
             targetOrganization.setBudget(targetBudget);
+            targetOrganization.setCode(sourceOrganization.getCode());
 
             // Save the new Organization entity to the target database
             organisationRepository.save(targetOrganization);
         }
         // Retrieve all Department entities for the source Organization entity
-        List<Department> departmentList = departmentRepository.findAll();
+       /* List<Department> departmentList = departmentRepository.findAll();
 
         // Loop through each Department entity and copy its data to the target Organization entity
-        for (Department sourceDepartment : departmentList) {
-            // Create a new Department entity for the target Organization entity and copy the common attributes
-            Department targetDepartment = new Department();
-            targetDepartment.setDepartment(sourceDepartment.getDepartment());
-            // targetDepartment.setOrganisation(targetOrganization);
-
-            // Save the new Department entity to the target database
-            departmentRepository.save(targetDepartment);
-
-            // Retrieve all Section entities for the source Department entity
-            List<Section> sectionList = sectionRepository.findByDepartment(sourceDepartment);
-
-            // Loop through each Section entity and copy its data to the target Department entity
-            for (Section sourceSection : sectionList) {
-                // Create a new Section entity for the target Department entity and copy the common attributes
-                Section targetSection = new Section();
-                targetSection.setSection(sourceSection.getSection());
-                targetSection.setDepartment(targetDepartment);
-
-                // Save the new Section entity to the target database
-                sectionRepository.save(targetSection);
-
-                // Retrieve all D_Unit entities for the source Section entity
-                List<D_Unit> dUnitList = unitRepository.findBySection(sourceSection);
-
-                // Loop through each D_Unit entity and copy its data to the target Section entity
-                for (D_Unit sourceDUnit : dUnitList) {
-                    // Create a new D_Unit entity for the target Section entity and copy the common attributes
-                    D_Unit targetDUnit = new D_Unit();
-                    targetDUnit.setUnit(sourceDUnit.getUnit());
-                    targetDUnit.setSection(targetSection);
-
-                    // Save the new D_Unit entity to the target database
-                    unitRepository.save(targetDUnit);
-                }
-            }
-
+                for (Department sourceDepartment : departmentList) {
+        // Create a new Department entity for the target Organization entity and copy the common attributes
+        Department targetDepartment = new Department();
+        targetDepartment.setDepartment(sourceDepartment.getDepartment());
+        // targetDepartment.setOrganisation(targetOrganization);
+        
+        // Save the new Department entity to the target database
+        departmentRepository.save(targetDepartment);
+        
+        // Retrieve all Section entities for the source Department entity
+        List<Section> sectionList = sectionRepository.findByDepartment(sourceDepartment);
+        
+        // Loop through each Section entity and copy its data to the target Department entity
+        for (Section sourceSection : sectionList) {
+        // Create a new Section entity for the target Department entity and copy the common attributes
+        Section targetSection = new Section();
+        targetSection.setSection(sourceSection.getSection());
+        targetSection.setDepartment(targetDepartment);
+        
+        // Save the new Section entity to the target database
+        sectionRepository.save(targetSection);
+        
+        // Retrieve all D_Unit entities for the source Section entity
+        List<D_Unit> dUnitList = unitRepository.findBySection(sourceSection);
+        
+        // Loop through each D_Unit entity and copy its data to the target Section entity
+        for (D_Unit sourceDUnit : dUnitList) {
+        // Create a new D_Unit entity for the target Section entity and copy the common attributes
+        D_Unit targetDUnit = new D_Unit();
+        targetDUnit.setUnit(sourceDUnit.getUnit());
+        targetDUnit.setSection(targetSection);
+        
+        // Save the new D_Unit entity to the target database
+        unitRepository.save(targetDUnit);
         }
+        }
+        
+        }*/
 
         List<Currency> findCurrencyByBudget = currencyRepository.findByBudget(sourceBudget);
         for (Currency currency : findCurrencyByBudget) {
@@ -196,60 +197,63 @@ public class BudgetService {
             targetCurrency.setEnabled(currency.isEnabled());
             targetCurrency.setBudget(targetBudget);
             targetCurrency.setRate(currency.getRate());
+            targetCurrency.setData(currency.getData());
             currencyRepository.save(targetCurrency);
 
         }
+        
+        
         // Retrieve all Coalevel1 entities for the source financial year
-        List<Coalevel1> coalevel1List = coalevel1Repository.findAll();
+        /*        List<Coalevel1> coalevel1List = coalevel1Repository.findAll();
         // Loop through each Coalevel1 entity and copy its data to the target financial year
         for (Coalevel1 sourceCoalevel1 : coalevel1List) {
-            // Create a new Coalevel1 entity for the target financial year and copy the common attributes
-            Coalevel1 targetCoalevel1 = new Coalevel1();
-            targetCoalevel1.setName(sourceCoalevel1.getName());
-            //targetCoalevel1.setBudget(targetBudget);
-
-            // Save the new Coalevel1 entity to the target database
-            coalevel1Repository.save(targetCoalevel1);
-
-            // Retrieve all Coalevel12 entities for the source Coalevel1 entity
-            List<Coalevel12> coalevel12List = coalevel12Repository.findByCoalevel1(sourceCoalevel1);
-            for (Coalevel12 sourceCoalevel12 : coalevel12List) {
-                Coalevel12 targetCoalevel12 = new Coalevel12();
-                targetCoalevel12.setName(sourceCoalevel12.getName());
-                targetCoalevel12.setCoalevel1(targetCoalevel1);
-
-                // Save the new Coalevel11 entity to the target database
-                coalevel12Repository.save(targetCoalevel12);
-            }
-
-            // Retrieve all Coalevel11 entities for the source Coalevel1 entity
-            List<Coalevel11> coalevel11List = coalevel11Repository.findByCoalevel1(sourceCoalevel1);
-
-            // Loop through each Coalevel11 entity and copy its data to the target Coalevel1 entity
-            for (Coalevel11 sourceCoalevel11 : coalevel11List) {
-                // Create a new Coalevel11 entity for the target Coalevel1 entity and copy the common attributes
-                Coalevel11 targetCoalevel11 = new Coalevel11();
-                targetCoalevel11.setName(sourceCoalevel11.getName());
-                targetCoalevel11.setCoalevel1(targetCoalevel1);
-
-                // Save the new Coalevel11 entity to the target database
-                coalevel11Repository.save(targetCoalevel11);
-
-                // Retrieve all Coalevel13 entities for the source Coalevel11 entity
-                List<Coalevel13> coalevel13List = coalevel13Repository.findByCoalevel11(sourceCoalevel11);
-
-                // Loop through each Coalevel13 entity and copy its data to the target Coalevel11 entity
-                for (Coalevel13 sourceCoalevel13 : coalevel13List) {
-                    // Create a new Coalevel13 entity for the target Coalevel11 entity and copy the common attributes
-                    Coalevel13 targetCoalevel13 = new Coalevel13();
-                    targetCoalevel13.setName(sourceCoalevel13.getName());
-                    targetCoalevel13.setCoalevel11(targetCoalevel11);
-
-                    // Save the new Coalevel13 entity to the target database
-                    coalevel13Repository.save(targetCoalevel13);
-                }
-            }
+        // Create a new Coalevel1 entity for the target financial year and copy the common attributes
+        Coalevel1 targetCoalevel1 = new Coalevel1();
+        targetCoalevel1.setName(sourceCoalevel1.getName());
+        //targetCoalevel1.setBudget(targetBudget);
+        
+        // Save the new Coalevel1 entity to the target database
+        coalevel1Repository.save(targetCoalevel1);
+        
+        // Retrieve all Coalevel12 entities for the source Coalevel1 entity
+        List<Coalevel12> coalevel12List = coalevel12Repository.findByCoalevel1(sourceCoalevel1);
+        for (Coalevel12 sourceCoalevel12 : coalevel12List) {
+        Coalevel12 targetCoalevel12 = new Coalevel12();
+        targetCoalevel12.setName(sourceCoalevel12.getName());
+        targetCoalevel12.setCoalevel1(targetCoalevel1);
+        
+        // Save the new Coalevel11 entity to the target database
+        coalevel12Repository.save(targetCoalevel12);
         }
+        
+        // Retrieve all Coalevel11 entities for the source Coalevel1 entity
+        List<Coalevel11> coalevel11List = coalevel11Repository.findByCoalevel1(sourceCoalevel1);
+        
+        // Loop through each Coalevel11 entity and copy its data to the target Coalevel1 entity
+        for (Coalevel11 sourceCoalevel11 : coalevel11List) {
+        // Create a new Coalevel11 entity for the target Coalevel1 entity and copy the common attributes
+        Coalevel11 targetCoalevel11 = new Coalevel11();
+        targetCoalevel11.setName(sourceCoalevel11.getName());
+        targetCoalevel11.setCoalevel1(targetCoalevel1);
+        
+        // Save the new Coalevel11 entity to the target database
+        coalevel11Repository.save(targetCoalevel11);
+        
+        // Retrieve all Coalevel13 entities for the source Coalevel11 entity
+        List<Coalevel13> coalevel13List = coalevel13Repository.findByCoalevel11(sourceCoalevel11);
+        
+        // Loop through each Coalevel13 entity and copy its data to the target Coalevel11 entity
+        for (Coalevel13 sourceCoalevel13 : coalevel13List) {
+        // Create a new Coalevel13 entity for the target Coalevel11 entity and copy the common attributes
+        Coalevel13 targetCoalevel13 = new Coalevel13();
+        targetCoalevel13.setName(sourceCoalevel13.getName());
+        targetCoalevel13.setCoalevel11(targetCoalevel11);
+        
+        // Save the new Coalevel13 entity to the target database
+        coalevel13Repository.save(targetCoalevel13);
+        }
+        }
+        }*/
         saveFromPreviousBudget(sourceBudget, targetBudget);
     }
 

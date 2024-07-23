@@ -358,6 +358,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     private TextArea nameNdp6 = new TextArea("Objective");
 
     Checkbox checkbox = new Checkbox("Active");
+    Button saveCategory = new Button("Save");
     private final BudgetItemsService budgetItemsService;
     private final FundsourceService fundsourceService;
     PeriodExtractor periodExtractor = new PeriodExtractor();
@@ -491,6 +492,18 @@ public class BudgetView extends Div implements BeforeEnterObserver {
                 menuBar.setEnabled(true);
                 currentfy = sampleBudget.getFinancialYear();
                 populateForm(event.getValue());
+                if(event.getValue()!=null){
+                    if(event.getValue().isActive()){
+                      saveCurrency.setEnabled(true);  
+                      save.setEnabled(true);  
+                      saveCategory.setEnabled(true);
+                    }else{
+                        saveCurrency.setEnabled(false); 
+                        save.setEnabled(false);
+                        saveCategory.setEnabled(false);
+                    }
+                    
+                }
                 UI.getCurrent().navigate(BudgetView.class);
 
             } else {
@@ -2160,11 +2173,11 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         BudgetTypeNameField.setPlaceholder("Budget Category");
 
         HorizontalLayout buttonLayout = new HorizontalLayout();
-        Button save = new Button("Save");
+        
         Button cancel = new Button("Cancel");
         buttonLayout.setClassName("button-layout");
-        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonLayout.add(BudgetTypeNameField, save);
+        saveCategory.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        buttonLayout.add(BudgetTypeNameField, saveCategory);
         BudgetTypeNameField.setWidthFull();
         BudgetTypeNameField.setClearButtonVisible(true);
         buttonLayout.setWidthFull();
@@ -2192,7 +2205,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             }
         });
 
-        save.addClickListener(e -> {
+        saveCategory.addClickListener(e -> {
             if (validEditorTextFieldsOrganisation().toString().length() > 0) {
                 NotificationDialogue(validEditorTextFieldsOrganisation().toString());
             } else {
@@ -2534,9 +2547,10 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             Text textField = new Text("");
             if (Optional.ofNullable(Currency.getBudget()).isPresent()) {
 
-                Optional<CurrencyData> curr = sampleCurrencyDataService.get(Currency.getCurrencyid());
-                if (curr.isPresent()) {
-                    textField.setText(curr.get().getCurrency());
+                //Optional<CurrencyData> curr = sampleCurrencyDataService.get(Currency.getCurrencyid());
+                //Currency curr2=Currency.getData().getCurrencyShort()
+                if (Currency.getData()!=null) {
+                    textField.setText(Currency.getData().getCurrencyShort());
                 } else {
                     textField.setText("Not Found");
                 }
@@ -2561,7 +2575,8 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             if (event.getValue() != null) {
                 currencyRateField.setValue(event.getValue().getRate());
                 currencyEnabledField.setValue(event.getValue().isEnabled());
-                currencyName.setValue(sampleCurrencyDataService.get(event.getValue().getCurrencyid()).get());
+                //currencyName.setValue(sampleCurrencyDataService.get(event.getValue().getCurrencyid()).get());
+                currencyName.setValue(event.getValue().getData());
                 //UI.getCurrent().navigate(BudgetView.class);
 
             } else {
