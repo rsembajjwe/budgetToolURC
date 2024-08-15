@@ -236,7 +236,7 @@ public class ActualView extends Div {
         budget.setItemLabelGenerator(Budget::getFinancialYear);
         budget.setItems(query -> sampleBudgetService.list(PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query))).stream());
         Div div = new Div();
-        div.add(budget, comboBoxD_Section, view,downloadWorkplan, downloadWorkplan2);
+        div.add(budget, comboBoxD_Section, view, downloadWorkplan, downloadWorkplan2);
         downloadWorkplan.addThemeVariants(ButtonVariant.LUMO_ICON);
         downloadWorkplan.setEnabled(false);
 
@@ -316,7 +316,7 @@ public class ActualView extends Div {
                 downloadWorkplan.setEnabled(true);
                 downloadWorkplan2.setEnabled(true);
                 //gridBudgetItems.setItems(budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems()));
-               // gridBudgetItemsQuarterlyGrid.setItems(budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems()));
+                // gridBudgetItemsQuarterlyGrid.setItems(budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems()));
             } else {
                 downloadWorkplan.setEnabled(false);
                 downloadWorkplan2.setEnabled(false);
@@ -2228,9 +2228,69 @@ public class ActualView extends Div {
                     String name1 = budgetItem1.getCoacode() != null ? budgetItem1.getCoacode().getName() : "";
                     String name2 = budgetItem2.getCoacode() != null ? budgetItem2.getCoacode().getName() : "";
                     return name1.compareTo(name2);
-                }).setFrozen(true).setTooltipGenerator(trans -> {
+                }).setTooltipGenerator(trans -> {
             return trans.getCoacode().getCode();
         });
+
+        gridTransactions.addColumn(budgetItem -> {
+            Text label = new Text(budgetItem.getBudgetType() != null ? budgetItem.getBudgetType().getCode() : "");
+            return label.getText(); // Get the text content
+        })
+                .setHeader("Budget Type").setWidth("150px").setFlexGrow(0)
+                .setSortable(true) // Make the column sortable
+                .setComparator((budgetItem1, budgetItem2) -> {
+                    // Implement your custom comparator logic here
+                    String name1 = budgetItem1.getBudgetType() != null ? budgetItem1.getBudgetType().getCode() : "";
+                    String name2 = budgetItem2.getBudgetType() != null ? budgetItem2.getBudgetType().getCode() : "";
+                    return name1.compareTo(name2);
+                }).setTooltipGenerator(trans -> {
+            String sectcode = trans.getBudgetType().getName();
+            if (sectcode == null || sectcode.trim() == "") {
+                return "_";
+            } else {
+                return sectcode;
+            }
+        });
+
+        gridTransactions.addColumn(budgetItem -> {
+            Text label = new Text(budgetItem.getFundsource() != null ? budgetItem.getFundsource().getCode() : "");
+            return label.getText(); // Get the text content
+        })
+                .setHeader("Fund Source").setWidth("150px").setFlexGrow(0)
+                .setSortable(true) // Make the column sortable
+                .setComparator((budgetItem1, budgetItem2) -> {
+                    // Implement your custom comparator logic here
+                    String name1 = budgetItem1.getFundsource() != null ? budgetItem1.getFundsource().getCode() : "";
+                    String name2 = budgetItem2.getFundsource() != null ? budgetItem2.getFundsource().getCode() : "";
+                    return name1.compareTo(name2);
+                })
+                .setTooltipGenerator(trans -> {
+                    if (trans.getFundsource() == null || trans.getFundsource().getFundsource() == null || trans.getFundsource().getFundsource().trim().isEmpty()) {
+                        return "_";
+                    } else {
+                        return trans.getFundsource().getFundsource();
+                    }
+                });
+
+        gridTransactions.addColumn(budgetItem -> {
+            Text label = new Text(budgetItem.getActivity() != null ? budgetItem.getActivity().getActivityCode() : "");
+            return label.getText(); // Get the text content
+        })
+                .setHeader("Activity Code").setWidth("150px").setFlexGrow(0)
+                .setSortable(true) // Make the column sortable
+                .setComparator((budgetItem1, budgetItem2) -> {
+                    // Implement your custom comparator logic here
+                    String name1 = budgetItem1.getActivity() != null ? budgetItem1.getActivity().getActivityCode() : "";
+                    String name2 = budgetItem2.getActivity() != null ? budgetItem2.getActivity().getActivityCode() : "";
+                    return name1.compareTo(name2);
+                })
+                .setTooltipGenerator(trans -> {
+                    if (trans.getActivity() == null || trans.getActivity().getName() == null || trans.getActivity().getName().trim().isEmpty()) {
+                        return "_";
+                    } else {
+                        return trans.getActivity().getName();
+                    }
+                });
 
         gridTransactions.getStyle().set("width", "100%").set("max-width", "100%");
         gridTransactions.setSelectionMode(Grid.SelectionMode.SINGLE);
