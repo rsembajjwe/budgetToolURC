@@ -193,6 +193,7 @@ public class ActualView extends Div {
     PeriodExtractor gen = new PeriodExtractor();
     private final CoaService sampleCoaService;
     private Span footerTotal = new Span("");
+    Button view = new Button("View", new Icon(VaadinIcon.MENU));
 
     @Autowired
 
@@ -235,7 +236,7 @@ public class ActualView extends Div {
         budget.setItemLabelGenerator(Budget::getFinancialYear);
         budget.setItems(query -> sampleBudgetService.list(PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query))).stream());
         Div div = new Div();
-        div.add(budget, comboBoxD_Section, downloadWorkplan, downloadWorkplan2);
+        div.add(budget, comboBoxD_Section, view,downloadWorkplan, downloadWorkplan2);
         downloadWorkplan.addThemeVariants(ButtonVariant.LUMO_ICON);
         downloadWorkplan.setEnabled(false);
 
@@ -290,7 +291,12 @@ public class ActualView extends Div {
             }
 
         });
-
+        view.addSingleClickListener(v -> {
+            if (!comboBoxD_Section.isEmpty() || !budget.isEmpty()) {
+                gridBudgetItems.setItems(budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems()));
+                gridBudgetItemsQuarterlyGrid.setItems(budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems()));
+            }
+        });
         budget.addValueChangeListener(e -> {
             setSpanValues();
             setSpanQtrValues();
@@ -298,8 +304,7 @@ public class ActualView extends Div {
             if (!comboBoxD_Section.isEmpty() && !budget.isEmpty()) {
                 downloadWorkplan.setEnabled(true);
                 downloadWorkplan2.setEnabled(true);
-                gridBudgetItems.setItems(budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems()));
-                gridBudgetItemsQuarterlyGrid.setItems(budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems()));
+
             } else {
                 downloadWorkplan.setEnabled(false);
                 downloadWorkplan2.setEnabled(false);
@@ -310,8 +315,8 @@ public class ActualView extends Div {
             if (!budget.isEmpty() && !comboBoxD_Section.isEmpty()) {
                 downloadWorkplan.setEnabled(true);
                 downloadWorkplan2.setEnabled(true);
-                gridBudgetItems.setItems(budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems()));
-                gridBudgetItemsQuarterlyGrid.setItems(budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems()));
+                //gridBudgetItems.setItems(budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems()));
+               // gridBudgetItemsQuarterlyGrid.setItems(budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems()));
             } else {
                 downloadWorkplan.setEnabled(false);
                 downloadWorkplan2.setEnabled(false);
@@ -2161,9 +2166,7 @@ public class ActualView extends Div {
         gridTransactions.addColumn(BudgetItems::getItem).setHeader("Name").setFrozen(true).setWidth("200px");
 
         List<BudgetItems> list = budgetItemsService.findBudgetItemsByBudgetAndCoaAndSectios(target.getBudget(), target.getCoacode(), target.getDeptUnit(), month2);
-        System.out.println(list.size() + " " + target.getBudget().getFinancialYear() + " " + target.getCoacode().getCode() + " " + target.getDeptUnit().size() + " " + month2);
-        //footerTotal.setText("Total: " + sumBudgetAmountsByMonth(list, month2));
-        // footerTotal.getStyle().set("text-align", "right").set("font-weight", "bold");
+
         gridTransactions.addColumn(salfldg -> {
 
             return formatAmount(salfldg.getJul()) + "";
@@ -2218,7 +2221,7 @@ public class ActualView extends Div {
             Text label = new Text(coacode != null ? coacode.getNAME() : "");
             return label.getText(); // Get the text content
         })
-                .setHeader("Code").setWidth("150px").setFlexGrow(0)
+                .setHeader("Section").setWidth("150px").setFlexGrow(0)
                 .setSortable(true) // Make the column sortable
                 .setComparator((budgetItem1, budgetItem2) -> {
                     // Implement your custom comparator logic here
@@ -2800,6 +2803,7 @@ public class ActualView extends Div {
         }
 
     }
+
     public String sumBudgetAmountsByMonth2(List<BudgetItems> projections, String month) {
         BigDecimal sum = BigDecimal.ZERO;
         for (BudgetItems projection : projections) {
@@ -2850,13 +2854,14 @@ public class ActualView extends Div {
         }
         if (sum.compareTo(BigDecimal.ZERO) < 0) {
             sums = decimalFormat.format(sum.abs());
-            return sums ;
+            return sums;
         } else {
             sums = decimalFormat.format(sum);
-            return sums ;
+            return sums;
         }
 
     }
+
     public String sumBudgetAmountsByMonth(BudgetItems projection, String month) {
         BigDecimal sum = BigDecimal.ZERO;
 
@@ -2932,7 +2937,8 @@ public class ActualView extends Div {
         }
 
     }
-        public BigDecimal sumBudgetAmountsByMonth2(BudgetItems projection, String month) {
+
+    public BigDecimal sumBudgetAmountsByMonth2(BudgetItems projection, String month) {
         BigDecimal sum = BigDecimal.ZERO;
 
         switch (month) {
