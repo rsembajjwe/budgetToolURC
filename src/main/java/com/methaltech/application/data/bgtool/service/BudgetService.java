@@ -19,9 +19,12 @@ import com.methaltech.application.data.bgtool.repository.Coalevel13Repository;
 import com.methaltech.application.data.bgtool.repository.Coalevel1Repository;
 import com.methaltech.application.data.bgtool.repository.CurrencyRepository;
 import com.methaltech.application.data.bgtool.repository.DepartmentRepository;
+import com.methaltech.application.data.bgtool.repository.FundsourceRepository;
 import com.methaltech.application.data.bgtool.repository.OrganisationRepository;
 import com.methaltech.application.data.bgtool.repository.SectionRepository;
 import com.methaltech.application.data.bgtool.repository.UnitRepository;
+import com.methaltech.application.data.entity.bgtool.Fundsource;
+import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -50,6 +53,7 @@ public class BudgetService {
     private final SectionRepository sectionRepository;
     private final UnitRepository unitRepository;
     private final CoaRepository coaRepository;
+    private final FundsourceRepository fundsourceRepository;
 
     @Autowired
     public BudgetService(BudgetRepository repository, Coalevel1Repository coalevel1Repository,
@@ -57,7 +61,7 @@ public class BudgetService {
             Coalevel13Repository coalevel13Repository, CurrencyRepository currencyRepository,
             OrganisationRepository organisationRepository, DepartmentRepository departmentRepository,
             SectionRepository sectionRepository, UnitRepository unitRepository,
-            CoaRepository coaRepository) {
+            CoaRepository coaRepository, FundsourceRepository fundsourceRepository) {
         this.repository = repository;
         this.coalevel1Repository = coalevel1Repository;
         this.coalevel11Repository = coalevel11Repository;
@@ -69,6 +73,7 @@ public class BudgetService {
         this.sectionRepository = sectionRepository;
         this.unitRepository = unitRepository;
         this.coaRepository = coaRepository;
+        this.fundsourceRepository = fundsourceRepository;
 
     }
 
@@ -147,48 +152,6 @@ public class BudgetService {
             // Save the new Organization entity to the target database
             organisationRepository.save(targetOrganization);
         }
-        // Retrieve all Department entities for the source Organization entity
-       /* List<Department> departmentList = departmentRepository.findAll();
-
-        // Loop through each Department entity and copy its data to the target Organization entity
-                for (Department sourceDepartment : departmentList) {
-        // Create a new Department entity for the target Organization entity and copy the common attributes
-        Department targetDepartment = new Department();
-        targetDepartment.setDepartment(sourceDepartment.getDepartment());
-        // targetDepartment.setOrganisation(targetOrganization);
-        
-        // Save the new Department entity to the target database
-        departmentRepository.save(targetDepartment);
-        
-        // Retrieve all Section entities for the source Department entity
-        List<Section> sectionList = sectionRepository.findByDepartment(sourceDepartment);
-        
-        // Loop through each Section entity and copy its data to the target Department entity
-        for (Section sourceSection : sectionList) {
-        // Create a new Section entity for the target Department entity and copy the common attributes
-        Section targetSection = new Section();
-        targetSection.setSection(sourceSection.getSection());
-        targetSection.setDepartment(targetDepartment);
-        
-        // Save the new Section entity to the target database
-        sectionRepository.save(targetSection);
-        
-        // Retrieve all D_Unit entities for the source Section entity
-        List<D_Unit> dUnitList = unitRepository.findBySection(sourceSection);
-        
-        // Loop through each D_Unit entity and copy its data to the target Section entity
-        for (D_Unit sourceDUnit : dUnitList) {
-        // Create a new D_Unit entity for the target Section entity and copy the common attributes
-        D_Unit targetDUnit = new D_Unit();
-        targetDUnit.setUnit(sourceDUnit.getUnit());
-        targetDUnit.setSection(targetSection);
-        
-        // Save the new D_Unit entity to the target database
-        unitRepository.save(targetDUnit);
-        }
-        }
-        
-        }*/
 
         List<Currency> findCurrencyByBudget = currencyRepository.findByBudget(sourceBudget);
         for (Currency currency : findCurrencyByBudget) {
@@ -201,59 +164,17 @@ public class BudgetService {
             currencyRepository.save(targetCurrency);
 
         }
-        
-        
-        // Retrieve all Coalevel1 entities for the source financial year
-        /*        List<Coalevel1> coalevel1List = coalevel1Repository.findAll();
-        // Loop through each Coalevel1 entity and copy its data to the target financial year
-        for (Coalevel1 sourceCoalevel1 : coalevel1List) {
-        // Create a new Coalevel1 entity for the target financial year and copy the common attributes
-        Coalevel1 targetCoalevel1 = new Coalevel1();
-        targetCoalevel1.setName(sourceCoalevel1.getName());
-        //targetCoalevel1.setBudget(targetBudget);
-        
-        // Save the new Coalevel1 entity to the target database
-        coalevel1Repository.save(targetCoalevel1);
-        
-        // Retrieve all Coalevel12 entities for the source Coalevel1 entity
-        List<Coalevel12> coalevel12List = coalevel12Repository.findByCoalevel1(sourceCoalevel1);
-        for (Coalevel12 sourceCoalevel12 : coalevel12List) {
-        Coalevel12 targetCoalevel12 = new Coalevel12();
-        targetCoalevel12.setName(sourceCoalevel12.getName());
-        targetCoalevel12.setCoalevel1(targetCoalevel1);
-        
-        // Save the new Coalevel11 entity to the target database
-        coalevel12Repository.save(targetCoalevel12);
+
+        List<Fundsource> fs = fundsourceRepository.findByBudget(sourceBudget);
+
+        for (Fundsource f : fs) {
+            Fundsource nfs = new Fundsource();
+            nfs.setBudget(targetBudget);
+            nfs.setFundsource(f.getFundsource());
+            nfs.setCode(generateFundSourceCode(targetBudget));
+            fundsourceRepository.save(nfs);
         }
-        
-        // Retrieve all Coalevel11 entities for the source Coalevel1 entity
-        List<Coalevel11> coalevel11List = coalevel11Repository.findByCoalevel1(sourceCoalevel1);
-        
-        // Loop through each Coalevel11 entity and copy its data to the target Coalevel1 entity
-        for (Coalevel11 sourceCoalevel11 : coalevel11List) {
-        // Create a new Coalevel11 entity for the target Coalevel1 entity and copy the common attributes
-        Coalevel11 targetCoalevel11 = new Coalevel11();
-        targetCoalevel11.setName(sourceCoalevel11.getName());
-        targetCoalevel11.setCoalevel1(targetCoalevel1);
-        
-        // Save the new Coalevel11 entity to the target database
-        coalevel11Repository.save(targetCoalevel11);
-        
-        // Retrieve all Coalevel13 entities for the source Coalevel11 entity
-        List<Coalevel13> coalevel13List = coalevel13Repository.findByCoalevel11(sourceCoalevel11);
-        
-        // Loop through each Coalevel13 entity and copy its data to the target Coalevel11 entity
-        for (Coalevel13 sourceCoalevel13 : coalevel13List) {
-        // Create a new Coalevel13 entity for the target Coalevel11 entity and copy the common attributes
-        Coalevel13 targetCoalevel13 = new Coalevel13();
-        targetCoalevel13.setName(sourceCoalevel13.getName());
-        targetCoalevel13.setCoalevel11(targetCoalevel11);
-        
-        // Save the new Coalevel13 entity to the target database
-        coalevel13Repository.save(targetCoalevel13);
-        }
-        }
-        }*/
+
         saveFromPreviousBudget(sourceBudget, targetBudget);
     }
 
@@ -261,43 +182,80 @@ public class BudgetService {
         List<COA> coaList = coaRepository.findByBudget(oldBudget);
         int num = coaList.size();
 
-        // Loop through each COA entity and copy its data to the target Coalevel12 entity
         for (COA sourceCOA : coaList) {
             // Create a new COA entity for the target Coalevel12 entity and copy the common attributes
             COA targetCOA = new COA();
             targetCOA.setCode(sourceCOA.getCode());
             targetCOA.setName(sourceCOA.getName());
             targetCOA.setBudget(newBudget);
+            targetCOA.setDisplay(sourceCOA.getDisplay());
+            targetCOA.setProcclass(sourceCOA.getProcclass());
+            targetCOA.setDeptsection(sourceCOA.getDeptsection());
+            targetCOA.setStatCode(sourceCOA.getStatCode());
+            targetCOA.setStateOpen(sourceCOA.isStateOpen());
+
             Coalevel1 targetCoalevell = coalevel1Repository.findByNameAndBudget(sourceCOA.getCoalevel1().getName());
             targetCOA.setCoalevel1(targetCoalevell);
+
             targetCOA.setCoalevel11(
                     Optional.ofNullable(sourceCOA.getCoalevel11())
                             .map(coa11 -> coalevel11Repository.findByCoalevel1AndName(targetCoalevell, coa11.getName()))
-                            .orElse(null));
+                            .orElse(null)
+            );
+
             targetCOA.setCoalevel12(
                     Optional.ofNullable(sourceCOA.getCoalevel12())
                             .map(coa12 -> coalevel12Repository.findByCoalevel1AndName(targetCoalevell, coa12.getName()))
-                            .orElse(null));
+                            .orElse(null)
+            );
+
             if (sourceCOA.getCoalevel13() != null) {
                 Coalevel13 coalevel13 = coalevel13Repository.findByCoalevel11AndName(targetCOA.getCoalevel11(), sourceCOA.getCoalevel13().getName());
                 targetCOA.setCoalevel13(coalevel13);
             }
-            Set<Section> unitnew = new HashSet<>();
-            for (Section units : sourceCOA.getDsections()) {
-                //D_Unit unit = unitRepository.findByBudgetAndUnit(newBudget, units.getUnit());
-                // unitnew.add(unit);
 
+            // Create a new Set for Dsections to avoid shared references
+            Set<UrcDeptSectionAnlDimbgt> unitnew = new HashSet<>();
+            for (UrcDeptSectionAnlDimbgt units : sourceCOA.getDeptsection()) {
+                if (units != null) {
+                    unitnew.add(units);
+                }
             }
-            targetCOA.setDsections(unitnew);
-            num++;
+            targetCOA.setDeptsection(unitnew);
 
             // Save the new COA entity to the target database
             coaRepository.save(targetCOA);
+            num++;
         }
+
         return num;
     }
 
     public Optional<Budget> getLastSavedBudget2() {
         return repository.findTopByOrderByIdDesc();
+    }
+
+    private String generateFundSourceCode(Budget budget) {
+        // Assuming you have a way to retrieve the last code used in your database
+        // For demonstration purposes, let's assume it's stored in a variable called lastCode
+        // You can replace it with your actual logic to fetch the last used code
+        String lastCode = ""; // Replace this with actaul logic to retrieve last used code
+
+        Fundsource org = fundsourceRepository.findTopByBudgetOrderByIdDesc(budget);
+        // If lastCode is null or empty, start with ZBT01
+        if (org == null) {
+            return "ZBFS01";
+        }
+        lastCode = org.getCode();
+        // Extract the numeric part of the last code
+        String numericPart = lastCode.substring(4); // Assuming "ZBT" is always the prefix
+        int index = Integer.parseInt(numericPart);
+
+        // Increment index and format it with leading zeros
+        index++;
+        String newIndex = String.format("%02d", index);
+
+        // Construct the new code
+        return "ZBFS" + newIndex;
     }
 }

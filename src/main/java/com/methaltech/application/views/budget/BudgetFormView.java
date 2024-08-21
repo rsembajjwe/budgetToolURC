@@ -1922,6 +1922,7 @@ public class BudgetFormView extends Div {
 
                 if (!comboBoxBudget.isEmpty()) {
                     gridCOA.setItems(coaService.findByDeptSectionAndCodeStartingWith(comboBoxD_Section.getValue(), Coalevel1String(ev.getValue()), comboBoxBudget.getValue()));
+                   Notification.show(coaService.findByDeptSectionAndCodeStartingWith(comboBoxD_Section.getValue(), Coalevel1String(ev.getValue()), comboBoxBudget.getValue()).size()+"");
                     searchCoa.setValue(Coalevel1String(ev.getValue()));
                 }
 

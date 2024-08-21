@@ -92,7 +92,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 @PageTitle("Actuals")
 @Route(value = "actuals", layout = MainLayout.class)
-@RolesAllowed({"ADMIN", "PROCUREMENT", "BLO", "HOD"})
+@RolesAllowed({"ADMIN", "PROCUREMENT", "BLO", "HOD", "USER"})
 @Uses(Icon.class)
 public class ActualView extends Div {
 
@@ -228,7 +228,7 @@ public class ActualView extends Div {
         budget.getStyle().set("marginRight", "10px");
         comboBoxD_Section.getStyle().set("marginRight", "10px");
         comboBoxD_Section.setItemLabelGenerator(UrcDeptSectionAnlDimbgt::getNAME);
-        if (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT)) {
+        if (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT) || user.getRoles().contains(Role.USER)) {
             comboBoxD_Section.setItems(sampleUrcDeptSectionAnlDimbgtService.getAllUrcSectionsAnlDims());
         } else {
             comboBoxD_Section.setItems(user.getDeptsection());

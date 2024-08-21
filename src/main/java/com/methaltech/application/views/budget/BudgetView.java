@@ -492,17 +492,17 @@ public class BudgetView extends Div implements BeforeEnterObserver {
                 menuBar.setEnabled(true);
                 currentfy = sampleBudget.getFinancialYear();
                 populateForm(event.getValue());
-                if(event.getValue()!=null){
-                    if(event.getValue().isActive()){
-                      saveCurrency.setEnabled(true);  
-                      save.setEnabled(true);  
-                      saveCategory.setEnabled(true);
-                    }else{
-                        saveCurrency.setEnabled(false); 
+                if (event.getValue() != null) {
+                    if (event.getValue().isActive()) {
+                        saveCurrency.setEnabled(true);
+                        save.setEnabled(true);
+                        saveCategory.setEnabled(true);
+                    } else {
+                        saveCurrency.setEnabled(false);
                         save.setEnabled(false);
                         saveCategory.setEnabled(false);
                     }
-                    
+
                 }
                 UI.getCurrent().navigate(BudgetView.class);
 
@@ -990,7 +990,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             } else {
                 if (!gridCOASetting.asSingleSelect().isEmpty()) {
                     UR5_ACNT acnt = gridCOASetting.asSingleSelect().getValue();
-                    sampleCOA = sampleCoaService.findByCodeAndBudget(acnt.getAcntCode(), sampleBudget);
+                    sampleCOA = sampleCoaService.findByCodeAndBudget(acnt.getAcntCode().trim(), sampleBudget);
                     try {
                         if (sampleCOA == null) {
                             sampleCOA = new COA();
@@ -998,7 +998,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
                             sampleCOA.setCode(CodeField.getValue());
                             sampleCOA.setBudget(sampleBudget);
                             // sampleCOA.setCoalevel13(Coalevel13Box.getValue());
-                            //sampleCOA.setCoalevel1(Coalevel1Box1.getValue());
+                            sampleCOA.setCoalevel1(Coalevel1Box1.getValue());
                             //sampleCOA.setCoalevel12(Coalevel12Box.getValue());
                             sampleCOA.setDeptsection(sections.getValue());
                             //sampleCOA.setCoalevel11(Coalevel11Box.getValue());
@@ -1007,36 +1007,19 @@ public class BudgetView extends Div implements BeforeEnterObserver {
                             sampleCOA.setProcclass(procclass.getValue());
                             sampleCOA.setDisplay(displayBox.getValue());
                             sampleCOA.setStateOpen(checkbox.getValue());
-                            /*                     if (coaunits.getSelectedItems().isEmpty() || coaunits.getSelectedItems() == null) {
-                            //coaSAVE.setD_units(coaunits.getSelectedItems().stream().toList());
-                            } else if (sampleCoaService.existsByCode(CodeField.getValue(), sampleBudget) == true) {
-                            Notificationerror("Account Code Exits. ");
-                            } else {
-                            sampleCOA.setDsections(coaunits.getSelectedItems().stream().toList());
-                            }*/
 
-                            // data.setSections(sect);
                         } else {
                             sampleCOA.setName(COANameField.getValue());
                             sampleCOA.setCode(CodeField.getValue());
                             sampleCOA.setBudget(sampleBudget);
                             //sampleCOA.setCoalevel13(Coalevel13Box.getValue());
-                            // sampleCOA.setCoalevel1(Coalevel1Box1.getValue());
+                            sampleCOA.setCoalevel1(Coalevel1Box1.getValue());
                             //sampleCOA.setCoalevel12(Coalevel12Box.getValue());
                             sampleCOA.setDeptsection(sections.getValue());
                             sampleCOA.setProcclass(procclass.getValue());
                             sampleCOA.setDisplay(displayBox.getValue());
                             sampleCOA.setStateOpen(checkbox.getValue());
-                            //sampleCOA.setCoalevel11(Coalevel11Box.getValue());
-                            /*                            Set<Section> selectedSections = new HashSet<>(coaunits.getValue());
-                            sampleCOA.setDsections(selectedSections);*/
 
- /*
-                            if (coaunits.getSelectedItems().isEmpty() || coaunits.getSelectedItems() == null) {
-                            //coaSAVE.setD_units(coaunits.getSelectedItems().stream().toList());
-                            } else {
-                            sampleCOA.setDsections(coaunits.getSelectedItems().stream().toList());
-                            }*/
                         }
 
                     } catch (Exception validationException) {
@@ -2173,7 +2156,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         BudgetTypeNameField.setPlaceholder("Budget Category");
 
         HorizontalLayout buttonLayout = new HorizontalLayout();
-        
+
         Button cancel = new Button("Cancel");
         buttonLayout.setClassName("button-layout");
         saveCategory.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -2243,102 +2226,6 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         return dialogLayout;
     }
 
-    /*    private VerticalLayout createProcurementMethodsGridDialogLayout() {
-    ProcurementMethodNameField = new TextField("Procurement Method");
-    ProcurementMethodNameField.setPlaceholder("Procurement Method");
-    
-    HorizontalLayout buttonLayout = new HorizontalLayout();
-    Button save = new Button("Save");
-    Button cancel = new Button("Delete");
-    buttonLayout.setClassName("button-layout");
-    save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    buttonLayout.add(ProcurementMethodNameField, save, cancel);
-    ProcurementMethodNameField.setWidthFull();
-    ProcurementMethodNameField.setClearButtonVisible(true);
-    buttonLayout.setWidthFull();
-    buttonLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
-    
-    gridProcurementMethod = new Grid<>(ProcurementMethod.class, false);
-    gridProcurementMethod.setHeight(200, Unit.PIXELS);
-    gridProcurementMethod.setSelectionMode(Grid.SelectionMode.SINGLE);
-    // Configure Grid
-    gridProcurementMethod.addColumn("procuremntMethod").setAutoWidth(true);
-    gridProcurementMethod.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_WRAP_CELL_CONTENT);
-    
-    gridProcurementMethod.asSingleSelect().addValueChangeListener(event -> {
-    if (event.getValue() != null) {
-    ProcurementMethodNameField.setValue(event.getValue().getProcuremntMethod());
-    sampleProcurementMethod = event.getValue();
-    UI.getCurrent().navigate(BudgetView.class);
-    
-    } else {
-    sampleProcurementMethod = new ProcurementMethod();
-    ProcurementMethodNameField.clear();
-    UI.getCurrent().navigate(BudgetView.class);
-    
-    }
-    });
-    
-    save.addClickListener(e -> {
-    if (validEditorTextFieldsProcurementMethod().toString().length() > 0) {
-    NotificationDialogue(validEditorTextFieldsProcurementMethod().toString());
-    } else {
-    sampleProcurementMethod = gridProcurementMethod.asSingleSelect().getValue();
-    if (sampleProcurementMethod == null) {
-    ProcurementMethod org = new ProcurementMethod();
-    org.setProcuremntMethod(ProcurementMethodNameField.getValue());
-    sampleProcurementMethod = sampleProcurementMethodService.save(org);  // Assign the created organisation to sampleOrganisation
-    } else {
-    sampleProcurementMethod.setProcuremntMethod(ProcurementMethodNameField.getValue());
-    sampleProcurementMethodService.save(sampleProcurementMethod);
-    }
-    }
-    
-    ProcurementMethodNameField.clear();
-    refreshGridProcurementMethod();
-    });
-    
-    cancel.addClickListener(e -> {
-    if (!gridProcurementMethod.asSingleSelect().isEmpty()) {
-    ConfirmDialog dialog = new ConfirmDialog();
-    dialog.setHeader("Delete Item");
-    dialog.setText(
-    "An Item has been selected. Do you want to delete it?");
-    
-    dialog.setCancelable(true);
-    dialog.addCancelListener(event -> setStatus("Canceled"));
-    dialog.setRejectable(true);
-    dialog.setRejectText("Discard");
-    dialog.addRejectListener(event -> setStatus("Discarded"));
-    
-    dialog.setConfirmText("Delete");
-    dialog.addConfirmListener(event -> {
-    sampleProcurementMethodService.deleteProcurementMethod(gridProcurementMethod.asSingleSelect().getValue());
-    refreshGridProcurementMethod();
-    });
-    
-    dialog.open();
-    } else {
-    NotificationDialogue("Select a Procurement Method");
-    }
-    });
-    
-    refreshGridProcurementMethod();
-    // gridOrganisation.select(sampleOrganisationService.findById(Long.valueOf("1")));
-    //gridOrganisation.setEnabled(false);
-    //System.out.println(sampleOrganisationService.findById(Long.valueOf("1")).toString());
-    H1 title = new H1("BUDGETS");
-    title.getStyle().set("font-size", "var(--lumo-font-size-l)")
-    .set("margin", "0");
-    VerticalLayout dialogLayout = new VerticalLayout(buttonLayout, gridProcurementMethod);
-    dialogLayout.setPadding(true);
-    dialogLayout.setSpacing(false);
-    dialogLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
-    dialogLayout.setWidth("100%");
-    dialogLayout.setHeight("100%");
-    //dialogLayout.getStyle().set("width", "18rem").set("max-width", "100%");
-    return dialogLayout;
-    }*/
     private VerticalLayout createProcurementTypeGridDialogLayout() {
         ProcurementTypeNameField = new TextField("Procurement Type");
         ProcurementTypeNameField.setPlaceholder("Procurement Type");
@@ -2549,7 +2436,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
                 //Optional<CurrencyData> curr = sampleCurrencyDataService.get(Currency.getCurrencyid());
                 //Currency curr2=Currency.getData().getCurrencyShort()
-                if (Currency.getData()!=null) {
+                if (Currency.getData() != null) {
                     textField.setText(Currency.getData().getCurrencyShort());
                 } else {
                     textField.setText("Not Found");
@@ -2863,8 +2750,11 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             clearFormCOA();
             if (event.getValue() != null) {
                 sampleCOA = sampleCoaService.findByCodeAndBudgetWithDSections(event.getValue().getAcntCode(), sampleBudget);
+                
+               // sampleCOA = sampleCoaService.findByCodeAndBudget(event.getValue().getAcntCode(), sampleBudget);
 
                 if (sampleCOA != null) {
+                 
 
                     COANameField.setValue(event.getValue().getDescr());
                     CodeField.setValue(event.getValue().getAcntCode());

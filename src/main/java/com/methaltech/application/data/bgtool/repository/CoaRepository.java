@@ -36,6 +36,7 @@ public interface CoaRepository extends JpaRepository<COA, Long> {
     boolean existsBy();
 
     List<COA> findByBudget(Budget oldbudget);
+    List<COA> findByCode(String code);
 
     //COA findByCodeAndBudget(String code, Budget budget);
     @Query("SELECT c FROM COA c LEFT JOIN FETCH c.dsections WHERE c.code = :code AND c.stateOpen = true AND c.budget = :budget")
@@ -96,6 +97,9 @@ public interface CoaRepository extends JpaRepository<COA, Long> {
 
     @Query("SELECT c FROM COA c WHERE c.code = :code AND c.budget = :budget AND c.stateOpen = true")
     COA findByCodeAndBudget(@Param("code") String code, @Param("budget") Budget budget);
+    
+    @Query("SELECT c FROM COA c WHERE c.code = :code AND c.budget = :budget AND c.stateOpen = true")
+    List<COA> findByCodeAndBudget2(@Param("code") String code, @Param("budget") Budget budget);    
 
     List<COA> findByBudgetAndDisplayAndStateOpen(Budget budget, Display display, boolean stateOpen);
 

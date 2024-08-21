@@ -66,6 +66,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -136,6 +137,9 @@ public class UrcProgrammesView extends Div {
     Button rectifyA = new Button("Rectify");
     Button saveButton = new Button("Change Programme");
     Button uploadProgrammeButton = new Button("Upload Programmes...");
+    Button importProgrammeButton = new Button("Import Programmes...");
+    ComboBox<Budget> budgetComboBox = new ComboBox<>("Select Budget");
+    Button importActivityButton = new Button("Import Activities");
 
     public UrcProgrammesView(BudgetService chosenBudgetService, AuthenticatedUser authenticatedUser, UserService userService, URC_Priority_AreasService uRC_Priority_AreasService,
             BudgetItemsService budgetItemsService, Urc_ActivitiesService sampleUrc_ActivitiesService, UrcDeptSectionAnlDimbgtService urcDeptSectionAnlDimbgtService,
@@ -172,7 +176,7 @@ public class UrcProgrammesView extends Div {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         user = userService.getUserByEmail(username);
-        ComboBox<Budget> budgetComboBox = new ComboBox<>("Select Budget");
+
         budgetComboBox.setItems(/* Add your list of Budget entities here */);
         budgetComboBox.setItemLabelGenerator(Budget::getFinancialYear);
         gridView.addColumn(URC_Priority_Areas::getId).setHeader("ID").setAutoWidth(true).setFlexGrow(0);
@@ -197,16 +201,20 @@ public class UrcProgrammesView extends Div {
                 refreshActGrid(budgetComboBox.getValue(), gridView.asSingleSelect().getValue(), comboBoxD_Section.getSelectedItems().stream().toList());
             }
         });
-        if(user.getRoles().contains(Role.ADMIN)){
+        if (user.getRoles().contains(Role.ADMIN)) {
             uploadProgrammeButton.setEnabled(true);
             uploadProgrammeButton.setVisible(true);
+            importProgrammeButton.setEnabled(true);
+            importProgrammeButton.setVisible(true);
             save.setEnabled(true);
             delete.setEnabled(true);
-        }else{
+        } else {
             uploadProgrammeButton.setEnabled(false);
-            uploadProgrammeButton.setVisible(false);  
+            uploadProgrammeButton.setVisible(false);
+            importProgrammeButton.setEnabled(false);
+            importProgrammeButton.setVisible(false);
             save.setEnabled(false);
-            delete.setEnabled(false);            
+            delete.setEnabled(false);
         }
 
         budgetComboBox.setItems(query -> chosenBudgetService.list(
@@ -266,8 +274,20 @@ public class UrcProgrammesView extends Div {
                 saveA.setEnabled(false);
                 deleteA.setEnabled(false);
                 uploadProgrammeTemplate.setVisible(false);
+                importProgrammeButton.setVisible(false);
                 uploadActivityTemplate.setVisible(false);
+                importActivityButton.setVisible(false);
                 saveButton.setEnabled(false);
+            } else {
+                save.setEnabled(true);
+                delete.setEnabled(true);
+                saveA.setEnabled(true);
+                deleteA.setEnabled(true);
+                uploadProgrammeTemplate.setVisible(true);
+                importProgrammeButton.setVisible(true);
+                uploadActivityTemplate.setVisible(true);
+                saveButton.setEnabled(true);
+                importActivityButton.setVisible(true);
             }
         });
         searchCoa.addValueChangeListener(e -> {
@@ -282,8 +302,9 @@ public class UrcProgrammesView extends Div {
         });
         MultiFileMemoryBuffer buffer = new MultiFileMemoryBuffer();
         uploadProgrammeTemplate = new Upload(buffer);
-        
+
         uploadProgrammeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        importProgrammeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         uploadProgrammeTemplate.setUploadButton(uploadProgrammeButton);
 
@@ -296,7 +317,7 @@ public class UrcProgrammesView extends Div {
 
         lay.add(budgetComboBox, searchCoa);
         if (isUserAdmin() == true) {
-            lay.add(uploadProgrammeTemplate, layout);
+            lay.add(importProgrammeButton, uploadProgrammeTemplate, layout);
         }
         lay.setResponsiveSteps(
                 // Use one column by default
@@ -338,6 +359,14 @@ public class UrcProgrammesView extends Div {
                     e.printStackTrace();
                 }
                 refreshGrid(budgetComboBox.getValue());
+            }
+
+        });
+        importProgrammeButton.addSingleClickListener(e -> {
+            if (!budgetComboBox.isEmpty()) {
+                openProgramDialog().open();
+            } else {
+                Notificationwarning("Select a financial year");
             }
 
         });
@@ -499,7 +528,13 @@ public class UrcProgrammesView extends Div {
         if (isUserAdmin() == true) {
             vlay.add(layout);
         }
-        form.add(comboBoxD_Section, searchAct, uploadActivityTemplate);
+        importActivityButton.addSingleClickListener(e -> {
+            if (!gridView.asSingleSelect().isEmpty()) {
+                openActivityDialog().open();
+            }
+
+        });
+        form.add(comboBoxD_Section, searchAct, importActivityButton, uploadActivityTemplate);
         form.setResponsiveSteps(
                 // Use one column by default
                 new FormLayout.ResponsiveStep("0", 1),
@@ -518,7 +553,7 @@ public class UrcProgrammesView extends Div {
         vlay2.add(formActivity);
         HorizontalLayout lays = new HorizontalLayout();
 
-        lays.add(saveA, deleteA,rectifyA);
+        lays.add(saveA, deleteA, rectifyA);
         vlay2.add(lays);
 
         rectifyA.addClickListener(e -> {
@@ -583,7 +618,8 @@ public class UrcProgrammesView extends Div {
                             String maxActivityCode = urc_ActivitiesService.maxActivityCode(act.getDeptSection().getANL_CODE());
                             String nextActivityCode = "";
                             if (maxActivityCode != null) {
-                                int nextActivityCodeNumber = Integer.parseInt(maxActivityCode.substring(4)) + 1;
+                                //int nextActivityCodeNumber = Integer.parseInt(maxActivityCode.substring(4)) + 1;
+                                BigInteger nextActivityCodeNumber = new BigInteger(maxActivityCode.substring(7)).add(BigInteger.ONE);
                                 nextActivityCode = "ZBA" + act.getDeptSection().getANL_CODE().trim() + String.format("%07d", nextActivityCodeNumber);
                             } else {
                                 nextActivityCode = "ZBA" + act.getDeptSection().getANL_CODE().trim() + "0000001";
@@ -915,7 +951,8 @@ public class UrcProgrammesView extends Div {
                     String maxActivityCode = urc_ActivitiesService.maxActivityCode(activ.getDeptSection().getANL_CODE());
                     String nextActivityCode = "";
                     if (maxActivityCode != null) {
-                        int nextActivityCodeNumber = Integer.parseInt(maxActivityCode.substring(4)) + 1;
+                        //int nextActivityCodeNumber = Integer.parseInt(maxActivityCode.substring(4)) + 1;
+                        BigInteger nextActivityCodeNumber = new BigInteger(maxActivityCode.substring(7)).add(BigInteger.ONE);
                         nextActivityCode = "ZBA" + activ.getDeptSection().getANL_CODE().trim() + String.format("%07d", nextActivityCodeNumber);
                     } else {
                         nextActivityCode = "ZBA" + activ.getDeptSection().getANL_CODE().trim() + "0000001";
@@ -1005,7 +1042,7 @@ public class UrcProgrammesView extends Div {
                 });
 
                 dialogLayout.add(span, gridCOA2);
-                
+
                 saveButton.addClickListener(ev -> {
                     if (!gridCOA2.asSingleSelect().isEmpty()) {
                         person.setUrcPriorityAreas(gridCOA2.asSingleSelect().getValue());
@@ -1068,5 +1105,125 @@ public class UrcProgrammesView extends Div {
         // Generate the string
         String generatedString = "ZBFS" + indexString;
         return generatedString;
+    }
+
+    private Dialog openProgramDialog() {
+        Dialog dialog = new Dialog();
+
+        dialog.setHeaderTitle("Import Budget Programmes");
+
+        ComboBox<Budget> comboBox = new ComboBox<>("Source Budget");
+        List<Budget> lists = chosenBudgetService.findAllExcept(budgetComboBox.getValue().getFinancialYear());
+        comboBox.setItems(lists);
+        comboBox.setItemLabelGenerator(Budget::getFinancialYear);
+
+        Grid<URC_Priority_Areas> gridProgs = new Grid<>(URC_Priority_Areas.class, false);
+        gridProgs.addColumn(URC_Priority_Areas::getName).setHeader("Programme");
+        gridProgs.setSelectionMode(Grid.SelectionMode.MULTI);
+
+        comboBox.addValueChangeListener(e -> {
+            gridProgs.setItems(uRC_Priority_AreasService.findByBudget(e.getValue()));
+        });
+
+        VerticalLayout dialogLayout = new VerticalLayout(comboBox, gridProgs);
+        dialogLayout.setPadding(false);
+        dialogLayout.setSpacing(false);
+        dialogLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+        dialogLayout.getStyle().set("width", "18rem").set("max-width", "100%");
+        dialog.add(dialogLayout);
+
+        Button saveButton = new Button("Import Programmes", e -> {
+            if (!gridProgs.asMultiSelect().isEmpty()) {
+                Set<URC_Priority_Areas> lis = gridProgs.asMultiSelect().getValue();
+                for (URC_Priority_Areas p : lis) {
+                    URC_Priority_Areas ar = new URC_Priority_Areas();
+                    ar.setBudget(budgetComboBox.getValue());
+                    ar.setName(p.getName());
+                    ar.setUrcStrategicPlan(p.getUrcStrategicPlan());
+                    uRC_Priority_AreasService.update(ar);
+                }
+            }
+            dialog.close();
+        });
+        saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        Button cancelButton = new Button("Cancel", e -> dialog.close());
+        dialog.getFooter().add(cancelButton);
+        dialog.getFooter().add(saveButton);
+
+        return dialog;
+    }
+
+    private Dialog openActivityDialog() {
+        Dialog dialog = new Dialog();
+
+        dialog.setHeaderTitle("Import Budget Activities");
+
+        ComboBox<Budget> comboBox = new ComboBox<>("Source Budget");
+        List<Budget> lists = chosenBudgetService.findAllExcept(budgetComboBox.getValue().getFinancialYear());
+        comboBox.setItems(lists);
+        comboBox.setItemLabelGenerator(Budget::getFinancialYear);
+
+        Grid<Urc_Activities> gridProgs = new Grid<>(Urc_Activities.class, false);
+        gridProgs.addColumn(Urc_Activities::getName).setHeader("Activity");
+        gridProgs.setSelectionMode(Grid.SelectionMode.MULTI);
+
+        comboBox.addValueChangeListener(e -> {
+            if (!comboBoxD_Section.isEmpty()) {
+                int i = comboBoxD_Section.getSelectedItems().size();
+                if (i > 0 && i < 2) {
+                    Set<UrcDeptSectionAnlDimbgt> sel = comboBoxD_Section.getSelectedItems();
+                    UrcDeptSectionAnlDimbgt sellected = sel.stream().findFirst().get();
+                    gridProgs.setItems(sampleUrc_ActivitiesService.findByDeptSectionAndBudget(sellected, e.getValue()));
+                } else {
+                    Notification.show("Select cost centre");
+                }
+            }
+
+        });
+
+        VerticalLayout dialogLayout = new VerticalLayout(comboBox, gridProgs);
+        dialogLayout.setPadding(false);
+        dialogLayout.setSpacing(false);
+        dialogLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+        dialogLayout.getStyle().set("width", "18rem").set("max-width", "100%");
+        dialog.add(dialogLayout);
+
+        Button saveButton = new Button("Import Programmes", e -> {
+            if (!gridProgs.asMultiSelect().isEmpty()) {
+                Set<Urc_Activities> lis = gridProgs.asMultiSelect().getValue();
+                for (Urc_Activities p : lis) {
+                    Urc_Activities ar = new Urc_Activities();
+                    ar.setBudget(budgetComboBox.getValue());
+                    ar.setName(p.getName());
+                    ar.setFundsource(p.getFundsource());
+                    ar.setPerformanceIndicator(p.getPerformanceIndicator());
+                    ar.setOutcome(p.getOutcome());
+                    ar.setOutput(p.getOutput());
+                    ar.setObjective(p.getObjective());
+                    ar.setUrcPriorityAreas(gridView.asSingleSelect().getValue());
+                    ar.setDeptSection(p.getDeptSection());
+                    String maxActivityCode = urc_ActivitiesService.maxActivityCode(ar.getDeptSection().getANL_CODE());
+                    System.out.println(maxActivityCode+"");
+                    String nextActivityCode = "";
+                    if (maxActivityCode != null) {
+                        // int nextActivityCodeNumber = Integer.parseInt(maxActivityCode.substring(4)) + 1;
+                        BigInteger nextActivityCodeNumber = new BigInteger(maxActivityCode.substring(7)).add(BigInteger.ONE);
+                        nextActivityCode = "ZBA" + ar.getDeptSection().getANL_CODE().trim() + String.format("%07d", nextActivityCodeNumber);
+                    } else {
+                        nextActivityCode = "ZBA" + ar.getDeptSection().getANL_CODE().trim() + "0000001";
+                    }
+                    ar.setActivityCode(nextActivityCode);
+                    sampleUrc_ActivitiesService.update(ar);
+                    comboBoxD_Section.deselectAll();
+                }
+            }
+            dialog.close();
+        });
+        saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        Button cancelButton = new Button("Cancel", e -> dialog.close());
+        dialog.getFooter().add(cancelButton);
+        dialog.getFooter().add(saveButton);
+
+        return dialog;
     }
 }

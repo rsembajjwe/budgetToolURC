@@ -5,6 +5,7 @@ import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.bgtool.repository.CoaRepository;
 import com.methaltech.application.data.bgtool.repository.Coalevel11Repository;
 import com.methaltech.application.data.bgtool.repository.Coalevel12Repository;
+import com.methaltech.application.data.bgtool.repository.Coalevel13Repository;
 import com.methaltech.application.data.bgtool.repository.Coalevel1Repository;
 import com.methaltech.application.data.bgtool.repository.SectionRepository;
 import com.methaltech.application.data.bgtool.repository.UnitRepository;
@@ -16,6 +17,7 @@ import jakarta.persistence.PersistenceContext;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +37,7 @@ public class CoaService {
     private final Coalevel1Repository coalevel1Repository;
     private final Coalevel11Repository coalevel11Repository;
     private final Coalevel12Repository coalevel12Repository;
+    private final Coalevel13Repository coalevel13Repository;
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -42,7 +45,7 @@ public class CoaService {
     public CoaService(CoaRepository coaRepository, UnitRepository dUnitRepository,
             UR5_ACNTRepository urc5acntRepository, Coalevel1Repository coalevel1Repository,
             Coalevel11Repository coalevel11Repository, Coalevel12Repository coalevel12Repository,
-            SectionRepository sectionRepository) {
+            SectionRepository sectionRepository, Coalevel13Repository coalevel13Repository) {
         this.coaRepository = coaRepository;
         this.dUnitRepository = dUnitRepository;
         this.urc5acntRepository = urc5acntRepository;
@@ -50,6 +53,7 @@ public class CoaService {
         this.coalevel11Repository = coalevel11Repository;
         this.coalevel12Repository = coalevel12Repository;
         this.sectionRepository = sectionRepository;
+        this.coalevel13Repository = coalevel13Repository;
     }
 
     public List<COA> findAll() {
@@ -64,27 +68,38 @@ public class CoaService {
         return coaRepository.findByCodeAndBudget(code, budget);
     }
 
+    public List<COA> findByCodeAndBudget2(String code, Budget budget) {
+        return coaRepository.findByCodeAndBudget2(code, budget);
+    }
+
+    public List<COA> findByBudget(Budget budget) {
+        return coaRepository.findByBudget(budget);
+    }
+
+    public List<COA> findByCode(String code) {
+        return coaRepository.findByCode(code);
+    }
+
     public COA findByCodeAndBudgetWithDSections(String code, Budget budget) {
         return coaRepository.findByCodeAndBudgetWithDSections(code, budget);
     }
 
-@Transactional
-public COA save(COA coa) {
-    try {
-        for (Section section : coa.getDsections()) {
-            entityManager.merge(section);
+    @Transactional
+    public COA save(COA coa) {
+        try {
+            for (Section section : coa.getDsections()) {
+                entityManager.merge(section);
+            }
+            return coaRepository.save(coa);
+        } catch (Exception e) {
+            // Log detailed information about the exception, including the data causing the conflict.
+            e.printStackTrace();
+            throw e; // Rethrow the exception to propagate it.
         }
-        return coaRepository.save(coa);
-    } catch (Exception e) {
-        // Log detailed information about the exception, including the data causing the conflict.
-        e.printStackTrace();
-        throw e; // Rethrow the exception to propagate it.
     }
-}
 
-    
-    public COA saveCOA(COA coa){
-       return coaRepository.save(coa); 
+    public COA saveCOA(COA coa) {
+        return coaRepository.save(coa);
     }
 
     public boolean existsByCode(String code) {
@@ -153,30 +168,52 @@ public COA save(COA coa) {
         List<COA> coaList = coaRepository.findByBudget(oldBudget);
         int num = coaList.size();
 
-        // Loop through each COA entity and copy its data to the target Coalevel12 entity
         for (COA sourceCOA : coaList) {
             // Create a new COA entity for the target Coalevel12 entity and copy the common attributes
             COA targetCOA = new COA();
             targetCOA.setCode(sourceCOA.getCode());
             targetCOA.setName(sourceCOA.getName());
             targetCOA.setBudget(newBudget);
+            targetCOA.setDisplay(sourceCOA.getDisplay());
+            targetCOA.setProcclass(sourceCOA.getProcclass());
+            targetCOA.setDeptsection(sourceCOA.getDeptsection());
+            targetCOA.setStatCode(sourceCOA.getStatCode());
+            targetCOA.setStateOpen(sourceCOA.isStateOpen());
+
             Coalevel1 targetCoalevell = coalevel1Repository.findByNameAndBudget(sourceCOA.getCoalevel1().getName());
             targetCOA.setCoalevel1(targetCoalevell);
-            targetCOA.setCoalevel11(coalevel11Repository.findByCoalevel1AndName(targetCoalevell, sourceCOA.getCoalevel11().getName()));
-            targetCOA.setCoalevel12(coalevel12Repository.findByCoalevel1AndName(targetCoalevell, sourceCOA.getCoalevel12().getName()));
-            //List<Section> unitnew = new ArrayList();
-            Set<Section> unitnew = new HashSet<>();
-            for (Section units : sourceCOA.getDsections()) {
-                // D_Unit unit = dUnitRepository.findByBudgetAndUnit(newBudget, units.getUnit());
-                //unitnew.add(unit);
 
+            targetCOA.setCoalevel11(
+                    Optional.ofNullable(sourceCOA.getCoalevel11())
+                            .map(coa11 -> coalevel11Repository.findByCoalevel1AndName(targetCoalevell, coa11.getName()))
+                            .orElse(null)
+            );
+
+            targetCOA.setCoalevel12(
+                    Optional.ofNullable(sourceCOA.getCoalevel12())
+                            .map(coa12 -> coalevel12Repository.findByCoalevel1AndName(targetCoalevell, coa12.getName()))
+                            .orElse(null)
+            );
+
+            if (sourceCOA.getCoalevel13() != null) {
+                Coalevel13 coalevel13 = coalevel13Repository.findByCoalevel11AndName(targetCOA.getCoalevel11(), sourceCOA.getCoalevel13().getName());
+                targetCOA.setCoalevel13(coalevel13);
             }
-            targetCOA.setDsections(unitnew);
-            num++;
+
+            // Create a new Set for Dsections to avoid shared references
+            Set<UrcDeptSectionAnlDimbgt> unitnew = new HashSet<>();
+            for (UrcDeptSectionAnlDimbgt units : sourceCOA.getDeptsection()) {
+                if (units != null) {
+                    unitnew.add(units);
+                }
+            }
+            targetCOA.setDeptsection(unitnew);
 
             // Save the new COA entity to the target database
             coaRepository.save(targetCOA);
+            num++;
         }
+
         return num;
     }
 
@@ -246,10 +283,12 @@ public COA save(COA coa) {
     public List<COA> findByBudgetAndCoalevel11(Budget budget, Coalevel11 coalevel11) {
         return coaRepository.findByBudgetAndCoalevel11(budget, coalevel11);
     }
-    public List<COA> findByBudgetAndProcclassIn(Budget budget, List<ProcClass> procclasses){
+
+    public List<COA> findByBudgetAndProcclassIn(Budget budget, List<ProcClass> procclasses) {
         return coaRepository.findByBudgetAndProcclassIn(budget, procclasses);
     }
-    public List<COA> findByBudgetAndProcclass(Budget budget, ProcClass procclasses){
+
+    public List<COA> findByBudgetAndProcclass(Budget budget, ProcClass procclasses) {
         return coaRepository.findByBudgetAndProcclass(budget, procclasses);
-    }    
+    }
 }
