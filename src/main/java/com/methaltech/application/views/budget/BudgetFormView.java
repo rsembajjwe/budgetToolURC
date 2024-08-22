@@ -885,6 +885,9 @@ public class BudgetFormView extends Div {
             if (e.getValue().isActive() == false) {
                 disabledBudget(false);
                 contextMenu.setEnabled(false);
+            }else{
+                disabledBudget(true);
+                contextMenu.setEnabled(true);                
             }
 
             gridCOA.setItems(new ArrayList<>());

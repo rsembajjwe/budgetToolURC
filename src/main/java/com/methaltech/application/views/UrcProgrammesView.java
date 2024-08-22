@@ -179,7 +179,7 @@ public class UrcProgrammesView extends Div {
 
         budgetComboBox.setItems(/* Add your list of Budget entities here */);
         budgetComboBox.setItemLabelGenerator(Budget::getFinancialYear);
-        gridView.addColumn(URC_Priority_Areas::getId).setHeader("ID").setAutoWidth(true).setFlexGrow(0);
+        gridView.addColumn(URC_Priority_Areas::getId).setHeader("ID").setWidth("150px").setFlexGrow(0);
         gridView.addColumn(URC_Priority_Areas::getName).setHeader("Programme");
         gridView.asSingleSelect().addValueChangeListener(e -> {
             if (!gridView.asSingleSelect().isEmpty() && !budgetComboBox.isEmpty()) {
@@ -351,16 +351,19 @@ public class UrcProgrammesView extends Div {
                                 urcPriorityArea.setBudget(budgetComboBox.getValue());
 
                                 uRC_Priority_AreasService.update(urcPriorityArea);
+
                             }
 
                         }
                     }
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                refreshGrid(budgetComboBox.getValue());
+
             }
 
+            refreshGrid(budgetComboBox.getValue());
         });
         importProgrammeButton.addSingleClickListener(e -> {
             if (!budgetComboBox.isEmpty()) {
@@ -1203,7 +1206,7 @@ public class UrcProgrammesView extends Div {
                     ar.setUrcPriorityAreas(gridView.asSingleSelect().getValue());
                     ar.setDeptSection(p.getDeptSection());
                     String maxActivityCode = urc_ActivitiesService.maxActivityCode(ar.getDeptSection().getANL_CODE());
-                    System.out.println(maxActivityCode+"");
+                    System.out.println(maxActivityCode + "");
                     String nextActivityCode = "";
                     if (maxActivityCode != null) {
                         // int nextActivityCodeNumber = Integer.parseInt(maxActivityCode.substring(4)) + 1;

@@ -147,7 +147,7 @@ public class BudgetService {
             Organisation targetOrganization = new Organisation();
             targetOrganization.setName(sourceOrganization.getName());
             targetOrganization.setBudget(targetBudget);
-            targetOrganization.setCode(sourceOrganization.getCode());
+            targetOrganization.setCode(generateBudgetTypeCode());
 
             // Save the new Organization entity to the target database
             organisationRepository.save(targetOrganization);
@@ -171,7 +171,8 @@ public class BudgetService {
             Fundsource nfs = new Fundsource();
             nfs.setBudget(targetBudget);
             nfs.setFundsource(f.getFundsource());
-            nfs.setCode(generateFundSourceCode(targetBudget));
+            //nfs.setCode(generateFundSourceCode(targetBudget));
+            nfs.setCode(generateFundSourceCode());
             fundsourceRepository.save(nfs);
         }
 
@@ -242,6 +243,58 @@ public class BudgetService {
         String lastCode = ""; // Replace this with actaul logic to retrieve last used code
 
         Fundsource org = fundsourceRepository.findTopByBudgetOrderByIdDesc(budget);
+        // If lastCode is null or empty, start with ZBT01
+        if (org == null) {
+            return "ZBFS01";
+        }
+        lastCode = org.getCode();
+        // Extract the numeric part of the last code
+        String numericPart = lastCode.substring(4); // Assuming "ZBT" is always the prefix
+        int index = Integer.parseInt(numericPart);
+
+        // Increment index and format it with leading zeros
+        index++;
+        String newIndex = String.format("%02d", index);
+
+        // Construct the new code
+        return "ZBFS" + newIndex;
+    }
+
+    private String generateBudgetTypeCode() {
+        // Assuming you have a way to retrieve the last code used in your database
+        // For demonstration purposes, let's assume it's stored in a variable called lastCode
+        // You can replace it with your actual logic to fetch the last used code
+        String lastCode = ""; // Replace this with actaul logic to retrieve last used code
+
+        //Organisation org = sampleOrganisationService.getLastSavedOrganisationByBudget(sampleBudget);
+        Organisation org = organisationRepository.findTopByOrderByIdDesc();
+
+        // If lastCode is null or empty, start with ZBT01
+        if (org == null) {
+            return "ZBT01";
+        }
+        lastCode = org.getCode();
+        // Extract the numeric part of the last code
+        String numericPart = lastCode.substring(3); // Assuming "ZBT" is always the prefix
+        int index = Integer.parseInt(numericPart);
+
+        // Increment index and format it with leading zeros
+        index++;
+        String newIndex = String.format("%02d", index);
+
+        // Construct the new code
+        return "ZBT" + newIndex;
+    }
+
+    private String generateFundSourceCode() {
+        // Assuming you have a way to retrieve the last code used in your database
+        // For demonstration purposes, let's assume it's stored in a variable called lastCode
+        // You can replace it with your actual logic to fetch the last used code
+        String lastCode = ""; // Replace this with actaul logic to retrieve last used code
+
+        //Fundsource org = fundsourceService.getLastSavedFundsourceByBudget(sampleBudget);
+        Fundsource org = fundsourceRepository.findTopByOrderByIdDesc();
+
         // If lastCode is null or empty, start with ZBT01
         if (org == null) {
             return "ZBFS01";

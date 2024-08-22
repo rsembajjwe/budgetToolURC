@@ -60,4 +60,8 @@ public class FundsourceService {
     public Fundsource getLastSavedFundsourceByBudget(Budget budget) {
         return fundsourceRepository.findTopByBudgetOrderByIdDesc(budget);
     }
+    
+    public Fundsource getLastSavedFundsourceByBudget() {
+        return fundsourceRepository.findTopByOrderByIdDesc();
+    }    
 }

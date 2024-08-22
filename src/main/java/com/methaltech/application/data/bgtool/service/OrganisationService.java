@@ -39,6 +39,10 @@ public class OrganisationService {
         return organisationRepository.findTopByBudgetOrderByIdDesc(budget);
     }
 
+    public Organisation getLastSavedOrganisationByBudget() {
+        return organisationRepository.findTopByOrderByIdDesc();
+    }
+
     public void delete(Long id) {
         organisationRepository.deleteById(id);
     }

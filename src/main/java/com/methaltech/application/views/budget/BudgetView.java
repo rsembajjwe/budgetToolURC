@@ -7803,7 +7803,9 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         // You can replace it with your actual logic to fetch the last used code
         String lastCode = ""; // Replace this with actaul logic to retrieve last used code
 
-        Organisation org = sampleOrganisationService.getLastSavedOrganisationByBudget(sampleBudget);
+        //Organisation org = sampleOrganisationService.getLastSavedOrganisationByBudget(sampleBudget);
+        Organisation org = sampleOrganisationService.getLastSavedOrganisationByBudget();
+        System.out.println(org.getCode());
         // If lastCode is null or empty, start with ZBT01
         if (org == null) {
             return "ZBT01";
@@ -7827,7 +7829,9 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         // You can replace it with your actual logic to fetch the last used code
         String lastCode = ""; // Replace this with actaul logic to retrieve last used code
 
-        Fundsource org = fundsourceService.getLastSavedFundsourceByBudget(sampleBudget);
+        //Fundsource org = fundsourceService.getLastSavedFundsourceByBudget(sampleBudget);
+        Fundsource org = fundsourceService.getLastSavedFundsourceByBudget();
+        System.out.println(org.getCode());
         // If lastCode is null or empty, start with ZBT01
         if (org == null) {
             return "ZBFS01";
