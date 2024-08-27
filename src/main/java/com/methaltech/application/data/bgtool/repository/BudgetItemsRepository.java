@@ -837,6 +837,12 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
             @Param("coalevel1Code") Integer coalevel1Code
     );
+    
+    @Query("SELECT b FROM BudgetItems b "
+            + "WHERE b.activity = :activities ")
+    List<BudgetItems> findBudgetItemsByUrc_Activities(
+            @Param("activities") Urc_Activities activities
+    );    
 
     List<BudgetItems> findByBudgetAndCoacode(Budget budget, COA coacode);
 

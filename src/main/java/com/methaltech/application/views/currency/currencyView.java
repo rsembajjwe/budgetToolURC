@@ -49,13 +49,15 @@ public class currencyView extends Div {
                 .stream());
         comboBoxBudget.setItemLabelGenerator(Budget::getFinancialYear);
         gridCurrency.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_ROW_STRIPES);
+
         gridCurrency.addColumn(new ComponentRenderer<>(Currency -> {
             Text textField = new Text("");
             if (Optional.ofNullable(Currency.getBudget()).isPresent()) {
 
-                Optional<CurrencyData> curr = sampleCurrencyDataService.get(Currency.getCurrencyid());
-                if (curr.isPresent()) {
-                    textField.setText(curr.get().getCurrency());
+                //Optional<CurrencyData> curr = sampleCurrencyDataService.get(Currency.getCurrencyid());
+                //Currency curr2=Currency.getData().getCurrencyShort()
+                if (Currency.getData() != null) {
+                    textField.setText(Currency.getData().getCurrencyShort());
                 } else {
                     textField.setText("Not Found");
                 }
@@ -65,24 +67,7 @@ public class currencyView extends Div {
                 textField.setText("Empty");
                 return textField;
             }
-        })).setHeader("Currency");
-        gridCurrency.addColumn(new ComponentRenderer<>(Currency -> {
-            Text textField = new Text("");
-            if (Optional.ofNullable(Currency.getBudget()).isPresent()) {
-
-                Optional<CurrencyData> curr = sampleCurrencyDataService.get(Currency.getCurrencyid());
-                if (curr.isPresent()) {
-                    textField.setText(curr.get().getCurrencyShort());
-                } else {
-                    textField.setText("Not Found");
-                }
-
-                return textField;
-            } else {
-                textField.setText("Empty");
-                return textField;
-            }
-        })).setHeader("ABR");        
+        })).setHeader("Currency");       
         gridCurrency.addColumn("rate").setAutoWidth(true);
         LitRenderer<Currency> importantRenderer = LitRenderer.<Currency>of(
                 "<vaadin-icon icon='vaadin:${item.icon}' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")

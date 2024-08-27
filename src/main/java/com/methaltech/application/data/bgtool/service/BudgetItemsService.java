@@ -965,6 +965,11 @@ public class BudgetItemsService {
         List<BudgetItems> result = repository.findBudgetItemsByUrc_Activities(budgetType, budget, activities, deptUnits, coalevel1Code);
         return result != null ? result : Collections.emptyList();
     }
+
+    public List<BudgetItems> findBudgetItemsByUrc_Activities(Urc_Activities activities) {
+        List<BudgetItems> result = repository.findBudgetItemsByUrc_Activities(activities);
+        return result != null ? result : Collections.emptyList();
+    }
     // Method to fetch BudgetItems by Budget and Set of COA codes
 
     public List<BudgetItems> getBudgetItemsByBudgetAndCoacodes(Budget budget, Set<COA> coacodes) {
@@ -1435,6 +1440,10 @@ public class BudgetItemsService {
         return list;
     }
 
+public List<BudgetItems> findBudgetItemsByBudgetAndCoaAndSectios(Budget budget, COA coa, Set<UrcDeptSectionAnlDimbgt> deptUnit){
+  return repository.findBudgetItemsByBudgetAndCoaAndSectios(budget, coa, deptUnit);  
+}    
+    
     public List<BudgetItems> findBudgetItemsByBudgetAndCoaAndSectios(Budget budget, COA coa, Set<UrcDeptSectionAnlDimbgt> deptUnit, String month) {
         List<BudgetItems> result = repository.findBudgetItemsByBudgetAndCoaAndSectios(budget, coa, deptUnit);
         List<BudgetItems> resultList = new ArrayList<>();
