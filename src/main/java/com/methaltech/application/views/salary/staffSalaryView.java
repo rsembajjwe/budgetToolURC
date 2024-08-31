@@ -867,13 +867,13 @@ public class staffSalaryView extends Div {
                 "Provide the file in one of the supported formats (.xls, .xlsx, .csv).");
         upload.setI18n(i18n);
         upload.setVisible(true);
-        if (!comboBoxBudget.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty()) {
+        if (!comboBoxBudget.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty()&& !comboBoxUrc_Activities.isEmpty()) {
 
         } else {
             upload.setVisible(true);
         }
         upload.addSucceededListener(event -> {
-            if (!comboBoxBudget.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty()) {
+            if (!comboBoxBudget.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty()&& !comboBoxUrc_Activities.isEmpty()) {
                 String fileName = event.getFileName();
                 InputStream inputStream = buffer.getInputStream(fileName);
                 //System.out.println("Uploaded");

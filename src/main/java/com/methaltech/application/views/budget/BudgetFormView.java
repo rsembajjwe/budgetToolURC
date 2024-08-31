@@ -251,8 +251,8 @@ public class BudgetFormView extends Div {
     Grid gridUrc_ActivityDeatailImport = new Grid<>(Urc_Activities.class, false);
     Grid gridCOAImportBudgetItems = new Grid<>(COA.class, false);
     VerticalLayout caoImport = new VerticalLayout();
-    Budget bug=null;
-    ComboBox<Budget> comboBoxImport = new ComboBox<>("Source Budget");
+    Budget bug = null;
+    ComboBox<Budget> comboBoxBudgetImport = new ComboBox<>("Source Budget");
 
     public BudgetFormView(AuthenticatedUser authenticatedUser, BudgetService chosenBudgetService, Urc_ActivitiesService sampleUrc_ActivitiesService,
             UserService userService, UnitService unitService, UnitsBudgetService unitsbudgetService,
@@ -288,6 +288,20 @@ public class BudgetFormView extends Div {
         this.sampleBudgetApprovalService = sampleBudgetApprovalService;
         this.setHeight("100%");
         gridUrc_Activities.setHeight("100%");
+
+        gridUrc_ActivityDeatailImport.addColumn("name").setHeader("URC Activities").setAutoWidth(true).setFrozen(true);
+        gridUrc_ActivityDeatailImport.addColumn("fundsource").setHeader("Fund Source").setAutoWidth(true);
+        gridUrc_ActivityDeatailImport.addColumn("performanceIndicator").setHeader("Performance Indicator").setAutoWidth(true);
+        gridUrc_ActivityDeatailImport.addColumn("outcome").setHeader("Outcome").setAutoWidth(true);
+        gridUrc_ActivityDeatailImport.addColumn("objective").setHeader("Objective").setAutoWidth(true);
+        gridUrc_ActivityDeatailImport.setHeight("100%");
+        gridUrc_ActivityDeatailImport.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
+
+// Configure Grid for COA Import Budget Items
+        gridCOAImportBudgetItems.addColumn("code").setAutoWidth(true);
+        gridCOAImportBudgetItems.addColumn("name").setAutoWidth(true);
+        gridCOAImportBudgetItems.getStyle().set("flex-grow", "1");
+        comboBoxCoalevel1ImportBudgetItems = new ComboBox<>();
 
         addClassName("budget-form-view");
         decimalFormat.setGroupingUsed(true);
@@ -602,9 +616,9 @@ public class BudgetFormView extends Div {
 
                     if (!mes.isEmpty()) {
                         warningNotification(mes);
-                        System.out.println(error.toString());
+
                     } else {
-                        System.out.println("Start uploading budget");
+
                         String fileName2 = event.getFileName();
                         InputStream inputStream2 = buffer2.getInputStream(fileName2);
                         uploadSectionsBudget(inputStream2);
@@ -853,6 +867,7 @@ public class BudgetFormView extends Div {
             refreshgridBudgetItemCOA2();
         });
         comboBoxBudget.addValueChangeListener(e -> {
+            currency.setItems(sampleCurrencyService.findCurrencyByBudget(comboBoxBudget.getValue()));
             if (!comboBoxBudget.isEmpty() && !comboBoxD_Section.isEmpty()) {
                 BudgetApproval findTopByBudgetAndSection = sampleBudgetApprovalService.findTopByBudgetAndSectionOrderByBloSubmissionDateDesc(chosenBudget, chosenDsection);
 
@@ -1063,9 +1078,10 @@ public class BudgetFormView extends Div {
                 .set("padding", "calc(var(--lumo-space-xs) / 2)");
 
         FormLayout form = new FormLayout();
-        currency.setItems(query -> sampleCurrencyService.list(
-                PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
-                .stream());
+        /*        currency.setItems(query -> sampleCurrencyService.list(
+        PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
+        .stream());*/
+
         currency.setItemLabelGenerator(item -> item.getData().getCurrencyShort());
         unitMeasure.setItems(sampleStockUnitMeasureService.findAllUnitValues());
         //unitMeasure.setItemLabelGenerator(StockUnitMeasure::getUnit);
@@ -1246,7 +1262,6 @@ public class BudgetFormView extends Div {
                     UI.getCurrent().navigate(BudgetFormView.class);
                 } catch (Exception validationException) {
                     NotificationError(" An exception happened while trying to saving. " + validationException.getMessage());
-                    System.out.println(validationException.getMessage());
 
                 }
             } else {
@@ -1376,7 +1391,6 @@ public class BudgetFormView extends Div {
                     gratuityBudget.setCurrency(bug.getCurrency());
                     gratuityBudget.setDeptUnit(bug.getDeptUnit());
                     gratuityBudget.setBcategory(gratuity.getCode());
-                    System.out.println(staffSalaryService.getTotalSalaryMonthGratuityByFinancialYear(bgt) + " Summation");
                     gratuityBudget.setCost(staffSalaryService.getTotalSalaryMonthGratuityByFinancialYear(bgt));
                     gratuityBudget.setQty(new BigDecimal("12"));
                     gratuityBudget.setJul(staffSalaryService.getTotalSalaryMonthGratuityByFinancialYear(bgt));
@@ -1512,7 +1526,6 @@ public class BudgetFormView extends Div {
 
             z.setBcategory(z.getCoacode().getCode());
             if (!z.getBcategory().trim().equals(z.getCoacode().getCode().trim())) {
-                System.out.println(z.getBcategory() + "   " + z.getCoacode().getCode() + " 1");
             }
             //System.out.println(z.getBcategory() + "   " + z.getCoacode().getCode() + " 1");
 
@@ -2346,7 +2359,7 @@ public class BudgetFormView extends Div {
     }
 
     private Dialog openImportBudgetItemDialogue(UrcDeptSectionAnlDimbgt deptSection) {
-        
+
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Import Budget Line");
         dialog.setWidth("90%");
@@ -2355,18 +2368,17 @@ public class BudgetFormView extends Div {
                 (e) -> dialog.close());
         closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         dialog.getHeader().add(closeButton);
-        
+
         List<Budget> lists = chosenBudgetService.findAllExcept(chosenBudget.getFinancialYear());
-        comboBoxImport.setItems(lists);
-        comboBoxImport.setItemLabelGenerator(Budget::getFinancialYear);
-        comboBoxImport.addValueChangeListener(e -> {
-            bug=e.getValue();
+        comboBoxBudgetImport.setItems(lists);
+        comboBoxBudgetImport.setItemLabelGenerator(Budget::getFinancialYear);
+        comboBoxBudgetImport.addValueChangeListener(e -> {
+            bug = e.getValue();
             List<UrcDeptSectionAnlDimbgt> mys = new ArrayList<>();
             mys.add(deptSection);
             if (e.getValue() != null) {
                 gridUrc_ActivityDeatailImport.setItems(sampleUrc_ActivitiesService.findByBudgetAndDeptSectionIn(e.getValue(), mys));
             }
-
 
         });
         caoImport.setVisible(false);
@@ -2384,7 +2396,7 @@ public class BudgetFormView extends Div {
             }
         });
 
-        dialog.add(comboBoxImport, procClassCombo, createImportBudgetItemsDialogLayout(comboBoxImport.getValue(), deptSection));
+        dialog.add(comboBoxBudgetImport, procClassCombo, createImportBudgetItemsDialogLayout(comboBoxBudgetImport.getValue(), deptSection, dialog));
 
         dialog.open();
         return dialog;
@@ -2460,30 +2472,12 @@ public class BudgetFormView extends Div {
         return null;
     }
 
-    private SplitLayout createImportBudgetItemsDialogLayout(Budget budget, UrcDeptSectionAnlDimbgt deptSection) {
+    private SplitLayout createImportBudgetItemsDialogLayout(Budget budget, UrcDeptSectionAnlDimbgt deptSection, Dialog g) {
         VerticalLayout master = new VerticalLayout();
         VerticalLayout detail = new VerticalLayout();
-        //detail.setHeight("100%");
-        // master.setHeight("100%");
 
-        gridUrc_ActivityDeatailImport.addColumn("name").setHeader("URC Activities").setAutoWidth(true).setFrozen(true);
-        gridUrc_ActivityDeatailImport.addColumn("fundsource").setHeader("Fund Source").setAutoWidth(true);
-        gridUrc_ActivityDeatailImport.addColumn("performanceIndicator").setHeader("Performance Indicator").setAutoWidth(true);
-        gridUrc_ActivityDeatailImport.addColumn("outcome").setHeader("Outcome").setAutoWidth(true);
-        gridUrc_ActivityDeatailImport.addColumn("objective").setHeader("Objective").setAutoWidth(true);
-        gridUrc_ActivityDeatailImport.setHeight("100%");
-
-        gridUrc_ActivityDeatailImport.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
-
-        comboBoxCoalevel1ImportBudgetItems = new ComboBox<>();
         comboBoxCoalevel1ImportBudgetItems.setItemLabelGenerator(Coalevel1::getName);
         comboBoxCoalevel1ImportBudgetItems.setItems(coalevel1Service.findByBudget());
-
-        // Configure Grid
-        gridCOAImportBudgetItems.addColumn("code").setAutoWidth(true);
-        gridCOAImportBudgetItems.addColumn("name").setAutoWidth(true);
-        //gridCOAImportBudgetItems.setHeightFull();
-        gridCOAImportBudgetItems.getStyle().set("flex-grow", "1");
 
         caoImport.add(comboBoxCoalevel1ImportBudgetItems, gridCOAImportBudgetItems);
         comboBoxCoalevel1ImportBudgetItems.addValueChangeListener(e -> {
@@ -2491,11 +2485,16 @@ public class BudgetFormView extends Div {
         });
 
         Footer footer = new Footer();
-        Button saveButton = new Button("Save");
+        Button saveButton = new Button("Import Selected Items", e -> {
+            if (!gridCOAImportBudgetItems.asMultiSelect().isEmpty()) {
+
+            }
+        });
         Button cancelButton = new Button("Cancel", e -> {
             saveButton.setEnabled(true);
             clearForm();
             gridUrc_ActivityDeatailImport.getSelectionModel().deselectAll();
+            g.close();
         });
 
         footer.add(saveButton, cancelButton);
@@ -2534,15 +2533,17 @@ public class BudgetFormView extends Div {
         });
         gridCOAImportBudgetItems.asSingleSelect().addValueChangeListener(e -> {
             COA cc = (COA) e.getValue();
+            COA cc2 = coaService.findByCodeAndBudget(cc.getCode(), comboBoxBudgetImport.getValue());
             Set<UrcDeptSectionAnlDimbgt> sectionSet = new HashSet<>();
             sectionSet.add(comboBoxD_Section.getValue());
-            if (!comboBoxImport.isEmpty()) {
-                List<BudgetItems> list=budgetItemsService.findBudgetItemsByBudgetAndCoaAndSectios(comboBoxImport.getValue(), cc,sectionSet);
+
+            if (!comboBoxBudgetImport.isEmpty()) {
+                List<BudgetItems> list = budgetItemsService.findBudgetItemsByBudgetAndCoaAndSectios(comboBoxBudgetImport.getValue(), cc2, sectionSet);
+                // list = budgetItemsService.findByBudgetAndCoacode(comboBoxBudgetImport.getValue(), cc);
                 gridBudgetCoa.setItems(list);
-System.out.println(list.size()+" "+comboBoxImport.getValue().getFinancialYear()+" "+cc.getCode()+" "+comboBoxD_Section.getValue().getNAME());
+
             } else {
                 gridBudgetCoa.setItems(Collections.emptyList());
-                 System.out.println("Its null"+ comboBoxImport.getValue()+" 2");
             }
         });
 
@@ -3250,7 +3251,6 @@ System.out.println(list.size()+" "+comboBoxImport.getValue().getFinancialYear()+
                 anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
-                System.out.println("Image file not found: " + e.getMessage());
             }
 // Create a cell for the title
             Cell titleCell = titleRow.createCell(1);
@@ -3439,7 +3439,6 @@ System.out.println(list.size()+" "+comboBoxImport.getValue().getFinancialYear()+
                 anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
-                System.out.println("Image file not found: " + e.getMessage());
             }
 
             // Create the title row
@@ -3681,10 +3680,9 @@ System.out.println(list.size()+" "+comboBoxImport.getValue().getFinancialYear()+
         String cats = "";
 
         List<Coalevel1> findByBudget = coalevel1Service.findByBudget();
-        //System.out.println(findByBudget.size());
+
         Coalevel1 coalnew = null;
         for (Coalevel1 coal : findByBudget) {
-            //System.out.println(code+"       "+coal.getName().trim()+"       "+budget.getFinancialYear());
             if (code.startsWith("1") && coal.getName().trim().equalsIgnoreCase(income)) {
 
                 coalnew = coal;
@@ -3697,7 +3695,7 @@ System.out.println(list.size()+" "+comboBoxImport.getValue().getFinancialYear()+
                 coalnew = coal;
             }
         }
-        // System.out.println(code+"  "+coalnew.getName());
+
         return coalnew;
     }
 
@@ -4655,7 +4653,6 @@ System.out.println(list.size()+" "+comboBoxImport.getValue().getFinancialYear()+
             // budget.setTotal(total.setScale(scale, roundingMode));
         } else {
             // Handle the case where cost or qty is null
-            System.out.println("Cannot calculate monthly values. Cost or qty is null.");
         }
     }
 
