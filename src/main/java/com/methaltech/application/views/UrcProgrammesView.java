@@ -556,7 +556,8 @@ public class UrcProgrammesView extends Div {
         vlay2.add(formActivity);
         HorizontalLayout lays = new HorizontalLayout();
 
-        lays.add(saveA, deleteA, rectifyA);
+       // lays.add(saveA, deleteA, rectifyA);
+        lays.add(saveA, deleteA);
         vlay2.add(lays);
 
         rectifyA.addClickListener(e -> {

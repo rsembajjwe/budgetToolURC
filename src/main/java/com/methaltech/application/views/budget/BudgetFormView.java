@@ -318,7 +318,7 @@ public class BudgetFormView extends Div {
                     String name2 = budgetItem2.getCoacode() != null ? budgetItem2.getCoacode().getName() : "";
                     return name1.compareTo(name2);
                 });
-        gridBudgetCoaImportBudgetItems.addColumn(BudgetItems::getItem).setHeader("Description V");
+        gridBudgetCoaImportBudgetItems.addColumn(BudgetItems::getItem).setHeader("Description");
         gridBudgetCoaImportBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
 
             Span span = new Span(decimalFormat.format(generatesumofMonths(urcActivity)));
@@ -1487,7 +1487,8 @@ public class BudgetFormView extends Div {
                 budgetItemsService.update(y);
             }
         });
-        footer.add(saveBudgetItem, deleteBudgetItem, distrWorkplan, quarterWorkplan, clearWorkplan, templateDownload, uploadBudget);
+       // footer.add(saveBudgetItem, deleteBudgetItem, distrWorkplan, quarterWorkplan, clearWorkplan, templateDownload, uploadBudget);
+         footer.add(saveBudgetItem, deleteBudgetItem, distrWorkplan, quarterWorkplan, clearWorkplan, templateDownload);
         if (user.getRoles().contains(Role.ADMIN)) {
             footer.add(rectify, button);
         }
@@ -2136,7 +2137,7 @@ public class BudgetFormView extends Div {
                     String name2 = budgetItem2.getCoacode() != null ? budgetItem2.getCoacode().getName() : "";
                     return name1.compareTo(name2);
                 });
-        Grid.Column<BudgetItems> itemColumn = gridBudgetItems.addColumn(BudgetItems::getItem).setHeader("Description M").setKey("Item");
+        Grid.Column<BudgetItems> itemColumn = gridBudgetItems.addColumn(BudgetItems::getItem).setHeader("Description").setKey("Item");
         Grid.Column<BudgetItems> actcodeColumn = gridBudgetItems
                 .addColumn(budgetItem -> {
                     //COA coacode = budgetItem.getCoacode();
@@ -2253,7 +2254,7 @@ public class BudgetFormView extends Div {
                     String name2 = budgetItem2.getCoacode() != null ? budgetItem2.getCoacode().getName() : "";
                     return name1.compareTo(name2);
                 });
-        gridBudgetCoa.addColumn(BudgetItems::getItem).setHeader("Description H");
+        gridBudgetCoa.addColumn(BudgetItems::getItem).setHeader("Description");
         gridBudgetCoa.addColumn(new ComponentRenderer<>(urcActivity -> {
             Span span = new Span("");
             if (urcActivity.getTotal() != null) {
