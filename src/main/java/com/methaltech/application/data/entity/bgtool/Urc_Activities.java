@@ -17,6 +17,7 @@ import lombok.ToString;
 @Table(name = "urcActivities")
 @NoArgsConstructor
 @ToString(includeFieldNames = false, onlyExplicitlyIncluded = true)
+
 public @Data
 class Urc_Activities {
 

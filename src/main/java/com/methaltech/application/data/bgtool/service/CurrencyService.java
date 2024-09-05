@@ -3,6 +3,8 @@ package com.methaltech.application.data.bgtool.service;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.Currency;
 import com.methaltech.application.data.bgtool.repository.CurrencyRepository;
+import com.methaltech.application.data.entity.bgtool.CurrencyData;
+import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,5 +68,11 @@ public class CurrencyService {
 
     public Currency findByDataCurrencyAndBudget(String currency, Budget budget) {
         return repository.findByDataCurrencyAndBudget(currency, budget);
+    }
+
+    public Optional<Currency> findCurrency(CurrencyData data, Budget budget) {
+        /*        return repository.findByDataAndBudget(data, budget)
+        .orElseThrow(() -> new EntityNotFoundException("Currency not found"));*/
+                return repository.findByDataAndBudget(data, budget);
     }
 }

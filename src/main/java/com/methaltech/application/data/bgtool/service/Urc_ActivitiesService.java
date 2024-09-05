@@ -122,6 +122,9 @@ public class Urc_ActivitiesService {
     public Urc_Activities getLastSavedUrcActivities() {
         return repository.findTopByOrderByIdDesc();
     }
+    public Optional<Urc_Activities> findUrcActivityById(Long id) {
+        return repository.findById(id);
+    }
 
     public List<Urc_Activities> findUrcActivitiesByOrigid(Long origid) {
         return repository.findByOrigid(origid);

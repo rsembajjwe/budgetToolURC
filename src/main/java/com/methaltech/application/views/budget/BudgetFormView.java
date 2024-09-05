@@ -232,6 +232,7 @@ public class BudgetFormView extends Div {
     private Span accCode;
     private Span activity;
     private Urc_Activities chosenUrc_Activities;
+    private Urc_Activities chosenUrc_Activities2 = new Urc_Activities();
     private Organisation chosenOrganisation;
     private DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
     private BigDecimal calculateSumOfAllMonthstotal = BigDecimal.ZERO;
@@ -253,6 +254,7 @@ public class BudgetFormView extends Div {
     VerticalLayout caoImport = new VerticalLayout();
     Budget bug = null;
     ComboBox<Budget> comboBoxBudgetImport = new ComboBox<>("Source Budget");
+    Grid<BudgetItems> gridBudgetCoaImportBudgetItems = new Grid<>(BudgetItems.class, false);
 
     public BudgetFormView(AuthenticatedUser authenticatedUser, BudgetService chosenBudgetService, Urc_ActivitiesService sampleUrc_ActivitiesService,
             UserService userService, UnitService unitService, UnitsBudgetService unitsbudgetService,
@@ -301,6 +303,39 @@ public class BudgetFormView extends Div {
         gridCOAImportBudgetItems.addColumn("code").setAutoWidth(true);
         gridCOAImportBudgetItems.addColumn("name").setAutoWidth(true);
         gridCOAImportBudgetItems.getStyle().set("flex-grow", "1");
+        //gridCOAImportBudgetItems.setSelectionMode(Grid.SelectionMode.MULTI);
+
+        gridBudgetCoaImportBudgetItems.addColumn(budgetItem -> {
+            COA coacode = budgetItem.getCoacode();
+            Text label = new Text(coacode != null ? coacode.getCode() : "");
+            return label.getText(); // Get the text content
+        })
+                .setHeader("Code").setWidth("80px").setFlexGrow(0)
+                .setSortable(true) // Make the column sortable
+                .setComparator((budgetItem1, budgetItem2) -> {
+                    // Implement your custom comparator logic here
+                    String name1 = budgetItem1.getCoacode() != null ? budgetItem1.getCoacode().getName() : "";
+                    String name2 = budgetItem2.getCoacode() != null ? budgetItem2.getCoacode().getName() : "";
+                    return name1.compareTo(name2);
+                });
+        gridBudgetCoaImportBudgetItems.addColumn(BudgetItems::getItem).setHeader("Description V");
+        gridBudgetCoaImportBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
+
+            Span span = new Span(decimalFormat.format(generatesumofMonths(urcActivity)));
+            span.getElement().getThemeList().add("badge success");
+
+            return span;
+
+        })).setHeader("Total").setFlexGrow(0).setWidth("150px");
+
+        gridBudgetCoaImportBudgetItems.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
+        gridBudgetCoaImportBudgetItems.setSelectionMode(Grid.SelectionMode.MULTI);
+
+        gridUrc_ActivityDeatailImport.asSingleSelect().addValueChangeListener(e -> {
+            chosenUrc_Activities2 = (Urc_Activities) e.getValue();
+            gridBudgetCoaImportBudgetItems.setItems(budgetItemsService.findBudgetItemsByUrc_Activities((Urc_Activities) e.getValue()));
+        });
+
         comboBoxCoalevel1ImportBudgetItems = new ComboBox<>();
 
         addClassName("budget-form-view");
@@ -2101,7 +2136,7 @@ public class BudgetFormView extends Div {
                     String name2 = budgetItem2.getCoacode() != null ? budgetItem2.getCoacode().getName() : "";
                     return name1.compareTo(name2);
                 });
-        Grid.Column<BudgetItems> itemColumn = gridBudgetItems.addColumn(BudgetItems::getItem).setHeader("Description").setKey("Item");
+        Grid.Column<BudgetItems> itemColumn = gridBudgetItems.addColumn(BudgetItems::getItem).setHeader("Description M").setKey("Item");
         Grid.Column<BudgetItems> actcodeColumn = gridBudgetItems
                 .addColumn(budgetItem -> {
                     //COA coacode = budgetItem.getCoacode();
@@ -2218,10 +2253,14 @@ public class BudgetFormView extends Div {
                     String name2 = budgetItem2.getCoacode() != null ? budgetItem2.getCoacode().getName() : "";
                     return name1.compareTo(name2);
                 });
-        gridBudgetCoa.addColumn(BudgetItems::getItem).setHeader("Description");
+        gridBudgetCoa.addColumn(BudgetItems::getItem).setHeader("Description H");
         gridBudgetCoa.addColumn(new ComponentRenderer<>(urcActivity -> {
-
-            Span span = new Span(decimalFormat.format(urcActivity.getTotal()));
+            Span span = new Span("");
+            if (urcActivity.getTotal() != null) {
+                span = new Span(decimalFormat.format(urcActivity.getTotal()));
+            } else {
+                span = new Span("N/A"); // Or some other default value
+            }
             span.getElement().getThemeList().add("badge success");
 
             return span;
@@ -2333,10 +2372,8 @@ public class BudgetFormView extends Div {
         });
         importBudgetItems.addSingleClickListener(e -> {
             if (checkPreSettings()) {
-                Notification.show("All is well");
                 openImportBudgetItemDialogue(comboBoxD_Section.getValue());
             } else {
-                Notification.show("Not  All is well");
             }
         });
         out.add(comboBoxCoalevel1Two, sett, importBudgetItems);
@@ -2396,7 +2433,7 @@ public class BudgetFormView extends Div {
             }
         });
 
-        dialog.add(comboBoxBudgetImport, procClassCombo, createImportBudgetItemsDialogLayout(comboBoxBudgetImport.getValue(), deptSection, dialog));
+        dialog.add(comboBoxBudgetImport, procClassCombo, createImportBudgetItemsDialogLayout(chosenBudget, deptSection, dialog));
 
         dialog.open();
         return dialog;
@@ -2486,8 +2523,121 @@ public class BudgetFormView extends Div {
 
         Footer footer = new Footer();
         Button saveButton = new Button("Import Selected Items", e -> {
-            if (!gridCOAImportBudgetItems.asMultiSelect().isEmpty()) {
+            if (gridBudgetCoaImportBudgetItems.asMultiSelect().getValue() != null) {
 
+                if (checkPreSettings() == true) {
+
+                    Set<BudgetItems> itemsImported = gridBudgetCoaImportBudgetItems.asMultiSelect().getSelectedItems();
+                    for (BudgetItems b : itemsImported) {
+                        try {
+                            BudgetItems budg = new BudgetItems();
+                            budg.setItem(b.getItem());
+                            budg.setCost(b.getCost());
+                            budg.setQty(b.getQty());
+                            budg.setUnitMeasure(b.getUnitMeasure());
+
+                            Optional<Currency> cur = sampleCurrencyService.findCurrency(b.getCurrency().getData(), budget);
+                            if (!cur.isPresent()) {
+                                budg.setCost(b.getCost().multiply(b.getCurrency().getRate()));
+                                budg.setCurrency(sampleCurrencyService.getCurrencyByBudgetAndCurrencyShort(budget, "UGX"));
+                            } else {
+                                budg.setCurrency(cur.get());
+                            }
+
+                            budg.setNotes(b.getNotes());
+                            budg.setBudget(budget);
+                            Fundsource selectedFundsource = b.getFundsource();
+                            Fundsource f = sampleFundsourceService.findByFundsourceAndBudget("IGR", b.getBudget());
+                            Fundsource selectedFundsource2 = sampleFundsourceService.findByFundsourceAndBudget(selectedFundsource.getFundsource(), budget);
+
+                            if (!b.getCoacode().getCode().startsWith("1")) {
+                                if (selectedFundsource != null) {
+                                    if (selectedFundsource2 != null) {
+                                        budg.setFundsource(selectedFundsource2);
+                                    } else {
+                                        budg.setFundsource(f);
+                                    }
+                                } else {
+                                    budg.setFundsource(f);
+                                }
+                            } else {
+                                budg.setFundsource(null);
+                            }
+
+                            budg.setBudgetType(chosenOrganisation);
+                            if (b.getCoacode() != null) {
+                                budg.setCoacode(coaService.findByCodeAndBudget(b.getCoacode().getCode(), budget));
+                                //System.out.println(budg.getCoacode() + " Coa");
+                            }
+
+                            budg.setProcClass(b.getProcClass());
+                            if (b.getCoacode().getCoalevel1().getCode() != 1) {
+                                Optional<Urc_Activities> activ = sampleUrc_ActivitiesService.findUrcActivityById(chosenUrc_Activities.getId());
+                                if (activ.isPresent()) {
+
+                                    budg.setActivity(activ.get());
+                                } else {
+                                    budg.setActivity(activ.get());
+                                }
+
+                            }
+
+                            budg.setDeptUnit(chosenDsection);
+                            budg.setCoalevel1(chosenCoalevel1);
+                            budg.setActivity(chosenUrc_Activities);
+
+                            budg.setJan(b.getJan());
+                            budg.setFeb(b.getFeb());
+                            budg.setMar(b.getMar());
+                            budg.setApr(b.getApr());
+                            budg.setMay(b.getMay());
+                            budg.setJun(b.getJun());
+                            budg.setJul(b.getJul());
+                            budg.setAug(b.getAug());
+                            budg.setSep(b.getSep());
+                            budg.setOct(b.getOct());
+                            budg.setNov(b.getNov());
+                            budg.setDec(b.getDec());
+                            budgetItemsService.update(budg);
+                            ProcurementPlan getAllProcurementPlans = sampleProcurementPlanService.findFirstByBudgetAndProcClassAndCoa(budg.getBudget(), budg.getProcClass(), budg.getCoacode());
+                            if (getAllProcurementPlans != null) {
+                                // pp.setCost(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(budg.getBudget(), budg.getProcClass(), budg.getCoacode()));
+                                BigDecimal tDecimal = budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(getAllProcurementPlans.getBudget(), getAllProcurementPlans.getProcClass(), getAllProcurementPlans.getCoa());
+                                getAllProcurementPlans.setProcurementMethod(sampleProcurementPlanService.getProcurementMethodList2(budg.getProcClass(), tDecimal));
+                                sampleProcurementPlanService.save(getAllProcurementPlans);
+                            } else {
+                                ProcurementPlan pr = new ProcurementPlan();
+                                pr.setSubject(budg.getCoacode().getName());
+                                pr.setBudget(budg.getBudget()); // Assuming all selected plans have the same budget
+                                pr.setCoa(budg.getCoacode());
+                                Set<Fundsource> fundsourceSet = new HashSet<>();
+                                fundsourceSet.add(budg.getFundsource());
+                                //pr.setFundsource(fundsourceSet); // Assuming all selected plans have the same fund source
+                                pr.setCost(calculateMonthSum(budg));
+                                pr.setProcClass(procClassCombo.getValue());
+                                pr.setProcurementMethod(sampleProcurementPlanService.getProcurementMethodList2(budg.getProcClass(), pr.getCost()));
+
+                                sampleProcurementPlanService.save(pr);
+                            }
+
+                            refreshgridBudgetItems();
+                            refreshgridBudgetItemCOA2();
+                            clearWorkplan();
+                            clearBudget();
+                            g.close();
+                            UI.getCurrent().navigate(BudgetFormView.class);
+                        } catch (Exception validationException) {
+                            validationException.printStackTrace();
+                            NotificationError(" An exception happened while trying to saving. " + validationException.getMessage());
+
+                        }
+                    }
+
+                } else {
+
+                    Notification note = Notification.show("Check your settings");
+                    note.addThemeVariants(NotificationVariant.LUMO_WARNING);
+                }
             }
         });
         Button cancelButton = new Button("Cancel", e -> {
@@ -2499,38 +2649,10 @@ public class BudgetFormView extends Div {
 
         footer.add(saveButton, cancelButton);
 
-        Grid<BudgetItems> gridBudgetCoa = new Grid<>(BudgetItems.class, false);
-        gridBudgetCoa.addColumn(budgetItem -> {
-            COA coacode = budgetItem.getCoacode();
-            Text label = new Text(coacode != null ? coacode.getCode() : "");
-            return label.getText(); // Get the text content
-        })
-                .setHeader("Code").setWidth("80px").setFlexGrow(0)
-                .setSortable(true) // Make the column sortable
-                .setComparator((budgetItem1, budgetItem2) -> {
-                    // Implement your custom comparator logic here
-                    String name1 = budgetItem1.getCoacode() != null ? budgetItem1.getCoacode().getName() : "";
-                    String name2 = budgetItem2.getCoacode() != null ? budgetItem2.getCoacode().getName() : "";
-                    return name1.compareTo(name2);
-                });
-        gridBudgetCoa.addColumn(BudgetItems::getItem).setHeader("Description");
-        gridBudgetCoa.addColumn(new ComponentRenderer<>(urcActivity -> {
-
-            Span span = new Span(decimalFormat.format(generatesumofMonths(urcActivity)));
-            span.getElement().getThemeList().add("badge success");
-
-            return span;
-
-        })).setHeader("Total").setFlexGrow(0).setWidth("150px");
-
-        gridBudgetCoa.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
-        gridBudgetCoa.setSelectionMode(Grid.SelectionMode.MULTI);
         //detail.setHeight("100%");
-        detail.add(gridBudgetCoa, footer);
+        detail.add(gridBudgetCoaImportBudgetItems, footer);
         gridUrc_ActivityDeatailImport.setHeight("100%");
-        gridUrc_ActivityDeatailImport.asSingleSelect().addValueChangeListener(e -> {
-            gridBudgetCoa.setItems(budgetItemsService.findBudgetItemsByUrc_Activities((Urc_Activities) e.getValue()));
-        });
+
         gridCOAImportBudgetItems.asSingleSelect().addValueChangeListener(e -> {
             COA cc = (COA) e.getValue();
             COA cc2 = coaService.findByCodeAndBudget(cc.getCode(), comboBoxBudgetImport.getValue());
@@ -2540,10 +2662,10 @@ public class BudgetFormView extends Div {
             if (!comboBoxBudgetImport.isEmpty()) {
                 List<BudgetItems> list = budgetItemsService.findBudgetItemsByBudgetAndCoaAndSectios(comboBoxBudgetImport.getValue(), cc2, sectionSet);
                 // list = budgetItemsService.findByBudgetAndCoacode(comboBoxBudgetImport.getValue(), cc);
-                gridBudgetCoa.setItems(list);
+                gridBudgetCoaImportBudgetItems.setItems(list);
 
             } else {
-                gridBudgetCoa.setItems(Collections.emptyList());
+                gridBudgetCoaImportBudgetItems.setItems(Collections.emptyList());
             }
         });
 

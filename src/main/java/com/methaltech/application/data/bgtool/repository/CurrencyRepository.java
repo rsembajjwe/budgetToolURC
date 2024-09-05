@@ -2,7 +2,9 @@ package com.methaltech.application.data.bgtool.repository;
 
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.Currency;
+import com.methaltech.application.data.entity.bgtool.CurrencyData;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,4 +32,6 @@ public interface CurrencyRepository extends JpaRepository<Currency, Long> {
 
     @Query("SELECT c FROM Currency c WHERE c.data.currency = :currency AND c.budget = :budget")
     Currency findByDataCurrencyAndBudget(@Param("currency") String currency, @Param("budget") Budget budget);
+    
+    Optional<Currency> findByDataAndBudget(CurrencyData data, Budget budget);
 }
