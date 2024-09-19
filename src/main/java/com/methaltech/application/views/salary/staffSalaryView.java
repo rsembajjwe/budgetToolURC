@@ -1,6 +1,5 @@
 package com.methaltech.application.views.salary;
 
-import com.flowingcode.vaadin.addons.gridexporter.GridExporter;
 import com.methaltech.application.data.UploadExamplesI18N;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
 import com.methaltech.application.data.bgtool.service.BudgetService;
@@ -19,7 +18,6 @@ import com.methaltech.application.data.entity.bgtool.BudgetItems;
 import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.Currency;
-import com.methaltech.application.data.entity.bgtool.FreightVolumes;
 import com.methaltech.application.data.entity.bgtool.Fundsource;
 import com.methaltech.application.data.entity.bgtool.Organisation;
 import com.methaltech.application.data.entity.bgtool.StaffSalary;
@@ -27,9 +25,7 @@ import com.methaltech.application.data.entity.bgtool.StockUnitMeasure;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import com.methaltech.application.data.entity.bgtool.User;
-import com.methaltech.application.data.entity.oldbgtool.OldStaffPojo;
 import com.methaltech.application.data.errorMessages;
-import com.methaltech.application.data.oldbgtool.service.OldStaffPojoService;
 import com.methaltech.application.data.salaryScale;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.MainLayout;
@@ -56,7 +52,6 @@ import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Footer;
-import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.menubar.MenuBar;
@@ -78,11 +73,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import org.apache.poi.ss.usermodel.Cell;
@@ -148,7 +139,6 @@ public class staffSalaryView extends Div {
     private AuthenticatedUser authenticatedUser;
     private final UserService userService;
     private User user;
-    private final OldStaffPojoService oldStaffPojoService;
     private final Coalevel1Service coalevel1Service;
 
     private ComboBox<Fundsource> budgetItemfundSource = new ComboBox<>("Fund Source");
@@ -158,7 +148,7 @@ public class staffSalaryView extends Div {
     public staffSalaryView(AuthenticatedUser authenticatedUser, FreightVolumesService sampleFreightVolumesService, BudgetService sampleBudgetService, CoaService sampleCoaService,
             CurrencyService sampleCurrencyService, BudgetItemsService budgetItemsService, StockUnitMeasureService sampleStockUnitMeasureService,
             OrganisationService sampleOrganisationService, UserService userService, BudgetItemsService sampleBudgetItemsService,
-            Urc_ActivitiesService sampleUrc_ActivitiesService, StaffSalaryService sampleStaffSalaryService, OldStaffPojoService oldStaffPojoService,
+            Urc_ActivitiesService sampleUrc_ActivitiesService, StaffSalaryService sampleStaffSalaryService,
             Coalevel1Service coalevel1Service, FundsourceService sampleFundsourceService) {
         this.sampleFreightVolumesService = sampleFreightVolumesService;
         this.sampleBudgetService = sampleBudgetService;
@@ -171,7 +161,6 @@ public class staffSalaryView extends Div {
         this.sampleBudgetItemsService = sampleBudgetItemsService;
         this.sampleUrc_ActivitiesService = sampleUrc_ActivitiesService;
         this.sampleStaffSalaryService = sampleStaffSalaryService;
-        this.oldStaffPojoService = oldStaffPojoService;
         this.coalevel1Service = coalevel1Service;
         this.sampleFundsourceService = sampleFundsourceService;
         setHeight("100%");
@@ -1165,9 +1154,7 @@ public class staffSalaryView extends Div {
                 int x = 0;
                 for (StaffSalary a : listStaffSalary) {
                     x++;
-                    System.out.println(x + ": " + a.getSalary());
                     BudgetItems budget = new BudgetItems();
-                    System.out.println(a);
                     if (sampleStaffSalaryService.saveStaffSalary(a) != null) {
                         itemsalaryBudget(a, comboBoxOrganisation.getValue());
                     }

@@ -1,5 +1,5 @@
 
-package com.methaltech.application.data.entity.oldbgtool;
+package com.methaltech.application.data.entity.bgtool;
 
 
 public class RowsWorkplan {

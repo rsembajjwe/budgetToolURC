@@ -1,7 +1,6 @@
 package com.methaltech.application.data.bgtool.repository;
 
 import com.methaltech.application.data.entity.bgtool.CurrencyData;
-import com.methaltech.application.data.entity.oldbgtool.CurrencyEntity;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -17,6 +17,7 @@ import com.methaltech.application.data.bgtool.service.OrganisationService;
 import com.methaltech.application.data.bgtool.service.ProcurementPlanService;
 import com.methaltech.application.data.bgtool.service.SectionService;
 import com.methaltech.application.data.bgtool.service.StaffSalaryService;
+import com.methaltech.application.data.bgtool.service.StaffService;
 import com.methaltech.application.data.bgtool.service.StockUnitMeasureService;
 import com.methaltech.application.data.bgtool.service.URC_Priority_AreasService;
 import com.methaltech.application.data.bgtool.service.UnitService;
@@ -25,11 +26,8 @@ import com.methaltech.application.data.bgtool.service.UrcDeptSectionAnlDimbgtSer
 import com.methaltech.application.data.bgtool.service.Urc_ActivitiesService;
 import com.methaltech.application.data.entity.bgtool.*;
 import com.methaltech.application.data.entity.livedata.UR5_ACNT;
-import com.methaltech.application.data.entity.oldbgtool.OldBudget;
-import com.methaltech.application.data.entity.oldbgtool.Staff;
 import com.methaltech.application.data.errorMessages;
 import com.methaltech.application.data.livedata.service.UR5_ACNTService;
-import com.methaltech.application.data.oldbgtool.service.StaffService;
 import com.methaltech.application.data.salaryScale;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.MainLayout;
@@ -1487,8 +1485,8 @@ public class BudgetFormView extends Div {
                 budgetItemsService.update(y);
             }
         });
-       // footer.add(saveBudgetItem, deleteBudgetItem, distrWorkplan, quarterWorkplan, clearWorkplan, templateDownload, uploadBudget);
-         footer.add(saveBudgetItem, deleteBudgetItem, distrWorkplan, quarterWorkplan, clearWorkplan, templateDownload);
+        // footer.add(saveBudgetItem, deleteBudgetItem, distrWorkplan, quarterWorkplan, clearWorkplan, templateDownload, uploadBudget);
+        footer.add(saveBudgetItem, deleteBudgetItem, distrWorkplan, quarterWorkplan, clearWorkplan, templateDownload);
         if (user.getRoles().contains(Role.ADMIN)) {
             footer.add(rectify, button);
         }
@@ -1972,6 +1970,7 @@ public class BudgetFormView extends Div {
         comboBoxCoalevel1.setItemLabelGenerator(Coalevel1::getName);
 
         comboBoxCoalevel1.addValueChangeListener(ev -> {
+            
             chosenCoalevel1 = ev.getValue();
             //comboBoxCoalevel1Two.setValue(chosenCoalevel1);
             setBudgetDetails();
@@ -1984,6 +1983,7 @@ public class BudgetFormView extends Div {
 
                 if (!comboBoxBudget.isEmpty()) {
                     gridCOA.setItems(coaService.findByDeptSectionAndCodeStartingWith(comboBoxD_Section.getValue(), Coalevel1String(ev.getValue()), comboBoxBudget.getValue()));
+                    Notification.show(coaService.findByDeptSectionAndCodeStartingWith(comboBoxD_Section.getValue(), Coalevel1String(ev.getValue()), comboBoxBudget.getValue()).size()+" COA");
                     searchCoa.setValue(Coalevel1String(ev.getValue()));
                 }
 
@@ -2549,9 +2549,10 @@ public class BudgetFormView extends Div {
                             budg.setBudget(budget);
                             Fundsource selectedFundsource = b.getFundsource();
                             Fundsource f = sampleFundsourceService.findByFundsourceAndBudget("IGR", b.getBudget());
-                            Fundsource selectedFundsource2 = sampleFundsourceService.findByFundsourceAndBudget(selectedFundsource.getFundsource(), budget);
+                            Fundsource selectedFundsource2 = null;
 
                             if (!b.getCoacode().getCode().startsWith("1")) {
+                                selectedFundsource2 = sampleFundsourceService.findByFundsourceAndBudget(selectedFundsource.getFundsource(), budget);
                                 if (selectedFundsource != null) {
                                     if (selectedFundsource2 != null) {
                                         budg.setFundsource(selectedFundsource2);
@@ -2599,26 +2600,30 @@ public class BudgetFormView extends Div {
                             budg.setOct(b.getOct());
                             budg.setNov(b.getNov());
                             budg.setDec(b.getDec());
-                            budgetItemsService.update(budg);
-                            ProcurementPlan getAllProcurementPlans = sampleProcurementPlanService.findFirstByBudgetAndProcClassAndCoa(budg.getBudget(), budg.getProcClass(), budg.getCoacode());
-                            if (getAllProcurementPlans != null) {
-                                // pp.setCost(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(budg.getBudget(), budg.getProcClass(), budg.getCoacode()));
-                                BigDecimal tDecimal = budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(getAllProcurementPlans.getBudget(), getAllProcurementPlans.getProcClass(), getAllProcurementPlans.getCoa());
-                                getAllProcurementPlans.setProcurementMethod(sampleProcurementPlanService.getProcurementMethodList2(budg.getProcClass(), tDecimal));
-                                sampleProcurementPlanService.save(getAllProcurementPlans);
-                            } else {
-                                ProcurementPlan pr = new ProcurementPlan();
-                                pr.setSubject(budg.getCoacode().getName());
-                                pr.setBudget(budg.getBudget()); // Assuming all selected plans have the same budget
-                                pr.setCoa(budg.getCoacode());
-                                Set<Fundsource> fundsourceSet = new HashSet<>();
-                                fundsourceSet.add(budg.getFundsource());
-                                //pr.setFundsource(fundsourceSet); // Assuming all selected plans have the same fund source
-                                pr.setCost(calculateMonthSum(budg));
-                                pr.setProcClass(procClassCombo.getValue());
-                                pr.setProcurementMethod(sampleProcurementPlanService.getProcurementMethodList2(budg.getProcClass(), pr.getCost()));
+                            if (!b.getCoacode().getDisplay().equals(Display.FREIGHT)) {
+                                budgetItemsService.update(budg);
+                                if (b.getCoacode().getCoalevel1().getCode() != 1) {
+                                    ProcurementPlan getAllProcurementPlans = sampleProcurementPlanService.findFirstByBudgetAndProcClassAndCoa(budg.getBudget(), budg.getProcClass(), budg.getCoacode());
+                                    if (getAllProcurementPlans != null) {
+                                        // pp.setCost(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(budg.getBudget(), budg.getProcClass(), budg.getCoacode()));
+                                        BigDecimal tDecimal = budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(getAllProcurementPlans.getBudget(), getAllProcurementPlans.getProcClass(), getAllProcurementPlans.getCoa());
+                                        getAllProcurementPlans.setProcurementMethod(sampleProcurementPlanService.getProcurementMethodList2(budg.getProcClass(), tDecimal));
+                                        sampleProcurementPlanService.save(getAllProcurementPlans);
+                                    } else {
+                                        ProcurementPlan pr = new ProcurementPlan();
+                                        pr.setSubject(budg.getCoacode().getName());
+                                        pr.setBudget(budg.getBudget()); // Assuming all selected plans have the same budget
+                                        pr.setCoa(budg.getCoacode());
+                                        Set<Fundsource> fundsourceSet = new HashSet<>();
+                                        fundsourceSet.add(budg.getFundsource());
+                                        //pr.setFundsource(fundsourceSet); // Assuming all selected plans have the same fund source
+                                        pr.setCost(calculateMonthSum(budg));
+                                        pr.setProcClass(procClassCombo.getValue());
+                                        pr.setProcurementMethod(sampleProcurementPlanService.getProcurementMethodList2(budg.getProcClass(), pr.getCost()));
 
-                                sampleProcurementPlanService.save(pr);
+                                        sampleProcurementPlanService.save(pr);
+                                    }
+                                }
                             }
 
                             refreshgridBudgetItems();
@@ -2656,18 +2661,21 @@ public class BudgetFormView extends Div {
 
         gridCOAImportBudgetItems.asSingleSelect().addValueChangeListener(e -> {
             COA cc = (COA) e.getValue();
-            COA cc2 = coaService.findByCodeAndBudget(cc.getCode(), comboBoxBudgetImport.getValue());
-            Set<UrcDeptSectionAnlDimbgt> sectionSet = new HashSet<>();
-            sectionSet.add(comboBoxD_Section.getValue());
+            if (cc != null) {
+                COA cc2 = coaService.findByCodeAndBudget(cc.getCode(), comboBoxBudgetImport.getValue());
+                Set<UrcDeptSectionAnlDimbgt> sectionSet = new HashSet<>();
+                sectionSet.add(comboBoxD_Section.getValue());
 
-            if (!comboBoxBudgetImport.isEmpty()) {
-                List<BudgetItems> list = budgetItemsService.findBudgetItemsByBudgetAndCoaAndSectios(comboBoxBudgetImport.getValue(), cc2, sectionSet);
-                // list = budgetItemsService.findByBudgetAndCoacode(comboBoxBudgetImport.getValue(), cc);
-                gridBudgetCoaImportBudgetItems.setItems(list);
+                if (!comboBoxBudgetImport.isEmpty()) {
+                    List<BudgetItems> list = budgetItemsService.findBudgetItemsByBudgetAndCoaAndSectios(comboBoxBudgetImport.getValue(), cc2, sectionSet);
+                    // list = budgetItemsService.findByBudgetAndCoacode(comboBoxBudgetImport.getValue(), cc);
+                    gridBudgetCoaImportBudgetItems.setItems(list);
 
-            } else {
-                gridBudgetCoaImportBudgetItems.setItems(Collections.emptyList());
+                } else {
+                    gridBudgetCoaImportBudgetItems.setItems(Collections.emptyList());
+                }
             }
+
         });
 
         master.add(gridUrc_ActivityDeatailImport, caoImport);

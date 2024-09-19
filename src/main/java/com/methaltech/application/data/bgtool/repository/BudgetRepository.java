@@ -24,6 +24,8 @@ public interface BudgetRepository extends JpaRepository<Budget, Integer> {
     @Query("SELECT b FROM Budget b ORDER BY b.id DESC")
     List<Budget> findLastSavedBudget();
 
-    @Query("SELECT b FROM Budget b ORDER BY b.id DESC")
+    /*    @Query("SELECT b FROM Budget b ORDER BY b.id DESC")
+    Optional<Budget> findTopByOrderByIdDesc();*/
+    @Query(value = "SELECT TOP 1 * FROM budget ORDER BY id DESC", nativeQuery = true)
     Optional<Budget> findTopByOrderByIdDesc();
 }

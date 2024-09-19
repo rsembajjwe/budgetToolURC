@@ -18,13 +18,12 @@ import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.Currency;
 import com.methaltech.application.data.entity.bgtool.Organisation;
+import com.methaltech.application.data.entity.bgtool.RowsWorkplan;
 import com.methaltech.application.data.entity.bgtool.StaffSalary;
 import com.methaltech.application.data.entity.bgtool.URC_Priority_Areas;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import com.methaltech.application.data.entity.bgtool.User;
-import com.methaltech.application.data.entity.oldbgtool.RowsWorkplan;
-import com.methaltech.application.data.oldbgtool.service.OldStaffPojoService;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.MainLayout;
 import com.methaltech.application.views.budgetReport.BudgetReportsView;
@@ -124,7 +123,6 @@ public class budgetWorkplanView extends Div {
     private AuthenticatedUser authenticatedUser;
     private final UserService userService;
     private User user;
-    private final OldStaffPojoService oldStaffPojoService;
     private final Coalevel1Service coalevel1Service;
     Button downloadWorkplan = new Button(new Icon(VaadinIcon.DOWNLOAD));
     Button downloadWorkplan2 = new Button("Download Qtr");
@@ -134,7 +132,7 @@ public class budgetWorkplanView extends Div {
     public budgetWorkplanView(AuthenticatedUser authenticatedUser, FreightVolumesService sampleFreightVolumesService, BudgetService sampleBudgetService, CoaService sampleCoaService,
             CurrencyService sampleCurrencyService, BudgetItemsService budgetItemsService, StockUnitMeasureService sampleStockUnitMeasureService,
             OrganisationService sampleOrganisationService, UserService userService, BudgetItemsService sampleBudgetItemsService,
-            Urc_ActivitiesService sampleUrc_ActivitiesService, StaffSalaryService sampleStaffSalaryService, OldStaffPojoService oldStaffPojoService,
+            Urc_ActivitiesService sampleUrc_ActivitiesService, StaffSalaryService sampleStaffSalaryService, 
             Coalevel1Service coalevel1Service, URC_Priority_AreasService sampleURC_Priority_Areas) {
         this.sampleBudgetService = sampleBudgetService;
         this.sampleCoaService = sampleCoaService;
@@ -146,7 +144,6 @@ public class budgetWorkplanView extends Div {
         this.sampleBudgetItemsService = sampleBudgetItemsService;
         this.sampleUrc_ActivitiesService = sampleUrc_ActivitiesService;
         this.sampleStaffSalaryService = sampleStaffSalaryService;
-        this.oldStaffPojoService = oldStaffPojoService;
         this.coalevel1Service = coalevel1Service;
         this.sampleURC_Priority_Areas = sampleURC_Priority_Areas;
         setHeight("100%");

@@ -26,9 +26,7 @@ import com.methaltech.application.data.entity.bgtool.FreightVolumes;
 import com.methaltech.application.data.entity.bgtool.Organisation;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.User;
-import com.methaltech.application.data.entity.oldbgtool.OldFreightRate;
 import com.methaltech.application.data.errorMessages;
-import com.methaltech.application.data.oldbgtool.service.OldFreightRateService;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.MainLayout;
 import com.methaltech.application.views.budgetReport.BudgetReportsView;
@@ -129,7 +127,6 @@ public class freightVolumeView extends Div {
     private final StockUnitMeasureService sampleStockUnitMeasureService;
     private final OrganisationService sampleOrganisationService;
     private final BudgetItemsService sampleBudgetItemsService;
-    private final OldFreightRateService oldFreightRateService;
 
     private final Binder<FreightVolumes> binder = new BeanValidationBinder<>(FreightVolumes.class);
     private ComboBox<UrcDeptSectionAnlDimbgt> comboBoxD_Section;
@@ -175,7 +172,7 @@ public class freightVolumeView extends Div {
     public freightVolumeView(AuthenticatedUser authenticatedUser, FreightVolumesService sampleFreightVolumesService, BudgetService sampleBudgetService, CoaService sampleCoaService,
             CurrencyService sampleCurrencyService, BudgetItemsService budgetItemsService, StockUnitMeasureService sampleStockUnitMeasureService,
             OrganisationService sampleOrganisationService, UserService userService, BudgetItemsService sampleBudgetItemsService,
-            OldFreightRateService oldFreightRateService, COAReconcileService coaReconcileService, CoaService coaService, Coalevel1Service sampleCoalevel1Service,
+            COAReconcileService coaReconcileService, CoaService coaService, Coalevel1Service sampleCoalevel1Service,
             Coalevel11Service sampleCoalevel11Service) {
         this.sampleFreightVolumesService = sampleFreightVolumesService;
         this.sampleBudgetService = sampleBudgetService;
@@ -186,7 +183,6 @@ public class freightVolumeView extends Div {
         this.sampleOrganisationService = sampleOrganisationService;
         this.userService = userService;
         this.sampleBudgetItemsService = sampleBudgetItemsService;
-        this.oldFreightRateService = oldFreightRateService;
         this.coaReconcileService = coaReconcileService;
         this.coaService = coaService;
         this.sampleCoalevel1Service = sampleCoalevel1Service;

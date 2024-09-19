@@ -680,7 +680,10 @@ public final class ApprovalView extends Div {
     }
 
     private void setApprovalData() {
+        System.out.println("Started");
         Optional<Budget> budget = chosenBudgetService.getLastSavedBudget2();
+        System.out.println("Started 2");
+        System.out.println(budget);
         if (budget.isPresent()) {
             if (budget.get().isActive()) {
                 List<BudgetApproval> approvals = sampleBudgetApprovalService.getBudgetApprovalsByBudget(budget.get());

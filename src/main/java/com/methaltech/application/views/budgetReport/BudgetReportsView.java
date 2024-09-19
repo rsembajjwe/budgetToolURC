@@ -33,17 +33,9 @@ import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import com.methaltech.application.data.entity.bgtool.User;
 import com.methaltech.application.data.entity.livedata.URC_ACNT;
-import com.methaltech.application.data.entity.oldbgtool.DepartmentSection;
-import com.methaltech.application.data.entity.oldbgtool.DepartmentUnit;
 import com.methaltech.application.data.livedata.service.SALFLDGService;
 import com.methaltech.application.data.livedata.service.UrcAcntService;
 import com.methaltech.application.data.livedata.service.UrcBSalfldgService;
-import com.methaltech.application.data.oldbgtool.service.BudgetSubItemService;
-import com.methaltech.application.data.oldbgtool.service.DepartmentSectionService;
-import com.methaltech.application.data.oldbgtool.service.DepartmentUnitService;
-import com.methaltech.application.data.oldbgtool.service.ItemService2;
-import com.methaltech.application.data.oldbgtool.service.ProgramActivityService;
-import com.methaltech.application.data.oldbgtool.service.ProgrammeService;
 import com.methaltech.application.views.MainLayout;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HtmlComponent;
@@ -129,21 +121,12 @@ public class BudgetReportsView extends Div {
     private final CustomDetailedBudgetReportService sampleCustomDetailedBudgetReportService;
     private final OrganisationService sampleOrganisationService;
     private final BudgetService budgetService;
-    private final DepartmentSectionService departmentsectionService;
-    private final DepartmentUnitService departmentUnitService;
     private final SamplePersonService samplePersonService;
-    private final ProgrammeService programmeService;
     private final URC_Priority_AreasService sampleURC_Priority_AreasService;
     private final Urc_ActivitiesService sampleUrc_ActivitiesService;
-    private final ProgramActivityService programmeActivityService;
-    private final BudgetSubItemService budgetSubItemService;
-    private final ItemService2 itemService;
     private final SALFLDGService samopleSALFLDGService;
     private final UrcBSalfldgService sampleUrcBSalfldgService;
-    private Grid<DepartmentUnit> select = new Grid<>(DepartmentUnit.class, false);
-    private final List<DepartmentUnit> selected = new ArrayList<>();
     private final List<SamplePerson> person = new ArrayList<>();
-    private List<DepartmentSection> selectedSections = new ArrayList<>();
     private List<URC_Priority_Areas> programmes = new ArrayList<>();
     private List<Urc_Activities> programmesActivities = new ArrayList<>();
     private List<BudgetItems> budgetList = new ArrayList<>();
@@ -165,10 +148,7 @@ public class BudgetReportsView extends Div {
     private GenerateQtrFromFy gen;
 
     public BudgetReportsView(UserService userService, BudgetService budgetService,
-            DepartmentSectionService departmentsectionService, DepartmentUnitService departmentUnitService,
-            SamplePersonService samplePersonService, ProgrammeService programmeService,
-            ProgramActivityService programmeActivityService, BudgetSubItemService budgetSubItemService,
-            ItemService2 itemService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, OrganisationService sampleOrganisationService,
+            SamplePersonService samplePersonService,  UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, OrganisationService sampleOrganisationService,
             BudgetItemsService sampleBudgetItemsService, Coalevel1Service sampleCoalevel1Service, URC_Priority_AreasService sampleURC_Priority_AreasService,
             Urc_ActivitiesService sampleUrc_ActivitiesService, CustomDetailedBudgetReportImpService sampleCustomDetailedBudgetReportImpService,
             CustomDetailedBudgetReportService sampleCustomDetailedBudgetReportService, UrcAcntService urcAcntService,
@@ -176,13 +156,7 @@ public class BudgetReportsView extends Div {
             GenerateQtrFromFy gen, UrcBSalfldgService sampleUrcBSalfldgService) {
         this.userService = userService;
         this.budgetService = budgetService;
-        this.departmentsectionService = departmentsectionService;
-        this.departmentUnitService = departmentUnitService;
         this.samplePersonService = samplePersonService;
-        this.programmeService = programmeService;
-        this.programmeActivityService = programmeActivityService;
-        this.budgetSubItemService = budgetSubItemService;
-        this.itemService = itemService;
         this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
         this.sampleOrganisationService = sampleOrganisationService;
         this.sampleBudgetItemsService = sampleBudgetItemsService;

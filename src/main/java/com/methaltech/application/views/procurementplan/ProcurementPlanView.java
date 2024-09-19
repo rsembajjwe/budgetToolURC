@@ -29,9 +29,6 @@ import com.methaltech.application.data.entity.bgtool.ProcurementPlan;
 import com.methaltech.application.data.entity.bgtool.ProcurementType;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.User;
-import com.methaltech.application.data.oldbgtool.service.DepartmentUnitService;
-import com.methaltech.application.data.oldbgtool.service.UrcUserService;
-import com.methaltech.application.data.oldbgtool.service.UserUnitsService;
 import com.methaltech.application.data.livedata.service.UrcDeptSectionAnlDimService;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.MainLayout;
@@ -201,8 +198,6 @@ public class ProcurementPlanView extends Div {
     private final UnitsBudgetService sampleUnitsBudgetService;
     private final DataDuplicationService sampleDataDuplicationService;
     private final UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService;
-    private final UrcUserService urcUserService;
-    private final DepartmentUnitService departmentUnitService;
 
     private final ProcurementPlanService ProcurementPlanService;
     private final ProcurementMethodService ProcurementMethodService;
@@ -214,7 +209,6 @@ public class ProcurementPlanView extends Div {
     private final EmailValidator emailValidator;
     public MultiSelectComboBox<D_Unit> unitsList;
     private final UrcDeptSectionAnlDimService sampleSectionService;
-    private final UserUnitsService UserUnitsService;
     private final BudgetItemsService budgetItemsService;
     private final CoaService coaService;
     private DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
@@ -250,7 +244,6 @@ public class ProcurementPlanView extends Div {
             BudgetService sampleBudgetService, UnitService sampleUnitService, UnitsBudgetService sampleUnitsBudgetService,
             UrcDeptSectionAnlDimService sampleSectionService, DataDuplicationService sampleDataDuplicationService,
             UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, AuthenticatedUser authenticatedUser,
-            UrcUserService urcUserService, UserUnitsService UserUnitsService, DepartmentUnitService departmentUnitService,
             ProcurementPlanService ProcurementPlanService, BudgetItemsService budgetItemsService,
             CoaService coaService, CurrencyService sampleCurrencyService, FundsourceService sampleFundsourceService,
             ProcurementMethodService ProcurementMethodService, ProcurementTypeService sampleProcurementTypeService) {
@@ -262,9 +255,6 @@ public class ProcurementPlanView extends Div {
         this.sampleSectionService = sampleSectionService;
         this.sampleDataDuplicationService = sampleDataDuplicationService;
         this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
-        this.urcUserService = urcUserService;
-        this.UserUnitsService = UserUnitsService;
-        this.departmentUnitService = departmentUnitService;
         this.authenticatedUser = authenticatedUser;
         this.ProcurementPlanService = ProcurementPlanService;
         this.budgetItemsService = budgetItemsService;

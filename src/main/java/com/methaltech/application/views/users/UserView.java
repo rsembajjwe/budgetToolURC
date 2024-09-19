@@ -21,13 +21,6 @@ import com.methaltech.application.data.bgtool.service.UrcDeptSectionAnlDimbgtSer
 import com.methaltech.application.data.entity.bgtool.DeptSectionMerger;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.livedata.UrcDepartmentAnlDim;
-import com.methaltech.application.data.entity.oldbgtool.DepartmentUnit;
-import com.methaltech.application.data.entity.oldbgtool.UrcUser;
-import com.methaltech.application.data.entity.oldbgtool.UserUnits;
-import com.methaltech.application.data.livedata.service.UrcDepartmentAnlDimService;
-import com.methaltech.application.data.oldbgtool.service.DepartmentUnitService;
-import com.methaltech.application.data.oldbgtool.service.UrcUserService;
-import com.methaltech.application.data.oldbgtool.service.UserUnitsService;
 import com.methaltech.application.data.livedata.service.UrcDeptSectionAnlDimService;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.MainLayout;
@@ -112,9 +105,6 @@ public class UserView extends Div implements BeforeEnterObserver {
     private final UnitsBudgetService sampleUnitsBudgetService;
     private final DataDuplicationService sampleDataDuplicationService;
     private final UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService;
-    private final UrcUserService urcUserService;
-    private final DepartmentUnitService departmentUnitService;
-    private final UrcDepartmentAnlDimService sampleUrcDepartmentAnlDimService;
     private final UrDepartmentsAnlDimService2 sampleUrDepartmentsAnlDimService2;
 
     @Autowired
@@ -124,7 +114,6 @@ public class UserView extends Div implements BeforeEnterObserver {
     private final EmailValidator emailValidator;
     public MultiSelectComboBox<D_Unit> unitsList;
     private final UrcDeptSectionAnlDimService sampleSectionService;
-    private final UserUnitsService UserUnitsService;
     private final DeptSectionMergerService sampleDeptSectionMergerService;
 
     @Autowired
@@ -132,7 +121,6 @@ public class UserView extends Div implements BeforeEnterObserver {
             BudgetService sampleBudgetService, UnitService sampleUnitService, UnitsBudgetService sampleUnitsBudgetService,
             UrcDeptSectionAnlDimService sampleSectionService, DataDuplicationService sampleDataDuplicationService,
             UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, AuthenticatedUser authenticatedUser,
-            UrcUserService urcUserService, UserUnitsService UserUnitsService, DepartmentUnitService departmentUnitService, UrcDepartmentAnlDimService sampleUrcDepartmentAnlDimService,
             DeptSectionMergerService sampleDeptSectionMergerService,UrDepartmentsAnlDimService2 sampleUrDepartmentsAnlDimService2) {
         this.samplePersonService = samplePersonService;
         this.emailValidator = emailValidator;
@@ -142,11 +130,7 @@ public class UserView extends Div implements BeforeEnterObserver {
         this.sampleSectionService = sampleSectionService;
         this.sampleDataDuplicationService = sampleDataDuplicationService;
         this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
-        this.urcUserService = urcUserService;
-        this.UserUnitsService = UserUnitsService;
-        this.departmentUnitService = departmentUnitService;
         this.authenticatedUser = authenticatedUser;
-        this.sampleUrcDepartmentAnlDimService = sampleUrcDepartmentAnlDimService;
         this.sampleDeptSectionMergerService = sampleDeptSectionMergerService;
         this.sampleUrDepartmentsAnlDimService2=sampleUrDepartmentsAnlDimService2;
         addClassNames("user-view");
@@ -453,60 +437,7 @@ public class UserView extends Div implements BeforeEnterObserver {
             sampleDataDuplicationService.duplicateData();
             sections.setItems(query -> sampleUrcDeptSectionAnlDimbgtService.findByANL_CODEStartingWithD2(PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query))).stream());
         });
-        Button importUsers = new Button("Import Users");
-        importUsers.addClickListener(e -> {
-            List<UrcUser> userList = urcUserService.getAllUsers();
-            for (UrcUser us : userList) {
-                boolean userget = samplePersonService.getUsername(us.getEmail());
-                if (userget == false) {
-                    User user = new User();
-                    user.setFirstName(us.getFirstName());
-                    user.setLastName(us.getLastName());
-                    user.setTel(us.getTel());
-                    user.setEmailVerificationHash(us.getEmailVerificationHash());
-                    user.setHashedPassword(us.getPassword());
-                    user.setStatus(us.getStatus());
-                    user.setEmail(us.getEmail());
 
-                    Set<Role> role = new HashSet<>();
-                    role.add(Role.USER);
-                    user.setRoles(role);
-                    List<UserUnits> list = UserUnitsService.findByUserId(us.getUserId());
-                    // List<String> sects = new ArrayList<>();
-
-                    Set<UrcDeptSectionAnlDimbgt> uniqueSections = new HashSet<>();
-                    List<String> sects = new ArrayList<>();
-                    for (UserUnits b : list) {
-                        System.out.println(b.getUnitId() + " Unit Id");
-                        Optional<DepartmentUnit> unitOptional = departmentUnitService.getUnitById2(b.getUnitId());
-
-                        if (unitOptional.isPresent()) {
-                            DepartmentUnit unit = unitOptional.get();
-                            String sunCode = unit.getSunSectCode();
-                            sects.add(sunCode);
-                            System.out.println(sunCode + " Section codes");
-                        } else {
-                            System.out.println("Unit not found for ID: " + b.getUnitId());
-                        }
-                    }
-
-                    Set<String> uniqueSects = new HashSet<>(sects);
-                    if (!uniqueSects.isEmpty()) {
-                        for (String c : uniqueSects) {
-                            UrcDeptSectionAnlDimbgt sections = sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE(c);
-                            uniqueSections.add(sections);
-                        }
-                        user.setDeptsection(uniqueSections);
-                        System.out.println(uniqueSections.size());
-                    }
-
-                    samplePersonService.update(user);
-                    refreshgridUser();
-
-                }
-
-            }
-        });
         buttonLayout.add(save, cancel);
         Optional<User> maybeUser = authenticatedUser.get();
         if (maybeUser.isPresent()) {

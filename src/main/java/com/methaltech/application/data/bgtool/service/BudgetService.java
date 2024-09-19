@@ -233,6 +233,7 @@ public class BudgetService {
     }
 
     public Optional<Budget> getLastSavedBudget2() {
+        System.out.println(repository.findTopByOrderByIdDesc());
         return repository.findTopByOrderByIdDesc();
     }
 

@@ -1,4 +1,4 @@
-package com.methaltech.application.data.entity.oldbgtool;
+package com.methaltech.application.data.entity.bgtool;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

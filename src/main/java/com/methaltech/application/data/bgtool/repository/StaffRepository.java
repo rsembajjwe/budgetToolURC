@@ -1,6 +1,7 @@
-package com.methaltech.application.data.oldbgtool.repository;
+package com.methaltech.application.data.bgtool.repository;
 
-import com.methaltech.application.data.entity.oldbgtool.Staff;
+
+import com.methaltech.application.data.entity.bgtool.Staff;
 import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;

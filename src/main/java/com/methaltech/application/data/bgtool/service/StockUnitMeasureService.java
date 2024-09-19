@@ -2,8 +2,8 @@ package com.methaltech.application.data.bgtool.service;
 
 import com.methaltech.application.data.entity.bgtool.StockUnitMeasure;
 import com.methaltech.application.data.bgtool.repository.StockUnitMeasureRepository;
-import com.methaltech.application.data.entity.oldbgtool.StockUnitPojo;
-import com.methaltech.application.data.oldbgtool.repository.StockUnitRepository;
+import com.methaltech.application.data.entity.bgtool.StockUnitPojo;
+import com.methaltech.application.data.bgtool.repository.StockUnitRepository;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;

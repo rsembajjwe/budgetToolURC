@@ -1,7 +1,8 @@
-package com.methaltech.application.data.oldbgtool.service;
+package com.methaltech.application.data.bgtool.service;
 
-import com.methaltech.application.data.entity.oldbgtool.Staff;
-import com.methaltech.application.data.oldbgtool.repository.StaffRepository;
+
+import com.methaltech.application.data.bgtool.repository.StaffRepository;
+import com.methaltech.application.data.entity.bgtool.Staff;
 import java.math.BigDecimal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

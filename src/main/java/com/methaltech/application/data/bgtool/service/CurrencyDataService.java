@@ -2,12 +2,12 @@ package com.methaltech.application.data.bgtool.service;
 
 import com.methaltech.application.data.entity.bgtool.CurrencyData;
 import com.methaltech.application.data.bgtool.repository.CurrencyDataRepository;
+import com.methaltech.application.data.bgtool.repository.CurrencyEntityRepository;
 import com.methaltech.application.data.bgtool.repository.CurrencyRepository;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.Currency;
-import com.methaltech.application.data.entity.oldbgtool.CurrencyEntity;
+import com.methaltech.application.data.entity.bgtool.CurrencyEntity;
 import com.methaltech.application.data.entity.livedata.URCCurrency;
-import com.methaltech.application.data.oldbgtool.repository.CurrencyEntityRepository;
 import com.methaltech.application.data.livedata.repository.URCCurrencyRepository;
 import com.vaadin.flow.component.notification.Notification;
 import java.math.BigDecimal;

@@ -6,7 +6,6 @@ import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.bgtool.service.*;
 import com.methaltech.application.data.entity.bgtool.*;
 import com.methaltech.application.data.entity.livedata.UR5_ACNT;
-import com.methaltech.application.data.oldbgtool.service.OldBudgetService;
 import com.methaltech.application.data.livedata.service.UR5_ACNTService;
 import com.methaltech.application.data.livedata.service.UrcDepartmentAnlDimService;
 import static com.methaltech.application.test.getYears;
@@ -379,7 +378,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             National_Budget_Focus_AreasService sampleNational_Budget_Focus_AreasService,
             Urc_ActivitiesService sampleUrc_ActivitiesService, URC_Strategic_PlanService sampleURC_Strategic_PlanService,
             URC_Priority_AreasService sampleURC_Priority_AreasService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService,
-            OldBudgetService oldbudgetRepository, BudgetItemsService budgetItemsService,
+             BudgetItemsService budgetItemsService,
             ProcurementTypeService sampleProcurementTypeService, FundsourceService fundsourceService,
             UrcDepartmentAnlDimService sampleUrcAnlCodeService, DeptSectionMergerService sampleDeptSectionMergerService,
             FreightVolumesService sampleFreightVolumesService) {
