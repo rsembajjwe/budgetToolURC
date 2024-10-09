@@ -1970,7 +1970,7 @@ public class BudgetFormView extends Div {
         comboBoxCoalevel1.setItemLabelGenerator(Coalevel1::getName);
 
         comboBoxCoalevel1.addValueChangeListener(ev -> {
-            
+
             chosenCoalevel1 = ev.getValue();
             //comboBoxCoalevel1Two.setValue(chosenCoalevel1);
             setBudgetDetails();
@@ -1983,7 +1983,7 @@ public class BudgetFormView extends Div {
 
                 if (!comboBoxBudget.isEmpty()) {
                     gridCOA.setItems(coaService.findByDeptSectionAndCodeStartingWith(comboBoxD_Section.getValue(), Coalevel1String(ev.getValue()), comboBoxBudget.getValue()));
-                    Notification.show(coaService.findByDeptSectionAndCodeStartingWith(comboBoxD_Section.getValue(), Coalevel1String(ev.getValue()), comboBoxBudget.getValue()).size()+" COA");
+                    Notification.show(coaService.findByDeptSectionAndCodeStartingWith(comboBoxD_Section.getValue(), Coalevel1String(ev.getValue()), comboBoxBudget.getValue()).size() + " COA");
                     searchCoa.setValue(Coalevel1String(ev.getValue()));
                 }
 
@@ -2585,8 +2585,10 @@ public class BudgetFormView extends Div {
                             }
 
                             budg.setDeptUnit(chosenDsection);
-                            budg.setCoalevel1(chosenCoalevel1);
+                            //  budg.setCoalevel1(chosenCoalevel1);
                             budg.setActivity(chosenUrc_Activities);
+                            budg.setBcategory(b.getBcategory());
+                            budg.setCoalevel1(b.getCoalevel1());
 
                             budg.setJan(b.getJan());
                             budg.setFeb(b.getFeb());
