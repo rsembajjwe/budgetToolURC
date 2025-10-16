@@ -1,0 +1,812 @@
+/* ===================================================================
+   BLO REQUISITION MANAGEMENT - PROFESSIONAL STYLING
+   Elegant & Sophisticated CSS for Budget Requisition System
+   ================================================================== */
+
+/* ===================================================================
+   DESIGN TOKENS - REQUISITION SPECIFIC
+   ================================================================== */
+:root {
+    /* Requisition Color Palette */
+    --requisition-primary: #1e40af;
+    --requisition-accent: #7c3aed;
+    --requisition-success: #059669;
+    --requisition-warning: #d97706;
+    --requisition-danger: #dc2626;
+    --requisition-info: #0891b2;
+    
+    /* Requisition Status Colors */
+    --requisition-draft: #6b7280;
+    --requisition-submitted: #3b82f6;
+    --requisition-under-review: #f59e0b;
+    --requisition-approved: #10b981;
+    --requisition-rejected: #ef4444;
+    --requisition-cancelled: #9ca3af;
+    --requisition-completed: #059669;
+    
+    /* Requisition Priority Colors */
+    --priority-low: #10b981;
+    --priority-medium: #f59e0b;
+    --priority-high: #ef4444;
+    --priority-urgent: #dc2626;
+    --priority-emergency: #991b1b;
+    
+    /* Glass Morphism */
+    --requisition-glass-bg: rgba(248, 250, 252, 0.95);
+    --requisition-glass-border: rgba(203, 213, 225, 0.3);
+    --requisition-glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.12);
+    --requisition-backdrop-blur: blur(20px);
+}
+
+/* ===================================================================
+   REQUISITION VIEW MAIN CONTAINER
+   ================================================================== */
+.blo-requisition-view {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+    position: relative;
+    overflow-x: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.blo-requisition-view::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(30, 64, 175, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ===================================================================
+   REQUISITION HEADER - ELEGANT DESIGN
+   ================================================================== */
+.requisition-header {
+    background: var(--requisition-glass-bg);
+    backdrop-filter: var(--requisition-backdrop-blur);
+    border-bottom: 1px solid var(--requisition-glass-border);
+    box-shadow: var(--requisition-glass-shadow);
+    padding: 1.5rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.requisition-header:hover {
+    box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.1);
+    background: rgba(248, 250, 252, 0.98);
+}
+
+.requisition-title {
+    background: linear-gradient(135deg, var(--requisition-primary) 0%, var(--requisition-accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1.875rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.requisition-subtitle {
+    color: #64748b;
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0.5rem 0 1rem 0;
+    letter-spacing: 0.01em;
+}
+
+.budget-label {
+    color: #475569;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.budget-selector {
+    background: var(--requisition-glass-bg);
+    border: 1px solid var(--requisition-glass-border);
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    min-width: 200px;
+}
+
+.budget-selector:hover {
+    border-color: var(--requisition-accent);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
+    transform: translateY(-1px);
+}
+
+/* Search and Filter Controls */
+.requisition-search {
+    background: var(--requisition-glass-bg);
+    border: 1px solid var(--requisition-glass-border);
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    min-width: 250px;
+}
+
+.requisition-search:hover {
+    border-color: var(--requisition-primary);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
+}
+
+.status-filter,
+.priority-filter {
+    background: var(--requisition-glass-bg);
+    border: 1px solid var(--requisition-glass-border);
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    min-width: 150px;
+}
+
+.new-requisition-button {
+    background: linear-gradient(135deg, var(--requisition-accent) 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    border-radius: 0.75rem;
+    padding: 0.5rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.new-requisition-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.new-requisition-button:hover::before {
+    left: 100%;
+}
+
+.new-requisition-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.4);
+}
+
+/* ===================================================================
+   REQUISITION NAVIGATION TABS
+   ================================================================== */
+.requisition-navigation {
+    background: var(--requisition-glass-bg);
+    backdrop-filter: var(--requisition-backdrop-blur);
+    border-bottom: 1px solid var(--requisition-glass-border);
+    padding: 0 2rem;
+    box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.1);
+}
+
+.requisition-navigation .nav-tab {
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem 0.75rem 0 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.requisition-navigation .nav-tab::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--requisition-accent) 0%, #8b5cf6 100%);
+    transform: scaleX(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.requisition-navigation .nav-tab[selected]::before {
+    transform: scaleX(1);
+}
+
+.requisition-navigation .nav-tab:hover {
+    background: rgba(124, 58, 237, 0.05);
+    transform: translateY(-2px);
+    color: var(--requisition-accent);
+}
+
+.requisition-navigation .nav-tab[selected] {
+    background: rgba(124, 58, 237, 0.1);
+    color: var(--requisition-accent);
+    font-weight: 600;
+}
+
+/* ===================================================================
+   REQUISITION MAIN CONTENT
+   ================================================================== */
+.requisition-main-content {
+    padding: 2rem;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.requisition-content-container {
+    gap: 1.5rem;
+}
+
+/* ===================================================================
+   REQUISITION DASHBOARD CARDS
+   ================================================================== */
+.requisition-dashboard-cards {
+    margin-bottom: 2rem;
+}
+
+.dashboard-card {
+    background: var(--requisition-glass-bg);
+    backdrop-filter: var(--requisition-backdrop-blur);
+    border: 1px solid var(--requisition-glass-border);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
+    position: relative;
+    overflow: hidden;
+    height: 120px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.dashboard-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 1rem 1rem 0 0;
+}
+
+.dashboard-card:hover::before {
+    opacity: 1;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+    background: rgba(255, 255, 255, 0.98);
+}
+
+.card-total::before { background: linear-gradient(90deg, var(--requisition-primary), #3b82f6); }
+.card-pending::before { background: linear-gradient(90deg, var(--requisition-warning), #fbbf24); }
+.card-approved::before { background: linear-gradient(90deg, var(--requisition-success), #10b981); }
+.card-amount::before { background: linear-gradient(90deg, var(--requisition-info), #06b6d4); }
+.card-approved-amount::before { background: linear-gradient(90deg, var(--requisition-accent), #8b5cf6); }
+
+.dashboard-card .card-title {
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-card .card-value {
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.dashboard-card .card-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
+}
+
+.card-total .card-icon {
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.1), rgba(30, 64, 175, 0.2));
+    color: var(--requisition-primary);
+}
+
+.card-pending .card-icon {
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.1), rgba(217, 119, 6, 0.2));
+    color: var(--requisition-warning);
+}
+
+.card-approved .card-icon {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.1), rgba(5, 150, 105, 0.2));
+    color: var(--requisition-success);
+}
+
+.card-amount .card-icon {
+    background: linear-gradient(135deg, rgba(8, 145, 178, 0.1), rgba(8, 145, 178, 0.2));
+    color: var(--requisition-info);
+}
+
+.card-approved-amount .card-icon {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(124, 58, 237, 0.2));
+    color: var(--requisition-accent);
+}
+
+.dashboard-card:hover .card-icon {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.2);
+}
+
+/* ===================================================================
+   REQUISITION GRID STYLING
+   ================================================================== */
+.requisition-grid {
+    background: var(--requisition-glass-bg);
+    backdrop-filter: var(--requisition-backdrop-blur);
+    border: 1px solid var(--requisition-glass-border);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.requisition-grid:hover {
+    box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Grid Cell Styling */
+.department-info,
+.account-info,
+.requisition-info,
+.amount-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.dept-name,
+.account-code,
+.requisition-type {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+.section-name,
+.account-name,
+.requisition-purpose {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.requested-amount {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.over-budget {
+    color: var(--requisition-danger);
+    font-weight: 800;
+}
+
+.near-budget {
+    color: var(--requisition-warning);
+    font-weight: 700;
+}
+
+/* Status and Priority Badges */
+.status-badge,
+.priority-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.view-button,
+.edit-button,
+.submit-button,
+.cancel-button {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.view-button:hover {
+    background: rgba(30, 64, 175, 0.1);
+    color: var(--requisition-primary);
+    transform: scale(1.1);
+}
+
+.edit-button:hover {
+    background: rgba(100, 116, 139, 0.1);
+    transform: scale(1.1);
+}
+
+.submit-button:hover {
+    background: rgba(16, 185, 129, 0.1);
+    transform: scale(1.1);
+}
+
+.cancel-button:hover {
+    background: rgba(239, 68, 68, 0.1);
+    transform: scale(1.1);
+}
+
+/* ===================================================================
+   REQUISITION FORM STYLING
+   ================================================================== */
+.budget-requisition-form-dialog {
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+    backdrop-filter: var(--requisition-backdrop-blur);
+}
+
+.requisition-form-layout {
+    background: var(--requisition-glass-bg);
+    border-radius: 1rem;
+}
+
+.requisition-form .form-title {
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.02em;
+}
+
+.requisition-form .form-subtitle {
+    color: #64748b;
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 2rem;
+}
+
+/* Budget Info Card */
+.budget-info-card {
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.05) 0%, rgba(124, 58, 237, 0.05) 100%);
+    border: 1px solid var(--requisition-glass-border);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.budget-info-title {
+    color: #1e293b;
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+}
+
+.available-budget-display,
+.utilization-display {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.available-budget-display.over-budget,
+.utilization-display.over-budget {
+    color: var(--requisition-danger);
+}
+
+.available-budget-display.near-budget,
+.utilization-display.near-budget {
+    color: var(--requisition-warning);
+}
+
+/* Form Field Styling */
+.department-combo,
+.section-combo,
+.account-code-combo,
+.revenue-source-combo,
+.requisition-type-combo,
+.procurement-method-combo,
+.priority-combo,
+.requested-amount-field,
+.available-budget-field,
+.account-name-field,
+.revenue-source-name-field,
+.vendor-name-field,
+.vendor-contact-field,
+.expected-delivery-picker,
+.purpose-area,
+.justification-area,
+.notes-area,
+.document-upload {
+    background: var(--requisition-glass-bg);
+    border: 1px solid var(--requisition-glass-border);
+    border-radius: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.department-combo:hover,
+.section-combo:hover,
+.account-code-combo:hover,
+.revenue-source-combo:hover,
+.requisition-type-combo:hover,
+.procurement-method-combo:hover,
+.priority-combo:hover,
+.requested-amount-field:hover,
+.vendor-name-field:hover,
+.vendor-contact-field:hover,
+.expected-delivery-picker:hover,
+.purpose-area:hover,
+.justification-area:hover,
+.notes-area:hover {
+    border-color: var(--requisition-accent);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.form-buttons {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--requisition-glass-border);
+}
+
+.submit-button {
+    background: linear-gradient(135deg, var(--requisition-accent) 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.3);
+}
+
+.submit-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.4);
+}
+
+.save-button {
+    background: linear-gradient(135deg, var(--requisition-info) 0%, #06b6d4 100%);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(8, 145, 178, 0.3);
+    margin-right: 0.5rem;
+}
+
+.save-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(8, 145, 178, 0.4);
+}
+
+.cancel-button {
+    background: transparent;
+    color: #64748b;
+    border: 1px solid var(--requisition-glass-border);
+    border-radius: 0.5rem;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cancel-button:hover {
+    background: rgba(100, 116, 139, 0.1);
+    border-color: #94a3b8;
+}
+
+/* ===================================================================
+   SECTION TITLES
+   ================================================================== */
+.section-title {
+    color: #1e293b;
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0 0 1.5rem 0;
+    letter-spacing: -0.02em;
+    text-align: center;
+    position: relative;
+    padding-bottom: 0.75rem;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--requisition-accent) 0%, #8b5cf6 100%);
+    border-radius: 9999px;
+}
+
+/* ===================================================================
+   RESPONSIVE DESIGN
+   ================================================================== */
+@media (max-width: 768px) {
+    .requisition-header {
+        padding: 1rem;
+    }
+    
+    .requisition-title {
+        font-size: 1.5rem;
+    }
+    
+    .requisition-main-content {
+        padding: 1rem;
+    }
+    
+    .requisition-dashboard-cards {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .dashboard-card {
+        height: 100px;
+        padding: 1rem;
+        min-width: auto;
+    }
+    
+    .requisition-navigation {
+        padding: 0 1rem;
+    }
+    
+    .requisition-navigation .nav-tab {
+        padding: 0.75rem 1rem;
+        font-size: 0.75rem;
+    }
+    
+    .requisition-navigation .nav-tab span {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .requisition-header {
+        padding: 0.75rem;
+    }
+    
+    .requisition-title {
+        font-size: 1.25rem;
+    }
+    
+    .requisition-main-content {
+        padding: 0.75rem;
+    }
+    
+    .dashboard-card {
+        height: 80px;
+        padding: 0.75rem;
+    }
+    
+    .dashboard-card .card-value {
+        font-size: 1.25rem;
+    }
+}
+
+/* ===================================================================
+   ANIMATIONS
+   ================================================================== */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.dashboard-card {
+    animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.requisition-grid {
+    animation: fadeIn 0.8s ease-out;
+}
+
+/* ===================================================================
+   FOCUS STATES - ACCESSIBILITY
+   ================================================================== */
+.new-requisition-button:focus,
+.budget-selector:focus,
+.requisition-search:focus,
+.status-filter:focus,
+.priority-filter:focus {
+    outline: 2px solid var(--requisition-accent);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+}
+
+.requisition-navigation .nav-tab:focus {
+    outline: 2px solid var(--requisition-accent);
+    outline-offset: 2px;
+    border-radius: 0.75rem;
+}
+
+/* ===================================================================
+   PRINT STYLES
+   ================================================================== */
+@media print {
+    .blo-requisition-view {
+        background: white;
+    }
+    
+    .requisition-header {
+        background: white;
+        box-shadow: none;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .requisition-grid {
+        background: white;
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+        break-inside: avoid;
+    }
+    
+    .new-requisition-button {
+        display: none;
+    }
+    
+    .requisition-navigation {
+        display: none;
+    }
+}
+

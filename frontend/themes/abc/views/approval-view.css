@@ -1,0 +1,29 @@
+.approval-view {
+  display: block;
+  height: 100%;
+  background-color: #cccccc;
+}
+
+.approval-view vaadin-message::part(message){
+   color: blue;
+}
+.approval-view vaadin-message::part(content){
+   color: green;
+}
+
+.approval-view vaadin-message{
+    background-color: #ccccff;
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 9px;
+    font-weight: 900;
+}
+.approval-view vaadin-message ::part(name) {
+    font-weight: 900;
+}
+.approval-view vaadin-message::part(time) {
+    color: #fff;
+}
+.approval-view vaadin-message::part(name)::after{
+    content: " (You)";
+}

@@ -1,0 +1,1977 @@
+/* ===================================================================
+   BLO REQUISITION VIEW - PROFESSIONAL & ELEGANT STYLING
+   Beautiful, Sophisticated CSS for Budget Liaison Officer Requisition Management
+   Apple-Level Design Aesthetics with Premium Feel
+   ================================================================== */
+
+/* ===================================================================
+   DESIGN TOKENS - PROFESSIONAL SYSTEM
+   ================================================================== */
+:root {
+    /* Primary Color Palette - Sophisticated */
+    --req-primary: #1e40af;
+    --req-primary-light: #3b82f6;
+    --req-primary-dark: #1e3a8a;
+    --req-accent: #7c3aed;
+    --req-accent-light: #8b5cf6;
+    --req-accent-dark: #6d28d9;
+    
+    /* Secondary Colors - Professional */
+    --req-secondary: #0891b2;
+    --req-secondary-light: #06b6d4;
+    --req-tertiary: #059669;
+    --req-tertiary-light: #10b981;
+    
+    /* Status Colors - Clear Communication */
+    --req-success: #059669;
+    --req-success-light: #10b981;
+    --req-warning: #d97706;
+    --req-warning-light: #f59e0b;
+    --req-danger: #dc2626;
+    --req-danger-light: #ef4444;
+    --req-info: #0891b2;
+    --req-info-light: #06b6d4;
+    
+    /* Neutral Palette - Sophisticated Grays */
+    --req-gray-50: #f8fafc;
+    --req-gray-100: #f1f5f9;
+    --req-gray-200: #e2e8f0;
+    --req-gray-300: #cbd5e1;
+    --req-gray-400: #94a3b8;
+    --req-gray-500: #64748b;
+    --req-gray-600: #475569;
+    --req-gray-700: #334155;
+    --req-gray-800: #1e293b;
+    --req-gray-900: #0f172a;
+    
+    /* Glass Morphism - Premium Effects */
+    --req-glass-bg: rgba(248, 250, 252, 0.85);
+    --req-glass-border: rgba(203, 213, 225, 0.2);
+    --req-glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+    --req-backdrop-blur: blur(20px);
+    --req-backdrop-saturate: saturate(180%);
+    
+    /* Spacing System - Apple-like */
+    --req-space-xs: 0.25rem;
+    --req-space-sm: 0.5rem;
+    --req-space-md: 1rem;
+    --req-space-lg: 1.5rem;
+    --req-space-xl: 2rem;
+    --req-space-2xl: 2.5rem;
+    --req-space-3xl: 3rem;
+    --req-space-4xl: 4rem;
+    --req-space-5xl: 5rem;
+    
+    /* Typography - Professional Hierarchy */
+    --req-font-xs: 0.75rem;
+    --req-font-sm: 0.875rem;
+    --req-font-base: 1rem;
+    --req-font-lg: 1.125rem;
+    --req-font-xl: 1.25rem;
+    --req-font-2xl: 1.5rem;
+    --req-font-3xl: 1.875rem;
+    --req-font-4xl: 2.25rem;
+    
+    /* Shadow System - Depth & Elevation */
+    --req-shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    --req-shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.1), 0 1px 2px -1px rgba(15, 23, 42, 0.1);
+    --req-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -2px rgba(15, 23, 42, 0.1);
+    --req-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.1);
+    --req-shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+    --req-shadow-2xl: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+    
+    /* Border Radius - Consistent Curves */
+    --req-radius-xs: 0.25rem;
+    --req-radius-sm: 0.375rem;
+    --req-radius-md: 0.5rem;
+    --req-radius-lg: 0.75rem;
+    --req-radius-xl: 1rem;
+    --req-radius-2xl: 1.5rem;
+    --req-radius-3xl: 2rem;
+    --req-radius-full: 9999px;
+    
+    /* Transitions - Smooth & Natural */
+    --req-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --req-transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --req-transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+    --req-transition-bounce: 600ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* ===================================================================
+   GLOBAL CONTAINER - APPLE-LEVEL AESTHETICS
+   ================================================================== */
+.blo-requisition-view {
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--req-gray-50) 0%, var(--req-gray-100) 50%, var(--req-gray-200) 100%);
+    position: relative;
+    overflow-x: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-optical-sizing: auto;
+    color: var(--req-gray-800);
+    line-height: 1.0;
+    letter-spacing: -0.01em;
+}
+
+.blo-requisition-view::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(30, 64, 175, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(5, 150, 105, 0.02) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ===================================================================
+   HEADER - ELEGANT & SOPHISTICATED
+   ================================================================== */
+.requisition-header {
+    background: var(--req-glass-bg);
+    backdrop-filter: var(--req-backdrop-blur);
+    -webkit-backdrop-filter: var(--req-backdrop-blur);
+    border-bottom: 1px solid var(--req-glass-border);
+    box-shadow: var(--req-glass-shadow);
+    padding: 0.1rem 2.5rem 0 0.5rem;
+    margin-right: 5px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: all var(--req-transition-normal);
+}
+
+.requisition-header:hover {
+    box-shadow: var(--req-shadow-lg);
+    background: rgba(248, 250, 252, 0.9);
+}
+
+.requisition-title {
+    background: linear-gradient(135deg, var(--req-primary) 0%, var(--req-accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+
+.requisition-subtitle {
+    color: var(--req-gray-600);
+    font-size: 0.6rem;
+    font-weight: 500;
+    margin: 0.1rem 0 0 0;
+    letter-spacing: 0.01em;
+}
+
+/* Header Actions */
+.requisition-header-actions {
+    gap: 0.1rem !important;
+}
+
+.new-requisition-button {
+    background: linear-gradient(135deg, var(--req-accent) 0%, var(--req-accent-light) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--req-radius-xl);
+    padding: 0.5rem 0.5rem;
+    font-size: 0.675rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    transition: all var(--req-transition-normal);
+    box-shadow: var(--req-shadow-md);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
+}
+
+.new-requisition-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left var(--req-transition-slow);
+}
+
+.new-requisition-button:hover::before {
+    left: 100%;
+}
+
+.new-requisition-button:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--req-shadow-xl);
+    background: linear-gradient(135deg, var(--req-accent-light) 0%, var(--req-accent) 100%);
+}
+
+.refresh-requisitions-button {
+    background: linear-gradient(135deg, var(--req-success) 0%, var(--req-success-light) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--req-radius-xl);
+    padding: 0.5rem 0.5rem;
+    font-size: 0.675rem;
+    font-weight: 600;
+    transition: all var(--req-transition-normal);
+    box-shadow: var(--req-shadow-md);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.refresh-requisitions-button:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--req-shadow-xl);
+    background: linear-gradient(135deg, var(--req-success-light) 0%, var(--req-success) 100%);
+}
+
+.export-requisitions-button {
+    background: linear-gradient(135deg, var(--req-secondary) 0%, var(--req-secondary-light) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--req-radius-xl);
+    padding: 0.5rem 1.0rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all var(--req-transition-normal);
+    box-shadow: var(--req-shadow-md);
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
+}
+
+.export-requisitions-button:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--req-shadow-xl);
+    background: linear-gradient(135deg, var(--req-secondary-light) 0%, var(--req-secondary) 100%);
+}
+
+/* ===================================================================
+   NAVIGATION TABS - ELEGANT DESIGN
+   ================================================================== */
+.requisition-navigation {
+    background: var(--req-glass-bg);
+    backdrop-filter: var(--req-backdrop-blur);
+    border-bottom: 1px solid var(--req-glass-border);
+    padding: 0 2.5rem;
+    box-shadow: var(--req-shadow-sm);
+}
+
+.requisition-navigation vaadin-tabs {
+    background: transparent;
+}
+
+.requisition-navigation .nav-tab {
+    padding: 1rem 1.5rem;
+    border-radius: var(--req-radius-xl) var(--req-radius-xl) 0 0;
+    transition: all var(--req-transition-normal);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--req-gray-600);
+    margin: 0 0.25rem;
+}
+
+.requisition-navigation .nav-tab::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--req-accent) 0%, var(--req-accent-light) 100%);
+    transform: scaleX(0);
+    transition: transform var(--req-transition-normal);
+    border-radius: var(--req-radius-full);
+}
+
+.requisition-navigation .nav-tab[selected]::before {
+    transform: scaleX(1);
+}
+
+.requisition-navigation .nav-tab:hover {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, rgba(30, 64, 175, 0.05) 100%);
+    transform: translateY(-2px);
+    color: var(--req-accent);
+    box-shadow: var(--req-shadow-sm);
+}
+
+.requisition-navigation .nav-tab[selected] {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(30, 64, 175, 0.1) 100%);
+    color: var(--req-accent);
+    font-weight: 600;
+    box-shadow: var(--req-shadow-sm);
+}
+
+.requisition-navigation .nav-tab vaadin-icon {
+    width: 1rem;
+    height: 1rem;
+    transition: all var(--req-transition-normal);
+}
+
+.requisition-navigation .nav-tab:hover vaadin-icon {
+    transform: scale(1.1);
+}
+
+/* ===================================================================
+   MAIN CONTENT - SPACIOUS & ORGANIZED
+   ================================================================== */
+.requisition-main-content {
+    padding: 0.5rem;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+.budget-selector,
+.organisation-selector,
+.coa-selector {
+    background: var(--requisition-glass-bg);
+    border: 1px solid var(--requisition-glass-border);
+    border-radius: 0.75rem;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.675rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    min-width: 200px;
+    padding-bottom: 0.001rem;
+}
+
+.budget-selector:hover,
+.organisation-selector:hover,
+.coa-selector:hover {
+    border-color: var(--requisition-accent);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
+    transform: translateY(-1px);
+}
+
+.requisition-content-container {
+    gap: 1rem !important;
+}
+
+/* ===================================================================
+   DASHBOARD CARDS - PREMIUM DESIGN
+   ================================================================== */
+.requisition-dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2rem;
+    margin-bottom: 0.1rem;
+}
+
+.requisition-dashboard-card {
+    background: var(--req-glass-bg);
+    backdrop-filter: var(--req-backdrop-blur);
+    border: 1px solid var(--req-glass-border);
+    border-radius: var(--req-radius-2xl);
+    padding: 1.0rem;
+    transition: all var(--req-transition-normal);
+    box-shadow: var(--req-shadow-md);
+    position: relative;
+    overflow: hidden;
+    height: 100px;
+    cursor: pointer;
+}
+
+.requisition-dashboard-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    opacity: 0;
+    transition: opacity var(--req-transition-normal);
+    border-radius: var(--req-radius-2xl) var(--req-radius-2xl) 0 0;
+}
+
+.requisition-dashboard-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--req-transition-normal);
+}
+
+.requisition-dashboard-card:hover::before {
+    opacity: 1;
+}
+
+.requisition-dashboard-card:hover::after {
+    opacity: 1;
+}
+
+.requisition-dashboard-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--req-shadow-2xl);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+/* Card Type Specific Styling */
+.card-total::before { 
+    background: linear-gradient(90deg, var(--req-primary) 0%, var(--req-secondary) 100%); 
+}
+
+.card-draft::before { 
+    background: linear-gradient(90deg, var(--req-gray-500) 0%, var(--req-gray-400) 100%); 
+}
+
+.card-submitted::before { 
+    background: linear-gradient(90deg, var(--req-info) 0%, var(--req-info-light) 100%); 
+}
+
+.card-approved::before { 
+    background: linear-gradient(90deg, var(--req-success) 0%, var(--req-success-light) 100%); 
+}
+
+.card-amount::before { 
+    background: linear-gradient(90deg, var(--req-accent) 0%, var(--req-accent-light) 100%); 
+}
+
+.requisition-dashboard-card .card-title {
+    color: var(--req-gray-600);
+    font-size: var(--req-font-sm);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+}
+
+.requisition-dashboard-card .card-value {
+    color: var(--req-gray-800);
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0;
+    line-height: 1;
+    letter-spacing: -0.03em;
+}
+
+.requisition-dashboard-card .card-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: var(--req-radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--req-transition-normal);
+    box-shadow: var(--req-shadow-md);
+    position: absolute;
+    top: 1.75rem;
+    right: 1.75rem;
+}
+
+.card-total .card-icon {
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.1) 0%, rgba(30, 64, 175, 0.2) 100%);
+    color: var(--req-primary);
+}
+
+.card-draft .card-icon {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.1) 0%, rgba(107, 114, 128, 0.2) 100%);
+    color: var(--req-gray-500);
+}
+
+.card-submitted .card-icon {
+    background: linear-gradient(135deg, rgba(8, 145, 178, 0.1) 0%, rgba(8, 145, 178, 0.2) 100%);
+    color: var(--req-info);
+}
+
+.card-approved .card-icon {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.1) 0%, rgba(5, 150, 105, 0.2) 100%);
+    color: var(--req-success);
+}
+
+.card-amount .card-icon {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(124, 58, 237, 0.2) 100%);
+    color: var(--req-accent);
+}
+
+.requisition-dashboard-card:hover .card-icon {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: var(--req-shadow-lg);
+}
+
+/* ===================================================================
+   QUICK STATS - PROFESSIONAL INDICATORS
+   ================================================================== */
+.quick-stat-item {
+    background: var(--req-glass-bg);
+    backdrop-filter: var(--req-backdrop-blur);
+    border: 1px solid var(--req-glass-border);
+    border-radius: var(--req-radius-xl);
+    padding: 1rem;
+    transition: all var(--req-transition-normal);
+    box-shadow: var(--req-shadow-sm);
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    cursor: pointer;
+}
+
+.quick-stat-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--req-accent) 0%, var(--req-accent-light) 100%);
+    opacity: 0;
+    transition: opacity var(--req-transition-normal);
+    border-radius: var(--req-radius-xl) var(--req-radius-xl) 0 0;
+}
+
+.quick-stat-item:hover::before {
+    opacity: 1;
+}
+
+.quick-stat-item:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: var(--req-shadow-xl);
+    background: rgba(255, 255, 255, 0.95);
+    border-color: var(--req-accent);
+}
+
+.stat-icon-container {
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--req-radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem auto;
+    transition: all var(--req-transition-normal);
+    box-shadow: var(--req-shadow-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-icon-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.3) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity var(--req-transition-normal);
+}
+
+.quick-stat-item:hover .stat-icon-container::before {
+    opacity: 1;
+}
+
+.quick-stat-item:hover .stat-icon-container {
+    transform: scale(1.15) rotate(8deg);
+    box-shadow: var(--req-shadow-lg);
+}
+
+/* Stat Icon Container Variants */
+.stat-total .stat-icon-container {
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.15) 0%, rgba(30, 64, 175, 0.25) 100%);
+    color: var(--req-primary);
+    border: 2px solid rgba(30, 64, 175, 0.3);
+}
+
+.stat-draft .stat-icon-container {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.15) 0%, rgba(107, 114, 128, 0.25) 100%);
+    color: var(--req-gray-600);
+    border: 2px solid rgba(107, 114, 128, 0.3);
+}
+
+.stat-submitted .stat-icon-container {
+    background: linear-gradient(135deg, rgba(8, 145, 178, 0.15) 0%, rgba(8, 145, 178, 0.25) 100%);
+    color: var(--req-info);
+    border: 2px solid rgba(8, 145, 178, 0.3);
+}
+
+.stat-approved .stat-icon-container {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.15) 0%, rgba(5, 150, 105, 0.25) 100%);
+    color: var(--req-success);
+    border: 2px solid rgba(5, 150, 105, 0.3);
+}
+
+.stat-amount .stat-icon-container {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(124, 58, 237, 0.25) 100%);
+    color: var(--req-accent);
+    border: 2px solid rgba(124, 58, 237, 0.3);
+}
+
+.stat-rejected .stat-icon-container {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.25) 100%);
+    color: var(--req-danger);
+    border: 2px solid rgba(239, 68, 68, 0.3);
+}
+
+.stat-pending .stat-icon-container {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.25) 100%);
+    color: var(--req-warning);
+    border: 2px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Stat Icon */
+.stat-icon-container vaadin-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    transition: all var(--req-transition-normal);
+}
+
+.quick-stat-item:hover .stat-icon-container vaadin-icon {
+    transform: scale(1.1);
+}
+
+/* Stat Value */
+.quick-stat-item .stat-value {
+    color: var(--req-gray-800);
+    font-size: var(--req-font-2xl);
+    font-weight: 800;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.03em;
+    line-height: 1;
+}
+
+/* Stat Label */
+.quick-stat-item .stat-label {
+    color: var(--req-gray-600);
+    font-size: var(--req-font-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0;
+}
+
+/* Stat Change Indicator */
+.stat-change {
+    color: var(--req-success);
+    font-size: var(--req-font-xs);
+    font-weight: 600;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.stat-change.negative {
+    color: var(--req-danger);
+}
+
+.stat-change vaadin-icon {
+    width: 0.75rem;
+    height: 0.75rem;
+}
+
+/* ===================================================================
+   SEARCH & FILTERS - PROFESSIONAL CONTROLS
+   ================================================================== */
+.requisition-search-filters {
+    background: var(--req-glass-bg);
+    backdrop-filter: var(--req-backdrop-blur);
+    border: 1px solid var(--req-glass-border);
+    border-radius: var(--req-radius-2xl);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--req-shadow-sm);
+    transition: all var(--req-transition-normal);
+}
+
+.requisition-search-filters:hover {
+    box-shadow: var(--req-shadow-md);
+    transform: translateY(-2px);
+}
+
+.search-filters-title {
+    color: var(--req-gray-800);
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin: 0 0 1rem 0;
+    text-align: center;
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.search-filters-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--req-accent) 0%, var(--req-accent-light) 100%);
+    border-radius: var(--req-radius-full);
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 1rem;
+    align-items: end;
+}
+
+.requisition-search {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--req-glass-border);
+    border-radius: var(--req-radius-lg);
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    transition: all var(--req-transition-normal);
+    box-shadow: var(--req-shadow-xs);
+}
+
+.requisition-search:hover {
+    border-color: var(--req-primary);
+    box-shadow: var(--req-shadow-sm);
+    transform: translateY(-1px);
+}
+
+.requisition-search:focus {
+    outline: none;
+    border-color: var(--req-accent);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.status-filter,
+.priority-filter,
+.type-filter {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--req-glass-border);
+    border-radius: var(--req-radius-lg);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    transition: all var(--req-transition-normal);
+    box-shadow: var(--req-shadow-xs);
+}
+
+.status-filter:hover,
+.priority-filter:hover,
+.type-filter:hover {
+    border-color: var(--req-accent);
+    box-shadow: var(--req-shadow-sm);
+    transform: translateY(-1px);
+}
+
+/* ===================================================================
+   REQUISITION GRID - ELEGANT TABLE
+   ================================================================== */
+.requisition-grid {
+    background: var(--req-glass-bg);
+    backdrop-filter: var(--req-backdrop-blur);
+    border: 1px solid var(--req-glass-border);
+    border-radius: var(--req-radius-2xl);
+    padding: 1.5rem;
+    box-shadow: var(--req-shadow-md);
+    transition: all var(--req-transition-normal);
+    overflow: hidden;
+}
+
+.requisition-grid:hover {
+    box-shadow: var(--req-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.requisition-grid vaadin-grid {
+    background: transparent;
+    border-radius: var(--req-radius-xl);
+    overflow: hidden;
+    box-shadow: var(--req-shadow-sm);
+}
+
+.requisition-grid vaadin-grid::part(header-cell) {
+    background: linear-gradient(135deg, var(--req-primary) 0%, var(--req-accent) 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 1rem;
+    border: none;
+}
+
+.requisition-grid vaadin-grid::part(cell) {
+    background: rgba(255, 255, 255, 0.7);
+    border-bottom: 1px solid rgba(203, 213, 225, 0.3);
+    padding: 1rem;
+    transition: all var(--req-transition-fast);
+}
+
+.requisition-grid vaadin-grid::part(row):hover vaadin-grid::part(cell) {
+    background: rgba(124, 58, 237, 0.05);
+    transform: translateY(-1px);
+}
+
+/* ===================================================================
+   STATUS & PRIORITY BADGES - PROFESSIONAL INDICATORS
+   ================================================================== */
+.status-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--req-radius-lg);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: all var(--req-transition-normal);
+    box-shadow: var(--req-shadow-xs);
+}
+
+.status-badge:hover {
+    transform: scale(1.05);
+    box-shadow: var(--req-shadow-sm);
+}
+
+.status-draft {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.1) 0%, rgba(107, 114, 128, 0.2) 100%);
+    color: var(--req-gray-700);
+    border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+.status-submitted {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.2) 100%);
+    color: var(--req-primary);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.status-approved {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.2) 100%);
+    color: var(--req-success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-rejected {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.2) 100%);
+    color: var(--req-danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-completed {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.1) 0%, rgba(5, 150, 105, 0.2) 100%);
+    color: var(--req-tertiary);
+    border: 1px solid rgba(5, 150, 105, 0.3);
+}
+
+.priority-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--req-radius-md);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: inline-block;
+    transition: all var(--req-transition-normal);
+}
+
+.priority-low {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.2) 100%);
+    color: var(--req-success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.priority-medium {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.2) 100%);
+    color: var(--req-warning);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.priority-high {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.2) 100%);
+    color: var(--req-danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.priority-urgent {
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(220, 38, 38, 0.2) 100%);
+    color: #dc2626;
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    animation: pulse 2s infinite;
+}
+
+.priority-emergency {
+    background: linear-gradient(135deg, rgba(153, 27, 27, 0.1) 0%, rgba(153, 27, 27, 0.2) 100%);
+    color: #991b1b;
+    border: 1px solid rgba(153, 27, 27, 0.3);
+    animation: pulse 1.5s infinite;
+}
+
+/* ===================================================================
+   ACTION BUTTONS - SOPHISTICATED INTERACTIONS
+   ================================================================== */
+.action-buttons {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.view-button,
+.edit-button,
+.submit-button,
+.approve-button,
+.reject-button,
+.cancel-button,
+.print-button {
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--req-radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--req-transition-normal);
+    border: none;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.view-button {
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.1) 0%, rgba(30, 64, 175, 0.2) 100%);
+    color: var(--req-primary);
+}
+
+.view-button:hover {
+    background: var(--req-primary);
+    color: white;
+    transform: scale(1.1);
+    box-shadow: var(--req-shadow-md);
+}
+
+.edit-button {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(124, 58, 237, 0.2) 100%);
+    color: var(--req-accent);
+}
+
+.edit-button:hover {
+    background: var(--req-accent);
+    color: white;
+    transform: scale(1.1);
+    box-shadow: var(--req-shadow-md);
+}
+
+.submit-button {
+    background: linear-gradient(135deg, rgba(8, 145, 178, 0.1) 0%, rgba(8, 145, 178, 0.2) 100%);
+    color: var(--req-secondary);
+}
+
+.submit-button:hover {
+    background: var(--req-secondary);
+    color: white;
+    transform: scale(1.1);
+    box-shadow: var(--req-shadow-md);
+}
+
+.approve-button {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.2) 100%);
+    color: var(--req-success);
+}
+
+.approve-button:hover {
+    background: var(--req-success);
+    color: white;
+    transform: scale(1.1);
+    box-shadow: var(--req-shadow-md);
+}
+
+.reject-button {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.2) 100%);
+    color: var(--req-danger);
+}
+
+.reject-button:hover {
+    background: var(--req-danger);
+    color: white;
+    transform: scale(1.1);
+    box-shadow: var(--req-shadow-md);
+}
+
+.cancel-button {
+    background: linear-gradient(135deg, rgba(156, 163, 175, 0.1) 0%, rgba(156, 163, 175, 0.2) 100%);
+    color: var(--req-gray-500);
+}
+
+.cancel-button:hover {
+    background: var(--req-gray-500);
+    color: white;
+    transform: scale(1.1);
+    box-shadow: var(--req-shadow-md);
+}
+
+.print-button {
+    background: linear-gradient(135deg, rgba(100, 116, 139, 0.1) 0%, rgba(100, 116, 139, 0.2) 100%);
+    color: var(--req-gray-600);
+}
+
+.print-button:hover {
+    background: var(--req-gray-600);
+    color: white;
+    transform: scale(1.1);
+    box-shadow: var(--req-shadow-md);
+}
+
+/* ===================================================================
+   STATISTICS SECTION - ELEGANT ANALYTICS
+   ================================================================== */
+.statistics-section {
+    background: var(--req-glass-bg);
+    backdrop-filter: var(--req-backdrop-blur);
+    border: 1px solid var(--req-glass-border);
+    border-radius: var(--req-radius-2xl);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--req-shadow-md);
+    transition: all var(--req-transition-normal);
+}
+
+.statistics-section:hover {
+    box-shadow: var(--req-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.statistics-title {
+    color: var(--req-gray-800);
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0 0 1.5rem 0;
+    text-align: center;
+    background: linear-gradient(135deg, var(--req-gray-800) 0%, var(--req-accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.statistics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--req-glass-border);
+    border-radius: var(--req-radius-xl);
+    padding: 1.5rem;
+    text-align: center;
+    transition: all var(--req-transition-normal);
+    box-shadow: var(--req-shadow-xs);
+}
+
+.stat-card:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-4px);
+    box-shadow: var(--req-shadow-md);
+}
+
+.stat-value {
+    color: var(--req-gray-800);
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.stat-label {
+    color: var(--req-gray-600);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ===================================================================
+   CHARTS SECTION - VISUAL ANALYTICS
+   ================================================================== */
+.charts-section {
+    background: var(--req-glass-bg);
+    backdrop-filter: var(--req-backdrop-blur);
+    border: 1px solid var(--req-glass-border);
+    border-radius: var(--req-radius-2xl);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--req-shadow-md);
+    transition: all var(--req-transition-normal);
+}
+
+.charts-section:hover {
+    box-shadow: var(--req-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.charts-title {
+    color: var(--req-gray-800);
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0 0 1.5rem 0;
+    text-align: center;
+    background: linear-gradient(135deg, var(--req-gray-800) 0%, var(--req-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+}
+
+.chart-card {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--req-glass-border);
+    border-radius: var(--req-radius-xl);
+    padding: 1.5rem;
+    transition: all var(--req-transition-normal);
+    box-shadow: var(--req-shadow-xs);
+}
+
+.chart-card:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-4px);
+    box-shadow: var(--req-shadow-md);
+}
+
+.chart-title {
+    color: var(--req-gray-800);
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 1rem 0;
+    text-align: center;
+}
+
+/* ===================================================================
+   ALERTS SECTION - NOTIFICATION SYSTEM
+   ================================================================== */
+.alerts-section {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(245, 158, 11, 0.05) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: var(--req-radius-2xl);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--req-shadow-sm);
+    transition: all var(--req-transition-normal);
+}
+
+.alerts-section:hover {
+    box-shadow: var(--req-shadow-md);
+    transform: translateY(-2px);
+}
+
+.alerts-title {
+    color: var(--req-danger);
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin: 0 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.alert-item {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: var(--req-radius-lg);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: all var(--req-transition-normal);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.alert-item:hover {
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateX(4px);
+    box-shadow: var(--req-shadow-sm);
+}
+
+.alert-text {
+    color: var(--req-gray-700);
+    font-size: 0.875rem;
+    font-weight: 500;
+    flex-grow: 1;
+}
+
+.dismiss-alert-button {
+    background: transparent;
+    color: var(--req-gray-400);
+    border: none;
+    border-radius: var(--req-radius-md);
+    padding: 0.25rem;
+    transition: all var(--req-transition-normal);
+    cursor: pointer;
+}
+
+.dismiss-alert-button:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--req-danger);
+    transform: scale(1.1);
+}
+
+/* ===================================================================
+   BULK ACTIONS - PROFESSIONAL OPERATIONS
+   ================================================================== */
+.bulk-actions-section {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, rgba(30, 64, 175, 0.05) 100%);
+    border: 1px solid var(--req-glass-border);
+    border-radius: var(--req-radius-2xl);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--req-shadow-sm);
+    transition: all var(--req-transition-normal);
+}
+
+.bulk-actions-section:hover {
+    box-shadow: var(--req-shadow-md);
+    transform: translateY(-2px);
+}
+
+.bulk-actions-title {
+    color: var(--req-gray-800);
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 1rem 0;
+    text-align: center;
+}
+
+.bulk-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.bulk-approve-button {
+    background: linear-gradient(135deg, var(--req-success) 0%, var(--req-success-light) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--req-radius-lg);
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all var(--req-transition-normal);
+    box-shadow: var(--req-shadow-sm);
+}
+
+.bulk-approve-button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--req-shadow-md);
+}
+
+.bulk-reject-button {
+    background: linear-gradient(135deg, var(--req-danger) 0%, var(--req-danger-light) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--req-radius-lg);
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all var(--req-transition-normal);
+    box-shadow: var(--req-shadow-sm);
+}
+
+.bulk-reject-button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--req-shadow-md);
+}
+
+.bulk-export-button {
+    background: linear-gradient(135deg, var(--req-secondary) 0%, var(--req-secondary-light) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--req-radius-lg);
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all var(--req-transition-normal);
+    box-shadow: var(--req-shadow-sm);
+}
+
+.bulk-export-button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--req-shadow-md);
+}
+
+.clear-selection-button {
+    background: rgba(156, 163, 175, 0.2);
+    color: var(--req-gray-600);
+    border: 1px solid var(--req-glass-border);
+    border-radius: var(--req-radius-lg);
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all var(--req-transition-normal);
+}
+
+.clear-selection-button:hover {
+    background: var(--req-gray-500);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* ===================================================================
+   WORKFLOW SECTION - PROCESS VISUALIZATION
+   ================================================================== */
+.workflow-section {
+    background: var(--req-glass-bg);
+    backdrop-filter: var(--req-backdrop-blur);
+    border: 1px solid var(--req-glass-border);
+    border-radius: var(--req-radius-2xl);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--req-shadow-md);
+    transition: all var(--req-transition-normal);
+}
+
+.workflow-section:hover {
+    box-shadow: var(--req-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.workflow-title {
+    color: var(--req-gray-800);
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0 0 1.5rem 0;
+    text-align: center;
+    background: linear-gradient(135deg, var(--req-gray-800) 0%, var(--req-info) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.workflow-steps {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.workflow-step {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--req-glass-border);
+    border-radius: var(--req-radius-lg);
+    padding: 1rem;
+    text-align: center;
+    transition: all var(--req-transition-normal);
+    position: relative;
+}
+
+.workflow-step:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+    box-shadow: var(--req-shadow-sm);
+}
+
+.workflow-step.active {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(124, 58, 237, 0.2) 100%);
+    border-color: var(--req-accent);
+    color: var(--req-accent);
+}
+
+.workflow-step.completed {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.2) 100%);
+    border-color: var(--req-success);
+    color: var(--req-success);
+}
+
+.step-number {
+    width: 2rem;
+    height: 2rem;
+    background: var(--req-gray-300);
+    color: var(--req-gray-700);
+    border-radius: var(--req-radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin: 0 auto 0.5rem auto;
+    transition: all var(--req-transition-normal);
+}
+
+.workflow-step.active .step-number {
+    background: var(--req-accent);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.workflow-step.completed .step-number {
+    background: var(--req-success);
+    color: white;
+}
+
+.step-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ===================================================================
+   EMPTY STATE - ELEGANT PLACEHOLDER
+   ================================================================== */
+.requisition-empty-state {
+    background: var(--req-glass-bg);
+    backdrop-filter: var(--req-backdrop-blur);
+    border: 2px dashed var(--req-glass-border);
+    border-radius: var(--req-radius-3xl);
+    padding: 4rem;
+    text-align: center;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--req-transition-normal);
+}
+
+.requisition-empty-state:hover {
+    border-color: var(--req-accent);
+    background: rgba(248, 250, 252, 0.9);
+    transform: translateY(-4px);
+    box-shadow: var(--req-shadow-lg);
+}
+
+.empty-state-icon {
+    color: var(--req-gray-400);
+    width: 4rem;
+    height: 4rem;
+    margin-bottom: 1.5rem;
+    transition: all var(--req-transition-normal);
+}
+
+.requisition-empty-state:hover .empty-state-icon {
+    color: var(--req-accent);
+    transform: scale(1.1);
+}
+
+.empty-state-title {
+    color: var(--req-gray-700);
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 1rem 0;
+}
+
+.empty-state-message {
+    color: var(--req-gray-600);
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.6;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+/* ===================================================================
+   SECTION TITLES - ELEGANT TYPOGRAPHY
+   ================================================================== */
+.section-title {
+    color: var(--req-gray-800);
+    font-size: 1.0rem;
+    font-weight: 800;
+    margin: 0 0 1.5rem 0;
+    letter-spacing: -0.02em;
+    text-align: center;
+    position: relative;
+    padding-bottom: 0.5rem;
+
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--req-accent) 0%, var(--req-accent-light) 100%);
+    border-radius: var(--req-radius-full);
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+/* ===================================================================
+   RESPONSIVE DESIGN - MOBILE OPTIMIZATION
+   ================================================================== */
+@media (max-width: 1200px) {
+    .requisition-dashboard-cards {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+    
+    .statistics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .workflow-steps {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .requisition-header {
+        padding: 1rem 1.5rem;
+    }
+    
+    .requisition-title {
+        font-size: 1.5rem;
+    }
+    
+    .requisition-main-content {
+        padding: 1.5rem;
+    }
+    
+    .requisition-dashboard-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .requisition-dashboard-card {
+        height: 120px;
+        padding: 1.25rem;
+    }
+    
+    .requisition-dashboard-card .card-value {
+        font-size: 1.5rem;
+    }
+    
+    .filters-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .statistics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .workflow-steps {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .bulk-actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .requisition-navigation {
+        padding: 0 1.5rem;
+    }
+    
+    .requisition-navigation .nav-tab {
+        padding: 0.75rem 1rem;
+        font-size: 0.75rem;
+    }
+    
+    .requisition-navigation .nav-tab span {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .requisition-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .requisition-title {
+        font-size: 1.25rem;
+    }
+    
+    .requisition-subtitle {
+        font-size: 1rem;
+    }
+    
+    .requisition-main-content {
+        padding: 1rem;
+    }
+    
+    .requisition-dashboard-cards {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .requisition-dashboard-card {
+        height: 100px;
+        padding: 1rem;
+    }
+    
+    .requisition-dashboard-card .card-value {
+        font-size: 1.25rem;
+    }
+    
+    .requisition-dashboard-card .card-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        top: 1rem;
+        right: 1rem;
+    }
+    
+    .workflow-steps {
+        grid-template-columns: 1fr;
+    }
+    
+    .bulk-actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .new-requisition-button,
+    .refresh-requisitions-button,
+    .export-requisitions-button {
+        padding: 0.1rem;
+        font-size: 0;
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+    
+    .new-requisition-button vaadin-icon,
+    .refresh-requisitions-button vaadin-icon,
+    .export-requisitions-button vaadin-icon {
+        margin: 0;
+    }
+}
+
+/* ===================================================================
+   ANIMATIONS - SOPHISTICATED MOTION
+   ================================================================== */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200px 0;
+    }
+    100% {
+        background-position: calc(200px + 100%) 0;
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 53%, 80%, 100% {
+        transform: translate3d(0, 0, 0);
+    }
+    40%, 43% {
+        transform: translate3d(0, -10px, 0);
+    }
+    70% {
+        transform: translate3d(0, -5px, 0);
+    }
+    90% {
+        transform: translate3d(0, -2px, 0);
+    }
+}
+
+/* Apply animations */
+.requisition-dashboard-card {
+    animation: slideInUp 0.6s var(--req-transition-normal);
+}
+
+.statistics-section,
+.charts-section,
+.workflow-section {
+    animation: fadeIn 0.8s ease-out;
+}
+
+.requisition-grid {
+    animation: slideInUp 0.7s var(--req-transition-normal);
+}
+
+/* Stagger card animations */
+.requisition-dashboard-card:nth-child(1) { animation-delay: 0.1s; }
+.requisition-dashboard-card:nth-child(2) { animation-delay: 0.2s; }
+.requisition-dashboard-card:nth-child(3) { animation-delay: 0.3s; }
+.requisition-dashboard-card:nth-child(4) { animation-delay: 0.4s; }
+.requisition-dashboard-card:nth-child(5) { animation-delay: 0.5s; }
+
+/* ===================================================================
+   FOCUS STATES - ACCESSIBILITY
+   ================================================================== */
+.new-requisition-button:focus,
+.refresh-requisitions-button:focus,
+.export-requisitions-button:focus,
+.bulk-approve-button:focus,
+.bulk-reject-button:focus,
+.bulk-export-button:focus,
+.clear-selection-button:focus {
+    outline: 2px solid var(--req-accent);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+}
+
+.requisition-search:focus,
+.status-filter:focus,
+.priority-filter:focus,
+.type-filter:focus {
+    outline: 2px solid var(--req-accent);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+}
+
+.requisition-navigation .nav-tab:focus {
+    outline: 2px solid var(--req-accent);
+    outline-offset: 2px;
+    border-radius: var(--req-radius-xl);
+}
+
+.requisition-dashboard-card:focus {
+    outline: 2px solid var(--req-accent);
+    outline-offset: 2px;
+    border-radius: var(--req-radius-2xl);
+}
+
+/* ===================================================================
+   PRINT STYLES - PROFESSIONAL PRINTING
+   ================================================================== */
+@media print {
+    .blo-requisition-view {
+        background: white;
+    }
+    
+    .requisition-header {
+        background: white;
+        box-shadow: none;
+        border-bottom: 2px solid var(--req-gray-300);
+    }
+    
+    .requisition-dashboard-card,
+    .statistics-section,
+    .charts-section,
+    .workflow-section,
+    .requisition-grid {
+        background: white;
+        box-shadow: none;
+        border: 1px solid var(--req-gray-300);
+        break-inside: avoid;
+    }
+    
+    .new-requisition-button,
+    .refresh-requisitions-button,
+    .export-requisitions-button,
+    .bulk-actions-section {
+        display: none;
+    }
+    
+    .requisition-navigation {
+        display: none;
+    }
+}
+
+/* ===================================================================
+   HIGH CONTRAST MODE SUPPORT
+   ================================================================== */
+@media (prefers-contrast: high) {
+    :root {
+        --req-glass-bg: rgba(255, 255, 255, 0.98);
+        --req-glass-border: rgba(0, 0, 0, 0.2);
+    }
+    
+    .requisition-dashboard-card,
+    .statistics-section,
+    .charts-section {
+        border-width: 2px;
+    }
+    
+    .status-badge,
+    .priority-badge {
+        border-width: 2px;
+    }
+}
+
+/* ===================================================================
+   REDUCED MOTION SUPPORT
+   ================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .priority-urgent,
+    .priority-emergency,
+    .workflow-step.active .step-number {
+        animation: none;
+    }
+}
+
+/* ===================================================================
+   DARK MODE SUPPORT (Future Enhancement)
+   ================================================================== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --req-glass-bg: rgba(15, 23, 42, 0.85);
+        --req-glass-border: rgba(71, 85, 105, 0.3);
+    }
+    
+    .blo-requisition-view {
+        background: linear-gradient(135deg, var(--req-gray-900) 0%, var(--req-gray-800) 50%, var(--req-gray-700) 100%);
+    }
+    
+    .requisition-title {
+        background: linear-gradient(135deg, var(--req-gray-100) 0%, var(--req-accent-light) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .section-title {
+        background: linear-gradient(135deg, var(--req-gray-100) 0%, var(--req-accent-light) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+}
+
+/* ===================================================================
+   PERFORMANCE OPTIMIZATIONS
+   ================================================================== */
+.blo-requisition-view {
+    will-change: transform;
+}
+
+.requisition-dashboard-card,
+.statistics-section,
+.charts-section,
+.workflow-section {
+    will-change: transform, box-shadow;
+}
+
+.action-buttons button {
+    will-change: transform, background;
+}
+
+/* ===================================================================
+   MICRO-INTERACTIONS - APPLE-LEVEL POLISH
+   ================================================================== */
+.requisition-dashboard-card:active {
+    transform: translateY(-6px) scale(1.01);
+}
+
+.action-buttons button:active {
+    transform: scale(0.95);
+}
+
+.new-requisition-button:active,
+.refresh-requisitions-button:active,
+.export-requisitions-button:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+/* ===================================================================
+   LOADING STATES - ELEGANT FEEDBACK
+   ================================================================== */
+.loading-overlay {
+    background: var(--req-glass-bg);
+    backdrop-filter: var(--req-backdrop-blur);
+    border-radius: var(--req-radius-2xl);
+    padding: 2rem;
+    text-align: center;
+    box-shadow: var(--req-shadow-lg);
+    position: relative;
+    overflow: hidden;
+}
+
+.loading-overlay::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.1), transparent);
+    animation: shimmer 2s infinite;
+}
+
+.loading-text {
+    color: var(--req-gray-600);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* ===================================================================
+   ENHANCED GRID STYLING
+   ================================================================== */
+.requisition-grid vaadin-grid::part(row):nth-child(even) vaadin-grid::part(cell) {
+    background: rgba(248, 250, 252, 0.5);
+}
+
+.requisition-grid vaadin-grid::part(row):nth-child(odd) vaadin-grid::part(cell) {
+    background: rgba(255, 255, 255, 0.7);
+}
+
+.requisition-grid vaadin-grid::part(selected-row) vaadin-grid::part(cell) {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(30, 64, 175, 0.1) 100%);
+    border-color: var(--req-accent);
+}
+
+/* ===================================================================
+   NOTIFICATION ENHANCEMENTS
+   ================================================================== */
+vaadin-notification-card {
+    background: var(--req-glass-bg);
+    backdrop-filter: var(--req-backdrop-blur);
+    border: 1px solid var(--req-glass-border);
+    border-radius: var(--req-radius-xl);
+    box-shadow: var(--req-shadow-xl);
+}
+
+/* ===================================================================
+   DIALOG ENHANCEMENTS
+   ================================================================== */
+vaadin-dialog-overlay {
+    backdrop-filter: var(--req-backdrop-blur);
+    background: rgba(15, 23, 42, 0.4);
+}
+
+vaadin-dialog-overlay::part(overlay) {
+    border-radius: var(--req-radius-2xl);
+    box-shadow: var(--req-shadow-2xl);
+    backdrop-filter: var(--req-backdrop-blur);
+}
+.requisition-grid {
+   /* width: 90% !important;   Force 90% of parent width */
+    margin: 0 auto;  
+    color: red;/* Center the grid horizontally */
+    width: 900px;
+}

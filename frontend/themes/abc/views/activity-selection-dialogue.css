@@ -1,0 +1,977 @@
+/* ===================================================================
+   ACTIVITY SELECTION DIALOG - PROFESSIONAL STYLING
+   Elegant & Sophisticated CSS for Activity Selection Interface
+   ================================================================== */
+
+/* ===================================================================
+   DESIGN TOKENS - ACTIVITY DIALOG SPECIFIC
+   ================================================================== */
+:root {
+    /* Activity Dialog Color Palette */
+    --activity-primary: #1e40af;
+    --activity-accent: #7c3aed;
+    --activity-success: #059669;
+    --activity-warning: #d97706;
+    --activity-danger: #dc2626;
+    --activity-info: #0891b2;
+    
+    /* Activity Status Colors */
+    --activity-active: #10b981;
+    --activity-inactive: #6b7280;
+    --activity-selected: #8b5cf6;
+    
+    /* Glass Morphism */
+    --activity-glass-bg: rgba(248, 250, 252, 0.95);
+    --activity-glass-border: rgba(203, 213, 225, 0.3);
+    --activity-glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.12);
+    --activity-backdrop-blur: blur(24px);
+    
+    /* Spacing System */
+    --activity-space-xs: 0.25rem;
+    --activity-space-sm: 0.5rem;
+    --activity-space-md: 1rem;
+    --activity-space-lg: 1.5rem;
+    --activity-space-xl: 2rem;
+    --activity-space-2xl: 2.5rem;
+    --activity-space-3xl: 3rem;
+    
+    /* Typography */
+    --activity-font-xs: 0.75rem;
+    --activity-font-sm: 0.875rem;
+    --activity-font-base: 1rem;
+    --activity-font-lg: 1.125rem;
+    --activity-font-xl: 1.25rem;
+    --activity-font-2xl: 1.5rem;
+    
+    /* Shadows */
+    --activity-shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    --activity-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -1px rgba(15, 23, 42, 0.06);
+    --activity-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -2px rgba(15, 23, 42, 0.05);
+    --activity-shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 10px 10px -5px rgba(15, 23, 42, 0.04);
+    
+    /* Border Radius */
+    --activity-radius-sm: 0.375rem;
+    --activity-radius-md: 0.5rem;
+    --activity-radius-lg: 0.75rem;
+    --activity-radius-xl: 1rem;
+    --activity-radius-2xl: 1.5rem;
+    
+    /* Transitions */
+    --activity-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --activity-transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --activity-transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===================================================================
+   ACTIVITY SELECTION DIALOG MAIN CONTAINER
+   ================================================================== */
+.activity-selection-dialog {
+    width: 90%;
+    padding: 1rem;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.activity-selection-dialog::part(overlay) {
+}
+
+/* ===================================================================
+   DIALOG LAYOUT
+   ================================================================== */
+.activity-dialog-layout {
+    border-radius: var(--activity-radius-2xl);
+    padding: 0;
+    margin: 0;
+    gap: 0 !important;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* ===================================================================
+   DIALOG HEADER - ELEGANT DESIGN
+   ================================================================== */
+.activity-dialog-header {
+    background: linear-gradient(135deg, var(--activity-primary) 0%, var(--activity-accent) 30%);
+    color: white;
+    padding: 12px;
+    border-radius: var(--activity-radius-2xl) var(--activity-radius-2xl) 0 0;
+    position: relative;
+    overflow: hidden;
+    margin: 0;
+}
+
+.activity-dialog-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.dialog-title {
+    color: white;
+    font-size: var(--activity-font-xl);
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.025em;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dialog-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: var(--activity-font-base);
+    font-weight: 300;
+    margin: 0;
+    letter-spacing: 0.01em;
+}
+
+.dialog-icon-container {
+    width: 4rem;
+    height: 4rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--activity-radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all var(--activity-transition-normal);
+}
+
+.dialog-icon-container:hover {
+    transform: scale(1.05) rotate(5deg);
+    box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.2);
+}
+
+.dialog-icon {
+    color: white;
+    width: 2rem;
+    height: 2rem;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+/* ===================================================================
+   SEARCH SECTION - PROFESSIONAL DESIGN
+   ================================================================== */
+.search-section {
+    background: var(--activity-glass-bg);
+    border-bottom: 1px solid var(--activity-glass-border);
+    padding: 0;
+    margin: 0;
+}
+
+.activity-search {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid var(--activity-glass-border);
+    border-radius: var(--activity-radius-lg);
+    padding: var(--activity-space-sm) var(--activity-space-md);
+    font-size: var(--activity-font-base);
+    transition: all var(--activity-transition-normal);
+    box-shadow: var(--activity-shadow-sm);
+    backdrop-filter: blur(8px);
+}
+
+.activity-search:hover {
+    border-color: var(--activity-accent);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateY(-1px);
+}
+
+.activity-search:focus {
+    outline: none;
+    border-color: var(--activity-accent);
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.15);
+    background: white;
+}
+
+.activity-search::part(input-field) {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.result-count {
+    color: var(--activity-primary);
+    font-size: var(--activity-font-sm);
+    font-weight: 600;
+    background: rgba(30, 64, 175, 0.1);
+    padding: var(--activity-space-sm) var(--activity-space-md);
+    border-radius: var(--activity-radius-md);
+    border: 1px solid rgba(30, 64, 175, 0.2);
+    white-space: nowrap;
+}
+
+/* ===================================================================
+   MAIN CONTENT AREA - ELEGANT LAYOUT
+   ================================================================== */
+.activity-main-content {
+    padding: 8px;
+    gap: var(--activity-space-xl) !important;
+    overflow: auto;
+}
+
+/* ===================================================================
+   ACTIVITIES SECTION - LEFT PANEL
+   ================================================================== */
+.activities-section {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--activity-glass-border);
+    border-radius: var(--activity-radius-xl);
+    padding: var(--activity-space-lg);
+    box-shadow: var(--activity-shadow-md);
+    transition: all var(--activity-transition-normal);
+    height: 100%;
+    overflow: hidden;
+}
+
+.activities-section:hover {
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: var(--activity-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.activities-section .section-title {
+    color: var(--activity-primary);
+    font-size: var(--activity-font-xl);
+    font-weight: 700;
+    margin: 0;
+    text-align: center;
+    position: relative;
+    padding-bottom: 3px;
+}
+
+.activities-section .section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--activity-primary) 0%, var(--activity-accent) 100%);
+    border-radius: var(--activity-radius-sm);
+}
+
+/* ===================================================================
+   ACTIVITIES GRID - PROFESSIONAL TABLE
+   ================================================================== */
+.activities-grid {
+    border-radius: var(--activity-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--activity-shadow-md);
+    background: white;
+    border: 1px solid var(--activity-glass-border);
+}
+
+.activities-grid::part(header-cell) {
+    background: linear-gradient(135deg, var(--activity-primary) 0%, var(--activity-accent) 100%);
+    color: white;
+    font-weight: 500;
+    font-size: 13;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0;
+    border: none;
+}
+
+.activities-grid::part(cell) {
+    padding: 0;
+    border-bottom: 1px solid rgba(203, 213, 225, 0.3);
+    transition: all var(--activity-transition-fast);
+}
+
+.activities-grid::part(row):hover {
+    background: rgba(124, 58, 237, 0.05);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.activities-grid::part(row)[selected] {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(30, 64, 175, 0.1) 100%);
+    border-left: 4px solid var(--activity-accent);
+}
+
+/* ===================================================================
+   BUDGET DETAILS SECTION - RIGHT PANEL
+   ================================================================== */
+.budget-details-section {
+    gap: var(--activity-space-lg) !important;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* ===================================================================
+   BUDGET ITEMS SECTION - TOP RIGHT
+   ================================================================== */
+.budget-items-section {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--activity-glass-border);
+    border-radius: var(--activity-radius-xl);
+    padding: 3px;
+    box-shadow: var(--activity-shadow-md);
+    transition: all var(--activity-transition-normal);
+    flex: 1;
+    overflow: hidden;
+}
+
+.budget-items-section:hover {
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: var(--activity-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.budget-items-section .section-title {
+    color: var(--activity-success);
+    font-size: var(--activity-font-lg);
+    font-weight: 700;
+    margin: 0 0 var(--activity-space-md) 0;
+    text-align: center;
+    position: relative;
+    padding-bottom: 0;
+}
+
+.budget-items-section .section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--activity-success) 0%, #34d399 100%);
+    border-radius: var(--activity-radius-sm);
+}
+
+/* ===================================================================
+   BUDGET ITEMS GRID
+   ================================================================== */
+.budget-items-grid {
+    border-radius: var(--activity-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--activity-shadow-sm);
+    background: white;
+    border: 1px solid var(--activity-glass-border);
+}
+
+.budget-items-grid::part(header-cell) {
+    background: linear-gradient(135deg, var(--activity-success) 0%, #34d399 100%);
+    color: white;
+    font-weight: 600;
+    font-size: var(--activity-font-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0;
+    border: none;
+}
+
+.budget-items-grid::part(cell) {
+    padding: var(--activity-space-sm);
+    border-bottom: 1px solid rgba(203, 213, 225, 0.2);
+    font-size: var(--activity-font-sm);
+}
+
+.budget-items-grid::part(row):hover {
+    background: rgba(5, 150, 105, 0.05);
+}
+
+/* ===================================================================
+   TOTAL FOOTER - ELEGANT SUMMARY
+   ================================================================== */
+.total-footer {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+    border: 1px solid rgba(5, 150, 105, 0.2);
+    border-radius: var(--activity-radius-lg);
+    padding-top: 5px;
+    margin-top: 5px;
+    box-shadow: var(--activity-shadow-sm);
+    transition: all var(--activity-transition-normal);
+}
+
+.total-footer:hover {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
+    box-shadow: var(--activity-shadow-md);
+    transform: translateY(-1px);
+}
+
+.total-text {
+    color: var(--activity-success);
+    font-size: 10;
+    font-weight: 600;
+    text-align: right;
+    margin: 0;
+    letter-spacing: -0.02em;
+    text-shadow: 0 1px 2px rgba(5, 150, 105, 0.1);
+}
+
+/* ===================================================================
+   ACCOUNT SUMMARY SECTION - BOTTOM RIGHT
+   ================================================================== */
+.account-summary-section {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--activity-glass-border);
+    border-radius: var(--activity-radius-xl);
+    padding: 3px;
+    box-shadow: var(--activity-shadow-md);
+    transition: all var(--activity-transition-normal);
+    flex: 1;
+    overflow: hidden;
+}
+
+.account-summary-section:hover {
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: var(--activity-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.account-summary-section .section-title {
+    color: var(--activity-info);
+    font-size: var(--activity-font-lg);
+    font-weight: 700;
+    margin: 0;
+    text-align: center;
+    position: relative;
+    padding-bottom: 0;
+}
+
+.account-summary-section .section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--activity-info) 0%, #22d3ee 100%);
+    border-radius: var(--activity-radius-sm);
+}
+
+/* ===================================================================
+   ACCOUNT SUMMARY GRID
+   ================================================================== */
+.account-summary-grid {
+    border-radius: var(--activity-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--activity-shadow-sm);
+    background: white;
+    border: 1px solid var(--activity-glass-border);
+}
+
+.account-summary-grid::part(header-cell) {
+    background: linear-gradient(135deg, var(--activity-info) 0%, #22d3ee 100%);
+    color: white;
+    font-weight: 600;
+    font-size: var(--activity-font-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0;
+    border: none;
+}
+
+.account-summary-grid::part(cell) {
+    padding: 3px;
+    border-bottom: 1px solid rgba(203, 213, 225, 0.2);
+    font-size: var(--activity-font-sm);
+}
+
+.account-summary-grid::part(row):hover {
+    background: rgba(8, 145, 178, 0.05);
+}
+
+/* ===================================================================
+   GRID CELL CONTENT STYLING
+   ================================================================== */
+.activity-budget-info {
+    text-align: right;
+}
+
+.activity-budget-amount {
+    color: black;
+    font-size: 12;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.budget-zero {
+    color: var(--activity-danger);
+    font-style: italic;
+}
+
+.total-cost-info,
+.total-budget-info,
+.total-committed-info,
+.total-requisitions-info,
+.total-actual-info,
+.total-balance-info {
+    text-align: right;
+}
+
+.total-cost,
+.total-budget,
+.total-committed,
+.total-requisitions,
+.total-actual {
+    color: #334155;
+    font-size: var(--activity-font-sm);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.total-balance {
+    font-size: var(--activity-font-sm);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.balance-good {
+    color: var(--activity-success);
+}
+
+.balance-low {
+    color: var(--activity-warning);
+}
+
+.balance-negative {
+    color: var(--activity-danger);
+    font-weight: 800;
+}
+
+/* ===================================================================
+   ACTION BUTTONS IN GRID
+   ================================================================== */
+.account-action-buttons {
+    justify-content: center !important;
+    gap: var(--activity-space-xs) !important;
+}
+
+.requisition-button {
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--activity-radius-md);
+    background: linear-gradient(135deg, var(--activity-accent) 0%, #a855f7 100%);
+    color: white;
+    border: none;
+    transition: all var(--activity-transition-normal);
+    box-shadow: var(--activity-shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.requisition-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left var(--activity-transition-slow);
+}
+
+.requisition-button:hover::before {
+    left: 100%;
+}
+
+.requisition-button:hover {
+    transform: scale(1.1);
+    box-shadow: var(--activity-shadow-lg);
+    background: linear-gradient(135deg, #a855f7 0%, var(--activity-accent) 100%);
+}
+
+.requisition-button:disabled {
+    background: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.requisition-button:disabled:hover {
+    transform: none;
+    box-shadow: var(--activity-shadow-sm);
+}
+
+.requisition-button vaadin-icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* ===================================================================
+   DIALOG ACTION BUTTONS - PROFESSIONAL DESIGN
+   ================================================================== */
+.activity-dialog-buttons {
+    background: var(--activity-glass-bg);
+    border-top: 1px solid var(--activity-glass-border);
+    padding: var(--activity-space-lg) var(--activity-space-2xl);
+    margin: 0;
+    border-radius: 0 0 var(--activity-radius-2xl) var(--activity-radius-2xl);
+}
+
+.cancel-button {
+    background: transparent;
+    color: #64748b;
+    border: 1px solid var(--activity-glass-border);
+    border-radius: var(--activity-radius-lg);
+    padding: var(--activity-space-md) var(--activity-space-xl);
+    font-size: var(--activity-font-base);
+    font-weight: 600;
+    transition: all var(--activity-transition-normal);
+    display: flex;
+    align-items: center;
+    gap: var(--activity-space-sm);
+}
+
+.cancel-button:hover {
+    background: rgba(100, 116, 139, 0.1);
+    border-color: #94a3b8;
+    color: #475569;
+    transform: translateY(-1px);
+    box-shadow: var(--activity-shadow-sm);
+}
+
+.select-button {
+    background: linear-gradient(135deg, var(--activity-accent) 0%, #a855f7 100%);
+    color: white;
+    border: none;
+    border-radius: var(--activity-radius-lg);
+    padding: var(--activity-space-md) var(--activity-space-2xl);
+    font-size: var(--activity-font-base);
+    font-weight: 700;
+    letter-spacing: 0.025em;
+    transition: all var(--activity-transition-normal);
+    box-shadow: var(--activity-shadow-md);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: var(--activity-space-sm);
+}
+
+.select-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left var(--activity-transition-slow);
+}
+
+.select-button:hover::before {
+    left: 100%;
+}
+
+.select-button:hover {
+    background: linear-gradient(135deg, #a855f7 0%, var(--activity-accent) 100%);
+    box-shadow: var(--activity-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.select-button:disabled {
+    background: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: var(--activity-shadow-sm);
+}
+
+/* ===================================================================
+   RESPONSIVE DESIGN - MOBILE OPTIMIZATION
+   ================================================================== */
+@media (max-width: 768px) {
+    .activity-selection-dialog {
+        width: 95vw !important;
+        height: 90vh !important;
+        margin: 2.5vh auto;
+    }
+    
+    .activity-dialog-header {
+        padding: var(--activity-space-lg);
+    }
+    
+    .dialog-title {
+        font-size: var(--activity-font-xl);
+    }
+    
+    .dialog-subtitle {
+        font-size: var(--activity-font-sm);
+    }
+    
+    .search-section {
+        padding: var(--activity-space-md) var(--activity-space-lg);
+    }
+    
+    .activity-main-content {
+        padding: var(--activity-space-lg);
+        flex-direction: column !important;
+        gap: var(--activity-space-lg) !important;
+        height: auto;
+    }
+    
+    .activities-section,
+    .budget-details-section {
+        width: 100% !important;
+        height: auto;
+        flex: none;
+    }
+    
+    .budget-items-section,
+    .account-summary-section {
+        height: 200px;
+    }
+    
+    .activity-dialog-buttons {
+        padding: var(--activity-space-md) var(--activity-space-lg);
+    }
+    
+    .cancel-button,
+    .select-button {
+        padding: var(--activity-space-sm) var(--activity-space-lg);
+        font-size: var(--activity-font-sm);
+    }
+}
+
+@media (max-width: 480px) {
+    .activity-selection-dialog {
+        width: 98vw !important;
+        height: 95vh !important;
+        margin: 2.5vh auto;
+    }
+    
+    .activity-dialog-header {
+        padding: var(--activity-space-md);
+    }
+    
+    .dialog-title {
+        font-size: var(--activity-font-lg);
+    }
+    
+    .dialog-icon-container {
+        width: 3rem;
+        height: 3rem;
+    }
+    
+    .dialog-icon {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+    
+    .search-section {
+        padding: var(--activity-space-sm) var(--activity-space-md);
+    }
+    
+    .activity-main-content {
+        padding: var(--activity-space-md);
+    }
+    
+    .activities-section,
+    .budget-items-section,
+    .account-summary-section {
+        padding: var(--activity-space-md);
+    }
+    
+    .budget-items-section,
+    .account-summary-section {
+        height: 180px;
+    }
+    
+    .activity-dialog-buttons {
+        padding: var(--activity-space-sm) var(--activity-space-md);
+        flex-direction: column;
+        gap: var(--activity-space-sm) !important;
+    }
+    
+    .cancel-button,
+    .select-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ===================================================================
+   ANIMATIONS - SOPHISTICATED MOTION
+   ================================================================== */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.02);
+    }
+}
+
+/* Apply animations */
+.activities-section {
+    animation: slideInUp 0.6s var(--activity-transition-normal);
+}
+
+.budget-items-section {
+    animation: slideInUp 0.6s var(--activity-transition-normal);
+    animation-delay: 0.1s;
+}
+
+.account-summary-section {
+    animation: slideInUp 0.6s var(--activity-transition-normal);
+    animation-delay: 0.2s;
+}
+
+.activity-dialog-header {
+    animation: fadeIn 0.8s ease-out;
+}
+
+/* ===================================================================
+   FOCUS STATES - ACCESSIBILITY
+   ================================================================== */
+.activity-search:focus,
+.cancel-button:focus,
+.select-button:focus,
+.requisition-button:focus {
+    outline: 2px solid var(--activity-accent);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+}
+
+.activities-grid:focus,
+.budget-items-grid:focus,
+.account-summary-grid:focus {
+    outline: 2px solid var(--activity-accent);
+    outline-offset: 2px;
+    border-radius: var(--activity-radius-lg);
+}
+
+/* ===================================================================
+   PRINT STYLES - PROFESSIONAL PRINTING
+   ================================================================== */
+@media print {
+    .activity-selection-dialog {
+        background: white;
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .activity-dialog-header {
+        background: white;
+        color: #1e293b;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .activities-section,
+    .budget-items-section,
+    .account-summary-section {
+        background: white;
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+        break-inside: avoid;
+    }
+    
+    .cancel-button,
+    .select-button,
+    .requisition-button {
+        display: none;
+    }
+}
+
+/* ===================================================================
+   DARK MODE SUPPORT (Future Enhancement)
+   ================================================================== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --activity-glass-bg: rgba(15, 23, 42, 0.85);
+        --activity-glass-border: rgba(71, 85, 105, 0.3);
+    }
+    
+    .activity-selection-dialog {
+        background: linear-gradient(135deg, var(--activity-glass-bg) 0%, rgba(30, 41, 59, 0.85) 100%);
+    }
+    
+    .dialog-title {
+        background: linear-gradient(135deg, #f1f5f9 0%, #a855f7 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+}
+
+/* ===================================================================
+   ENHANCED MICRO-INTERACTIONS
+   ================================================================== */
+.activities-section:hover .section-title::after {
+    width: 80px;
+    transition: width var(--activity-transition-normal);
+}
+
+.budget-items-section:hover .section-title::after {
+    width: 70px;
+    transition: width var(--activity-transition-normal);
+}
+
+.account-summary-section:hover .section-title::after {
+    width: 70px;
+    transition: width var(--activity-transition-normal);
+}
+
+/* Grid row selection enhancement */
+.activities-grid::part(row)[selected] {
+    box-shadow: inset 4px 0 0 var(--activity-accent);
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(30, 64, 175, 0.08) 100%);
+}
+
+/* Enhanced button states */
+.select-button:enabled {
+    cursor: pointer;
+}
+
+.select-button:disabled::before {
+    display: none;
+}
+
+/* Professional loading states */
+.activities-grid[loading]::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(248, 250, 252, 0.8);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

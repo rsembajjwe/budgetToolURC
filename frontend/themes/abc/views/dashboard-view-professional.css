@@ -1,0 +1,1313 @@
+/* ===================================================================
+   DASHBOARD VIEW - PROFESSIONAL & ELEGANT STYLING
+   Beautiful, Sophisticated CSS for Budget Management Dashboard
+   ================================================================== */
+
+/* ===================================================================
+   DESIGN TOKENS - PROFESSIONAL SYSTEM
+   ================================================================== */
+:root {
+    /* Primary Color Palette - Sophisticated Blues */
+    --dashboard-primary: #1e40af;
+    --dashboard-primary-light: #3b82f6;
+    --dashboard-primary-dark: #1e3a8a;
+    --dashboard-accent: #7c3aed;
+    --dashboard-accent-light: #8b5cf6;
+    --dashboard-accent-dark: #6d28d9;
+
+    /* Secondary Colors - Professional Palette */
+    --dashboard-secondary: #0891b2;
+    --dashboard-secondary-light: #06b6d4;
+    --dashboard-tertiary: #059669;
+    --dashboard-tertiary-light: #10b981;
+
+    /* Status Colors - Clear Communication */
+    --dashboard-success: #059669;
+    --dashboard-success-light: #10b981;
+    --dashboard-warning: #d97706;
+    --dashboard-warning-light: #f59e0b;
+    --dashboard-danger: #dc2626;
+    --dashboard-danger-light: #ef4444;
+    --dashboard-info: #0891b2;
+    --dashboard-info-light: #06b6d4;
+
+    /* Neutral Palette - Sophisticated Grays */
+    --dashboard-gray-50: #f8fafc;
+    --dashboard-gray-100: #f1f5f9;
+    --dashboard-gray-200: #e2e8f0;
+    --dashboard-gray-300: #cbd5e1;
+    --dashboard-gray-400: #94a3b8;
+    --dashboard-gray-500: #64748b;
+    --dashboard-gray-600: #475569;
+    --dashboard-gray-700: #334155;
+    --dashboard-gray-800: #1e293b;
+    --dashboard-gray-900: #0f172a;
+
+    /* Glass Morphism - Premium Effects */
+    --dashboard-glass-bg: rgba(248, 250, 252, 0.95);
+    --dashboard-glass-border: rgba(203, 213, 225, 0.3);
+    --dashboard-glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.12);
+    --dashboard-backdrop-blur: blur(24px);
+    --dashboard-backdrop-saturate: saturate(180%);
+
+    /* Spacing System - Consistent Scale */
+    --dashboard-space-xs: 0.25rem;
+    --dashboard-space-sm: 0.5rem;
+    --dashboard-space-md: 1rem;
+    --dashboard-space-lg: 1.5rem;
+    --dashboard-space-xl: 2rem;
+    --dashboard-space-2xl: 2.5rem;
+    --dashboard-space-3xl: 3rem;
+    --dashboard-space-4xl: 4rem;
+    --dashboard-space-5xl: 5rem;
+
+    /* Typography Scale - Professional Hierarchy */
+    --dashboard-font-xs: 0.75rem;
+    --dashboard-font-sm: 0.875rem;
+    --dashboard-font-base: 1rem;
+    --dashboard-font-lg: 1.125rem;
+    --dashboard-font-xl: 1.25rem;
+    --dashboard-font-2xl: 1.5rem;
+    --dashboard-font-3xl: 1.875rem;
+    --dashboard-font-4xl: 2.25rem;
+    --dashboard-font-5xl: 3rem;
+
+    /* Shadow System - Depth & Elevation */
+    --dashboard-shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    --dashboard-shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.1), 0 1px 2px -1px rgba(15, 23, 42, 0.1);
+    --dashboard-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -2px rgba(15, 23, 42, 0.1);
+    --dashboard-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.1);
+    --dashboard-shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+    --dashboard-shadow-2xl: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+    --dashboard-shadow-inner: inset 0 2px 4px 0 rgba(15, 23, 42, 0.06);
+
+    /* Border Radius - Consistent Curves */
+    --dashboard-radius-xs: 0.25rem;
+    --dashboard-radius-sm: 0.375rem;
+    --dashboard-radius-md: 0.5rem;
+    --dashboard-radius-lg: 0.75rem;
+    --dashboard-radius-xl: 1rem;
+    --dashboard-radius-2xl: 1.5rem;
+    --dashboard-radius-3xl: 2rem;
+    --dashboard-radius-full: 9999px;
+
+    /* Transitions - Smooth Animations */
+    --dashboard-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --dashboard-transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --dashboard-transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+    --dashboard-transition-bounce: 600ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* ===================================================================
+   GLOBAL DASHBOARD CONTAINER
+   ================================================================== */
+.dashboard-view {
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--dashboard-gray-50) 0%, var(--dashboard-gray-100) 50%, var(--dashboard-gray-200) 100%);
+    position: relative;
+    overflow-x: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-optical-sizing: auto;
+    color: var(--dashboard-gray-800);
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+
+    /* Centering styles */
+    align-items: center;     /* Vertical center */
+}
+
+.dashboard-view::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 20% 80%, rgba(30, 64, 175, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(5, 150, 105, 0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ===================================================================
+   DASHBOARD HEADER - ELEGANT & SOPHISTICATED
+   ================================================================== */
+.dashboard-header {
+    background: var(--dashboard-glass-bg);
+    backdrop-filter: var(--dashboard-backdrop-blur);
+    -webkit-backdrop-filter: var(--dashboard-backdrop-blur);
+    border-bottom: 1px solid var(--dashboard-glass-border);
+    box-shadow: var(--dashboard-glass-shadow);
+    padding: 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: all var(--dashboard-transition-normal);
+    min-height: 85px;
+    max-height: 85px;
+}
+
+.dashboard-header:hover {
+    box-shadow: var(--dashboard-shadow-lg);
+    background: rgba(248, 250, 252, 0.98);
+}
+
+/* Header Content Layout */
+.dashboard-header vaadin-horizontal-layout {
+    width: 100% !important;
+    height: 100% !important;
+    gap: var(--dashboard-space-lg) !important;
+}
+
+/* ===================================================================
+   LOGO & BRANDING - SOPHISTICATED
+   ================================================================== */
+.logo-section {
+    gap: var(--dashboard-space-lg) !important;
+}
+
+.app-logo {
+    width: 3rem;
+    height: 3rem;
+    background: linear-gradient(135deg, var(--dashboard-primary) 0%, var(--dashboard-primary-dark) 100%);
+    border-radius: var(--dashboard-radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--dashboard-shadow-lg);
+    transition: all var(--dashboard-transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.app-logo::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity var(--dashboard-transition-normal);
+}
+
+.app-logo:hover::before {
+    opacity: 1;
+}
+
+.app-logo:hover {
+    transform: scale(1.05) rotate(3deg);
+    box-shadow: var(--dashboard-shadow-xl);
+}
+
+.logo-text {
+    color: white;
+    font-weight: 500;
+    font-size: var(--dashboard-font-xl);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    letter-spacing: -0.02em;
+}
+
+.app-title {
+    color: var(--dashboard-gray-800);
+    font-size: var(--dashboard-font-2xl);
+    font-weight: 500;
+    margin: 0;
+    letter-spacing: -0.025em;
+    background: linear-gradient(135deg, var(--dashboard-gray-800) 0%, var(--dashboard-primary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+}
+
+.app-subtitle {
+    color: var(--dashboard-gray-600);
+    font-size: var(--dashboard-font-sm);
+    font-weight: 500;
+    margin: 0;
+    letter-spacing: 0.01em;
+}
+
+/* ===================================================================
+   FISCAL YEAR SELECTOR - ELEGANT INTEGRATION
+   ================================================================== */
+.fiscal-year {
+    background: var(--dashboard-glass-bg);
+    border: 1px solid var(--dashboard-glass-border);
+    border-radius: var(--dashboard-radius-xl);
+    padding: var(--dashboard-space-sm) var(--dashboard-space-lg);
+    color: var(--dashboard-gray-700);
+    font-size: var(--dashboard-font-sm);
+    font-weight: 600;
+    transition: all var(--dashboard-transition-normal);
+    box-shadow: var(--dashboard-shadow-sm);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    gap: var(--dashboard-space-sm);
+    min-width: 200px;
+    color:red;
+}
+
+.fiscal-year:hover {
+    background: rgba(248, 250, 252, 0.98);
+    box-shadow: var(--dashboard-shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--dashboard-primary);
+}
+
+.calendar-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+    color: var(--dashboard-primary);
+    filter: drop-shadow(0 1px 2px rgba(30, 64, 175, 0.1));
+}
+
+.fiscal-label {
+    color: var(--dashboard-gray-600);
+    font-size: var(--dashboard-font-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+}
+
+.fiscal-year-selector {
+    background: transparent;
+    border: none;
+    font-size: var(--dashboard-font-sm);
+    font-weight: 600;
+    color: var(--dashboard-gray-800);
+    padding: 0;
+    margin: 0;
+}
+
+/* Fiscal Year ComboBox Styling */
+.fiscal-year vaadin-combo-box {
+    --vaadin-combo-box-overlay-background-color: var(--dashboard-glass-bg);
+    --vaadin-combo-box-overlay-border-radius: var(--dashboard-radius-xl);
+    --vaadin-combo-box-overlay-box-shadow: var(--dashboard-shadow-2xl);
+    --vaadin-input-field-background: transparent;
+    --vaadin-input-field-border-color: transparent;
+}
+
+.fiscal-year vaadin-combo-box::part(input-field) {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: var(--dashboard-gray-800);
+    font-weight: 600;
+    font-size: var(--dashboard-font-sm);
+    padding: 0;
+    min-height: auto;
+}
+
+.fiscal-year vaadin-combo-box::part(toggle-button) {
+    color: var(--dashboard-primary);
+    width: 1.5rem;
+}
+
+.fiscal-year vaadin-combo-box::part(toggle-button):hover {
+    color: var(--dashboard-primary-dark);
+}
+
+/* ===================================================================
+   STATUS INDICATOR - PROFESSIONAL FEEDBACK
+   ================================================================== */
+.status-layout {
+    background: var(--dashboard-glass-bg);
+    border: 1px solid var(--dashboard-glass-border);
+    border-radius: var(--dashboard-radius-lg);
+    padding: var(--dashboard-space-sm) var(--dashboard-space-md);
+    box-shadow: var(--dashboard-shadow-sm);
+    transition: all var(--dashboard-transition-normal);
+    margin-right: var(--dashboard-space-md);
+}
+
+.status-layout:hover {
+    box-shadow: var(--dashboard-shadow-md);
+    transform: translateY(-1px);
+}
+
+.status-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    background: var(--dashboard-success);
+    border-radius: var(--dashboard-radius-full);
+    margin-right: var(--dashboard-space-sm);
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.7);
+}
+
+.status-indicator {
+    color: var(--dashboard-gray-800);
+    font-size: var(--dashboard-font-xs);
+    font-weight: 600;
+    margin: 0;
+}
+
+.last-updated {
+    color: var(--dashboard-gray-500);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* ===================================================================
+   NOTIFICATION BUTTON - ELEGANT DESIGN
+   ================================================================== */
+.notification-button {
+    background: var(--dashboard-glass-bg);
+    color: var(--dashboard-gray-600);
+    border: 1px solid var(--dashboard-glass-border);
+    border-radius: var(--dashboard-radius-lg);
+    padding: var(--dashboard-space-sm);
+    transition: all var(--dashboard-transition-normal);
+    box-shadow: var(--dashboard-shadow-sm);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin-right: var(--dashboard-space-md);
+}
+
+.notification-button:hover {
+    background: var(--dashboard-warning);
+    color: white;
+    box-shadow: var(--dashboard-shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--dashboard-warning);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--dashboard-danger);
+    color: white;
+    border-radius: var(--dashboard-radius-full);
+    width: 1.125rem;
+    height: 1.125rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.625rem;
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+    animation: bounce 2s infinite;
+}
+
+/* ===================================================================
+   ACTION BUTTONS - PROFESSIONAL STYLING
+   ================================================================== */
+.header-actions {
+    gap: var(--dashboard-space-sm) !important;
+}
+
+.primary-action {
+    background: linear-gradient(135deg, var(--dashboard-primary) 0%, var(--dashboard-primary-light) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--dashboard-radius-lg);
+    padding: var(--dashboard-space-sm) var(--dashboard-space-lg);
+    font-weight: 600;
+    font-size: var(--dashboard-font-sm);
+    transition: all var(--dashboard-transition-normal);
+    box-shadow: var(--dashboard-shadow-md);
+    height: 40px;
+    letter-spacing: 0.025em;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: var(--dashboard-space-xs);
+}
+
+.primary-action::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left var(--dashboard-transition-slow);
+}
+
+.primary-action:hover::before {
+    left: 100%;
+}
+
+.primary-action:hover {
+    background: linear-gradient(135deg, var(--dashboard-primary-light) 0%, var(--dashboard-primary) 100%);
+    box-shadow: var(--dashboard-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.secondary-action {
+    background: linear-gradient(135deg, var(--dashboard-secondary) 0%, var(--dashboard-secondary-light) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--dashboard-radius-lg);
+    padding: var(--dashboard-space-sm) var(--dashboard-space-lg);
+    font-weight: 600;
+    font-size: var(--dashboard-font-sm);
+    transition: all var(--dashboard-transition-normal);
+    box-shadow: var(--dashboard-shadow-md);
+    height: 40px;
+    letter-spacing: 0.025em;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: var(--dashboard-space-xs);
+    margin: 0 var(--dashboard-space-sm);
+}
+
+.secondary-action::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left var(--dashboard-transition-slow);
+}
+
+.secondary-action:hover::before {
+    left: 100%;
+}
+
+.secondary-action:hover {
+    background: linear-gradient(135deg, var(--dashboard-secondary-light) 0%, var(--dashboard-secondary) 100%);
+    box-shadow: var(--dashboard-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.tertiary-action {
+    background: var(--dashboard-glass-bg);
+    color: var(--dashboard-gray-600);
+    border: 1px solid var(--dashboard-glass-border);
+    border-radius: var(--dashboard-radius-lg);
+    padding: var(--dashboard-space-sm);
+    transition: all var(--dashboard-transition-normal);
+    box-shadow: var(--dashboard-shadow-sm);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 var(--dashboard-space-xs);
+}
+
+.tertiary-action:hover {
+    background: var(--dashboard-primary);
+    color: white;
+    box-shadow: var(--dashboard-shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--dashboard-primary);
+}
+
+.tertiary-action vaadin-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+}
+
+/* ===================================================================
+   MAIN CONTENT AREA - SPACIOUS & ORGANIZED
+   ================================================================== */
+.professional-layout {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: var(--dashboard-space-3xl);
+    position: relative;
+}
+
+.content-container {
+    gap: var(--dashboard-space-3xl) !important;
+}
+
+/* ===================================================================
+   BUDGET SUMMARY CARDS - PREMIUM DESIGN
+   ================================================================== */
+.professional-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--dashboard-space-xl);
+    margin-bottom: var(--dashboard-space-4xl);
+}
+
+.professional-cards .summary-card {
+    background: var(--dashboard-glass-bg);
+    backdrop-filter: var(--dashboard-backdrop-blur);
+    border: 1px solid var(--dashboard-glass-border);
+    border-radius: var(--dashboard-radius-2xl);
+    padding: var(--dashboard-space-2xl);
+    transition: all var(--dashboard-transition-normal);
+    box-shadow: var(--dashboard-shadow-md);
+    position: relative;
+    overflow: hidden;
+    height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.professional-cards .summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    opacity: 0;
+    transition: opacity var(--dashboard-transition-normal);
+    border-radius: var(--dashboard-radius-2xl) var(--dashboard-radius-2xl) 0 0;
+}
+
+.professional-cards .summary-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--dashboard-transition-normal);
+}
+
+.professional-cards .summary-card:hover::before {
+    opacity: 1;
+}
+
+.professional-cards .summary-card:hover::after {
+    opacity: 1;
+}
+
+.professional-cards .summary-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--dashboard-shadow-2xl);
+    background: rgba(255, 255, 255, 0.98);
+}
+
+.professional-cards .card-blue::before {
+    background: linear-gradient(90deg, var(--dashboard-primary) 0%, var(--dashboard-secondary) 100%);
+}
+
+.professional-cards .card-red::before {
+    background: linear-gradient(90deg, var(--dashboard-danger) 0%, #f97316 100%);
+}
+
+.professional-cards .card-green::before {
+    background: linear-gradient(90deg, var(--dashboard-success) 0%, var(--dashboard-tertiary) 100%);
+}
+
+.professional-cards .card-emerald::before {
+    background: linear-gradient(90deg, var(--dashboard-accent) 0%, #8b5cf6 100%);
+}
+
+.professional-cards .card-title {
+    color: var(--dashboard-gray-600);
+    font-size: var(--dashboard-font-sm);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: var(--dashboard-space-sm);
+}
+
+.professional-cards .card-amount {
+    color: var(--dashboard-gray-800);
+    font-size: var(--dashboard-font-3xl);
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.professional-cards .card-subtitle {
+    color: var(--dashboard-gray-500);
+    font-size: var(--dashboard-font-sm);
+    font-weight: 600;
+    margin-top: var(--dashboard-space-sm);
+}
+
+.professional-cards .card-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: var(--dashboard-radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--dashboard-transition-normal);
+    box-shadow: var(--dashboard-shadow-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.professional-cards .card-icon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity var(--dashboard-transition-normal);
+}
+
+.professional-cards .summary-card:hover .card-icon::before {
+    opacity: 1;
+}
+
+.professional-cards .card-blue .card-icon {
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.1) 0%, rgba(30, 64, 175, 0.2) 100%);
+    color: var(--dashboard-primary);
+}
+
+.professional-cards .card-red .card-icon {
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(220, 38, 38, 0.2) 100%);
+    color: var(--dashboard-danger);
+}
+
+.professional-cards .card-green .card-icon {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.1) 0%, rgba(5, 150, 105, 0.2) 100%);
+    color: var(--dashboard-success);
+}
+
+.professional-cards .card-emerald .card-icon {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(124, 58, 237, 0.2) 100%);
+    color: var(--dashboard-accent);
+}
+
+.professional-cards .summary-card:hover .card-icon {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: var(--dashboard-shadow-lg);
+}
+
+/* ===================================================================
+   PROFESSIONAL SECTIONS - ELEGANT CONTAINERS
+   ================================================================== */
+.professional-section {
+    background: var(--dashboard-glass-bg);
+    backdrop-filter: var(--dashboard-backdrop-blur);
+    border: 1px solid var(--dashboard-glass-border);
+    border-radius: var(--dashboard-radius-2xl);
+    padding: var(--dashboard-space-3xl);
+    box-shadow: var(--dashboard-shadow-md);
+    transition: all var(--dashboard-transition-normal);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: var(--dashboard-space-xl);
+}
+
+.professional-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top left, rgba(30, 64, 175, 0.02) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.professional-section:hover {
+    box-shadow: var(--dashboard-shadow-xl);
+    transform: translateY(-4px);
+}
+
+.dashboard-grid {
+    gap: var(--dashboard-space-xl) !important;
+    margin-bottom: var(--dashboard-space-2xl);
+}
+
+.department-overview {
+    background: var(--dashboard-glass-bg);
+    backdrop-filter: var(--dashboard-backdrop-blur);
+    border: 1px solid var(--dashboard-glass-border);
+    border-radius: var(--dashboard-radius-2xl);
+    padding: var(--dashboard-space-3xl);
+    box-shadow: var(--dashboard-shadow-md);
+    transition: all var(--dashboard-transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.department-overview::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top left, rgba(30, 64, 175, 0.02) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.department-overview:hover {
+    box-shadow: var(--dashboard-shadow-xl);
+    transform: translateY(-4px);
+}
+
+.revenue-breakdown {
+    background: var(--dashboard-glass-bg);
+    backdrop-filter: var(--dashboard-backdrop-blur);
+    border: 1px solid var(--dashboard-glass-border);
+    border-radius: var(--dashboard-radius-2xl);
+    padding: var(--dashboard-space-3xl);
+    box-shadow: var(--dashboard-shadow-md);
+    transition: all var(--dashboard-transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.revenue-breakdown::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at bottom right, rgba(124, 58, 237, 0.02) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.revenue-breakdown:hover {
+    box-shadow: var(--dashboard-shadow-xl);
+    transform: translateY(-4px);
+}
+
+/* ===================================================================
+   EMPTY STATE - ELEGANT PLACEHOLDER
+   ================================================================== */
+.empty-state {
+    background: var(--dashboard-glass-bg);
+    backdrop-filter: var(--dashboard-backdrop-blur);
+    border: 2px dashed var(--dashboard-glass-border);
+    border-radius: var(--dashboard-radius-3xl);
+    padding: var(--dashboard-space-5xl);
+    text-align: center;
+    min-height: 500px;
+    transition: all var(--dashboard-transition-normal);
+}
+
+.empty-state:hover {
+    border-color: var(--dashboard-accent);
+    background: rgba(248, 250, 252, 0.98);
+    transform: translateY(-4px);
+    box-shadow: var(--dashboard-shadow-lg);
+}
+
+.empty-state-icon {
+    color: var(--dashboard-gray-400);
+    width: 5rem;
+    height: 5rem;
+    margin-bottom: var(--dashboard-space-2xl);
+    transition: all var(--dashboard-transition-normal);
+}
+
+.empty-state:hover .empty-state-icon {
+    color: var(--dashboard-accent);
+    transform: scale(1.1);
+}
+
+.empty-state-title {
+    color: var(--dashboard-gray-700);
+    font-size: var(--dashboard-font-3xl);
+    font-weight: 700;
+    margin: 0 0 var(--dashboard-space-lg) 0;
+    letter-spacing: -0.02em;
+}
+
+.empty-state-message {
+    color: var(--dashboard-gray-600);
+    font-size: var(--dashboard-font-lg);
+    font-weight: 500;
+    line-height: 1.6;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* ===================================================================
+   LOADING INDICATOR - ELEGANT FEEDBACK
+   ================================================================== */
+.loading-indicator {
+    background: var(--dashboard-glass-bg);
+    backdrop-filter: var(--dashboard-backdrop-blur);
+    border: 2px dashed var(--dashboard-glass-border);
+    border-radius: var(--dashboard-radius-2xl);
+    padding: var(--dashboard-space-4xl);
+    text-align: center;
+    color: var(--dashboard-gray-600);
+    font-weight: 600;
+    font-size: var(--dashboard-font-lg);
+    box-shadow: var(--dashboard-shadow-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.loading-indicator::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(30, 64, 175, 0.1), transparent);
+    animation: shimmer 2s infinite;
+}
+
+/* ===================================================================
+   RESPONSIVE DESIGN - MOBILE OPTIMIZATION
+   ================================================================== */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: var(--dashboard-space-md) var(--dashboard-space-lg);
+    }
+
+    .dashboard-header vaadin-horizontal-layout {
+        height: 60px !important;
+    }
+
+    .app-logo {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    .app-title {
+        font-size: var(--dashboard-font-xl);
+    }
+
+    .app-subtitle {
+        display: none;
+    }
+
+    .fiscal-year {
+        min-width: 160px;
+        padding: var(--dashboard-space-xs) var(--dashboard-space-md);
+    }
+
+    .status-layout {
+        display: none;
+    }
+
+    .notification-button {
+        width: 36px;
+        height: 36px;
+    }
+
+    .professional-layout {
+        padding: var(--dashboard-space-lg);
+    }
+
+    .professional-cards {
+        grid-template-columns: 1fr;
+        gap: var(--dashboard-space-lg);
+    }
+
+    .professional-cards .summary-card {
+        height: 120px;
+        padding: var(--dashboard-space-xl);
+    }
+
+    .primary-action,
+    .secondary-action {
+        padding: var(--dashboard-space-sm);
+        font-size: 0;
+        width: 40px;
+        margin: 0 var(--dashboard-space-xs);
+    }
+
+    .primary-action vaadin-icon,
+    .secondary-action vaadin-icon {
+        margin: 0;
+    }
+
+    .tertiary-action {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-header {
+        padding: var(--dashboard-space-sm) var(--dashboard-space-md);
+    }
+
+    .dashboard-header vaadin-horizontal-layout {
+        height: 50px !important;
+    }
+
+    .app-logo {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    .app-title {
+        font-size: var(--dashboard-font-lg);
+    }
+
+    .fiscal-year {
+        min-width: 120px;
+    }
+
+    .professional-layout {
+        padding: var(--dashboard-space-md);
+    }
+
+    .professional-cards .summary-card {
+        height: 100px;
+        padding: var(--dashboard-space-lg);
+    }
+
+    .professional-cards .card-amount {
+        font-size: var(--dashboard-font-2xl);
+    }
+
+    .primary-action,
+    .secondary-action,
+    .tertiary-action {
+        width: 32px;
+        height: 32px;
+        padding: var(--dashboard-space-xs);
+    }
+
+    .notification-button {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .professional-layout {
+        padding: var(--dashboard-space-4xl);
+    }
+
+    .professional-cards {
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--dashboard-space-2xl);
+    }
+
+    .professional-cards .summary-card {
+        height: 160px;
+    }
+
+    .professional-cards .card-amount {
+        font-size: var(--dashboard-font-4xl);
+    }
+}
+
+/* ===================================================================
+   ANIMATIONS - SOPHISTICATED MOTION
+   ================================================================== */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.7);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.02);
+        box-shadow: 0 0 0 10px rgba(5, 150, 105, 0);
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 53%, 80%, 100% {
+        transform: translate3d(0, 0, 0);
+    }
+    40%, 43% {
+        transform: translate3d(0, -8px, 0);
+    }
+    70% {
+        transform: translate3d(0, -4px, 0);
+    }
+    90% {
+        transform: translate3d(0, -2px, 0);
+    }
+}
+
+/* Apply animations */
+.professional-cards .summary-card {
+    animation: slideInUp 0.6s var(--dashboard-transition-normal);
+}
+
+.department-overview,
+.revenue-breakdown {
+    animation: fadeIn 0.8s ease-out;
+}
+
+.loading-indicator {
+    animation: pulse 2s infinite;
+}
+
+.notification-badge {
+    animation: bounce 2s infinite;
+}
+
+/* Stagger card animations */
+.professional-cards .summary-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+.professional-cards .summary-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+.professional-cards .summary-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+.professional-cards .summary-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+/* ===================================================================
+   FOCUS STATES - ACCESSIBILITY
+   ================================================================== */
+.primary-action:focus,
+.secondary-action:focus,
+.tertiary-action:focus,
+.notification-button:focus {
+    outline: 2px solid var(--dashboard-primary);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.1);
+}
+
+.fiscal-year:focus-within {
+    outline: 2px solid var(--dashboard-primary);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.1);
+}
+
+.professional-cards .summary-card:focus {
+    outline: 2px solid var(--dashboard-accent);
+    outline-offset: 2px;
+    border-radius: var(--dashboard-radius-2xl);
+}
+
+/* ===================================================================
+   PRINT STYLES - PROFESSIONAL PRINTING
+   ================================================================== */
+@media print {
+    .dashboard-view {
+        background: white;
+    }
+
+    .dashboard-header {
+        background: white;
+        box-shadow: none;
+        border-bottom: 2px solid var(--dashboard-gray-300);
+    }
+
+    .professional-cards .summary-card,
+    .department-overview,
+    .revenue-breakdown {
+        background: white;
+        box-shadow: none;
+        border: 1px solid var(--dashboard-gray-300);
+        break-inside: avoid;
+    }
+
+    .primary-action,
+    .secondary-action,
+    .tertiary-action,
+    .notification-button {
+        display: none;
+    }
+
+    .status-layout {
+        display: none;
+    }
+}
+
+/* ===================================================================
+   DARK MODE SUPPORT (Future Enhancement)
+   ================================================================== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --dashboard-glass-bg: rgba(15, 23, 42, 0.85);
+        --dashboard-glass-border: rgba(71, 85, 105, 0.3);
+    }
+
+    .dashboard-view {
+        background: linear-gradient(135deg, var(--dashboard-gray-900) 0%, var(--dashboard-gray-800) 50%, var(--dashboard-gray-700) 100%);
+    }
+
+    .app-title {
+        background: linear-gradient(135deg, var(--dashboard-gray-100) 0%, var(--dashboard-primary-light) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+}
+
+/* ===================================================================
+   SECTION TITLES - ELEGANT TYPOGRAPHY
+   ================================================================== */
+.section-title {
+    color: var(--dashboard-gray-800);
+    font-size: var(--dashboard-font-2xl);
+    font-weight: 800;
+    margin: 0 0 var(--dashboard-space-xl) 0;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--dashboard-gray-800) 0%, var(--dashboard-accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--dashboard-accent) 0%, var(--dashboard-accent-light) 100%);
+    border-radius: var(--dashboard-radius-full);
+}
+
+.section-subtitle {
+    color: var(--dashboard-gray-600);
+    font-size: var(--dashboard-font-base);
+    font-weight: 500;
+    margin-bottom: var(--dashboard-space-2xl);
+    line-height: 1.5;
+}
+
+.section-icon {
+    color: var(--dashboard-primary);
+    width: 2rem;
+    height: 2rem;
+    filter: drop-shadow(0 2px 4px rgba(30, 64, 175, 0.1));
+}
+
+/* ===================================================================
+   ENHANCED HOVER EFFECTS - MICRO-INTERACTIONS
+   ================================================================== */
+.dashboard-header:hover .app-logo {
+    transform: scale(1.02) rotate(1deg);
+}
+
+.dashboard-header:hover .status-dot {
+    animation-duration: 1s;
+}
+
+.dashboard-header:hover .notification-badge {
+    animation-duration: 1s;
+}
+
+/* ===================================================================
+   PERFORMANCE OPTIMIZATIONS
+   ================================================================== */
+.dashboard-view {
+    will-change: transform;
+}
+
+.professional-cards .summary-card,
+.professional-section {
+    will-change: transform, box-shadow;
+}
+
+.primary-action,
+.secondary-action,
+.tertiary-action {
+    will-change: transform, background;
+}
+
+/* ===================================================================
+   ACCESSIBILITY ENHANCEMENTS
+   ================================================================== */
+.dashboard-view {
+    scroll-behavior: smooth;
+}
+
+.primary-action,
+.secondary-action,
+.tertiary-action,
+.notification-button {
+    cursor: pointer;
+}
+
+.primary-action:disabled,
+.secondary-action:disabled,
+.tertiary-action:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ===================================================================
+   HIGH CONTRAST MODE SUPPORT
+   ================================================================== */
+@media (prefers-contrast: high) {
+    :root {
+        --dashboard-glass-bg: rgba(255, 255, 255, 0.98);
+        --dashboard-glass-border: rgba(0, 0, 0, 0.2);
+    }
+
+    .professional-cards .summary-card,
+    .professional-section {
+        border-width: 2px;
+    }
+
+    .primary-action,
+    .secondary-action {
+        border: 2px solid currentColor;
+    }
+}
+
+/* ===================================================================
+   REDUCED MOTION SUPPORT
+   ================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .status-dot,
+    .notification-badge {
+        animation: none;
+    }
+}

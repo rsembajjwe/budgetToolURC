@@ -1,0 +1,15 @@
+.actual-view {
+  display: block;
+  height: 100%;
+  background-color: #cccccc;
+}
+
+.actual-view vaadin-grid::part(selected-row-cell){
+    background-color: dodgerblue;
+}
+.actual-view .orange-column {
+    background-color: orange;
+}
+.actual-view vaadin-grid-cell-background{
+   background-color: orange; 
+}

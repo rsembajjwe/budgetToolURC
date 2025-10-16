@@ -1,0 +1,832 @@
+/* ===================================================================
+   BUDGET CEILING MANAGEMENT - PROFESSIONAL STYLING
+   Elegant & Sophisticated CSS for Multi-Level Budget Ceiling System
+   ================================================================== */
+
+/* ===================================================================
+   DESIGN TOKENS - CEILING SPECIFIC
+   ================================================================== */
+:root {
+    /* Ceiling Color Palette */
+    --ceiling-primary: #1e40af;
+    --ceiling-accent: #7c3aed;
+    --ceiling-success: #059669;
+    --ceiling-warning: #d97706;
+    --ceiling-danger: #dc2626;
+    --ceiling-info: #0891b2;
+    
+    /* Ceiling Status Colors */
+    --ceiling-active: #10b981;
+    --ceiling-inactive: #6b7280;
+    --ceiling-suspended: #f59e0b;
+    --ceiling-expired: #ef4444;
+    
+    /* Ceiling Utilization Colors */
+    --ceiling-good: #10b981;
+    --ceiling-near: #f59e0b;
+    --ceiling-critical: #f97316;
+    --ceiling-over: #dc2626;
+    
+    /* Glass Morphism */
+    --ceiling-glass-bg: rgba(248, 250, 252, 0.95);
+    --ceiling-glass-border: rgba(203, 213, 225, 0.3);
+    --ceiling-glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.12);
+    --ceiling-backdrop-blur: blur(20px);
+}
+
+/* ===================================================================
+   CEILING VIEW MAIN CONTAINER
+   ================================================================== */
+.budget-ceiling-view {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+    position: relative;
+    overflow-x: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.budget-ceiling-view::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(30, 64, 175, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ===================================================================
+   CEILING HEADER - ELEGANT DESIGN
+   ================================================================== */
+.ceiling-header {
+    background: var(--ceiling-glass-bg);
+    backdrop-filter: var(--ceiling-backdrop-blur);
+    border-bottom: 1px solid var(--ceiling-glass-border);
+    box-shadow: var(--ceiling-glass-shadow);
+    padding: 1.5rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ceiling-header:hover {
+    box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.1);
+    background: rgba(248, 250, 252, 0.98);
+}
+
+.ceiling-title {
+    background: linear-gradient(135deg, var(--ceiling-primary) 0%, var(--ceiling-accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1.875rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.ceiling-subtitle {
+    color: #64748b;
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0.5rem 0 1rem 0;
+    letter-spacing: 0.01em;
+}
+
+.budget-label {
+    color: #475569;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.budget-selector {
+    background: var(--ceiling-glass-bg);
+    border: 1px solid var(--ceiling-glass-border);
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    min-width: 200px;
+}
+
+.budget-selector:hover {
+    border-color: var(--ceiling-accent);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
+    transform: translateY(-1px);
+}
+
+/* Search and Filter Controls */
+.ceiling-search {
+    background: var(--ceiling-glass-bg);
+    border: 1px solid var(--ceiling-glass-border);
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    min-width: 250px;
+}
+
+.ceiling-search:hover {
+    border-color: var(--ceiling-primary);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
+}
+
+.type-filter,
+.status-filter {
+    background: var(--ceiling-glass-bg);
+    border: 1px solid var(--ceiling-glass-border);
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    min-width: 150px;
+}
+
+.new-ceiling-button {
+    background: linear-gradient(135deg, var(--ceiling-accent) 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    border-radius: 0.75rem;
+    padding: 0.5rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.new-ceiling-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.new-ceiling-button:hover::before {
+    left: 100%;
+}
+
+.new-ceiling-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.4);
+}
+
+/* ===================================================================
+   CEILING NAVIGATION TABS
+   ================================================================== */
+.ceiling-navigation {
+    background: var(--ceiling-glass-bg);
+    backdrop-filter: var(--ceiling-backdrop-blur);
+    border-bottom: 1px solid var(--ceiling-glass-border);
+    padding: 0 2rem;
+    box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.1);
+}
+
+.ceiling-navigation .nav-tab {
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem 0.75rem 0 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.ceiling-navigation .nav-tab::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--ceiling-accent) 0%, #8b5cf6 100%);
+    transform: scaleX(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ceiling-navigation .nav-tab[selected]::before {
+    transform: scaleX(1);
+}
+
+.ceiling-navigation .nav-tab:hover {
+    background: rgba(124, 58, 237, 0.05);
+    transform: translateY(-2px);
+    color: var(--ceiling-accent);
+}
+
+.ceiling-navigation .nav-tab[selected] {
+    background: rgba(124, 58, 237, 0.1);
+    color: var(--ceiling-accent);
+    font-weight: 600;
+}
+
+/* ===================================================================
+   CEILING MAIN CONTENT
+   ================================================================== */
+.ceiling-main-content {
+    padding: 2rem;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.ceiling-content-container {
+    gap: 1.5rem;
+}
+
+/* ===================================================================
+   CEILING DASHBOARD CARDS
+   ================================================================== */
+.budget-ceiling-dashboard {
+    margin-bottom: 2rem;
+}
+
+.ceiling-dashboard-card {
+    background: var(--ceiling-glass-bg);
+    backdrop-filter: var(--ceiling-backdrop-blur);
+    border: 1px solid var(--ceiling-glass-border);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
+    position: relative;
+    overflow: hidden;
+    height: 120px;
+}
+
+.ceiling-dashboard-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 1rem 1rem 0 0;
+}
+
+.ceiling-dashboard-card:hover::before {
+    opacity: 1;
+}
+
+.ceiling-dashboard-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+    background: rgba(255, 255, 255, 0.98);
+}
+
+.card-active::before { background: linear-gradient(90deg, var(--ceiling-active), #10b981); }
+.card-over::before { background: linear-gradient(90deg, var(--ceiling-over), #f97316); }
+.card-near::before { background: linear-gradient(90deg, var(--ceiling-near), #fbbf24); }
+.card-total::before { background: linear-gradient(90deg, var(--ceiling-primary), var(--ceiling-info)); }
+.card-allocated::before { background: linear-gradient(90deg, var(--ceiling-accent), #8b5cf6); }
+
+.ceiling-dashboard-card .card-title {
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+}
+
+.ceiling-dashboard-card .card-value {
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+.ceiling-dashboard-card .card-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
+}
+
+.card-active .card-icon {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.2));
+    color: var(--ceiling-active);
+}
+
+.card-over .card-icon {
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(220, 38, 38, 0.2));
+    color: var(--ceiling-over);
+}
+
+.card-near .card-icon {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.2));
+    color: var(--ceiling-near);
+}
+
+.card-total .card-icon {
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.1), rgba(30, 64, 175, 0.2));
+    color: var(--ceiling-primary);
+}
+
+.card-allocated .card-icon {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(124, 58, 237, 0.2));
+    color: var(--ceiling-accent);
+}
+
+.ceiling-dashboard-card:hover .card-icon {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.2);
+}
+
+/* ===================================================================
+   CEILING GRID STYLING
+   ================================================================== */
+.budget-ceiling-grid {
+    background: var(--ceiling-glass-bg);
+    backdrop-filter: var(--ceiling-backdrop-blur);
+    border: 1px solid var(--ceiling-glass-border);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.budget-ceiling-grid:hover {
+    box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.1);
+    transform: translateY(-2px);
+}
+
+.ceiling-grid {
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.1);
+}
+
+/* Grid Cell Styling */
+.ceiling-type-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.type-icon {
+    color: var(--ceiling-accent);
+    width: 1rem;
+    height: 1rem;
+}
+
+.type-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+.hierarchy-path {
+    padding: 0.5rem 0;
+}
+
+.path-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #475569;
+    line-height: 1.4;
+}
+
+.amount-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.ceiling-amount {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.allocated-amount,
+.available-amount {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.amount-negative {
+    color: var(--ceiling-danger);
+    font-weight: 700;
+}
+
+.utilization-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.utilization-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+.utilization-amounts {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+/* Utilization Progress Bars */
+.utilization-good {
+    --vaadin-progress-value-color: var(--ceiling-good);
+}
+
+.utilization-near {
+    --vaadin-progress-value-color: var(--ceiling-near);
+}
+
+.utilization-critical {
+    --vaadin-progress-value-color: var(--ceiling-critical);
+}
+
+.utilization-over {
+    --vaadin-progress-value-color: var(--ceiling-over);
+}
+
+/* Status Badges */
+.status-badge,
+.approval-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.edit-button,
+.approve-button,
+.reject-button {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.edit-button:hover {
+    background: rgba(30, 64, 175, 0.1);
+    color: var(--ceiling-primary);
+    transform: scale(1.1);
+}
+
+.approve-button:hover {
+    background: rgba(16, 185, 129, 0.1);
+    transform: scale(1.1);
+}
+
+.reject-button:hover {
+    background: rgba(239, 68, 68, 0.1);
+    transform: scale(1.1);
+}
+
+/* ===================================================================
+   CEILING FORM STYLING
+   ================================================================== */
+.budget-ceiling-form-dialog {
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+    backdrop-filter: var(--ceiling-backdrop-blur);
+}
+
+.ceiling-form-layout {
+    background: var(--ceiling-glass-bg);
+    border-radius: 1rem;
+}
+
+.ceiling-form .form-title {
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.02em;
+}
+
+.ceiling-form .form-subtitle {
+    color: #64748b;
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 2rem;
+}
+
+/* Form Field Styling */
+.ceiling-type-combo,
+.department-combo,
+.section-code-field,
+.section-name-field,
+.revenue-source-code-field,
+.revenue-source-name-field,
+.account-code-field,
+.account-name-field,
+.ceiling-amount-field,
+.allocated-amount-field,
+.effective-date-picker,
+.expiry-date-picker,
+.status-combo,
+.description-area {
+    background: var(--ceiling-glass-bg);
+    border: 1px solid var(--ceiling-glass-border);
+    border-radius: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ceiling-type-combo:hover,
+.department-combo:hover,
+.section-code-field:hover,
+.section-name-field:hover,
+.revenue-source-code-field:hover,
+.revenue-source-name-field:hover,
+.account-code-field:hover,
+.account-name-field:hover,
+.ceiling-amount-field:hover,
+.allocated-amount-field:hover,
+.effective-date-picker:hover,
+.expiry-date-picker:hover,
+.status-combo:hover,
+.description-area:hover {
+    border-color: var(--ceiling-accent);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.form-buttons {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--ceiling-glass-border);
+}
+
+.save-button {
+    background: linear-gradient(135deg, var(--ceiling-accent) 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.3);
+}
+
+.save-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.4);
+}
+
+.cancel-button {
+    background: transparent;
+    color: #64748b;
+    border: 1px solid var(--ceiling-glass-border);
+    border-radius: 0.5rem;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cancel-button:hover {
+    background: rgba(100, 116, 139, 0.1);
+    border-color: #94a3b8;
+}
+
+/* ===================================================================
+   EMPTY STATE STYLING
+   ================================================================== */
+.ceiling-empty-state {
+    background: var(--ceiling-glass-bg);
+    backdrop-filter: var(--ceiling-backdrop-blur);
+    border: 2px dashed var(--ceiling-glass-border);
+    border-radius: 1.5rem;
+    padding: 4rem;
+    text-align: center;
+    min-height: 400px;
+}
+
+.ceiling-empty-state .empty-state-icon {
+    color: #94a3b8;
+    width: 4rem;
+    height: 4rem;
+    margin-bottom: 1.5rem;
+}
+
+.ceiling-empty-state .empty-state-title {
+    color: #475569;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 1rem 0;
+}
+
+.ceiling-empty-state .empty-state-message {
+    color: #64748b;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.6;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+/* ===================================================================
+   SECTION TITLES
+   ================================================================== */
+.section-title {
+    color: #1e293b;
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0 0 1.5rem 0;
+    letter-spacing: -0.02em;
+    text-align: center;
+    position: relative;
+    padding-bottom: 0.75rem;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--ceiling-accent) 0%, #8b5cf6 100%);
+    border-radius: 9999px;
+}
+
+/* ===================================================================
+   RESPONSIVE DESIGN
+   ================================================================== */
+@media (max-width: 768px) {
+    .ceiling-header {
+        padding: 1rem;
+    }
+    
+    .ceiling-title {
+        font-size: 1.5rem;
+    }
+    
+    .ceiling-main-content {
+        padding: 1rem;
+    }
+    
+    .budget-ceiling-dashboard {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .ceiling-dashboard-card {
+        height: 100px;
+        padding: 1rem;
+    }
+    
+    .ceiling-navigation {
+        padding: 0 1rem;
+    }
+    
+    .ceiling-navigation .nav-tab {
+        padding: 0.75rem 1rem;
+        font-size: 0.75rem;
+    }
+    
+    .ceiling-navigation .nav-tab span {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .ceiling-header {
+        padding: 0.75rem;
+    }
+    
+    .ceiling-title {
+        font-size: 1.25rem;
+    }
+    
+    .ceiling-main-content {
+        padding: 0.75rem;
+    }
+    
+    .ceiling-dashboard-card {
+        height: 80px;
+        padding: 0.75rem;
+    }
+    
+    .ceiling-dashboard-card .card-value {
+        font-size: 1.25rem;
+    }
+}
+
+/* ===================================================================
+   ANIMATIONS
+   ================================================================== */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.ceiling-dashboard-card {
+    animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.budget-ceiling-grid {
+    animation: fadeIn 0.8s ease-out;
+}
+
+/* ===================================================================
+   FOCUS STATES - ACCESSIBILITY
+   ================================================================== */
+.new-ceiling-button:focus,
+.budget-selector:focus,
+.ceiling-search:focus,
+.type-filter:focus,
+.status-filter:focus {
+    outline: 2px solid var(--ceiling-accent);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+}
+
+.ceiling-navigation .nav-tab:focus {
+    outline: 2px solid var(--ceiling-accent);
+    outline-offset: 2px;
+    border-radius: 0.75rem;
+}
+
+/* ===================================================================
+   PRINT STYLES
+   ================================================================== */
+@media print {
+    .budget-ceiling-view {
+        background: white;
+    }
+    
+    .ceiling-header {
+        background: white;
+        box-shadow: none;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .budget-ceiling-grid {
+        background: white;
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+        break-inside: avoid;
+    }
+    
+    .new-ceiling-button {
+        display: none;
+    }
+    
+    .ceiling-navigation {
+        display: none;
+    }
+}

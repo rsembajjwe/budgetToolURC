@@ -1,0 +1,555 @@
+/* ===================================================================
+   PROFESSIONAL MAIN LAYOUT - ENTERPRISE DESIGN
+   Elegant & Sophisticated CSS for Budget Management System Layout
+   ================================================================== */
+
+/* ===================================================================
+   DESIGN TOKENS - MAIN LAYOUT SPECIFIC
+   ================================================================== */
+:root {
+    /* Professional Color Palette */
+    --main-primary: #1e40af;
+    --main-primary-light: #3b82f6;
+    --main-primary-dark: #1e3a8a;
+    --main-accent: #7c3aed;
+    --main-accent-light: #8b5cf6;
+    --main-accent-dark: #6d28d9;
+    
+    /* Secondary Colors */
+    --main-secondary: #0891b2;
+    --main-secondary-light: #06b6d4;
+    --main-tertiary: #059669;
+    --main-tertiary-light: #10b981;
+    
+    /* Status Colors */
+    --main-success: #059669;
+    --main-success-light: #10b981;
+    --main-warning: #d97706;
+    --main-warning-light: #f59e0b;
+    --main-danger: #dc2626;
+    --main-danger-light: #ef4444;
+    --main-info: #0891b2;
+    --main-info-light: #06b6d4;
+    
+    /* Neutral Palette */
+    --main-gray-50: #f8fafc;
+    --main-gray-100: #f1f5f9;
+    --main-gray-200: #e2e8f0;
+    --main-gray-300: #cbd5e1;
+    --main-gray-400: #94a3b8;
+    --main-gray-500: #64748b;
+    --main-gray-600: #475569;
+    --main-gray-700: #334155;
+    --main-gray-800: #1e293b;
+    --main-gray-900: #0f172a;
+    
+    /* Glass Morphism */
+    --main-glass-bg: rgba(248, 250, 252, 0.95);
+    --main-glass-border: rgba(203, 213, 225, 0.3);
+    --main-glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.12);
+    --main-backdrop-blur: blur(24px);
+    --main-backdrop-saturate: saturate(180%);
+    
+    /* Spacing System */
+    --main-space-xs: 0.25rem;
+    --main-space-sm: 0.5rem;
+    --main-space-md: 1rem;
+    --main-space-lg: 1.5rem;
+    --main-space-xl: 2rem;
+    --main-space-2xl: 2.5rem;
+    --main-space-3xl: 3rem;
+    --main-space-4xl: 4rem;
+    
+    /* Typography */
+    --main-font-xs: 0.75rem;
+    --main-font-sm: 0.875rem;
+    --main-font-base: 1rem;
+    --main-font-lg: 1.125rem;
+    --main-font-xl: 1.25rem;
+    --main-font-2xl: 1.5rem;
+    --main-font-3xl: 1.875rem;
+    --main-font-4xl: 2.25rem;
+    
+    /* Shadows */
+    --main-shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    --main-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -1px rgba(15, 23, 42, 0.06);
+    --main-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -2px rgba(15, 23, 42, 0.05);
+    --main-shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 10px 10px -5px rgba(15, 23, 42, 0.04);
+    --main-shadow-2xl: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+    
+    /* Border Radius */
+    --main-radius-sm: 0.375rem;
+    --main-radius-md: 0.5rem;
+    --main-radius-lg: 0.75rem;
+    --main-radius-xl: 1rem;
+    --main-radius-2xl: 1.5rem;
+    --main-radius-full: 9999px;
+    
+    /* Transitions */
+    --main-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --main-transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --main-transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===================================================================
+   MAIN LAYOUT CONTAINER
+   ================================================================== */
+.main-contentcss {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-optical-sizing: auto;
+    background: linear-gradient(135deg, var(--main-gray-50) 0%, var(--main-gray-100) 50%, var(--main-gray-200) 100%);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    animation: fadeIn 0.6s ease-in-out;
+}
+
+.main-contentcss::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(30, 64, 175, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(5, 150, 105, 0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ===================================================================
+   PROFESSIONAL HEADER - NAVBAR
+   ================================================================== */
+vaadin-app-layout::part(navbar) {
+    background: var(--main-glass-bg);
+    backdrop-filter: var(--main-backdrop-blur);
+    -webkit-backdrop-filter: var(--main-backdrop-blur);
+    border-bottom: 1px solid var(--main-glass-border);
+    box-shadow: var(--main-glass-shadow);
+    height: 40px;
+    min-height: 40px;
+    padding: 0 var(--main-space-xl);
+}
+
+/* Professional Drawer Toggle */
+.professional-drawer-toggle {
+    background: var(--main-glass-bg);
+    border: 1px solid var(--main-glass-border);
+    border-radius: var(--main-radius-lg);
+    padding: var(--main-space-sm);
+    transition: all var(--main-transition-normal);
+    box-shadow: var(--main-shadow-sm);
+    width: 30px;
+    height: 30px;
+}
+
+.professional-drawer-toggle:hover {
+    background: var(--main-primary);
+    color: white;
+    border-color: var(--main-primary);
+    box-shadow: var(--main-shadow-md);
+    transform: translateY(-2px);
+}
+
+/* Header Title */
+.professional-view-title {
+    background: linear-gradient(135deg, var(--main-primary) 0%, var(--main-accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+}
+
+/* ===================================================================
+   PROFESSIONAL DRAWER - SIDEBAR
+   ================================================================== */
+vaadin-app-layout::part(drawer) {
+    background: var(--main-glass-bg);
+    backdrop-filter: var(--main-backdrop-blur);
+    -webkit-backdrop-filter: var(--main-backdrop-blur);
+    border-right: 1px solid var(--main-glass-border);
+    box-shadow: var(--main-shadow-lg);
+    width: 280px;
+}
+
+/* Professional Drawer Header */
+.professional-drawer-header {
+    background: linear-gradient(135deg, var(--main-primary) 0%, var(--main-primary-dark) 100%);
+    color: white;
+    padding: var(--main-space-xl);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.professional-drawer-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.professional-app-name {
+    color: white;
+    font-size: var(--main-font-2xl);
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.02em;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ===================================================================
+   PROFESSIONAL NAVIGATION
+   ================================================================== */
+.professional-navigation-scroller {
+    padding: var(--main-space-xs);
+    background: transparent;
+}
+
+.professional-side-nav {
+    background: transparent;
+}
+
+/* Professional Menu Headers */
+.menu-header {
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
+    border: 1px solid var(--main-glass-border);
+    border-radius: var(--main-radius-lg);
+    padding: 0 0;
+    margin: 0 0 0 0;
+    color: var(--main-primary);
+    font-size: var(--main-font-sm);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    box-shadow: var(--main-shadow-sm);
+    transition: all var(--main-transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.menu-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(135deg, var(--main-primary) 0%, var(--main-accent) 100%);
+    border-radius: 0 var(--main-radius-sm) var(--main-radius-sm) 0;
+}
+
+.menu-header:hover {
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%);
+    transform: translateX(4px);
+    box-shadow: var(--main-shadow-md);
+}
+
+/* Professional Menu Items */
+.menu-item {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--main-radius-lg);
+    margin: 0 0;
+    padding: 0 0;
+    transition: all var(--main-transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.menu-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--main-accent);
+    transform: scaleY(0);
+    transition: transform var(--main-transition-normal);
+    border-radius: 0 var(--main-radius-sm) var(--main-radius-sm) 0;
+}
+
+.menu-item:hover::before {
+    transform: scaleY(1);
+}
+
+.menu-item:hover {
+    background: var(--main-glass-bg);
+    border-color: var(--main-glass-border);
+    box-shadow: var(--main-shadow-md);
+    transform: translateX(8px);
+}
+
+.menu-item[highlight] {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(30, 64, 175, 0.1) 100%);
+    border-color: var(--main-accent);
+    color: var(--main-accent);
+    font-weight: 600;
+    box-shadow: var(--main-shadow-md);
+}
+
+.menu-item[highlight]::before {
+    transform: scaleY(1);
+}
+
+/* Menu Item Icons */
+.menu-item vaadin-icon {
+    color: var(--main-gray-600);
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0;
+    transition: all var(--main-transition-normal);
+}
+
+.menu-item:hover vaadin-icon {
+    color: var(--main-accent);
+    transform: scale(1.1);
+}
+
+.menu-item[highlight] vaadin-icon {
+    color: var(--main-accent);
+}
+
+/* Menu Item Text */
+.menu-item a {
+    color: var(--main-gray-700);
+    font-size: var(--main-font-sm);
+    font-weight: 500;
+    text-decoration: none;
+    letter-spacing: 0.01em;
+    transition: all var(--main-transition-normal);
+}
+
+.menu-item:hover a {
+    color: var(--main-accent);
+    font-weight: 600;
+}
+
+.menu-item[highlight] a {
+    color: var(--main-accent);
+    font-weight: 600;
+}
+
+/* ===================================================================
+   PROFESSIONAL DRAWER FOOTER
+   ================================================================== */
+vaadin-app-layout footer {
+    background: var(--main-glass-bg);
+    backdrop-filter: var(--main-backdrop-blur);
+    border-top: 1px solid var(--main-glass-border);
+    padding: var(--main-space-xl);
+    box-shadow: 0 -4px 6px -1px rgba(15, 23, 42, 0.1);
+}
+
+/* Profile Menu Styling */
+.profileMenu {
+    background: var(--main-glass-bg);
+    border: 1px solid var(--main-glass-border);
+    border-radius: var(--main-radius-xl);
+    padding: var(--main-space-md);
+    transition: all var(--main-transition-normal);
+    box-shadow: var(--main-shadow-md);
+    width: 100%;
+    cursor: pointer;
+}
+
+.profileMenu:hover {
+    background: rgba(124, 58, 237, 0.1);
+    border-color: var(--main-accent);
+    box-shadow: var(--main-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.profileMenu vaadin-avatar {
+    border: 2px solid var(--main-accent);
+    box-shadow: var(--main-shadow-sm);
+}
+
+/* ===================================================================
+   SCROLLER STYLING
+   ================================================================== */
+vaadin-scroller[slot="drawer"] {
+    padding: 0;
+}
+
+[slot="drawer"]:is(header, footer) {
+    display: flex;
+    align-items: center;
+    gap: var(--main-space-sm);
+    padding: 0 0;
+    min-height: 1px;
+    box-sizing: border-box;
+}
+
+[slot="drawer"]:is(header, footer):is(:empty) {
+    display: none;
+}
+
+/* ===================================================================
+   SIDE NAVIGATION ITEMS
+   ================================================================== */
+vaadin-side-nav-item {
+    margin: 0;
+    padding: 0.01px 0;
+    border-radius: var(--main-radius-lg);
+    transition: all var(--main-transition-normal);
+}
+
+vaadin-side-nav-item:hover {
+    background: rgba(124, 58, 237, 0.05);
+}
+
+/* ===================================================================
+   RESPONSIVE DESIGN
+   ================================================================== */
+@media (max-width: 768px) {
+    vaadin-app-layout::part(navbar) {
+        height: 64px;
+        min-height: 64px;
+        padding: 0 var(--main-space-lg);
+    }
+    
+    .professional-view-title {
+        font-size: var(--main-font-xl);
+    }
+    
+    vaadin-app-layout::part(drawer) {
+        width: 260px;
+    }
+    
+    .professional-drawer-header {
+        padding: var(--main-space-lg);
+    }
+    
+    .professional-app-name {
+        font-size: var(--main-font-xl);
+    }
+    
+    .professional-navigation-scroller {
+        padding: var(--main-space-md);
+    }
+}
+
+@media (max-width: 480px) {
+    vaadin-app-layout::part(navbar) {
+        height: 56px;
+        min-height: 56px;
+        padding: 0 var(--main-space-md);
+    }
+    
+    .professional-view-title {
+        font-size: var(--main-font-lg);
+    }
+    
+    vaadin-app-layout::part(drawer) {
+        width: 240px;
+    }
+    
+    .professional-drawer-header {
+        padding: var(--main-space-md);
+    }
+    
+    .professional-app-name {
+        font-size: var(--main-font-lg);
+    }
+}
+
+/* ===================================================================
+   ANIMATIONS
+   ================================================================== */
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(2px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Apply animations */
+.menu-item {
+    animation: slideInUp 0.4s ease-out;
+}
+
+.menu-header {
+    animation: slideInUp 0.5s var(--main-transition-normal);
+}
+
+.profileMenu {
+    animation: slideInUp 0.6s var(--main-transition-normal);
+}
+
+/* ===================================================================
+   FOCUS STATES - ACCESSIBILITY
+   ================================================================== */
+.professional-drawer-toggle:focus,
+.menu-item:focus,
+.profileMenu:focus {
+    outline: 2px solid var(--main-accent);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+}
+
+/* ===================================================================
+   PRINT STYLES
+   ================================================================== */
+@media print {
+    vaadin-app-layout::part(navbar) {
+        background: white;
+        box-shadow: none;
+        border-bottom: 2px solid var(--main-gray-300);
+    }
+    
+    vaadin-app-layout::part(drawer) {
+        display: none;
+    }
+    
+    .main-contentcss {
+        background: white;
+    }
+}
+
+/* ===================================================================
+   DARK MODE SUPPORT (Future Enhancement)
+   ================================================================== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --main-glass-bg: rgba(15, 23, 42, 0.85);
+        --main-glass-border: rgba(71, 85, 105, 0.3);
+    }
+    
+    .main-contentcss {
+        background: linear-gradient(135deg, var(--main-gray-900) 0%, var(--main-gray-800) 50%, var(--main-gray-700) 100%);
+    }
+    
+    .professional-view-title {
+        background: linear-gradient(135deg, var(--main-gray-100) 0%, var(--main-accent-light) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+}
+

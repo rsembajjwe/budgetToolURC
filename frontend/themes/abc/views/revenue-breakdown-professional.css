@@ -1,0 +1,662 @@
+/* ===================================================================
+   REVENUE BREAKDOWN - PROFESSIONAL STYLING
+   Elegant & Sophisticated CSS for Revenue Sources Analysis
+   ================================================================== */
+
+/* ===================================================================
+   DESIGN TOKENS - REVENUE BREAKDOWN SPECIFIC
+   ================================================================== */
+:root {
+    /* Revenue Color Palette */
+    --revenue-primary: #1e40af;
+    --revenue-accent: #7c3aed;
+    --revenue-success: #059669;
+    --revenue-warning: #d97706;
+    --revenue-danger: #dc2626;
+    --revenue-info: #0891b2;
+    
+    /* Revenue Category Colors */
+    --revenue-grants: #3b82f6;
+    --revenue-fees: #10b981;
+    --revenue-donations: #ef4444;
+    --revenue-sales: #f59e0b;
+    --revenue-investments: #8b5cf6;
+    --revenue-other: #06b6d4;
+    
+    /* Glass Morphism */
+    --revenue-glass-bg: rgba(248, 250, 252, 0.95);
+    --revenue-glass-border: rgba(203, 213, 225, 0.3);
+    --revenue-glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.12);
+    --revenue-backdrop-blur: blur(20px);
+}
+
+/* ===================================================================
+   REVENUE BREAKDOWN MAIN CONTAINER
+   ================================================================== */
+.revenue-breakdown {
+    background: var(--revenue-glass-bg);
+    backdrop-filter: var(--revenue-backdrop-blur);
+    border: 1px solid var(--revenue-glass-border);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    box-shadow: var(--revenue-glass-shadow);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.revenue-breakdown::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.02) 0%, rgba(8, 145, 178, 0.02) 100%);
+    pointer-events: none;
+}
+
+.revenue-breakdown:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+    background: rgba(255, 255, 255, 0.98);
+}
+
+/* ===================================================================
+   REVENUE BREAKDOWN HEADER
+   ================================================================== */
+.revenue-breakdown .section-title {
+    background: linear-gradient(135deg, var(--revenue-primary) 0%, var(--revenue-accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.revenue-breakdown .section-subtitle {
+    color: #64748b;
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0.5rem 0 0 0;
+    letter-spacing: 0.01em;
+}
+
+.revenue-breakdown .section-icon {
+    color: var(--revenue-accent);
+    width: 2rem;
+    height: 2rem;
+    filter: drop-shadow(0 2px 4px rgba(124, 58, 237, 0.2));
+}
+
+/* ===================================================================
+   REVENUE SOURCE CARDS
+   ================================================================== */
+.revenue-source-card {
+    background: var(--revenue-glass-bg);
+    backdrop-filter: var(--revenue-backdrop-blur);
+    border: 1px solid var(--revenue-glass-border);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.revenue-source-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--revenue-accent);
+    transform: scaleY(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.revenue-source-card:hover::before {
+    transform: scaleY(1);
+}
+
+.revenue-source-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top right, rgba(124, 58, 237, 0.02) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.revenue-source-card:hover::after {
+    opacity: 1;
+}
+
+.revenue-source-card:hover {
+    transform: translateY(-6px) translateX(8px);
+    box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+    background: rgba(255, 255, 255, 0.98);
+    border-color: var(--revenue-accent);
+}
+
+/* ===================================================================
+   REVENUE ICON
+   ================================================================== */
+.revenue-icon {
+    font-size: 2.5rem;
+    margin-right: 1rem;
+    filter: drop-shadow(0 4px 6px rgba(15, 23, 42, 0.1));
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    background: rgba(124, 58, 237, 0.1);
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 4px -1px rgba(124, 58, 237, 0.2);
+}
+
+.revenue-source-card:hover .revenue-icon {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 8px 15px -3px rgba(124, 58, 237, 0.3);
+}
+
+/* ===================================================================
+   SOURCE DETAILS
+   ================================================================== */
+.source-name {
+    color: #1e293b;
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.02em;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.revenue-source-card:hover .source-name {
+    color: var(--revenue-accent);
+}
+
+.source-category {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    letter-spacing: 0.025em;
+    margin: 0.25rem 0 0 0;
+    background: rgba(100, 116, 139, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    display: inline-block;
+}
+
+/* ===================================================================
+   TREND INDICATOR
+   ================================================================== */
+.trend-icon {
+    color: var(--revenue-success);
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.5rem;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: 50%;
+    padding: 0.25rem;
+    box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.revenue-source-card:hover .trend-icon {
+    transform: scale(1.1);
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+}
+
+.percentage-text {
+    color: var(--revenue-success);
+    font-size: 0.875rem;
+    font-weight: 800;
+    letter-spacing: 0.025em;
+    background: rgba(16, 185, 129, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* ===================================================================
+   AMOUNT DETAILS
+   ================================================================== */
+.revenue-source-card .collected-row,
+.revenue-source-card .projected-row {
+    margin: 0.5rem 0;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(203, 213, 225, 0.3);
+}
+
+.revenue-source-card .collected-row:last-child,
+.revenue-source-card .projected-row:last-child {
+    border-bottom: none;
+}
+
+/* Enhanced Progress Bar */
+.revenue-source-card vaadin-progress-bar {
+    height: 8px;
+    border-radius: 9999px;
+    background: #e2e8f0;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    margin-top: 0.75rem;
+}
+
+/* ===================================================================
+   SUMMARY PANEL - ELEGANT DESIGN
+   ================================================================== */
+.summary-panel {
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(241, 245, 249, 0.8) 100%);
+    backdrop-filter: var(--revenue-backdrop-blur);
+    border: 1px solid var(--revenue-glass-border);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    box-shadow: var(--revenue-glass-shadow);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at bottom left, rgba(30, 64, 175, 0.03) 0%, transparent 50%);
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.summary-panel:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%);
+}
+
+.summary-title {
+    color: #1e293b;
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0 0 1.5rem 0;
+    letter-spacing: -0.02em;
+    text-align: center;
+    position: relative;
+    padding-bottom: 0.75rem;
+}
+
+.summary-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--revenue-accent) 0%, #8b5cf6 100%);
+    border-radius: 9999px;
+}
+
+.summary-label {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+}
+
+.summary-value {
+    color: #1e293b;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.distribution-title {
+    color: #1e293b;
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 1.5rem 0 1rem 0;
+    letter-spacing: -0.02em;
+    text-align: center;
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.distribution-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--revenue-info) 0%, #06b6d4 100%);
+    border-radius: 9999px;
+}
+
+/* ===================================================================
+   COLOR DOTS AND DISTRIBUTION
+   ================================================================== */
+.color-dot {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.5rem;
+    margin-right: 0.75rem;
+    box-shadow: 0 2px 4px -1px rgba(15, 23, 42, 0.1);
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.color-dot::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: inherit;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.4) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.summary-panel:hover .color-dot::after {
+    opacity: 1;
+}
+
+.summary-panel:hover .color-dot {
+    transform: scale(1.1);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.2);
+}
+
+.distribution-name {
+    color: #475569;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.distribution-percentage {
+    color: #1e293b;
+    font-size: 0.875rem;
+    font-weight: 800;
+    letter-spacing: 0.025em;
+    background: rgba(30, 41, 59, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+}
+
+/* ===================================================================
+   SUMMARY ROWS
+   ================================================================== */
+.summary-panel .summary-label {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.summary-panel .summary-value {
+    color: #1e293b;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+/* Special styling for collection rate */
+.summary-panel .summary-value[style*="--secondary-600"] {
+    color: var(--revenue-accent) !important;
+    font-size: 1.125rem;
+    background: rgba(124, 58, 237, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(124, 58, 237, 0.3);
+}
+
+/* ===================================================================
+   CONTENT GRID LAYOUT
+   ================================================================== */
+.revenue-breakdown vaadin-flex-layout {
+    gap: 2rem !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+}
+
+/* Sources List Styling */
+.sources-list {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 1rem;
+    padding: 1rem;
+    box-shadow: 0 2px 4px -1px rgba(15, 23, 42, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-right: 1rem !important;
+}
+
+.sources-list:hover {
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 8px 15px -3px rgba(15, 23, 42, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Summary Panel Enhanced */
+.summary-panel {
+    margin-left: 1rem !important;
+    min-width: 300px;
+}
+
+/* ===================================================================
+   RESPONSIVE DESIGN
+   ================================================================== */
+@media (max-width: 768px) {
+    .revenue-breakdown {
+        padding: 1rem;
+    }
+    
+    .revenue-breakdown vaadin-flex-layout {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+    
+    .sources-list,
+    .summary-panel {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    
+    .revenue-source-card {
+        padding: 1rem;
+    }
+    
+    .revenue-icon {
+        font-size: 2rem;
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+    
+    .source-name {
+        font-size: 1rem;
+    }
+    
+    .summary-panel {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .revenue-breakdown {
+        padding: 0.75rem;
+    }
+    
+    .revenue-source-card {
+        padding: 0.75rem;
+    }
+    
+    .revenue-icon {
+        font-size: 1.5rem;
+        width: 2rem;
+        height: 2rem;
+        margin-right: 0.75rem;
+    }
+    
+    .source-name {
+        font-size: 0.875rem;
+    }
+    
+    .source-category {
+        font-size: 0.75rem;
+    }
+    
+    .summary-panel {
+        padding: 1rem;
+    }
+    
+    .summary-title {
+        font-size: 1rem;
+    }
+    
+    .distribution-title {
+        font-size: 0.875rem;
+    }
+}
+
+/* ===================================================================
+   ANIMATIONS
+   ================================================================== */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.02);
+    }
+}
+
+.revenue-source-card {
+    animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.summary-panel {
+    animation: fadeIn 0.8s ease-out;
+}
+
+/* Stagger animation for multiple cards */
+.revenue-source-card:nth-child(1) { animation-delay: 0.1s; }
+.revenue-source-card:nth-child(2) { animation-delay: 0.2s; }
+.revenue-source-card:nth-child(3) { animation-delay: 0.3s; }
+.revenue-source-card:nth-child(4) { animation-delay: 0.4s; }
+.revenue-source-card:nth-child(5) { animation-delay: 0.5s; }
+.revenue-source-card:nth-child(6) { animation-delay: 0.6s; }
+
+/* ===================================================================
+   FOCUS STATES - ACCESSIBILITY
+   ================================================================== */
+.revenue-source-card:focus {
+    outline: 2px solid var(--revenue-accent);
+    outline-offset: 2px;
+    border-radius: 1rem;
+}
+
+.summary-panel:focus {
+    outline: 2px solid var(--revenue-accent);
+    outline-offset: 2px;
+    border-radius: 1.5rem;
+}
+
+/* ===================================================================
+   PRINT STYLES
+   ================================================================== */
+@media print {
+    .revenue-breakdown {
+        background: white;
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+        break-inside: avoid;
+    }
+    
+    .revenue-source-card {
+        background: white;
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+        break-inside: avoid;
+    }
+    
+    .summary-panel {
+        background: white;
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .revenue-source-card:hover {
+        transform: none;
+    }
+}
+
+/* ===================================================================
+   ENHANCED HOVER EFFECTS
+   ================================================================== */
+.revenue-source-card:hover .percentage-text {
+    background: rgba(16, 185, 129, 0.2);
+    transform: scale(1.05);
+}
+
+.revenue-source-card:hover .source-category {
+    background: rgba(124, 58, 237, 0.1);
+    color: var(--revenue-accent);
+}
+
+/* ===================================================================
+   DARK MODE SUPPORT (Future Enhancement)
+   ================================================================== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --revenue-glass-bg: rgba(15, 23, 42, 0.85);
+        --revenue-glass-border: rgba(71, 85, 105, 0.3);
+    }
+    
+    .revenue-breakdown {
+        background: linear-gradient(135deg, var(--revenue-glass-bg) 0%, rgba(30, 41, 59, 0.85) 100%);
+    }
+    
+    .revenue-breakdown .section-title {
+        background: linear-gradient(135deg, #f1f5f9 0%, #8b5cf6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+}

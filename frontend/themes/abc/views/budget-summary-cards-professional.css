@@ -1,0 +1,389 @@
+/* ===================================================================
+   BUDGET SUMMARY CARDS - PROFESSIONAL STYLING
+   Elegant & Sophisticated CSS for Budget Summary Cards
+   ================================================================== */
+
+/* ===================================================================
+   DESIGN TOKENS - BUDGET SUMMARY CARDS SPECIFIC
+   ================================================================== */
+:root {
+    /* Budget Cards Color Palette */
+    --budget-cards-primary: #1e40af;
+    --budget-cards-accent: #7c3aed;
+    --budget-cards-success: #059669;
+    --budget-cards-warning: #d97706;
+    --budget-cards-danger: #dc2626;
+    --budget-cards-info: #0891b2;
+    
+    /* Card Type Colors */
+    --card-blue: #3b82f6;
+    --card-red: #ef4444;
+    --card-green: #10b981;
+    --card-emerald: #8b5cf6;
+    
+    /* Glass Morphism */
+    --budget-cards-glass-bg: rgba(248, 250, 252, 0.95);
+    --budget-cards-glass-border: rgba(203, 213, 225, 0.3);
+    --budget-cards-glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.12);
+    --budget-cards-backdrop-blur: blur(20px);
+}
+
+/* ===================================================================
+   BUDGET SUMMARY CARDS MAIN CONTAINER
+   ================================================================== */
+.budget-summary-cards {
+    margin-bottom: 1rem;
+    padding: 0;
+    gap: 1.5rem !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+}
+
+/* ===================================================================
+   INDIVIDUAL SUMMARY CARDS
+   ================================================================== */
+.budget-summary-cards .summary-card {
+    background: var(--budget-cards-glass-bg);
+    backdrop-filter: var(--budget-cards-backdrop-blur);
+    border: 1px solid var(--budget-cards-glass-border);
+    border-radius: 1rem;
+    padding: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
+    position: relative;
+    overflow: hidden;
+    height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    flex: 1 1 auto;
+    min-width: 200px !important;
+    max-width: 280px !important;
+}
+
+.budget-summary-cards .summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 1rem 1rem 0 0;
+}
+
+.budget-summary-cards .summary-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.budget-summary-cards .summary-card:hover::before {
+    opacity: 1;
+}
+
+.budget-summary-cards .summary-card:hover::after {
+    opacity: 1;
+}
+
+.budget-summary-cards .summary-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+    background: rgba(255, 255, 255, 0.98);
+}
+
+/* Card Type Specific Styling */
+.budget-summary-cards .card-blue::before { 
+    background: linear-gradient(90deg, var(--card-blue) 0%, #06b6d4 100%); 
+}
+
+.budget-summary-cards .card-red::before { 
+    background: linear-gradient(90deg, var(--card-red) 0%, #f97316 100%); 
+}
+
+.budget-summary-cards .card-green::before { 
+    background: linear-gradient(90deg, var(--card-green) 0%, #059669 100%); 
+}
+
+.budget-summary-cards .card-emerald::before { 
+    background: linear-gradient(90deg, var(--card-emerald) 0%, #7c3aed 100%); 
+}
+
+/* ===================================================================
+   CARD CONTENT STYLING
+   ================================================================== */
+.budget-summary-cards .card-title {
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.budget-summary-cards .card-amount {
+    color: #1e293b;
+    font-size: 1.125rem;
+    font-weight: 800;
+    margin: 0.5rem 0 0 0;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    word-break: break-word;
+}
+
+.budget-summary-cards .card-subtitle {
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin: 0.25rem 0 0 0;
+    line-height: 1.2;
+}
+
+/* ===================================================================
+   CARD ICONS
+   ================================================================== */
+.budget-summary-cards .card-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px -1px rgba(15, 23, 42, 0.1);
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.budget-summary-cards .card-icon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.budget-summary-cards .summary-card:hover .card-icon::before {
+    opacity: 1;
+}
+
+.budget-summary-cards .card-blue .card-icon {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.2) 100%);
+    color: var(--card-blue);
+}
+
+.budget-summary-cards .card-red .card-icon {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.2) 100%);
+    color: var(--card-red);
+}
+
+.budget-summary-cards .card-green .card-icon {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.2) 100%);
+    color: var(--card-green);
+}
+
+.budget-summary-cards .card-emerald .card-icon {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.2) 100%);
+    color: var(--card-emerald);
+}
+
+.budget-summary-cards .summary-card:hover .card-icon {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 8px 15px -3px rgba(15, 23, 42, 0.2);
+}
+
+/* ===================================================================
+   CARD CONTENT LAYOUT
+   ================================================================== */
+.budget-summary-cards .summary-card vaadin-horizontal-layout {
+    width: 100% !important;
+    height: 100% !important;
+    gap: 0.75rem !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
+.budget-summary-cards .summary-card vaadin-vertical-layout {
+    flex-grow: 1 !important;
+    gap: 0.1rem !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+}
+
+/* ===================================================================
+   RESPONSIVE DESIGN
+   ================================================================== */
+@media (max-width: 1200px) {
+    .budget-summary-cards {
+        gap: 1rem !important;
+    }
+    
+    .budget-summary-cards .summary-card {
+        min-width: 180px !important;
+        max-width: 240px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .budget-summary-cards {
+        gap: 0.75rem !important;
+        justify-content: center !important;
+    }
+    
+    .budget-summary-cards .summary-card {
+        min-width: 160px !important;
+        max-width: 200px !important;
+        height: 100px;
+        padding: 1rem;
+    }
+    
+    .budget-summary-cards .card-amount {
+        font-size: 1rem;
+    }
+    
+    .budget-summary-cards .card-icon {
+        width: 2rem;
+        height: 2rem;
+    }
+    
+    .budget-summary-cards .card-icon vaadin-icon {
+        width: 0.875rem !important;
+        height: 0.875rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .budget-summary-cards {
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+        align-items: stretch !important;
+    }
+    
+    .budget-summary-cards .summary-card {
+        min-width: auto !important;
+        max-width: none !important;
+        width: 100% !important;
+        height: 90px;
+        padding: 0.75rem;
+    }
+    
+    .budget-summary-cards .card-title {
+        font-size: 0.6875rem;
+    }
+    
+    .budget-summary-cards .card-amount {
+        font-size: 0.875rem;
+    }
+    
+    .budget-summary-cards .card-subtitle {
+        font-size: 0.6875rem;
+    }
+    
+    .budget-summary-cards .card-icon {
+        width: 1.75rem;
+        height: 1.75rem;
+    }
+}
+
+/* ===================================================================
+   ANIMATIONS
+   ================================================================== */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.budget-summary-cards .summary-card {
+    animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Stagger animation for multiple cards */
+.budget-summary-cards .summary-card:nth-child(1) { animation-delay: 0.1s; }
+.budget-summary-cards .summary-card:nth-child(2) { animation-delay: 0.2s; }
+.budget-summary-cards .summary-card:nth-child(3) { animation-delay: 0.3s; }
+.budget-summary-cards .summary-card:nth-child(4) { animation-delay: 0.4s; }
+
+/* ===================================================================
+   FOCUS STATES - ACCESSIBILITY
+   ================================================================== */
+.budget-summary-cards .summary-card:focus {
+    outline: 2px solid var(--budget-cards-accent);
+    outline-offset: 2px;
+    border-radius: 1rem;
+}
+
+/* ===================================================================
+   PRINT STYLES
+   ================================================================== */
+@media print {
+    .budget-summary-cards .summary-card {
+        background: white;
+        box-shadow: none;
+        border: 1px solid #e2e8f0;
+        break-inside: avoid;
+    }
+    
+    .budget-summary-cards .summary-card:hover {
+        transform: none;
+    }
+}
+
+/* ===================================================================
+   ENHANCED HOVER EFFECTS
+   ================================================================== */
+.budget-summary-cards .summary-card:hover .card-title {
+    color: #475569;
+}
+
+.budget-summary-cards .summary-card:hover .card-amount {
+    color: #0f172a;
+    transform: scale(1.02);
+}
+
+.budget-summary-cards .summary-card:hover .card-subtitle {
+    color: #475569;
+}
+
+/* ===================================================================
+   DARK MODE SUPPORT (Future Enhancement)
+   ================================================================== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --budget-cards-glass-bg: rgba(15, 23, 42, 0.85);
+        --budget-cards-glass-border: rgba(71, 85, 105, 0.3);
+    }
+    
+    .budget-summary-cards .summary-card {
+        background: linear-gradient(135deg, var(--budget-cards-glass-bg) 0%, rgba(30, 41, 59, 0.85) 100%);
+    }
+}
