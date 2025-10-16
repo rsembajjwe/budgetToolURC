@@ -480,8 +480,8 @@ public class NdpPlanManagementView extends VerticalLayout {
             //objectiveGridUrc.setItems(plan.getStrategicObjectives());
             //priorityGridUrc.setItems(plan.getPriorityAreas());
         } else {
-            objectiveGrid.setItems(Collections.emptyList());
-            priorityGrid.setItems(Collections.emptyList());
+           // objectiveGrid.setItems(Collections.emptyList());
+           // priorityGrid.setItems(Collections.emptyList());
         }
     }    
 
