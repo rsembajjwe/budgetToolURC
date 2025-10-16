@@ -6,7 +6,7 @@
     <groupId>com.methaltech.application</groupId>
     <artifactId>abc4</artifactId>
     <name>abc4</name>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>jar</packaging>
 
     <properties>
