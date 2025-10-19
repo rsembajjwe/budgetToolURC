@@ -69,10 +69,10 @@ public class NdpPlanManagementView extends VerticalLayout {
     private final Grid<NdpPlan> planGrid = new Grid<>(NdpPlan.class, false);
     private final Grid<PriorityArea> priorityGrid = new Grid<>(PriorityArea.class, false);
     private final Grid<StrategicObjective> objectiveGrid = new Grid<>(StrategicObjective.class, false);
-    
+
     private final Grid<URC_Priority_Areas> priorityGridUrc = new Grid<>(URC_Priority_Areas.class, false);
     private final Grid<UrcStrategicObjectives> objectiveGridUrc = new Grid<>(UrcStrategicObjectives.class, false);
-    
+
     private ComboBox<NdpPlan> comboBoxNdpPlan = new ComboBox<>();
     private ComboBox<UrcStrategicPlan> comboBoxurcPlan = new ComboBox<>();
 
@@ -84,13 +84,13 @@ public class NdpPlanManagementView extends VerticalLayout {
     private final DatePicker startDate = new DatePicker("Start Date");
     private final DatePicker endDate = new DatePicker("End Date");
     private final Binder<NdpPlan> binder = new Binder<>(NdpPlan.class);
-    
+
     private final TextField nameUrc = new TextField("Name");
     private final TextField themeUrc = new TextField("Theme");
     private final TextField ultimateGoalUrc = new TextField("Ultimate Goal");
     private final DatePicker startDateUrc = new DatePicker("Start Date");
     private final DatePicker endDateUrc = new DatePicker("End Date");
-    private final Binder<UrcStrategicPlan> binderUrc = new Binder<>(UrcStrategicPlan.class);    
+    private final Binder<UrcStrategicPlan> binderUrc = new Binder<>(UrcStrategicPlan.class);
 
     private final Span themeValue = new Span("");
     private final Span goalValue = new Span("");
@@ -101,17 +101,17 @@ public class NdpPlanManagementView extends VerticalLayout {
     private final Span urcTimeRange = new Span("");
     private User user;
 
-    public NdpPlanManagementView(NdpPlanService ndpPlanService,UrcStrategicPlanService urcStrategicPlanService,
-            PriorityAreaService priorityAreaService,URC_Priority_AreasService uRC_Priority_AreasService,
-            StrategicObjectiveService strategicObjectiveService, UrcStrategicObjectivesService urcStrategicObjectivesService,UserService userService, AuthenticatedUser authenticatedUser) {
+    public NdpPlanManagementView(NdpPlanService ndpPlanService, UrcStrategicPlanService urcStrategicPlanService,
+            PriorityAreaService priorityAreaService, URC_Priority_AreasService uRC_Priority_AreasService,
+            StrategicObjectiveService strategicObjectiveService, UrcStrategicObjectivesService urcStrategicObjectivesService, UserService userService, AuthenticatedUser authenticatedUser) {
         this.ndpPlanService = ndpPlanService;
         this.priorityAreaService = priorityAreaService;
         this.strategicObjectiveService = strategicObjectiveService;
         this.userService = userService;
         this.authenticatedUser = authenticatedUser;
-        this.urcStrategicPlanService=urcStrategicPlanService;
-        this.uRC_Priority_AreasService=uRC_Priority_AreasService;
-        this.urcStrategicObjectivesService=urcStrategicObjectivesService;
+        this.urcStrategicPlanService = urcStrategicPlanService;
+        this.uRC_Priority_AreasService = uRC_Priority_AreasService;
+        this.urcStrategicObjectivesService = urcStrategicObjectivesService;
         binder.bindInstanceFields(this);
         binderUrc.bindInstanceFields(this);
 
@@ -201,7 +201,7 @@ public class NdpPlanManagementView extends VerticalLayout {
         layout.setSpacing(false);
 
         // layout.add(createUrcBudgetHeader(), createUrcMainHeader(), createUrcMainLayout());
-          layout.add(createUrcBudgetHeader(), createUrcMainHeader(), createUrcMainLayout());
+        layout.add(createUrcBudgetHeader(), createUrcMainHeader(), createUrcMainLayout());
         return layout;
     }
 
@@ -248,7 +248,7 @@ public class NdpPlanManagementView extends VerticalLayout {
 
         return headerLayout;
     }
-    
+
     private Component createUrcBudgetHeader() {
         comboBoxurcPlan.setItems(urcStrategicPlanService.findAll());
         comboBoxurcPlan.setItemLabelGenerator(UrcStrategicPlan::getName);
@@ -291,7 +291,7 @@ public class NdpPlanManagementView extends VerticalLayout {
                 .set("box-shadow", "0 1px 3px rgba(0,0,0,0.05)");
 
         return headerLayout;
-    }    
+    }
 
     private Component createMainHeader() {
         // Labels and values
@@ -334,7 +334,6 @@ public class NdpPlanManagementView extends VerticalLayout {
 
         return headerLayout;
     }
-    
 
     private Component createUrcMainHeader() {
         // Labels and values
@@ -376,7 +375,7 @@ public class NdpPlanManagementView extends VerticalLayout {
         headerLayout.getStyle().set("row-gap", "0.2rem"); // minimal vertical spacing
 
         return headerLayout;
-    }    
+    }
 
     private Component createMainLayout() {
         // Left: NDP Plan Grid
@@ -401,15 +400,25 @@ public class NdpPlanManagementView extends VerticalLayout {
         planLayout.setPadding(false);
 
         // Center: Strategic Objectives
-        objectiveGrid.addColumn(StrategicObjective::getTitle).setHeader("Code").setAutoWidth(true);
-        objectiveGrid.addColumn(StrategicObjective::getDescription).setHeader("Description").setAutoWidth(true);
+        //objectiveGrid.addColumn(StrategicObjective::getTitle).setHeader("Code").setAutoWidth(true);
+        objectiveGrid.addColumn(object
+                -> objectiveGrid.getListDataView().getItems()
+                        .collect(java.util.stream.Collectors.toList())
+                        .indexOf(object) + 1
+        ).setHeader("#").setAutoWidth(true).setFlexGrow(0);        
+        objectiveGrid.addColumn(StrategicObjective::getDescription).setHeader("NDP Objectives").setAutoWidth(true);
         Button addObjectiveBtn = new Button("Add Objective", e -> openObjectiveDialog(new StrategicObjective()));
         VerticalLayout objectiveLayout = new VerticalLayout(new H3("Strategic Objectives"), objectiveGrid, addObjectiveBtn);
         objectiveLayout.setWidth("35%");
 
         // Right: Priority Areas
-        priorityGrid.addColumn(PriorityArea::getName).setHeader("Priority Area").setAutoWidth(true);
-        priorityGrid.addColumn(PriorityArea::getDescription).setHeader("Description").setAutoWidth(true);
+        // priorityGrid.addColumn(PriorityArea::getName).setHeader("Priority Area").setAutoWidth(true);
+                priorityGrid.addColumn(object
+                -> priorityGrid.getListDataView().getItems()
+                        .collect(java.util.stream.Collectors.toList())
+                        .indexOf(object) + 1
+        ).setHeader("#").setAutoWidth(true).setFlexGrow(0);
+        priorityGrid.addColumn(PriorityArea::getDescription).setHeader("NDP Programmes").setAutoWidth(true);
         Button addPriorityBtn = new Button("Add Priority Area", e -> openPriorityDialog(new PriorityArea()));
         VerticalLayout priorityLayout = new VerticalLayout(new H3("Priority Areas"), priorityGrid, addPriorityBtn);
         priorityLayout.setWidth("65%");
@@ -423,26 +432,11 @@ public class NdpPlanManagementView extends VerticalLayout {
     }
 
     private Component createUrcMainLayout() {
-        // Left: NDP Plan Grid
-        /*        planGrid.addColumn(NdpPlan::getName).setHeader("Plan Name").setAutoWidth(true);
-        planGrid.addColumn(NdpPlan::getStartDate).setHeader("Start Date");
-        planGrid.addColumn(NdpPlan::getEndDate).setHeader("End Date");
-        planGrid.setSelectionMode(Grid.SelectionMode.SINGLE);*/
-        /*        planGrid.addSelectionListener(e -> {
-        
-        e.getFirstSelectedItem().ifPresent(this::selectPlan);
-        });*/
-        /*        planGrid.asSingleSelect().addValueChangeListener(e -> {
-        
-        selectedPlan = e.getValue();
-        selectPlan(selectedPlan);
-        });
-        
-        Button addPlanBtn = new Button("Add Plan", e -> openPlanDialog(new NdpPlan()));
-        VerticalLayout planLayout = new VerticalLayout(new H3("NDP Plans"), planGrid, addPlanBtn);
-        planLayout.setWidth("35%");
-        planLayout.setSpacing(false);
-        planLayout.setPadding(false);*/
+        objectiveGridUrc.addColumn(object
+                -> objectiveGridUrc.getListDataView().getItems()
+                        .collect(java.util.stream.Collectors.toList())
+                        .indexOf(object) + 1
+        ).setHeader("#").setAutoWidth(true).setFlexGrow(0);
 
         objectiveGridUrc.addColumn(UrcStrategicObjectives::getObjective).setHeader("Description").setAutoWidth(true);
         Button addObjectiveBtn = new Button("Add Objective", e -> openObjectiveDialog(new StrategicObjective()));
@@ -450,6 +444,12 @@ public class NdpPlanManagementView extends VerticalLayout {
         objectiveLayout.setWidth("35%");
 
         // Right: Priority Areas
+        priorityGridUrc.addColumn(object
+                -> priorityGridUrc.getListDataView().getItems()
+                        .collect(java.util.stream.Collectors.toList())
+                        .indexOf(object) + 1
+        ).setHeader("#").setAutoWidth(true).setFlexGrow(0);
+
         priorityGridUrc.addColumn(URC_Priority_Areas::getName).setHeader("Priority Area").setAutoWidth(true);
         Button addPriorityBtn = new Button("Add Priority Area", e -> openUrcPriorityDialog(new URC_Priority_Areas()));
         VerticalLayout priorityLayout = new VerticalLayout(new H3("Priority Areas"), priorityGridUrc, addPriorityBtn);
@@ -462,6 +462,7 @@ public class NdpPlanManagementView extends VerticalLayout {
         layout.setSpacing(true);
         return layout;
     }
+
     private void selectPlan(NdpPlan plan) {
         this.selectedPlan = plan;
         if (plan != null) {
@@ -472,18 +473,18 @@ public class NdpPlanManagementView extends VerticalLayout {
             priorityGrid.setItems(Collections.emptyList());
         }
     }
-    
+
     private void selectUrcPlan(UrcStrategicPlan plan) {
         this.selectedUrcPlan = plan;
         if (plan != null) {
-            //uRC_Priority_AreasService.
-            //objectiveGridUrc.setItems(plan.getStrategicObjectives());
-            //priorityGridUrc.setItems(plan.getPriorityAreas());
+
+            objectiveGridUrc.setItems(urcStrategicObjectivesService.findByStrategicPlan(plan));
+            priorityGridUrc.setItems(uRC_Priority_AreasService.getAreasByDate(plan.getStartDate()));
         } else {
-           // objectiveGrid.setItems(Collections.emptyList());
-           // priorityGrid.setItems(Collections.emptyList());
+            objectiveGrid.setItems(Collections.emptyList());
+            priorityGrid.setItems(Collections.emptyList());
         }
-    }    
+    }
 
     private void updatePlans() {
         comboBoxNdpPlan.setItems(ndpPlanService.findAllWithDetails());
@@ -491,7 +492,7 @@ public class NdpPlanManagementView extends VerticalLayout {
 
     private void updateUrcPlans() {
         //comboBoxurcPlan.setItems(urcStrategicPlanService.findAll());
-    }    
+    }
 
     // --------------------------- Dialogs ---------------------------
     private void openPlanDialog(NdpPlan plan) {
@@ -515,7 +516,7 @@ public class NdpPlanManagementView extends VerticalLayout {
         dialog.add(form, new HorizontalLayout(save, cancel));
         dialog.open();
     }
-    
+
     private void openUrcPlanDialog(UrcStrategicPlan plan) {
         Dialog dialog = new Dialog();
 
@@ -536,7 +537,7 @@ public class NdpPlanManagementView extends VerticalLayout {
         Button cancel = new Button("Cancel", e -> dialog.close());
         dialog.add(form, new HorizontalLayout(save, cancel));
         dialog.open();
-    }    
+    }
 
     private void openObjectiveDialog(StrategicObjective obj) {
         if (selectedPlan == null) {
@@ -562,7 +563,7 @@ public class NdpPlanManagementView extends VerticalLayout {
         dialog.add(new FormLayout(code, desc), new HorizontalLayout(save, cancel));
         dialog.open();
     }
-    
+
     private void openUrcObjectiveDialog(UrcStrategicObjectives obj) {
         if (selectedUrcPlan == null) {
             Notification.show("Select a plan first.");
@@ -576,7 +577,7 @@ public class NdpPlanManagementView extends VerticalLayout {
         binder.setBean(obj);
 
         Button save = new Button("Save", e -> {
-           // obj.setUrcStrategicPlan(selectedUrcPlan);
+            // obj.setUrcStrategicPlan(selectedUrcPlan);
             urcStrategicObjectivesService.save(obj);
             dialog.close();
             selectUrcPlan(selectedUrcPlan);
@@ -584,7 +585,7 @@ public class NdpPlanManagementView extends VerticalLayout {
         Button cancel = new Button("Cancel", e -> dialog.close());
         dialog.add(new FormLayout(desc), new HorizontalLayout(save, cancel));
         dialog.open();
-    }    
+    }
 
     private void openPriorityDialog(PriorityArea area) {
         if (selectedPlan == null) {
@@ -610,7 +611,7 @@ public class NdpPlanManagementView extends VerticalLayout {
         dialog.add(new FormLayout(name, desc), new HorizontalLayout(save, cancel));
         dialog.open();
     }
-    
+
     private void openUrcPriorityDialog(URC_Priority_Areas area) {
         if (selectedUrcPlan == null) {
             Notification.show("Select a plan first.");
@@ -637,5 +638,5 @@ public class NdpPlanManagementView extends VerticalLayout {
         dialog.add(new FormLayout(name, desc), new HorizontalLayout(save, cancel));
         dialog.open();
     }
-    
+
 }

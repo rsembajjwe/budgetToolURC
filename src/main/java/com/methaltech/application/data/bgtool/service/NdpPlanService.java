@@ -3,6 +3,7 @@ package com.methaltech.application.data.bgtool.service;
 
 import com.methaltech.application.data.bgtool.repository.NdpPlanRepository;
 import com.methaltech.application.data.entity.bgtool.NdpPlan;
+import java.time.LocalDate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,5 +37,14 @@ public class NdpPlanService {
 
     public void delete(NdpPlan ndpPlan) {
         repository.delete(ndpPlan);
+    }
+    
+        /**
+     * Finds the NDP Plan active on the given date.
+     * @param date LocalDate to check
+     * @return Optional containing NdpPlan if found
+     */
+    public Optional<NdpPlan> findPlanByDate(LocalDate date) {
+        return repository.findByDateBetween(date);
     }
 }

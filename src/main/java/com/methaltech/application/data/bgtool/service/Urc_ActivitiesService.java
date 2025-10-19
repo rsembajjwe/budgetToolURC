@@ -61,13 +61,19 @@ public class Urc_ActivitiesService {
     /*    public List<Urc_Activities> listByBudget(Budget budget) {
     return repository.findByBudget2(budget);
     }*/
-
     public List<Urc_Activities> listByBudget2(Budget budget) {
         return repository.findByBudget(budget);
     }
 
     public List<Urc_Activities> findActivitiesByBudgetAndPriorityAndDeptUnits(Budget budget, URC_Priority_Areas urcPriorityAreas, List<UrcDeptSectionAnlDimbgt> deptUnits) {
         return repository.findByBudgetAndUrcPriorityAreasAndDeptSectionIn(budget, urcPriorityAreas, deptUnits);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Urc_Activities> getLoadedActivities(Budget budget,
+            URC_Priority_Areas priority,
+            List<UrcDeptSectionAnlDimbgt> sections) {
+        return repository.findWithAllJoins(budget, priority, sections);
     }
 
     public List<Urc_Activities> findActivitiesByPriorityAreas(URC_Priority_Areas urcPriorityAreas) {
@@ -85,7 +91,6 @@ public class Urc_ActivitiesService {
     /*    public List<Urc_Activities> findByBudgetAndSearch(Budget budget, String search) {
     return repository.findByBudgetAndSearch(budget, search);
     }*/
-
     public List<Urc_Activities> findByDeptSectionAndBudget(UrcDeptSectionAnlDimbgt deptSection, Budget budget, String filter) {
         return repository.findByDeptSectionAndBudgetAndNameContaining(deptSection, budget, filter);
     }

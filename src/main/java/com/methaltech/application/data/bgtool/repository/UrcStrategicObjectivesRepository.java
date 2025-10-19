@@ -15,4 +15,5 @@ public interface UrcStrategicObjectivesRepository extends JpaRepository<UrcStrat
 
     // Optional: Find objectives by keyword search (useful for UI filtering)
    // List<UrcStrategicObjectives> findByObjectiveContainingIgnoreCase(String keyword);
+    List<UrcStrategicObjectives> findByStrategicPlan(UrcStrategicPlan strategicPlan);
 }

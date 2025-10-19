@@ -1,7 +1,9 @@
 package com.methaltech.application.data.bgtool.service;
 
 import com.methaltech.application.data.bgtool.repository.UrcStrategicPlanRepository;
+import com.methaltech.application.data.entity.bgtool.NdpPlan;
 import com.methaltech.application.data.entity.bgtool.UrcStrategicPlan;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
@@ -26,12 +28,15 @@ public class UrcStrategicPlanService {
         return repository.findAll();
     }
 
-
     public Optional<UrcStrategicPlan> findById(Long id) {
         return repository.findById(id);
     }
 
     public void deleteById(Long id) {
         repository.deleteById(id);
+    }
+
+    public Optional<UrcStrategicPlan> findPlanByDate(LocalDate date) {
+        return repository.findByDateBetween(date);
     }
 }

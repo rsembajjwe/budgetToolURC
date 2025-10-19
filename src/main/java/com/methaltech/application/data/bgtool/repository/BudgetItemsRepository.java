@@ -481,6 +481,52 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits
     );
     
+
+
+
+    @Query("SELECT COALESCE(SUM(b.jul + b.aug + b.sep ), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.activity = :activity "
+            + "AND b.deptUnit IN :deptUnits")
+    BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsQtr1(
+            @Param("budget") Budget budget,
+            @Param("activity") Urc_Activities activity,
+            @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits
+    );
+
+    @Query("SELECT COALESCE(SUM( b.oct + b.nov + b.dec), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.activity = :activity "
+            + "AND b.deptUnit IN :deptUnits")
+    BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsQtr2(
+            @Param("budget") Budget budget,
+            @Param("activity") Urc_Activities activity,
+            @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits
+    );
+
+    @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.activity = :activity "
+            + "AND b.deptUnit IN :deptUnits")
+    BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsQtr3(
+            @Param("budget") Budget budget,
+            @Param("activity") Urc_Activities activity,
+            @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits
+    ); 
+        @Query("SELECT COALESCE(SUM(b.apr + b.may + b.jun), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.activity = :activity "
+            + "AND b.deptUnit IN :deptUnits")
+    BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsQtr4(
+            @Param("budget") Budget budget,
+            @Param("activity") Urc_Activities activity,
+            @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits
+    );
+    
     @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
             + "FROM BudgetItems b "
             + "WHERE b.budget = :budget "
@@ -492,7 +538,56 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("activity") Urc_Activities activity,
             @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits,
             @Param("budgetType") Set<Organisation> budgetType
-    );    
+    );   
+    
+        @Query("SELECT COALESCE(SUM(b.jul + b.aug + b.sep ), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.budgetType IN :budgetType "
+            + "AND b.activity = :activity "
+            + "AND b.deptUnit IN :deptUnits")
+    BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr1(
+            @Param("budget") Budget budget,
+            @Param("activity") Urc_Activities activity,
+            @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits,
+            @Param("budgetType") Set<Organisation> budgetType
+    );
+        @Query("SELECT COALESCE(SUM( b.oct + b.nov + b.dec), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.budgetType IN :budgetType "
+            + "AND b.activity = :activity "
+            + "AND b.deptUnit IN :deptUnits")
+    BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr2(
+            @Param("budget") Budget budget,
+            @Param("activity") Urc_Activities activity,
+            @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits,
+            @Param("budgetType") Set<Organisation> budgetType
+    );
+        @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar ), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.budgetType IN :budgetType "
+            + "AND b.activity = :activity "
+            + "AND b.deptUnit IN :deptUnits")
+    BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr3(
+            @Param("budget") Budget budget,
+            @Param("activity") Urc_Activities activity,
+            @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits,
+            @Param("budgetType") Set<Organisation> budgetType
+    );
+        @Query("SELECT COALESCE(SUM(b.apr + b.may + b.jun), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.budgetType IN :budgetType "
+            + "AND b.activity = :activity "
+            + "AND b.deptUnit IN :deptUnits")
+    BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr4(
+            @Param("budget") Budget budget,
+            @Param("activity") Urc_Activities activity,
+            @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits,
+            @Param("budgetType") Set<Organisation> budgetType
+    );
 
     @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
             + "FROM BudgetItems b "

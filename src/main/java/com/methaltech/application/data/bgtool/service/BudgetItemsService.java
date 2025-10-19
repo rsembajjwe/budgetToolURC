@@ -377,15 +377,83 @@ public class BudgetItemsService {
     ) {
         return repository.calculateTotalByBudgetAndActivityAndDeptUnits(budget, activity, deptUnits);
     }
-    
+
+    public BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsQtr1(
+            Budget budget,
+            Urc_Activities activity,
+            List<UrcDeptSectionAnlDimbgt> deptUnits
+    ) {
+        return repository.calculateTotalByBudgetAndActivityAndDeptUnitsQtr1(budget, activity, deptUnits);
+    }
+
+    public BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsQtr2(
+            Budget budget,
+            Urc_Activities activity,
+            List<UrcDeptSectionAnlDimbgt> deptUnits
+    ) {
+        return repository.calculateTotalByBudgetAndActivityAndDeptUnitsQtr2(budget, activity, deptUnits);
+    }
+
+    public BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsQtr3(
+            Budget budget,
+            Urc_Activities activity,
+            List<UrcDeptSectionAnlDimbgt> deptUnits
+    ) {
+        return repository.calculateTotalByBudgetAndActivityAndDeptUnitsQtr3(budget, activity, deptUnits);
+    }
+
+    public BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsQtr4(
+            Budget budget,
+            Urc_Activities activity,
+            List<UrcDeptSectionAnlDimbgt> deptUnits
+    ) {
+        return repository.calculateTotalByBudgetAndActivityAndDeptUnitsQtr4(budget, activity, deptUnits);
+    }
+
     public BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypes(
             Budget budget,
             Urc_Activities activity,
             List<UrcDeptSectionAnlDimbgt> deptUnits,
             Set<Organisation> budgetType
     ) {
-        return repository.calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypes(budget, activity, deptUnits,budgetType);
-    }    
+        return repository.calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypes(budget, activity, deptUnits, budgetType);
+    }
+
+    public BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr1(
+            Budget budget,
+            Urc_Activities activity,
+            List<UrcDeptSectionAnlDimbgt> deptUnits,
+            Set<Organisation> budgetType
+    ) {
+        return repository.calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr1(budget, activity, deptUnits, budgetType);
+    }
+
+    public BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr2(
+            Budget budget,
+            Urc_Activities activity,
+            List<UrcDeptSectionAnlDimbgt> deptUnits,
+            Set<Organisation> budgetType
+    ) {
+        return repository.calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr2(budget, activity, deptUnits, budgetType);
+    }
+
+    public BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr3(
+            Budget budget,
+            Urc_Activities activity,
+            List<UrcDeptSectionAnlDimbgt> deptUnits,
+            Set<Organisation> budgetType
+    ) {
+        return repository.calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr3(budget, activity, deptUnits, budgetType);
+    }
+
+    public BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr4(
+            Budget budget,
+            Urc_Activities activity,
+            List<UrcDeptSectionAnlDimbgt> deptUnits,
+            Set<Organisation> budgetType
+    ) {
+        return repository.calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr4(budget, activity, deptUnits, budgetType);
+    }
 
     public BigDecimal calculateTotalByBudgetAndCoaAndActivityAndSection(Budget budget, COA coacode, Urc_Activities activity, UrcDeptSectionAnlDimbgt deptUnits) {
         return repository.calculateTotalByBudgetAndCoaAndActivityAndSection(budget, coacode, activity, deptUnits);

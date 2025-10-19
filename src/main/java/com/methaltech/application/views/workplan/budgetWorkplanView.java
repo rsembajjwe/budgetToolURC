@@ -22,6 +22,7 @@ import com.methaltech.application.data.entity.bgtool.RowsWorkplan;
 import com.methaltech.application.data.entity.bgtool.StaffSalary;
 import com.methaltech.application.data.entity.bgtool.URC_Priority_Areas;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
+import com.methaltech.application.data.entity.bgtool.UrcStrategicObjectives;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import com.methaltech.application.data.entity.bgtool.User;
 import com.methaltech.application.security.AuthenticatedUser;
@@ -33,8 +34,10 @@ import com.vaadin.flow.component.accordion.Accordion;
 import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
@@ -43,6 +46,7 @@ import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -68,6 +72,7 @@ import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -348,24 +353,39 @@ public class budgetWorkplanView extends Div {
         accordion.getChildren().forEach(component -> accordion.remove((AccordionPanel) component));
         List<UrcDeptSectionAnlDimbgt> selectedSections = comboBoxD_Section.getSelectedItems().stream().toList();
         if (isSumBudgetDeptUnitsGreaterThanZero(comboBoxBudget.getValue(), selectedSections) == true) {
-            programmes = sampleURC_Priority_Areas.findByBudget(comboBoxBudget.getValue());
+            programmes = sampleURC_Priority_Areas.getAreasByDate(comboBoxBudget.getValue().getCloseDate());
             for (URC_Priority_Areas prog : programmes) {
                 List<Urc_Activities> listUrc_Activities = new ArrayList<>();
-                programmesActivities = sampleUrc_ActivitiesService.findActivitiesByBudgetAndPriorityAndDeptUnits(comboBoxBudget.getValue(), prog, selectedSections);
+                programmesActivities = sampleUrc_ActivitiesService.getLoadedActivities(comboBoxBudget.getValue(), prog, selectedSections);
+
                 if (programmesActivities != null) {
 
                     if (budgetItemsService.isSumProgrammeGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), programmesActivities, comboBoxD_Section.getSelectedItems(), 2) == true) {
 
                         for (Urc_Activities d : programmesActivities) {
+
                             if (budgetItemsService.isSumActvityGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 2) == true) {
                                 listUrc_Activities.add(d);
+
                             }
+
                         }
 
                         Grid<Urc_Activities> grid = new Grid<>(Urc_Activities.class, false);
                         grid.setSizeFull();
+                        Grid.Column<Urc_Activities> npdProgrammeCol = grid.addColumn(new ComponentRenderer<>(activity -> {
+                            Span nameSpan = new Span(activity.getUrcPriorityAreas().getPriorityArea().getDescription());
+                            nameSpan.getStyle()
+                                    .set("font-weight", "500")
+                                    .set("color", "#1a237e"); // elegant deep blue
 
-                        grid.addColumn(new ComponentRenderer<>(activity -> {
+                            return nameSpan;
+                        }))
+                                .setHeader("NPD Programme")
+                                .setSortable(true)
+                                .setAutoWidth(true);
+                        npdProgrammeCol.setVisible(false);
+                        Grid.Column<Urc_Activities> activityCol = grid.addColumn(new ComponentRenderer<>(activity -> {
                             Span nameSpan = new Span(activity.getName());
                             nameSpan.getStyle()
                                     .set("font-weight", "500")
@@ -378,41 +398,69 @@ public class budgetWorkplanView extends Div {
                                     + " | Section: " + (activity.getDeptSection() != null
                                     ? activity.getDeptSection().getNAME()
                                     : "N/A")
+                                    + " | " + (activity.getBudget() != null
+                                    ? activity.getBudget().getFinancialYear()
+                                    : "N/A")
                             );
                             tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
                             tooltip.setManual(false); // show on hover
 
                             return nameSpan;
                         }))
-                                .setHeader("Name")
+                                .setHeader("Activity")
                                 .setSortable(true)
                                 .setAutoWidth(true);
 
-                        grid.addColumn(activity -> {
-                            Set<Long> budgetTypeIds = comboBoxOrganisation.getSelectedItems().stream().map(Organisation::getId).collect(Collectors.toSet());
-                            String fundsources = "";
-                            if (budgetTypeIds.isEmpty()) {
-                                fundsources = budgetItemsService.getDistinctFundSources(activity.getBudget().getId(), activity.getId());
-                            } else {
-                                fundsources = budgetItemsService.getDistinctFundSources(activity.getBudget().getId(), activity.getId(), budgetTypeIds);
-                            }
-
-                            return fundsources;
-                        })
-                                .setHeader("Fund Source")
+                        Grid.Column<Urc_Activities> objectiveCol = grid.addColumn(activity
+                                -> Optional.ofNullable(activity.getObjectives())
+                                        .map(UrcStrategicObjectives::getObjective)
+                                        .orElse("N/A")
+                        )
+                                .setHeader("URC Strategic Objectives")
                                 .setSortable(true)
                                 .setAutoWidth(true);
+                        objectiveCol.setVisible(false);
 
-                        grid.addColumn(activity -> activity.getOutput())
+                        Grid.Column<Urc_Activities> outputCol = grid.addColumn(activity -> activity.getOutput())
                                 .setHeader("Deliverables/Output")
                                 .setSortable(true)
                                 .setAutoWidth(true);
-                        grid.addColumn(activity -> activity.getPerformanceIndicator())
-                                .setHeader("KPI")
+                        Grid.Column<Urc_Activities> actualOutputCol = grid.addColumn(new ComponentRenderer<>(activity -> {
+                            HorizontalLayout layout = new HorizontalLayout();
+                            layout.setPadding(false);
+                            layout.setSpacing(true);
+
+                            // Check for null or empty
+                            Set<String> deliverables = activity.getDeliverable_outputs();
+                            if (deliverables != null && !deliverables.isEmpty()) {
+                                deliverables.forEach(output -> {
+                                    Span span = new Span(output);
+                                    span.getStyle().set("padding", "2px 6px");
+                                    span.getStyle().set("background-color", "#fff9c4"); // light yellow
+                                    span.getStyle().set("border-radius", "4px");
+                                    span.getStyle().set("font-size", "0.85em");
+                                    layout.add(span);
+                                });
+                            } else {
+                                // Optional: show a placeholder when null/empty
+                                Span placeholder = new Span("—"); // em dash as placeholder
+                                placeholder.getStyle().set("color", "#9e9e9e"); // gray color
+                                layout.add(placeholder);
+                            }
+
+                            return layout;
+                        }))
+                                .setHeader("Actual Deliverable/Outputs")
+                                .setAutoWidth(true)
+                                .setFlexGrow(1);
+                        actualOutputCol.setVisible(false);
+
+                        Grid.Column<Urc_Activities> kpiCol = grid.addColumn(activity -> activity.getPerformanceIndicator())
+                                .setHeader("Performance Indicator")
                                 .setSortable(true)
                                 .setAutoWidth(true);
 
-                        grid.addColumn(activity -> {
+                        Grid.Column<Urc_Activities> bgtCol = grid.addColumn(activity -> {
                             List<UrcDeptSectionAnlDimbgt> deptUnits = new ArrayList();
                             deptUnits.add(activity.getDeptSection());
                             BigDecimal bgt = BigDecimal.ZERO;
@@ -428,29 +476,210 @@ public class budgetWorkplanView extends Div {
                                 .setSortable(true)
                                 .setAutoWidth(true);
 
-                        grid.addColumn(activity -> formatBigDecimal(activity.getTotal()))
-                                .setHeader("Total")
+                        Grid.Column<Urc_Activities> qtr1Col = grid.addColumn(activity -> {
+                            List<UrcDeptSectionAnlDimbgt> deptUnits = new ArrayList();
+                            deptUnits.add(activity.getDeptSection());
+                            BigDecimal bgt = BigDecimal.ZERO;
+                            if (comboBoxOrganisation.isEmpty()) {
+                                bgt = budgetItemsService.calculateTotalByBudgetAndActivityAndDeptUnitsQtr1(activity.getBudget(), activity, deptUnits);
+                            } else {
+                                bgt = budgetItemsService.calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr1(activity.getBudget(), activity, deptUnits, comboBoxOrganisation.getSelectedItems());
+                            }
+
+                            return formatBigDecimal(bgt);
+                        })
+                                .setHeader("QTR1")
                                 .setSortable(true)
                                 .setAutoWidth(true);
 
-                        grid.addColumn(activity -> activity.getUrcPriorityAreas() != null
-                                ? activity.getUrcPriorityAreas().getName() : "N/A")
-                                .setHeader("Priority Area")
+                        Grid.Column<Urc_Activities> actualQtr1Col = grid.addColumn(new ComponentRenderer<>(activity -> {
+                            Span span = new Span(formatBigDecimal(activity.getQtr1A()));
+                            span.getStyle().set("font-weight", "bold");
+                            span.getStyle().set("color", "#d32f2f");          // Red text
+                            span.getStyle().set("background-color", "#fff3e0"); // Light orange background
+                            span.getStyle().set("text-align", "right");
+                            span.getStyle().set("display", "block");          // Needed for alignment
+                            return span;
+                        })).setHeader("ACTUAL QTR1")
+                                .setSortable(true)
+                                .setAutoWidth(true);
+                        actualQtr1Col.setVisible(false);
+
+                        Grid.Column<Urc_Activities> qtr2Col = grid.addColumn(activity -> {
+                            List<UrcDeptSectionAnlDimbgt> deptUnits = new ArrayList();
+                            deptUnits.add(activity.getDeptSection());
+                            BigDecimal bgt = BigDecimal.ZERO;
+                            if (comboBoxOrganisation.isEmpty()) {
+                                bgt = budgetItemsService.calculateTotalByBudgetAndActivityAndDeptUnitsQtr2(activity.getBudget(), activity, deptUnits);
+                            } else {
+                                bgt = budgetItemsService.calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr2(activity.getBudget(), activity, deptUnits, comboBoxOrganisation.getSelectedItems());
+                            }
+
+                            return formatBigDecimal(bgt);
+                        })
+                                .setHeader("QTR2")
                                 .setSortable(true)
                                 .setAutoWidth(true);
 
-                        grid.addColumn(activity -> activity.getDeptSection() != null
+                        Grid.Column<Urc_Activities> actualQtr2Col = grid.addColumn(new ComponentRenderer<>(activity -> {
+                            Span span = new Span(formatBigDecimal(activity.getQtr2A()));
+                            span.getStyle().set("font-weight", "bold");
+                            span.getStyle().set("color", "#d32f2f");          // Red text
+                            span.getStyle().set("background-color", "#fff3e0"); // Light orange background
+                            span.getStyle().set("text-align", "right");
+                            span.getStyle().set("display", "block");          // Needed for alignment
+                            return span;
+                        })).setHeader("ACTUAL QTR2")
+                                .setSortable(true)
+                                .setAutoWidth(true);
+                        actualQtr2Col.setVisible(false);
+
+                        Grid.Column<Urc_Activities> qtr3Col = grid.addColumn(activity -> {
+                            List<UrcDeptSectionAnlDimbgt> deptUnits = new ArrayList();
+                            deptUnits.add(activity.getDeptSection());
+                            BigDecimal bgt = BigDecimal.ZERO;
+                            if (comboBoxOrganisation.isEmpty()) {
+                                bgt = budgetItemsService.calculateTotalByBudgetAndActivityAndDeptUnitsQtr3(activity.getBudget(), activity, deptUnits);
+                            } else {
+                                bgt = budgetItemsService.calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr3(activity.getBudget(), activity, deptUnits, comboBoxOrganisation.getSelectedItems());
+                            }
+
+                            return formatBigDecimal(bgt);
+                        })
+                                .setHeader("QTR3")
+                                .setSortable(true)
+                                .setAutoWidth(true);
+
+                        Grid.Column<Urc_Activities> actualQtr3Col = grid.addColumn(new ComponentRenderer<>(activity -> {
+                            Span span = new Span(formatBigDecimal(activity.getQtr3A()));
+                            span.getStyle().set("font-weight", "bold");
+                            span.getStyle().set("color", "#d32f2f");          // Red text
+                            span.getStyle().set("background-color", "#fff3e0"); // Light orange background
+                            span.getStyle().set("text-align", "right");
+                            span.getStyle().set("display", "block");          // Needed for alignment
+                            return span;
+                        })).setHeader("ACTUAL QTR3")
+                                .setSortable(true)
+                                .setAutoWidth(true);
+                        actualQtr3Col.setVisible(false);
+
+                        Grid.Column<Urc_Activities> qtr4Col = grid.addColumn(activity -> {
+                            List<UrcDeptSectionAnlDimbgt> deptUnits = new ArrayList();
+                            deptUnits.add(activity.getDeptSection());
+                            BigDecimal bgt = BigDecimal.ZERO;
+                            if (comboBoxOrganisation.isEmpty()) {
+                                bgt = budgetItemsService.calculateTotalByBudgetAndActivityAndDeptUnitsQtr4(activity.getBudget(), activity, deptUnits);
+                            } else {
+                                bgt = budgetItemsService.calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr4(activity.getBudget(), activity, deptUnits, comboBoxOrganisation.getSelectedItems());
+                            }
+
+                            return formatBigDecimal(bgt);
+                        })
+                                .setHeader("QTR4")
+                                .setSortable(true)
+                                .setAutoWidth(true);
+
+                        Grid.Column<Urc_Activities> actualQtr4Col = grid.addColumn(new ComponentRenderer<>(activity -> {
+                            Span span = new Span(formatBigDecimal(activity.getQtr4A()));
+                            span.getStyle().set("font-weight", "bold");
+                            span.getStyle().set("color", "#d32f2f");          // Red text
+                            span.getStyle().set("background-color", "#fff3e0"); // Light orange background
+                            span.getStyle().set("text-align", "right");
+                            span.getStyle().set("display", "block");          // Needed for alignment
+                            return span;
+                        })).setHeader("ACTUAL QTR4")
+                                .setSortable(true)
+                                .setAutoWidth(true);
+                        actualQtr4Col.setVisible(false);
+
+                        Grid.Column<Urc_Activities> fundsourceCol = grid.addColumn(activity -> {
+                            Set<Long> budgetTypeIds = comboBoxOrganisation.getSelectedItems().stream().map(Organisation::getId).collect(Collectors.toSet());
+                            String fundsources = "";
+                            if (budgetTypeIds.isEmpty()) {
+                                fundsources = budgetItemsService.getDistinctFundSources(activity.getBudget().getId(), activity.getId());
+                            } else {
+                                fundsources = budgetItemsService.getDistinctFundSources(activity.getBudget().getId(), activity.getId(), budgetTypeIds);
+                            }
+
+                            return fundsources;
+                        })
+                                .setHeader("Fund Source")
+                                .setSortable(true)
+                                .setAutoWidth(true);
+                        fundsourceCol.setVisible(false);
+
+                        Grid.Column<Urc_Activities> sectionCol = grid.addColumn(activity -> activity.getDeptSection() != null
                                 ? activity.getDeptSection().getNAME() : "N/A")
                                 .setHeader("Department Section")
                                 .setSortable(true)
                                 .setAutoWidth(true);
+                        sectionCol.setVisible(false);
                         grid.setItems(listUrc_Activities);
+
                         VerticalLayout personalInformationLayout = new VerticalLayout();
                         personalInformationLayout.setSpacing(false);
                         personalInformationLayout.setPadding(false);
                         // personalInformationLayout.add(new Span("Activities Grid should be here"));
                         grid.setHeight("400px");
-                        personalInformationLayout.add(grid);
+                        // --- Column Toggle Menu ---
+                        MenuBar menuBar = new MenuBar();
+                        MenuItem columnMenu = menuBar.addItem("Hide/Show Columns");
+
+                        Checkbox npdCheck = new Checkbox("NPD Programme", false);
+                        npdCheck.addValueChangeListener(e -> npdProgrammeCol.setVisible(e.getValue()));
+
+                        Checkbox activityCheck = new Checkbox("Activity", true);
+                        activityCheck.addValueChangeListener(e -> activityCol.setVisible(e.getValue()));
+
+                        Checkbox objectiveCheck = new Checkbox("URC Strategic Objectives", false);
+                        objectiveCheck.addValueChangeListener(e -> objectiveCol.setVisible(e.getValue()));
+
+                        Checkbox outputCheck = new Checkbox("Deliverables/Output", false);
+                        outputCheck.addValueChangeListener(e -> outputCol.setVisible(e.getValue()));
+
+                        Checkbox actualOutputCheck = new Checkbox("Actual Deliverables/Output", false);
+                        actualOutputCheck.addValueChangeListener(e -> actualOutputCol.setVisible(e.getValue()));
+
+                        Checkbox kpiCheck = new Checkbox("Performance Indicator", false);
+                        kpiCheck.addValueChangeListener(e -> kpiCol.setVisible(e.getValue()));
+
+                        Checkbox bgtCheck = new Checkbox("Budget", true);
+                        bgtCheck.addValueChangeListener(e -> bgtCol.setVisible(e.getValue()));
+
+                        Checkbox qtr1Check = new Checkbox("QTR1", true);
+                        qtr1Check.addValueChangeListener(e -> qtr1Col.setVisible(e.getValue()));
+
+                        Checkbox actualQtr1Check = new Checkbox("ACTUAL QTR1", false);
+                        actualQtr1Check.addValueChangeListener(e -> actualQtr1Col.setVisible(e.getValue()));
+
+                        Checkbox qtr2Check = new Checkbox("QTR2", true);
+                        qtr2Check.addValueChangeListener(e -> qtr2Col.setVisible(e.getValue()));
+
+                        Checkbox actualQtr2Check = new Checkbox("ACTUAL QTR2", false);
+                        actualQtr2Check.addValueChangeListener(e -> actualQtr2Col.setVisible(e.getValue()));
+
+                        Checkbox qtr3Check = new Checkbox("QTR3", true);
+                        qtr3Check.addValueChangeListener(e -> qtr3Col.setVisible(e.getValue()));
+
+                        Checkbox actualQtr3Check = new Checkbox("ACTUAL QTR3", false);
+                        actualQtr3Check.addValueChangeListener(e -> actualQtr3Col.setVisible(e.getValue()));
+
+                        Checkbox qtr4ACheck = new Checkbox("QTR4", true);
+                        qtr4ACheck.addValueChangeListener(e -> qtr4Col.setVisible(e.getValue()));
+
+                        Checkbox actualQtr4Check = new Checkbox("ACTUAL  QTR4", false);
+                        actualQtr4Check.addValueChangeListener(e -> actualQtr4Col.setVisible(e.getValue()));
+
+                        Checkbox fundsourceCheck = new Checkbox("Fundsource", false);
+                        fundsourceCheck.addValueChangeListener(e -> fundsourceCol.setVisible(e.getValue()));
+
+                        Checkbox sectionCheck = new Checkbox("Section", false);
+                        sectionCheck.addValueChangeListener(e -> sectionCol.setVisible(e.getValue()));
+
+
+                        columnMenu.getSubMenu().add(npdCheck, activityCheck, objectiveCheck, outputCheck,actualOutputCheck,kpiCheck,qtr1Check, 
+                                actualQtr1Check,qtr2Check,actualQtr2Check,qtr3Check,actualQtr3Check,qtr4ACheck,actualQtr4Check,fundsourceCheck,sectionCheck);
+                        personalInformationLayout.add(menuBar,grid);
                         // System.out.println("Activities count: " + listUrc_Activities.size());
 
                         accordion.add(prog.getName(), personalInformationLayout);

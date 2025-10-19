@@ -1,5 +1,5 @@
-
 package com.methaltech.application.data.bgtool.service;
+
 import com.methaltech.application.data.bgtool.repository.UrcStrategicObjectivesRepository;
 import com.methaltech.application.data.entity.bgtool.UrcStrategicObjectives;
 import com.methaltech.application.data.entity.bgtool.UrcStrategicPlan;
@@ -19,16 +19,13 @@ public class UrcStrategicObjectivesService {
         this.repository = repository;
     }
 
-
     public UrcStrategicObjectives save(UrcStrategicObjectives objective) {
         return repository.save(objective);
     }
 
-
     public List<UrcStrategicObjectives> findAll() {
         return repository.findAll();
     }
-
 
     public Optional<UrcStrategicObjectives> findById(Long id) {
         return repository.findById(id);
@@ -43,8 +40,11 @@ public class UrcStrategicObjectivesService {
     public List<UrcStrategicObjectives> searchByObjective(String keyword) {
     return repository.findByObjectiveContainingIgnoreCase(keyword);
     }*/
-
     public void deleteById(Long id) {
         repository.deleteById(id);
-    }    
+    }
+
+    public List<UrcStrategicObjectives> findByStrategicPlan(UrcStrategicPlan strategicPlan) {
+        return repository.findByStrategicPlan(strategicPlan);
+    }
 }

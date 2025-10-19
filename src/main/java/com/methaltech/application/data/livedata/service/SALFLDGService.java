@@ -11,6 +11,7 @@ import com.methaltech.application.data.livedata.repository.SALFLDGRepository;
 import com.methaltech.application.data.livedata.repository.UrcCSalFldgRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,11 +35,11 @@ public class SALFLDGService {
 
     @Autowired
     public SALFLDGService(SALFLDGRepository salfldgRepository, CoaRepository coaRepository,
-            BudgetRepository repository,UrcCSalFldgRepository urcCSalFldgRepository) {
+            BudgetRepository repository, UrcCSalFldgRepository urcCSalFldgRepository) {
         this.salfldgRepository = salfldgRepository;
         this.coaRepository = coaRepository;
         this.repository = repository;
-        this.urcCSalFldgRepository=urcCSalFldgRepository;
+        this.urcCSalFldgRepository = urcCSalFldgRepository;
     }
 
     public BigDecimal findSumOfAmountByAccntCodeAndPeriod(String accntCode, int period) {
@@ -134,17 +135,18 @@ public class SALFLDGService {
 
         return nn;
     }
-    
+
     public List<SALFLDGProjection> findExpendituresByPeriodAndSections(Set<Integer> period, Set<String> sections) {
         List<SALFLDGProjection> nn = salfldgRepository.findByPeriodAndDepartmentExpenditures(period, sections);
 
         return nn;
-    } 
+    }
+
     public List<SALFLDGProjection> findExpendituresByPeriodAndSections(Set<Integer> period, String sections) {
         List<SALFLDGProjection> nn = salfldgRepository.findByPeriodAndDepartmentExpenditures(period, sections);
 
         return nn;
-    }    
+    }
 
     public List<SALFLDGProjection> findByPeriodAndExpenditures(List<Integer> period) {
         List<SALFLDGProjection> nn = salfldgRepository.findByPeriodAndTotalExpenditures(period);
@@ -250,19 +252,22 @@ public class SALFLDGService {
         BigDecimal amount = salfldgRepository.findTotalAmountByPeriodsAndAnalT1Set(periods, analT1Values);
         return amount; // always non-null
     }
-    
+
     public BigDecimal getTotalCommittedAmountByPeriods(Set<Integer> periods, Set<String> analT1Values) {
         BigDecimal amount = urcCSalFldgRepository.findTotalCommittedAmountByPeriodsAndAnalT1Set(periods, analT1Values);
         return amount; // always non-null
     }
-    public Double getTotalCommittedAmountByPeriodsCodeAndSection(Set<Integer> periods, String analT1Values,String accCode) {
-        BigDecimal amount = urcCSalFldgRepository.findTotalCommittedAmountByPeriodsCodeAndSection(periods, analT1Values,accCode);
+
+    public Double getTotalCommittedAmountByPeriodsCodeAndSection(Set<Integer> periods, String analT1Values, String accCode) {
+        BigDecimal amount = urcCSalFldgRepository.findTotalCommittedAmountByPeriodsCodeAndSection(periods, analT1Values, accCode);
         return amount.doubleValue(); // always non-null
-    }  
-    public Double getTotalCommittedAmountByPeriodsCodeAndSectionAndActivity(Set<Integer> periods, String analT1Values,String accCode,String activityCode) {
-        BigDecimal amount = urcCSalFldgRepository.findTotalCommittedAmountByPeriodsCodeAndSectionAndActivity(periods, analT1Values,accCode,activityCode);
+    }
+
+    public Double getTotalCommittedAmountByPeriodsCodeAndSectionAndActivity(Set<Integer> periods, String analT1Values, String accCode, String activityCode) {
+        BigDecimal amount = urcCSalFldgRepository.findTotalCommittedAmountByPeriodsCodeAndSectionAndActivity(periods, analT1Values, accCode, activityCode);
         return amount.doubleValue(); // always non-null
-    }    
+    }
+
     public BigDecimal getTotalAmountByPeriods2(Set<Integer> periods, String analT1Values) {
         BigDecimal amount = salfldgRepository.findTotalAmountByPeriodsAndAnalT1Set(periods, analT1Values);
         return amount; // always non-null
@@ -280,16 +285,17 @@ public class SALFLDGService {
     public Double getTotalAmountByActivity(String analT8) {
         return salfldgRepository.sumAmountByAnalT8(analT8);
     }
-    
-    public BigDecimal calculateTotalByBudgetAndCoaAndActivityAndSectionActuals(Set<Integer> periods, String accCode,String activity,String section) {
-        BigDecimal amount = salfldgRepository.calculateTotalByBudgetAndCoaAndActivityAndSectionActuals(periods, accCode,activity,section);
+
+    public BigDecimal calculateTotalByBudgetAndCoaAndActivityAndSectionActuals(Set<Integer> periods, String accCode, String activity, String section) {
+        BigDecimal amount = salfldgRepository.calculateTotalByBudgetAndCoaAndActivityAndSectionActuals(periods, accCode, activity, section);
         return amount; // always non-null
-    } 
-    
-    public BigDecimal calculateTotalByBudgetAndCoaAndSectionActuals(Set<Integer> periods, String accCode,String section) {
-        BigDecimal amount = salfldgRepository.calculateTotalByBudgetAndCoaAndSectionActuals(periods, accCode,section);
+    }
+
+    public BigDecimal calculateTotalByBudgetAndCoaAndSectionActuals(Set<Integer> periods, String accCode, String section) {
+        BigDecimal amount = salfldgRepository.calculateTotalByBudgetAndCoaAndSectionActuals(periods, accCode, section);
         return amount; // always non-null
-    }  
+    }
+
     public Set<Integer> getFinancialYearPeriods(Budget budget) {
         Set<Integer> periods = new LinkedHashSet<>();
 
@@ -310,5 +316,18 @@ public class SALFLDGService {
         }
 
         return periods;
-    }    
+    }
+
+    public Optional<SALFLDG> findByActualByID(
+            String accountCode,
+            Integer period,
+            LocalDateTime transactionDateTime,
+            Integer journalNo,
+            Integer journalLine
+    ) {
+        return salfldgRepository
+                .findByAccntCodeAndPeriodAndTransDatetimeAndJrnalNoAndJrnalLine(
+                        accountCode, period, transactionDateTime, journalNo, journalLine
+                );
+    }
 }

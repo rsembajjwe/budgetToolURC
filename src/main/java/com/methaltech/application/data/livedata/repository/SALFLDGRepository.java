@@ -2,7 +2,9 @@ package com.methaltech.application.data.livedata.repository;
 
 import com.methaltech.application.data.entity.livedata.SALFLDG;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -150,7 +152,7 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
             + "AND ANAL_T1 IN (:analT1Values) ", nativeQuery = true)
     List<SALFLDGProjection> findByPeriodAndDepartmentExpenditures(
             @Param("period") Set<Integer> period, @Param("analT1Values") Set<String> analT1Values);
-    
+
     @Query(value = "SELECT ACCNT_CODE AS accntCode, JRNAL_NO AS jrnalNo, AMOUNT AS amount, DESCRIPTN AS descriptn, "
             + "TRANS_DATETIME AS transDatetime, ANAL_T1 AS analT1 "
             + "FROM URC_A_SALFLDG_View "
@@ -161,7 +163,7 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
             + "AND ANAL_T1 = (:analT1Values) ", nativeQuery = true)
     List<SALFLDGProjection> findByPeriodAndDepartmentExpenditures(
             @Param("period") Set<Integer> period, @Param("analT1Values") String analT1Values);
-    
+
     @Query(value = """
     SELECT COALESCE(SUM(AMOUNT), 0)
     FROM URC_A_SALFLDG_View
@@ -278,5 +280,14 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
             + "FROM SALFLDG s "
             + "WHERE s.analT8 = :analT8")
     Double sumAmountByAnalT8(@Param("analT8") String analT8);
+
+    Optional<SALFLDG> findByAccntCodeAndPeriodAndTransDatetimeAndJrnalNoAndJrnalLine(
+        String accntCode,
+        Integer period,
+        LocalDateTime transDatetime,
+        Integer jrnalNo,
+        Integer jrnalLine
+);
+
 
 }

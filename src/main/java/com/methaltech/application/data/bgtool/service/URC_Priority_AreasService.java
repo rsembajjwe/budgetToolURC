@@ -4,6 +4,7 @@ import com.methaltech.application.data.entity.bgtool.URC_Priority_Areas;
 import com.methaltech.application.data.entity.bgtool.URC_Strategic_Plan;
 import com.methaltech.application.data.bgtool.repository.URC_Priority_AreasRepository;
 import com.methaltech.application.data.entity.bgtool.Budget;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,5 +80,13 @@ public class URC_Priority_AreasService {
     public URC_Priority_Areas getById(Long id) {
         // URC_Priority_Areas urcPriorityArea = repository.findById(id).orElse(null);
         return repository.findById(id).orElse(null);
+    }
+
+    public List<URC_Priority_Areas> getAreasByDate(LocalDate inputDate) {
+        return repository.findAllByInputDateBetweenNdpPlanDates(inputDate);
+    }
+    
+        public List<URC_Priority_Areas> getAreasByDateAndName(String name,LocalDate inputDate) {
+        return repository.findAllByNameAndInputDateBetweenNdpPlanDates(name,inputDate);
     }
 }

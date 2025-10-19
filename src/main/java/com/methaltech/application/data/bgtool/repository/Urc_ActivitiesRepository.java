@@ -17,18 +17,35 @@ import org.springframework.transaction.annotation.Transactional;
 public interface Urc_ActivitiesRepository extends JpaRepository<Urc_Activities, Long> {
 
     Page<Urc_Activities> findByUrcPriorityAreas(URC_Priority_Areas ndp111Objective, Pageable pageable);
+
     /*
     @Query("SELECT ua FROM Urc_Activities ua WHERE ua.urcPriorityAreas.urcStrategicPlan.nationalBudgetFocusArea.nationalTransportMasterPlan.ndp111Objective.budget = :budget")
     Page<Urc_Activities> findByBudget(Budget budget, Pageable pageable);*/
 
-    /*    @Query("SELECT ua FROM Urc_Activities ua WHERE ua.urcPriorityAreas.urcStrategicPlan.nationalBudgetFocusArea.nationalTransportMasterPlan.ndp111Objective.budget = :budget")
+ /*    @Query("SELECT ua FROM Urc_Activities ua WHERE ua.urcPriorityAreas.urcStrategicPlan.nationalBudgetFocusArea.nationalTransportMasterPlan.ndp111Objective.budget = :budget")
     List<Urc_Activities> findByBudget2(Budget budget);*/
-
     List<Urc_Activities> findByBudget(Budget budget);
 
     @Modifying
     @Query("DELETE FROM Urc_Activities b WHERE b = :activity")
     void deleteActivity(@Param("activity") Urc_Activities activity);
+
+@Query("""
+    SELECT DISTINCT a FROM Urc_Activities a
+    JOIN FETCH a.urcPriorityAreas pa
+    JOIN FETCH pa.priorityArea pr 
+    JOIN FETCH a.deptSection ds
+    JOIN FETCH a.budget b
+    LEFT JOIN FETCH a.quarterlyActuals q       
+    WHERE a.budget = :budget
+      AND a.urcPriorityAreas = :urcPriorityAreas
+      AND a.deptSection IN :deptSections
+""")
+List<Urc_Activities> findWithAllJoins(
+        @Param("budget") Budget budget,
+        @Param("urcPriorityAreas") URC_Priority_Areas urcPriorityAreas,
+        @Param("deptSections") List<UrcDeptSectionAnlDimbgt> deptSections);
+
 
     List<Urc_Activities> findByBudgetAndUrcPriorityAreasAndDeptSectionIn(Budget budget, URC_Priority_Areas urcPriorityAreas, List<UrcDeptSectionAnlDimbgt> deptSections);
 
@@ -64,7 +81,6 @@ public interface Urc_ActivitiesRepository extends JpaRepository<Urc_Activities, 
     @Param("budget") Budget budget,
     @Param("search") String search
     );*/
-
     @Query("SELECT ua FROM Urc_Activities ua WHERE ua.deptSection IN :deptSections")
     List<Urc_Activities> findByDeptSections(@Param("deptSections") List<UrcDeptSectionAnlDimbgt> deptSections);
 
