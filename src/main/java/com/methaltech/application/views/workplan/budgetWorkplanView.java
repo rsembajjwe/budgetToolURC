@@ -1,5 +1,6 @@
 package com.methaltech.application.views.workplan;
 
+import com.methaltech.application.data.GetPeriods;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
 import com.methaltech.application.data.bgtool.service.BudgetService;
 import com.methaltech.application.data.bgtool.service.CoaService;
@@ -7,6 +8,7 @@ import com.methaltech.application.data.bgtool.service.Coalevel1Service;
 import com.methaltech.application.data.bgtool.service.CurrencyService;
 import com.methaltech.application.data.bgtool.service.FreightVolumesService;
 import com.methaltech.application.data.bgtool.service.OrganisationService;
+import com.methaltech.application.data.bgtool.service.QuarterlyActualsService;
 import com.methaltech.application.data.bgtool.service.StaffSalaryService;
 import com.methaltech.application.data.bgtool.service.StockUnitMeasureService;
 import com.methaltech.application.data.bgtool.service.URC_Priority_AreasService;
@@ -18,6 +20,7 @@ import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.Currency;
 import com.methaltech.application.data.entity.bgtool.Organisation;
+import com.methaltech.application.data.entity.bgtool.QuarterlyActuals;
 import com.methaltech.application.data.entity.bgtool.RowsWorkplan;
 import com.methaltech.application.data.entity.bgtool.StaffSalary;
 import com.methaltech.application.data.entity.bgtool.URC_Priority_Areas;
@@ -37,11 +40,19 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.dependency.Uses;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.dataview.GridListDataView;
+import com.vaadin.flow.component.grid.dnd.GridDropMode;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -54,8 +65,10 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -69,7 +82,10 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -124,7 +140,7 @@ public class budgetWorkplanView extends Div {
     private final Urc_ActivitiesService sampleUrc_ActivitiesService;
     private final URC_Priority_AreasService sampleURC_Priority_Areas;
     private final StaffSalaryService sampleStaffSalaryService;
-
+    private final QuarterlyActualsService QuarterlyActualsService;
     private final Binder<StaffSalary> binder = new BeanValidationBinder<>(StaffSalary.class);
     private MultiSelectComboBox<UrcDeptSectionAnlDimbgt> comboBoxD_Section = new MultiSelectComboBox<>("Cost Centres");
     private ComboBox<Currency> currencyComboBox = new ComboBox("Currency");
@@ -140,12 +156,14 @@ public class budgetWorkplanView extends Div {
     Button downloadWorkplan2 = new Button("Download Qtr");
     private List<URC_Priority_Areas> programmes = new ArrayList<>();
     private List<Urc_Activities> programmesActivities = new ArrayList<>();
+    private QuarterlyActuals draggedItem = null;
+    private GetPeriods getPeriod = new GetPeriods();
 
     public budgetWorkplanView(AuthenticatedUser authenticatedUser, FreightVolumesService sampleFreightVolumesService, BudgetService sampleBudgetService, CoaService sampleCoaService,
             CurrencyService sampleCurrencyService, BudgetItemsService budgetItemsService, StockUnitMeasureService sampleStockUnitMeasureService,
             OrganisationService sampleOrganisationService, UserService userService, BudgetItemsService sampleBudgetItemsService,
             Urc_ActivitiesService sampleUrc_ActivitiesService, StaffSalaryService sampleStaffSalaryService,
-            Coalevel1Service coalevel1Service, URC_Priority_AreasService sampleURC_Priority_Areas) {
+            Coalevel1Service coalevel1Service, URC_Priority_AreasService sampleURC_Priority_Areas, QuarterlyActualsService QuarterlyActualsService) {
         this.sampleBudgetService = sampleBudgetService;
         this.sampleCoaService = sampleCoaService;
         this.sampleCurrencyService = sampleCurrencyService;
@@ -158,6 +176,7 @@ public class budgetWorkplanView extends Div {
         this.sampleStaffSalaryService = sampleStaffSalaryService;
         this.coalevel1Service = coalevel1Service;
         this.sampleURC_Priority_Areas = sampleURC_Priority_Areas;
+        this.QuarterlyActualsService = QuarterlyActualsService;
         setHeight("100%");
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
         image2.setWidthFull();
@@ -493,16 +512,51 @@ public class budgetWorkplanView extends Div {
                                 .setAutoWidth(true);
 
                         Grid.Column<Urc_Activities> actualQtr1Col = grid.addColumn(new ComponentRenderer<>(activity -> {
+                            // Create styled span
                             Span span = new Span(formatBigDecimal(activity.getQtr1A()));
                             span.getStyle().set("font-weight", "bold");
                             span.getStyle().set("color", "#d32f2f");          // Red text
                             span.getStyle().set("background-color", "#fff3e0"); // Light orange background
                             span.getStyle().set("text-align", "right");
-                            span.getStyle().set("display", "block");          // Needed for alignment
+                            span.getStyle().set("display", "block");
+
+                            span.getStyle()
+                                    .set("display", "inline-block")
+                                    .set("padding", "4px 10px")
+                                    .set("background-color", "#1976d2") // Primary blue
+                                    .set("color", "white")
+                                    .set("border-radius", "4px")
+                                    .set("font-weight", "bold")
+                                    .set("cursor", "pointer")
+                                    .set("text-align", "center")
+                                    .set("box-shadow", "0 2px 4px rgba(0, 0, 0, 0.2)");
+
+// Add hover effect using Element API
+                            span.getElement().getStyle().set("transition", "background-color 0.3s ease");
+                            span.getElement().addEventListener("mouseover", e
+                                    -> span.getStyle().set("background-color", "#1565c0"));
+                            span.getElement().addEventListener("mouseout", e
+                                    -> span.getStyle().set("background-color", "#1976d2"));
+
+                            // Create context menu for this specific cell
+                            ContextMenu contextMenu = new ContextMenu(span);
+                            contextMenu.setOpenOnClick(true); // true = opens menu on left click (optional)
+
+                            // Add menu items
+                            contextMenu.addItem("Add Budget Performance Data", e -> openPerformanceDialog(activity, 1));
+                            // contextMenu.addItem("View Details", e -> showActivityDetails(activity));
+                            contextMenu.addItem("Delete Value", e -> {
+                                activity.setQtr1A(BigDecimal.ZERO);
+                                Notification.show("QTR1 actual cleared for " + activity.getActivityCode());
+                                grid.getDataProvider().refreshItem(activity);
+                            });
+
                             return span;
-                        })).setHeader("ACTUAL QTR1")
+                        }))
+                                .setHeader("ACTUAL QTR1")
                                 .setSortable(true)
                                 .setAutoWidth(true);
+
                         actualQtr1Col.setVisible(false);
 
                         Grid.Column<Urc_Activities> qtr2Col = grid.addColumn(activity -> {
@@ -523,11 +577,23 @@ public class budgetWorkplanView extends Div {
 
                         Grid.Column<Urc_Activities> actualQtr2Col = grid.addColumn(new ComponentRenderer<>(activity -> {
                             Span span = new Span(formatBigDecimal(activity.getQtr2A()));
-                            span.getStyle().set("font-weight", "bold");
-                            span.getStyle().set("color", "#d32f2f");          // Red text
-                            span.getStyle().set("background-color", "#fff3e0"); // Light orange background
-                            span.getStyle().set("text-align", "right");
-                            span.getStyle().set("display", "block");          // Needed for alignment
+                            span.getStyle()
+                                    .set("display", "inline-block")
+                                    .set("padding", "4px 10px")
+                                    .set("background-color", "#1976d2") // Primary blue
+                                    .set("color", "white")
+                                    .set("border-radius", "4px")
+                                    .set("font-weight", "bold")
+                                    .set("cursor", "pointer")
+                                    .set("text-align", "center")
+                                    .set("box-shadow", "0 2px 4px rgba(0, 0, 0, 0.2)");
+
+// Add hover effect using Element API
+                            span.getElement().getStyle().set("transition", "background-color 0.3s ease");
+                            span.getElement().addEventListener("mouseover", e
+                                    -> span.getStyle().set("background-color", "#1565c0"));
+                            span.getElement().addEventListener("mouseout", e
+                                    -> span.getStyle().set("background-color", "#1976d2"));         // Needed for alignment
                             return span;
                         })).setHeader("ACTUAL QTR2")
                                 .setSortable(true)
@@ -552,11 +618,23 @@ public class budgetWorkplanView extends Div {
 
                         Grid.Column<Urc_Activities> actualQtr3Col = grid.addColumn(new ComponentRenderer<>(activity -> {
                             Span span = new Span(formatBigDecimal(activity.getQtr3A()));
-                            span.getStyle().set("font-weight", "bold");
-                            span.getStyle().set("color", "#d32f2f");          // Red text
-                            span.getStyle().set("background-color", "#fff3e0"); // Light orange background
-                            span.getStyle().set("text-align", "right");
-                            span.getStyle().set("display", "block");          // Needed for alignment
+                            span.getStyle()
+                                    .set("display", "inline-block")
+                                    .set("padding", "4px 10px")
+                                    .set("background-color", "#1976d2") // Primary blue
+                                    .set("color", "white")
+                                    .set("border-radius", "4px")
+                                    .set("font-weight", "bold")
+                                    .set("cursor", "pointer")
+                                    .set("text-align", "center")
+                                    .set("box-shadow", "0 2px 4px rgba(0, 0, 0, 0.2)");
+
+// Add hover effect using Element API
+                            span.getElement().getStyle().set("transition", "background-color 0.3s ease");
+                            span.getElement().addEventListener("mouseover", e
+                                    -> span.getStyle().set("background-color", "#1565c0"));
+                            span.getElement().addEventListener("mouseout", e
+                                    -> span.getStyle().set("background-color", "#1976d2"));         // Needed for alignment
                             return span;
                         })).setHeader("ACTUAL QTR3")
                                 .setSortable(true)
@@ -581,11 +659,23 @@ public class budgetWorkplanView extends Div {
 
                         Grid.Column<Urc_Activities> actualQtr4Col = grid.addColumn(new ComponentRenderer<>(activity -> {
                             Span span = new Span(formatBigDecimal(activity.getQtr4A()));
-                            span.getStyle().set("font-weight", "bold");
-                            span.getStyle().set("color", "#d32f2f");          // Red text
-                            span.getStyle().set("background-color", "#fff3e0"); // Light orange background
-                            span.getStyle().set("text-align", "right");
-                            span.getStyle().set("display", "block");          // Needed for alignment
+                            span.getStyle()
+                                    .set("display", "inline-block")
+                                    .set("padding", "4px 10px")
+                                    .set("background-color", "#1976d2") // Primary blue
+                                    .set("color", "white")
+                                    .set("border-radius", "4px")
+                                    .set("font-weight", "bold")
+                                    .set("cursor", "pointer")
+                                    .set("text-align", "center")
+                                    .set("box-shadow", "0 2px 4px rgba(0, 0, 0, 0.2)");
+
+// Add hover effect using Element API
+                            span.getElement().getStyle().set("transition", "background-color 0.3s ease");
+                            span.getElement().addEventListener("mouseover", e
+                                    -> span.getStyle().set("background-color", "#1565c0"));
+                            span.getElement().addEventListener("mouseout", e
+                                    -> span.getStyle().set("background-color", "#1976d2"));         // Needed for alignment
                             return span;
                         })).setHeader("ACTUAL QTR4")
                                 .setSortable(true)
@@ -676,10 +766,9 @@ public class budgetWorkplanView extends Div {
                         Checkbox sectionCheck = new Checkbox("Section", false);
                         sectionCheck.addValueChangeListener(e -> sectionCol.setVisible(e.getValue()));
 
-
-                        columnMenu.getSubMenu().add(npdCheck, activityCheck, objectiveCheck, outputCheck,actualOutputCheck,kpiCheck,qtr1Check, 
-                                actualQtr1Check,qtr2Check,actualQtr2Check,qtr3Check,actualQtr3Check,qtr4ACheck,actualQtr4Check,fundsourceCheck,sectionCheck);
-                        personalInformationLayout.add(menuBar,grid);
+                        columnMenu.getSubMenu().add(npdCheck, activityCheck, objectiveCheck, outputCheck, actualOutputCheck, kpiCheck, bgtCheck, qtr1Check,
+                                actualQtr1Check, qtr2Check, actualQtr2Check, qtr3Check, actualQtr3Check, qtr4ACheck, actualQtr4Check, fundsourceCheck, sectionCheck);
+                        personalInformationLayout.add(menuBar, grid);
                         // System.out.println("Activities count: " + listUrc_Activities.size());
 
                         accordion.add(prog.getName(), personalInformationLayout);
@@ -692,6 +781,200 @@ public class budgetWorkplanView extends Div {
         accordion.getStyle().set("background-color", "#f0f0f0");
         accordion.getStyle().set("padding", "10px");
         return accordion;
+    }
+
+    private void openPerformanceDialog(Urc_Activities activity, int qtr) {
+        Dialog dialog = new Dialog();
+        dialog.setWidth("1100px");
+        dialog.setHeight("650px");
+        dialog.setHeaderTitle("Manage Deliverables & Quarterly Actuals - " + activity.getActivityCode() + ": " + activity.getName());
+
+        // === Source Grid (Available QuarterlyActuals) ===
+        Grid<QuarterlyActuals> sourceGrid = new Grid<>(QuarterlyActuals.class, false);
+        sourceGrid.addColumn(QuarterlyActuals::getAccountCode).setHeader("Account Code").setWidth("60px").setSortable(true);
+        sourceGrid.addColumn(QuarterlyActuals::getDescription).setHeader("Description").setSortable(true);
+        sourceGrid.addColumn(qa -> formatBigDecimal(qa.getAmount())).setHeader("Amount").setSortable(true);
+        sourceGrid.addColumn(item -> {
+            if (item.getTransactionDateTime() == null) {
+                return "";
+            }
+            return item.getTransactionDateTime()
+                    .format(DateTimeFormatter.ofPattern("dd-MMM-yyyy"));
+        }).setHeader("Trans Date").setSortable(true);
+        sourceGrid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_WRAP_CELL_CONTENT);
+        sourceGrid.getStyle().set("border", "1px solid var(--lumo-contrast-10pct)");
+        sourceGrid.setHeight("400px");
+        sourceGrid.setWidth("48%");
+        sourceGrid.setSelectionMode(Grid.SelectionMode.MULTI);
+
+        // === Target Grid (Activity's QuarterlyActuals) ===
+        Grid<QuarterlyActuals> targetGrid = new Grid<>(QuarterlyActuals.class, false);
+        targetGrid.addColumn(QuarterlyActuals::getAccountCode).setHeader("Account Code").setWidth("60px").setSortable(true);
+        targetGrid.addColumn(QuarterlyActuals::getDescription).setHeader("Description").setSortable(true);
+        targetGrid.addColumn(qa -> formatBigDecimal(qa.getAmount())).setHeader("Amount").setSortable(true);
+        targetGrid.addColumn(QuarterlyActuals::getTransactionDateTime).setHeader("Trans Date").setSortable(true);
+        targetGrid.addColumn(item -> {
+            if (item.getTransactionDateTime() == null) {
+                return "";
+            }
+            return item.getTransactionDateTime()
+                    .format(DateTimeFormatter.ofPattern("dd-MMM-yyyy"));
+        }).setHeader("Trans Date");
+        targetGrid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_WRAP_CELL_CONTENT);
+        targetGrid.getStyle().set("border", "1px solid var(--lumo-contrast-10pct)");
+        targetGrid.setHeight("400px");
+        targetGrid.setWidth("48%");
+        targetGrid.setSelectionMode(Grid.SelectionMode.MULTI);
+        targetGrid.setItems(activity.getQuarterlyActuals());
+
+        // === Data Providers ===
+        List<QuarterlyActuals> sourceItems = QuarterlyActualsService.getQuarterlyActuals(activity.getDeptSection().getANL_CODE(), getPeriod.getFinancialYearPeriods(activity.getBudget(), qtr), activity);
+
+        GridListDataView<QuarterlyActuals> sourceDataView = sourceGrid.setItems(sourceItems);
+        GridListDataView<QuarterlyActuals> targetDataView = targetGrid.setItems(activity.getQuarterlyActuals());
+
+        List<QuarterlyActuals> targetItems = new ArrayList<>(activity.getQuarterlyActuals());
+
+        ListDataProvider<QuarterlyActuals> sourceProvider = new ListDataProvider<>(sourceItems);
+        ListDataProvider<QuarterlyActuals> targetProvider = new ListDataProvider<>(targetItems);
+
+        sourceGrid.setDataProvider(sourceProvider);
+        targetGrid.setDataProvider(targetProvider);
+
+        sourceGrid.setRowsDraggable(true);
+        targetGrid.setRowsDraggable(true);
+        sourceGrid.setDropMode(GridDropMode.ON_GRID);
+        targetGrid.setDropMode(GridDropMode.ON_GRID);
+
+// Drag start
+        sourceGrid.addDragStartListener(e -> draggedItem = e.getDraggedItems().get(0));
+        targetGrid.addDragStartListener(e -> draggedItem = e.getDraggedItems().get(0));
+
+// Drag end — reset
+        sourceGrid.addDragEndListener(e -> draggedItem = null);
+        targetGrid.addDragEndListener(e -> draggedItem = null);
+
+// Drop logic
+        targetGrid.addDropListener(e -> {
+            if (draggedItem != null && sourceItems.remove(draggedItem)) {
+                targetItems.add(draggedItem);
+                sourceProvider.refreshAll();
+                targetProvider.refreshAll();
+            }
+        });
+
+        sourceGrid.addDropListener(e -> {
+            if (draggedItem != null && targetItems.remove(draggedItem)) {
+                sourceItems.add(draggedItem);
+                sourceProvider.refreshAll();
+                targetProvider.refreshAll();
+            }
+        });
+
+// === Filters (Search Fields) ===
+        TextField sourceSearch = new TextField();
+        sourceSearch.setPlaceholder("Search available actuals...");
+        sourceSearch.setWidth("48%");
+        sourceSearch.setPrefixComponent(VaadinIcon.SEARCH.create());
+
+        TextField targetSearch = new TextField();
+        targetSearch.setPlaceholder("Search assigned actuals...");
+        targetSearch.setWidth("48%");
+        targetSearch.setPrefixComponent(VaadinIcon.SEARCH.create());
+
+// === Apply filtering logic ===
+        sourceSearch.addValueChangeListener(e -> {
+            String filterText = e.getValue().trim().toLowerCase();
+            sourceProvider.setFilter(qa
+                    -> (qa.getAccountCode() != null && qa.getAccountCode().toLowerCase().contains(filterText))
+                    || (qa.getDescription() != null && qa.getDescription().toLowerCase().contains(filterText))
+                    || (qa.getTransactionDateTime() != null
+                    && qa.getTransactionDateTime().format(DateTimeFormatter.ofPattern("dd-MMM-yyyy")).toLowerCase().contains(filterText))
+            );
+        });
+
+        targetSearch.addValueChangeListener(e -> {
+            String filterText = e.getValue().trim().toLowerCase();
+            targetProvider.setFilter(qa
+                    -> (qa.getAccountCode() != null && qa.getAccountCode().toLowerCase().contains(filterText))
+                    || (qa.getDescription() != null && qa.getDescription().toLowerCase().contains(filterText))
+                    || (qa.getTransactionDateTime() != null
+                    && qa.getTransactionDateTime().format(DateTimeFormatter.ofPattern("dd-MMM-yyyy")).toLowerCase().contains(filterText))
+            );
+        });
+
+        // === Deliverables Section ===
+        HorizontalLayout deliverableLayout = new HorizontalLayout();
+        deliverableLayout.setWidthFull();
+        deliverableLayout.setAlignItems(FlexComponent.Alignment.END);
+        deliverableLayout.getStyle().set("margin-top", "10px");
+
+        TextField deliverableField = new TextField("Add Deliverable");
+        deliverableField.setWidth("400px");
+        Button addDeliverableBtn = new Button("Add", e -> {
+            if (!deliverableField.getValue().isBlank()) {
+                if (activity.getDeliverable_outputs() == null) {
+                    activity.setDeliverable_outputs(new HashSet<>());
+                }
+                activity.getDeliverable_outputs().add(deliverableField.getValue());
+                deliverableField.clear();
+                Notification.show("Deliverable added.", 2000, Notification.Position.BOTTOM_START);
+            }
+        });
+        addDeliverableBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        deliverableLayout.add(deliverableField, addDeliverableBtn);
+
+        // === Buttons (Footer) ===
+        Button saveBtn = new Button("Save", e -> {
+            // Clear existing actuals before re-assigning
+            activity.getQuarterlyActuals().clear();
+
+            // Reassign new target items and set the relationship
+            for (QuarterlyActuals qa : targetItems) {
+                qa.setActivity(activity); // important for JPA consistency
+                activity.getQuarterlyActuals().add(qa);
+            }
+            sampleUrc_ActivitiesService.saveActivity(activity);
+            Notification.show("Changes saved successfully.", 3000, Notification.Position.BOTTOM_CENTER);
+            dialog.close();
+        });
+        saveBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button cancelBtn = new Button("Cancel", e -> dialog.close());
+        cancelBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
+        HorizontalLayout footer = new HorizontalLayout(saveBtn, cancelBtn);
+        footer.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+        footer.setWidthFull();
+        footer.getStyle().set("margin-top", "15px");
+
+        // === Main Layout ===
+        HorizontalLayout searchLayout = new HorizontalLayout(sourceSearch, targetSearch);
+        searchLayout.setWidthFull();
+        searchLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+
+        HorizontalLayout gridsLayout = new HorizontalLayout(sourceGrid, targetGrid);
+        gridsLayout.setWidthFull();
+        gridsLayout.setSpacing(true);
+        gridsLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+
+        VerticalLayout content = new VerticalLayout(
+                new H3("Quarterly Performance for Q" + qtr),
+                new Span("Drag items between tables to assign or unassign quarterly actuals."),
+                searchLayout, // 👈 Add this line
+                gridsLayout,
+                new Hr(),
+                new H4("Manage Deliverables"),
+                deliverableLayout,
+                footer
+        );
+
+        content.setPadding(true);
+        content.setSpacing(true);
+        content.setAlignItems(FlexComponent.Alignment.STRETCH);
+
+        dialog.add(content);
+        dialog.open();
     }
 
     private Grid Urc_ActivitiesGrid(List<Urc_Activities> listUrc_Activities) {

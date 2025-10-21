@@ -148,6 +148,12 @@ public class SALFLDGService {
         return nn;
     }
 
+    public List<SALFLDG> findExpendituresByPeriodAndSectionsExpenditure(Set<Integer> period, String sections) {
+        List<SALFLDG> nn = salfldgRepository.findByPeriodAndSectionExpenditures(period, sections);
+
+        return nn;
+    }
+
     public List<SALFLDGProjection> findByPeriodAndExpenditures(List<Integer> period) {
         List<SALFLDGProjection> nn = salfldgRepository.findByPeriodAndTotalExpenditures(period);
 

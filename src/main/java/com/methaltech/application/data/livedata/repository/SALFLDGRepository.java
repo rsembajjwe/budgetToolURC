@@ -153,7 +153,7 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
     List<SALFLDGProjection> findByPeriodAndDepartmentExpenditures(
             @Param("period") Set<Integer> period, @Param("analT1Values") Set<String> analT1Values);
 
-    @Query(value = "SELECT ACCNT_CODE AS accntCode, JRNAL_NO AS jrnalNo, AMOUNT AS amount, DESCRIPTN AS descriptn, "
+    @Query(value = "SELECT ACCNT_CODE AS accntCode, JRNAL_NO AS jrnalNo, JRNAL_LINE AS jrnalLine, PERIOD AS period, AMOUNT AS amount, DESCRIPTN AS descriptn, "
             + "TRANS_DATETIME AS transDatetime, ANAL_T1 AS analT1 "
             + "FROM URC_A_SALFLDG_View "
             + "WHERE PERIOD IN :period AND (ACCNT_CODE LIKE '2%' OR ACCNT_CODE LIKE '3%') "
@@ -163,6 +163,18 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
             + "AND ANAL_T1 = (:analT1Values) ", nativeQuery = true)
     List<SALFLDGProjection> findByPeriodAndDepartmentExpenditures(
             @Param("period") Set<Integer> period, @Param("analT1Values") String analT1Values);
+
+    @Query(value = "SELECT * FROM URC_A_SALFLDG_View "
+            + "WHERE PERIOD IN :period "
+            + "AND (ACCNT_CODE LIKE '2%' OR ACCNT_CODE LIKE '3%') "
+            + "AND ACCNT_CODE NOT LIKE '321%' "
+            + "AND ACCNT_CODE NOT LIKE '314%' "
+            + "AND LEN(ACCNT_CODE) <= 6 "
+            + "AND ANAL_T1 = :analT1Values",
+            nativeQuery = true)
+    List<SALFLDG> findByPeriodAndSectionExpenditures(
+            @Param("period") Set<Integer> period,
+            @Param("analT1Values") String analT1Values);
 
     @Query(value = """
     SELECT COALESCE(SUM(AMOUNT), 0)
@@ -282,12 +294,11 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
     Double sumAmountByAnalT8(@Param("analT8") String analT8);
 
     Optional<SALFLDG> findByAccntCodeAndPeriodAndTransDatetimeAndJrnalNoAndJrnalLine(
-        String accntCode,
-        Integer period,
-        LocalDateTime transDatetime,
-        Integer jrnalNo,
-        Integer jrnalLine
-);
-
+            String accntCode,
+            Integer period,
+            LocalDateTime transDatetime,
+            Integer jrnalNo,
+            Integer jrnalLine
+    );
 
 }

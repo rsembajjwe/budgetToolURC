@@ -15,7 +15,8 @@ import lombok.Data;
 
 @Entity
 @Table(name = "QuarterlyActuals")
-public @Data class QuarterlyActuals {
+public @Data
+class QuarterlyActuals {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,7 +40,10 @@ public @Data class QuarterlyActuals {
 
     @Column(name = "AMOUNT", nullable = false, precision = 18, scale = 2)
     private BigDecimal amount;
-    
+
+    @Column(name = "DESCRIPTN", nullable = false, length = 50)
+    private String description;
+
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "activity_id", nullable = false)
     private Urc_Activities activity;

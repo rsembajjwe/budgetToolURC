@@ -16,6 +16,7 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
@@ -23,7 +24,7 @@ import lombok.ToString;
 @Table(name = "urcActivities")
 @NoArgsConstructor
 @ToString(includeFieldNames = false, onlyExplicitlyIncluded = true)
-
+@EqualsAndHashCode(onlyExplicitlyIncluded = true) // Important!
 public @Data
 class Urc_Activities implements Serializable {
 
