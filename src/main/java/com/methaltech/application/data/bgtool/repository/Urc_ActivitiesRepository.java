@@ -30,7 +30,7 @@ public interface Urc_ActivitiesRepository extends JpaRepository<Urc_Activities, 
     @Query("DELETE FROM Urc_Activities b WHERE b = :activity")
     void deleteActivity(@Param("activity") Urc_Activities activity);
 
-@Query("""
+    @Query("""
     SELECT DISTINCT a FROM Urc_Activities a
     JOIN FETCH a.urcPriorityAreas pa
     JOIN FETCH pa.priorityArea pr 
@@ -41,11 +41,10 @@ public interface Urc_ActivitiesRepository extends JpaRepository<Urc_Activities, 
       AND a.urcPriorityAreas = :urcPriorityAreas
       AND a.deptSection IN :deptSections
 """)
-List<Urc_Activities> findWithAllJoins(
-        @Param("budget") Budget budget,
-        @Param("urcPriorityAreas") URC_Priority_Areas urcPriorityAreas,
-        @Param("deptSections") List<UrcDeptSectionAnlDimbgt> deptSections);
-
+    List<Urc_Activities> findWithAllJoins(
+            @Param("budget") Budget budget,
+            @Param("urcPriorityAreas") URC_Priority_Areas urcPriorityAreas,
+            @Param("deptSections") List<UrcDeptSectionAnlDimbgt> deptSections);
 
     List<Urc_Activities> findByBudgetAndUrcPriorityAreasAndDeptSectionIn(Budget budget, URC_Priority_Areas urcPriorityAreas, List<UrcDeptSectionAnlDimbgt> deptSections);
 
@@ -87,8 +86,17 @@ List<Urc_Activities> findWithAllJoins(
     List<Urc_Activities> findByDeptSectionAndBudgetAndNameContaining(
             UrcDeptSectionAnlDimbgt deptSection, Budget budget, String filter);
 
+    //List<Urc_Activities> findByDeptSectionAndBudget(UrcDeptSectionAnlDimbgt deptSection, Budget budget);
+    @Query("""
+       SELECT a 
+       FROM Urc_Activities a 
+       LEFT JOIN FETCH a.quarterlyActuals 
+       WHERE a.deptSection = :deptSection 
+         AND a.budget = :budget
+       """)
     List<Urc_Activities> findByDeptSectionAndBudget(
-            UrcDeptSectionAnlDimbgt deptSection, Budget budget);
+            @Param("deptSection") UrcDeptSectionAnlDimbgt deptSection,
+            @Param("budget") Budget budget);
 
     @Query("SELECT ua FROM Urc_Activities ua WHERE ua.deptSection = :deptSection "
             + "AND ua.budget = :budget "

@@ -1,6 +1,7 @@
 package com.methaltech.application.data.bgtool.repository;
 
 import com.methaltech.application.data.entity.bgtool.Budget;
+import com.methaltech.application.data.entity.bgtool.PriorityArea;
 import com.methaltech.application.data.entity.bgtool.URC_Priority_Areas;
 import com.methaltech.application.data.entity.bgtool.URC_Strategic_Plan;
 import java.time.LocalDate;
@@ -76,4 +77,21 @@ public interface URC_Priority_AreasRepository extends JpaRepository<URC_Priority
         WHERE :inputDate BETWEEN ndp.startDate AND ndp.endDate AND u.name LIKE %:name%
     """)
     List<URC_Priority_Areas> findAllByNameAndInputDateBetweenNdpPlanDates(@Param("name") String name, @Param("inputDate") LocalDate inputDate);
+
+    @Query("""
+        SELECT DISTINCT p.priorityArea 
+        FROM URC_Priority_Areas p
+        WHERE p.budget.id = :budgetId 
+          AND p.priorityArea IS NOT NULL
+    """)
+    List<PriorityArea> findDistinctPriorityAreasByBudgetId(@Param("budgetId") Long budgetId);
+
+    @Query("""
+    SELECT DISTINCT p.priorityArea
+    FROM URC_Priority_Areas p
+    WHERE p.priorityArea IS NOT NULL
+      AND :inputDate BETWEEN p.priorityArea.ndpPlan.startDate AND p.priorityArea.ndpPlan.endDate
+""")
+    List<PriorityArea> findDistinctPriorityAreasByBudgetAndDateWithinNdpPlan(@Param("inputDate") LocalDate inputDate);
+
 }

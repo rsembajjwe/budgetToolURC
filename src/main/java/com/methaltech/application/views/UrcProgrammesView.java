@@ -135,10 +135,11 @@ public class UrcProgrammesView extends Div {
     private final UrcStrategicObjectivesService urcStrategicObjectivesService;
 
     private TextArea activity = new TextArea("Urc Activity");
-    private TextArea fundsource = new TextArea("Fund Source");
+    // private TextArea fundsource = new TextArea("Fund Source");
     private TextArea performanceIndicator = new TextArea("Performance Indicator");
     private TextArea outcome = new TextArea("Outcome");
     private TextArea output = new TextArea("Output");
+    private TextArea annualTarget = new TextArea("Annual Target");
     private ComboBox<UrcStrategicObjectives> objectives = new ComboBox("Objective");
     private FormLayout formActivity = new FormLayout();
     private BeanValidationBinder<Urc_Activities> binder = new BeanValidationBinder<>(Urc_Activities.class);
@@ -176,7 +177,7 @@ public class UrcProgrammesView extends Div {
         this.priorityAreaService = priorityAreaService;
         this.ndpPlanService = ndpPlanService;
         this.urcStrategicPlanService = urcStrategicPlanService;
-        this.urcStrategicObjectivesService=urcStrategicObjectivesService;
+        this.urcStrategicObjectivesService = urcStrategicObjectivesService;
         gridUrc_Activities.setHeight("100%");
         Urc_ActivitiesGridContextMenu contextMenu = new Urc_ActivitiesGridContextMenu(gridUrc_Activities);
         // menuBar.setOpenOnHover(true);
@@ -303,7 +304,7 @@ public class UrcProgrammesView extends Div {
         activity.setMaxLength(50);
         outcome.setMaxLength(50);
         // objective.setMaxLength(50);
-        fundsource.setMaxLength(50);
+        //  fundsource.setMaxLength(50);
 
         delete.addClickListener(e -> {
             URC_Priority_Areas entity = gridView.asSingleSelect().getValue();
@@ -349,13 +350,11 @@ public class UrcProgrammesView extends Div {
                     .map(v -> v.getCloseDate())
                     .flatMap(urcStrategicPlanService::findPlanByDate)
                     .orElse(null);
-            if(selectedUrcPlan!=null){
+            if (selectedUrcPlan != null) {
                 objectives.setItems(urcStrategicObjectivesService.findByStrategicPlan(selectedUrcPlan));
-            }else{
+            } else {
                 objectives.setItems(Collections.emptyList());
             }
-            
-            
 
             if (!event.getValue().isActive()) {
                 save.setEnabled(false);
@@ -599,13 +598,19 @@ public class UrcProgrammesView extends Div {
             return span;
         })).setHeader("Budget").setFlexGrow(0).setWidth("150px");
         gridUrc_Activities.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
-
+        activity.setPlaceholder("Procurement and deployment of ICT equipment");
+        performanceIndicator.setPlaceholder("% of ICT equipment procured and installed");
+        outcome.setPlaceholder("Improved efficiency and automation of institutional processes through enhanced ICT infrastructure");
+        objectives.setPlaceholder("To strengthen the institutional capacity of the Corporation");
+        output.setPlaceholder("ICT equipment procured, installed, and operationalized in departments");
+        annualTarget.setPlaceholder("100%");
         binder.forField(activity).asRequired("Urc Activity is Required").bind("name");
-        binder.forField(fundsource).asRequired("Fund Source is Required").bind("fundsource");
+        //binder.forField(fundsource).asRequired("Fund Source is Required").bind("fundsource");
         binder.forField(performanceIndicator).asRequired("Performance Indicator is Required").bind("performanceIndicator");
         binder.forField(outcome).asRequired("outcome is Required").bind("outcome");
         binder.forField(objectives).asRequired("objective is Required").bind("objectives");
         binder.forField(output).asRequired("output is Required").bind("output");
+        binder.forField(annualTarget).asRequired("annual target is Required").bind("annualTarget");
         gridUrc_Activities.asSingleSelect().addValueChangeListener(e -> {
             if (!gridUrc_Activities.asSingleSelect().isEmpty()) {
                 populateForm(e.getValue());
@@ -651,7 +656,7 @@ public class UrcProgrammesView extends Div {
         layouts2.setHeight("100%");
         layouts2.setOrientation(SplitLayout.Orientation.VERTICAL);
 
-        formActivity.add(activity, fundsource, performanceIndicator, outcome, output, objectives);
+        formActivity.add(activity, performanceIndicator, outcome, output, annualTarget, objectives);
         vlay2.add(formActivity);
         HorizontalLayout lays = new HorizontalLayout();
 
@@ -696,15 +701,16 @@ public class UrcProgrammesView extends Div {
             }
         });
         saveA.addClickListener(e -> {
-            if (!activity.isEmpty() && !fundsource.isEmpty() && !performanceIndicator.isEmpty() && !outcome.isEmpty() && !output.isEmpty() && !objectives.isEmpty() && !comboBoxD_Section.isEmpty() && !budgetComboBox.isEmpty()) {
+            if (!activity.isEmpty() && !performanceIndicator.isEmpty() && !outcome.isEmpty() && !output.isEmpty() && !annualTarget.isEmpty() && !objectives.isEmpty() && !comboBoxD_Section.isEmpty() && !budgetComboBox.isEmpty()) {
                 Urc_Activities act = gridUrc_Activities.asSingleSelect().getValue();
                 if (act != null) {
                     act.setName(activity.getValue());
-                    act.setFundsource(fundsource.getValue());
+                    //act.setFundsource(fundsource.getValue());
                     act.setPerformanceIndicator(performanceIndicator.getValue());
                     act.setOutcome(outcome.getValue());
                     act.setOutput(output.getValue());
                     act.setObjectives(objectives.getValue());
+                    act.setAnnualTarget(annualTarget.getValue());
                     sampleUrc_ActivitiesService.update(act);
                     refreshActGrid(budgetComboBox.getValue(), act.getUrcPriorityAreas(), comboBoxD_Section.getSelectedItems().stream().toList());
 
@@ -712,10 +718,11 @@ public class UrcProgrammesView extends Div {
                     if (!gridView.asSingleSelect().isEmpty()) {
                         act = new Urc_Activities();
                         act.setName(activity.getValue());
-                        act.setFundsource(fundsource.getValue());
+                        //act.setFundsource(fundsource.getValue());
                         act.setPerformanceIndicator(performanceIndicator.getValue());
                         act.setOutcome(outcome.getValue());
                         act.setOutput(output.getValue());
+                        act.setAnnualTarget(annualTarget.getValue());
                         act.setObjectives(objectives.getValue());
                         act.setBudget(budgetComboBox.getValue());
                         act.setUrcPriorityAreas(gridView.asSingleSelect().getValue());
@@ -772,11 +779,12 @@ public class UrcProgrammesView extends Div {
 
     private void clearActivity() {
         activity.clear();
-        fundsource.clear();
+        // fundsource.clear();
         performanceIndicator.clear();
         outcome.clear();
         output.clear();
         objectives.clear();
+        annualTarget.clear();
     }
 
     private boolean isUserAdmin() {
@@ -1309,6 +1317,7 @@ public class UrcProgrammesView extends Div {
                     ar.setPerformanceIndicator(p.getPerformanceIndicator());
                     ar.setOutcome(p.getOutcome());
                     ar.setOutput(p.getOutput());
+                    ar.setAnnualTarget(p.getAnnualTarget());
                     ar.setObjective(p.getObjective());
                     ar.setUrcPriorityAreas(gridView.asSingleSelect().getValue());
                     ar.setDeptSection(p.getDeptSection());

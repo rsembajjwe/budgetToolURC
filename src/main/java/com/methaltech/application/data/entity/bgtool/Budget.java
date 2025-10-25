@@ -1,10 +1,13 @@
 package com.methaltech.application.data.entity.bgtool;
 
+import jakarta.persistence.CascadeType;
 import java.time.LocalDate;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.io.Serializable;
 import lombok.Data;
@@ -33,5 +36,22 @@ public class Budget implements Serializable {
     private LocalDate closeDate;
     private String description;
     private boolean active;
+    // One-to-one: budget owns nothing here, mappedBy points to field in SectionBudgetPerformance
+    @OneToOne(mappedBy = "budget", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private SectionBudgetPerformance sectionBudgetPerformance;
+
+    // helper
+    public void setSectionBudgetPerformance(SectionBudgetPerformance perf) {
+        if (perf == null) {
+            if (this.sectionBudgetPerformance != null) {
+                this.sectionBudgetPerformance.setBudget(null);
+            }
+            this.sectionBudgetPerformance = null;
+        } else {
+            perf.setBudget(this);
+            this.sectionBudgetPerformance = perf;
+        }
+    }
+
 
 }

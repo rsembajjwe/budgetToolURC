@@ -428,6 +428,13 @@ public class BudgetItemsService {
         return repository.calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr1(budget, activity, deptUnits, budgetType);
     }
 
+    public BigDecimal calculateTotalByBudgetAndDeptUnits(
+            Budget budget,
+            UrcDeptSectionAnlDimbgt deptUnits
+    ) {
+        return repository.calculateTotalByBudgetAndDeptUnits(budget, deptUnits);
+    }
+
     public BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr2(
             Budget budget,
             Urc_Activities activity,

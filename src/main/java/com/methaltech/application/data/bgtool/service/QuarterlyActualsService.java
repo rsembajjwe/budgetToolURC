@@ -62,4 +62,12 @@ public class QuarterlyActualsService {
             return qa;
         }).collect(Collectors.toList());
     }
+
+    public List<QuarterlyActuals> findByPeriods(Set<Integer> periods) {
+        if (periods == null || periods.isEmpty()) {
+            return List.of();
+        }
+        return quarterlyActualsRepository.findByPeriodIn(periods);
+    }
+
 }

@@ -46,6 +46,10 @@ public class SALFLDGService {
         return salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(accntCode, period);
     }
 
+    public BigDecimal findSumOfAmountByAnalT1AndPeriodIn(String sectionCode, List<Integer> period) {
+        return salfldgRepository.findSumOfAmountByAnalT1AndPeriodIn(sectionCode, period);
+    }
+
     public BigDecimal findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(String accntCode, int period, Set<String> analT1Set) {
         return salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(accntCode, period, analT1Set);
     }

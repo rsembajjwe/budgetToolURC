@@ -19,6 +19,7 @@ import com.methaltech.application.views.budget.BudgetView;
 import com.methaltech.application.views.budget.DashboardView;
 import com.methaltech.application.views.budget.OrganisationCOAManagementView;
 import com.methaltech.application.views.budgetReport.BudgetReportsView;
+import com.methaltech.application.views.budgetReport.PhysicalFinancialPerformanceView;
 import com.methaltech.application.views.budgetcontrol.BudgetControlView;
 import com.methaltech.application.views.currency.currencyView;
 import com.methaltech.application.views.freight.freightVolumeView;
@@ -255,9 +256,13 @@ public class MainLayout extends AppLayout {
         SideNavItem performanceReportHeader = new SideNavItem("Performance Reports");
         performanceReportHeader.setClassName("menu-header");
         nav.addItem(performanceReportHeader);
-
+        if (accessChecker.hasAccess(PhysicalFinancialPerformanceView.class)) {
+            SideNavItem item = new SideNavItem("Performance Report N", PhysicalFinancialPerformanceView.class, VaadinIcon.RASTER.create());
+            item.addClassName("menu-item");
+            nav.addItem(item);
+        }
         if (accessChecker.hasAccess(ActualView.class)) {
-            SideNavItem item = new SideNavItem("Performance Report", ActualView.class, VaadinIcon.TRENDING_UP.create());
+            SideNavItem item = new SideNavItem("Performance Report O", ActualView.class, VaadinIcon.TRENDING_UP.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }

@@ -117,7 +117,7 @@ public class BudgetService {
         this.sampleSALFLDGService = sampleSALFLDGService;
     }
 
-    public Optional<Budget> get(Integer id) {
+    public Optional<Budget> get(Long id) {
         //UUID myUUID = intToUUID(id);
         return repository.findById(id);
     }
@@ -144,7 +144,7 @@ public class BudgetService {
         return repository.save(entity);
     }
 
-    public void delete(Integer id) {
+    public void delete(Long id) {
         repository.deleteById(id);
     }
 

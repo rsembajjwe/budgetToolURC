@@ -130,7 +130,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 @PageTitle("Budget-Form-View")
 @Route(value = "budget-form", layout = MainLayout.class)
-@RouteAlias(value = "", layout = MainLayout.class)
+
 //@RolesAllowed("USER")
 @Uses(Icon.class)
 //@RouteAlias(value = "", layout = MainLayout.class)

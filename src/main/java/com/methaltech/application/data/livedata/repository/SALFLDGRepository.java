@@ -70,6 +70,9 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
     @Query("SELECT DISTINCT s.accntCode FROM SALFLDG s WHERE s.analT1 IN :analT1List AND s.period IN :periodList")
     List<String> findDistinctAccntCodeByAnalT1InAndPeriodIn(List<String> analT1List, List<Integer> periodList);
 
+    @Query("SELECT COALESCE(SUM(ABS(s.amount)), 0) FROM SALFLDG s WHERE s.analT1 = :analT1List AND s.period IN :periodList")
+    BigDecimal findSumOfAmountByAnalT1AndPeriodIn(String analT1List, List<Integer> periodList);
+
     /*    @Query("SELECT s FROM SALFLDG s WHERE s.period = :period AND s.accntCode = :accntCode AND s.analT1 IN :analT1List")
     List<SALFLDG> findByPeriodAndAccntCodeAndAnalT1In(@Param("period") int period, @Param("accntCode") String accntCode, @Param("analT1List") List<String> analT1List);*/
 

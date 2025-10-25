@@ -28,6 +28,7 @@ import lombok.ToString;
 public @Data
 class Urc_Activities implements Serializable {
 
+    @EqualsAndHashCode.Include
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -106,6 +107,20 @@ class Urc_Activities implements Serializable {
     private BigDecimal TotalA;
 
     private Long origid;
+    private String annualTarget;
+    private String cum_achievements_qtr1;
+    private String cum_achievements_qtr2;
+    private String cum_achievements_qtr3;
+    private String cum_achievements_qtr4;
+    private String perc_of_TargetAchieved_qtr1;
+    private String perc_of_TargetAchieved_qtr2;
+    private String perc_of_TargetAchieved_qtr3;
+    private String perc_of_TargetAchieved_qtr4;
+    private String expl_of_variations_qtr1;
+    private String expl_of_variations_qtr2;
+    private String expl_of_variations_qtr3;
+    private String expl_of_variations_qtr4;
+
 
     // Helper methods
     public String getDisplayName() {

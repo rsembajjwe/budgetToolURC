@@ -1162,7 +1162,8 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
         //Optional<UUID> samplePersonId = event.getRouteParameters().get(BUDGET_ID).map(UUID::fromString);
-        Optional<Integer> samplePersonId = event.getRouteParameters().get(BUDGET_ID).map(Integer::parseInt);
+        Optional<Long> samplePersonId = event.getRouteParameters() .get(BUDGET_ID).map(Long::parseLong);
+
         if (samplePersonId.isPresent()) {
             Optional<Budget> samplePersonFromBackend = sampleBudgetService.get(samplePersonId.get());
             if (samplePersonFromBackend.isPresent()) {

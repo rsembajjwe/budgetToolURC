@@ -481,7 +481,14 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits
     );
     
-
+    @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.deptUnit = :deptUnits")
+    BigDecimal calculateTotalByBudgetAndDeptUnits(
+            @Param("budget") Budget budget,
+            @Param("deptUnits") UrcDeptSectionAnlDimbgt deptUnits
+    );
 
 
     @Query("SELECT COALESCE(SUM(b.jul + b.aug + b.sep ), 0) "

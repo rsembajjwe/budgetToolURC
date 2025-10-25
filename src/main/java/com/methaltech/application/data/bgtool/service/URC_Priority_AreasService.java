@@ -4,6 +4,7 @@ import com.methaltech.application.data.entity.bgtool.URC_Priority_Areas;
 import com.methaltech.application.data.entity.bgtool.URC_Strategic_Plan;
 import com.methaltech.application.data.bgtool.repository.URC_Priority_AreasRepository;
 import com.methaltech.application.data.entity.bgtool.Budget;
+import com.methaltech.application.data.entity.bgtool.PriorityArea;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -83,10 +84,18 @@ public class URC_Priority_AreasService {
     }
 
     public List<URC_Priority_Areas> getAreasByDate(LocalDate inputDate) {
+        List<URC_Priority_Areas> results = repository.findAllByInputDateBetweenNdpPlanDates(inputDate);
+        System.out.println("Fetched count: " + results.size());
+        results.stream().map(URC_Priority_Areas::getName).forEach(System.out::println);
         return repository.findAllByInputDateBetweenNdpPlanDates(inputDate);
     }
-    
-        public List<URC_Priority_Areas> getAreasByDateAndName(String name,LocalDate inputDate) {
-        return repository.findAllByNameAndInputDateBetweenNdpPlanDates(name,inputDate);
+
+    public List<URC_Priority_Areas> getAreasByDateAndName(String name, LocalDate inputDate) {
+        return repository.findAllByNameAndInputDateBetweenNdpPlanDates(name, inputDate);
     }
+
+    public List<PriorityArea> getDistinctPriorityAreasByBudget(LocalDate inputDate) {
+        return repository.findDistinctPriorityAreasByBudgetAndDateWithinNdpPlan(inputDate);
+    }
+
 }

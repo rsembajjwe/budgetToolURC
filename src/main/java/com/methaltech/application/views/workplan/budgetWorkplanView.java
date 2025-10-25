@@ -31,6 +31,7 @@ import com.methaltech.application.data.entity.bgtool.User;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.MainLayout;
 import com.methaltech.application.views.budgetReport.BudgetReportsView;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HtmlComponent;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.accordion.Accordion;
@@ -44,6 +45,8 @@ import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dataview.GridListDataView;
@@ -65,6 +68,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
@@ -85,14 +89,17 @@ import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.ss.usermodel.BorderStyle;
@@ -370,6 +377,7 @@ public class budgetWorkplanView extends Div {
     private Accordion workplanview(Accordion accordion) {
 
         accordion.getChildren().forEach(component -> accordion.remove((AccordionPanel) component));
+
         List<UrcDeptSectionAnlDimbgt> selectedSections = comboBoxD_Section.getSelectedItems().stream().toList();
         if (isSumBudgetDeptUnitsGreaterThanZero(comboBoxBudget.getValue(), selectedSections) == true) {
             programmes = sampleURC_Priority_Areas.getAreasByDate(comboBoxBudget.getValue().getCloseDate());
@@ -391,6 +399,7 @@ public class budgetWorkplanView extends Div {
                         }
 
                         Grid<Urc_Activities> grid = new Grid<>(Urc_Activities.class, false);
+
                         grid.setSizeFull();
                         Grid.Column<Urc_Activities> npdProgrammeCol = grid.addColumn(new ComponentRenderer<>(activity -> {
                             Span nameSpan = new Span(activity.getUrcPriorityAreas().getPriorityArea().getDescription());
@@ -513,7 +522,7 @@ public class budgetWorkplanView extends Div {
 
                         Grid.Column<Urc_Activities> actualQtr1Col = grid.addColumn(new ComponentRenderer<>(activity -> {
                             // Create styled span
-                            Span span = new Span(formatBigDecimal(activity.getQtr1A()));
+                            Span span = new Span(formatBigDecimal2(activity.getQtr1A()));
                             span.getStyle().set("font-weight", "bold");
                             span.getStyle().set("color", "#d32f2f");          // Red text
                             span.getStyle().set("background-color", "#fff3e0"); // Light orange background
@@ -543,7 +552,7 @@ public class budgetWorkplanView extends Div {
                             contextMenu.setOpenOnClick(true); // true = opens menu on left click (optional)
 
                             // Add menu items
-                            contextMenu.addItem("Add Budget Performance Data", e -> openPerformanceDialog(activity, 1));
+                            contextMenu.addItem("Add Budget Performance Data", e -> openPerformanceDialog(grid, listUrc_Activities, activity, 1));
                             // contextMenu.addItem("View Details", e -> showActivityDetails(activity));
                             contextMenu.addItem("Delete Value", e -> {
                                 activity.setQtr1A(BigDecimal.ZERO);
@@ -576,7 +585,7 @@ public class budgetWorkplanView extends Div {
                                 .setAutoWidth(true);
 
                         Grid.Column<Urc_Activities> actualQtr2Col = grid.addColumn(new ComponentRenderer<>(activity -> {
-                            Span span = new Span(formatBigDecimal(activity.getQtr2A()));
+                            Span span = new Span(formatBigDecimal2(activity.getQtr2A()));
                             span.getStyle()
                                     .set("display", "inline-block")
                                     .set("padding", "4px 10px")
@@ -594,6 +603,19 @@ public class budgetWorkplanView extends Div {
                                     -> span.getStyle().set("background-color", "#1565c0"));
                             span.getElement().addEventListener("mouseout", e
                                     -> span.getStyle().set("background-color", "#1976d2"));         // Needed for alignment
+
+                            // Create context menu for this specific cell
+                            ContextMenu contextMenu = new ContextMenu(span);
+                            contextMenu.setOpenOnClick(true); // true = opens menu on left click (optional)
+
+                            // Add menu items
+                            contextMenu.addItem("Add Budget Performance Data", e -> openPerformanceDialog(grid, listUrc_Activities, activity, 2));
+                            // contextMenu.addItem("View Details", e -> showActivityDetails(activity));
+                            contextMenu.addItem("Delete Value", e -> {
+                                activity.setQtr1A(BigDecimal.ZERO);
+                                grid.getDataProvider().refreshItem(activity);
+                            });
+
                             return span;
                         })).setHeader("ACTUAL QTR2")
                                 .setSortable(true)
@@ -617,7 +639,7 @@ public class budgetWorkplanView extends Div {
                                 .setAutoWidth(true);
 
                         Grid.Column<Urc_Activities> actualQtr3Col = grid.addColumn(new ComponentRenderer<>(activity -> {
-                            Span span = new Span(formatBigDecimal(activity.getQtr3A()));
+                            Span span = new Span(formatBigDecimal2(activity.getQtr3A()));
                             span.getStyle()
                                     .set("display", "inline-block")
                                     .set("padding", "4px 10px")
@@ -635,6 +657,19 @@ public class budgetWorkplanView extends Div {
                                     -> span.getStyle().set("background-color", "#1565c0"));
                             span.getElement().addEventListener("mouseout", e
                                     -> span.getStyle().set("background-color", "#1976d2"));         // Needed for alignment
+
+                            // Create context menu for this specific cell
+                            ContextMenu contextMenu = new ContextMenu(span);
+                            contextMenu.setOpenOnClick(true); // true = opens menu on left click (optional)
+
+                            // Add menu items
+                            contextMenu.addItem("Add Budget Performance Data", e -> openPerformanceDialog(grid, listUrc_Activities, activity, 3));
+                            // contextMenu.addItem("View Details", e -> showActivityDetails(activity));
+                            contextMenu.addItem("Delete Value", e -> {
+                                activity.setQtr1A(BigDecimal.ZERO);
+                                Notification.show("QTR1 actual cleared for " + activity.getActivityCode());
+                                grid.getDataProvider().refreshItem(activity);
+                            });
                             return span;
                         })).setHeader("ACTUAL QTR3")
                                 .setSortable(true)
@@ -658,7 +693,7 @@ public class budgetWorkplanView extends Div {
                                 .setAutoWidth(true);
 
                         Grid.Column<Urc_Activities> actualQtr4Col = grid.addColumn(new ComponentRenderer<>(activity -> {
-                            Span span = new Span(formatBigDecimal(activity.getQtr4A()));
+                            Span span = new Span(formatBigDecimal2(activity.getQtr4A()));
                             span.getStyle()
                                     .set("display", "inline-block")
                                     .set("padding", "4px 10px")
@@ -676,6 +711,18 @@ public class budgetWorkplanView extends Div {
                                     -> span.getStyle().set("background-color", "#1565c0"));
                             span.getElement().addEventListener("mouseout", e
                                     -> span.getStyle().set("background-color", "#1976d2"));         // Needed for alignment
+                            // Create context menu for this specific cell
+                            ContextMenu contextMenu = new ContextMenu(span);
+                            contextMenu.setOpenOnClick(true); // true = opens menu on left click (optional)
+
+                            // Add menu items
+                            contextMenu.addItem("Add Budget Performance Data", e -> openPerformanceDialog(grid, listUrc_Activities, activity, 4));
+                            // contextMenu.addItem("View Details", e -> showActivityDetails(activity));
+                            contextMenu.addItem("Delete Value", e -> {
+                                activity.setQtr1A(BigDecimal.ZERO);
+                                Notification.show("QTR1 actual cleared for " + activity.getActivityCode());
+                                grid.getDataProvider().refreshItem(activity);
+                            });
                             return span;
                         })).setHeader("ACTUAL QTR4")
                                 .setSortable(true)
@@ -704,8 +751,6 @@ public class budgetWorkplanView extends Div {
                                 .setSortable(true)
                                 .setAutoWidth(true);
                         sectionCol.setVisible(false);
-                        grid.setItems(listUrc_Activities);
-
                         VerticalLayout personalInformationLayout = new VerticalLayout();
                         personalInformationLayout.setSpacing(false);
                         personalInformationLayout.setPadding(false);
@@ -768,9 +813,9 @@ public class budgetWorkplanView extends Div {
 
                         columnMenu.getSubMenu().add(npdCheck, activityCheck, objectiveCheck, outputCheck, actualOutputCheck, kpiCheck, bgtCheck, qtr1Check,
                                 actualQtr1Check, qtr2Check, actualQtr2Check, qtr3Check, actualQtr3Check, qtr4ACheck, actualQtr4Check, fundsourceCheck, sectionCheck);
+                        grid.setItems(Collections.emptyList());
+                        grid.setItems(listUrc_Activities);
                         personalInformationLayout.add(menuBar, grid);
-                        // System.out.println("Activities count: " + listUrc_Activities.size());
-
                         accordion.add(prog.getName(), personalInformationLayout);
                     }
                 }
@@ -783,18 +828,113 @@ public class budgetWorkplanView extends Div {
         return accordion;
     }
 
-    private void openPerformanceDialog(Urc_Activities activity, int qtr) {
+    private void openPerformanceDialog(Grid grid, List<Urc_Activities> activities, Urc_Activities activity, int qtr) {
         Dialog dialog = new Dialog();
         dialog.setWidth("1100px");
         dialog.setHeight("650px");
+        dialog.setMinWidth("550px");
         dialog.setHeaderTitle("Manage Deliverables & Quarterly Actuals - " + activity.getActivityCode() + ": " + activity.getName());
+        dialog.setModal(false);
+        dialog.setDraggable(true);
+        dialog.setResizable(true);
+
+        // === Data Providers ===
+        List<QuarterlyActuals> sourceItems = QuarterlyActualsService.getQuarterlyActuals(activity.getDeptSection().getANL_CODE(), getPeriod.getFinancialYearPeriods(activity.getBudget(), qtr), activity);
+        List<QuarterlyActuals> existingItems = QuarterlyActualsService.findByPeriods(getPeriod.getFinancialYearPeriods(activity.getBudget(), qtr));
+
+        // Build a Set of unique composite keys for fast lookup
+        Set<String> existingKeys = existingItems.stream()
+                .map(item -> item.getAccountCode() + "|"
+                + item.getPeriod() + "|"
+                + item.getTransactionDateTime() + "|"
+                + item.getJournalNo() + "|"
+                + item.getJournalLine())
+                .collect(Collectors.toSet());
+
+// Filter sourceItems to remove any that already exist
+        List<QuarterlyActuals> filteredItems = sourceItems.stream()
+                .filter(item -> !existingKeys.contains(
+                item.getAccountCode() + "|"
+                + item.getPeriod() + "|"
+                + item.getTransactionDateTime() + "|"
+                + item.getJournalNo() + "|"
+                + item.getJournalLine()))
+                .collect(Collectors.toList());
+
+        List<QuarterlyActuals> targetItems = new ArrayList<>(activity.getQuarterlyActuals());
+
+        ListDataProvider<QuarterlyActuals> sourceProvider = new ListDataProvider<>(filteredItems);
+        ListDataProvider<QuarterlyActuals> targetProvider = new ListDataProvider<>(targetItems);
 
         // === Source Grid (Available QuarterlyActuals) ===
         Grid<QuarterlyActuals> sourceGrid = new Grid<>(QuarterlyActuals.class, false);
-        sourceGrid.addColumn(QuarterlyActuals::getAccountCode).setHeader("Account Code").setWidth("60px").setSortable(true);
+        //sourceGrid.addColumn(QuarterlyActuals::getAccountCode).setHeader("Account Code").setWidth("60px").setSortable(true);
+
+        sourceGrid.addColumn(new ComponentRenderer<>(item -> {
+            if (item.getAccountCode() == null) {
+                return new Span(""); // Avoid returning an empty string
+            }
+
+            Span span = new Span(item.getAccountCode());
+            span.getStyle()
+                    .set("display", "inline-block")
+                    .set("padding", "4px 10px")
+                    .set("background-color", "#1976d2") // Blue button color
+                    .set("color", "white")
+                    .set("border-radius", "4px")
+                    .set("font-weight", "bold")
+                    .set("cursor", "pointer")
+                    .set("text-align", "center")
+                    .set("box-shadow", "0 2px 4px rgba(0, 0, 0, 0.2)");
+
+            // Create right-click or left-click context menu
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.setOpenOnClick(true); // Open menu on left click
+
+            // Add context menu action
+            contextMenu.addItem("Select All By Account Code", e -> {
+                String acc = item.getAccountCode();
+                if (acc != null) {
+                    Set<QuarterlyActuals> sameAccountItems = filteredItems.stream()
+                            .filter(i -> acc.equals(i.getAccountCode()))
+                            .collect(Collectors.toSet());
+                    sameAccountItems.forEach(sourceGrid::select);
+                }
+            });
+            contextMenu.addItem("Align/Transfer to Activity", e -> {
+                // Get selected items from the source grid
+                Set<QuarterlyActuals> selectedItems = new HashSet<>(sourceGrid.getSelectedItems());
+                if (selectedItems.isEmpty()) {
+                    Notification.show("No items selected.", 2000, Notification.Position.MIDDLE);
+                    return;
+                }
+
+                // Move selected items to the target grid
+                selectedItems.forEach(itemThis -> {
+                    sourceProvider.getItems().remove(itemThis);
+                    targetProvider.getItems().add(itemThis);
+                });
+
+                // Refresh both grids
+                sourceProvider.refreshAll();
+                targetProvider.refreshAll();
+
+                // Clear selection after transfer
+                sourceGrid.deselectAll();
+
+                Notification.show(selectedItems.size() + " item(s) transferred to activity.", 2000, Notification.Position.BOTTOM_CENTER);
+            });
+            return span;
+        }))
+                .setHeader("Account Code")
+                .setAutoWidth(true)
+                .setSortable(true)
+                .setFlexGrow(0);
+
         sourceGrid.addColumn(QuarterlyActuals::getDescription).setHeader("Description").setSortable(true);
         sourceGrid.addColumn(qa -> formatBigDecimal(qa.getAmount())).setHeader("Amount").setSortable(true);
         sourceGrid.addColumn(item -> {
+
             if (item.getTransactionDateTime() == null) {
                 return "";
             }
@@ -809,9 +949,73 @@ public class budgetWorkplanView extends Div {
 
         // === Target Grid (Activity's QuarterlyActuals) ===
         Grid<QuarterlyActuals> targetGrid = new Grid<>(QuarterlyActuals.class, false);
-        targetGrid.addColumn(QuarterlyActuals::getAccountCode).setHeader("Account Code").setWidth("60px").setSortable(true);
+        // targetGrid.addColumn(QuarterlyActuals::getAccountCode).setHeader("Account Code").setWidth("60px").setSortable(true);
+
+        targetGrid.addColumn(new ComponentRenderer<>(item -> {
+            if (item.getAccountCode() == null) {
+                return new Span(""); // Avoid returning an empty string
+            }
+
+            Span span = new Span(item.getAccountCode());
+            span.getStyle()
+                    .set("display", "inline-block")
+                    .set("padding", "4px 10px")
+                    .set("background-color", "#1976d2") // Blue button color
+                    .set("color", "white")
+                    .set("border-radius", "4px")
+                    .set("font-weight", "bold")
+                    .set("cursor", "pointer")
+                    .set("text-align", "center")
+                    .set("box-shadow", "0 2px 4px rgba(0, 0, 0, 0.2)");
+
+            // Create right-click or left-click context menu
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.setOpenOnClick(true); // Open menu on left click
+
+            // Add context menu action
+            contextMenu.addItem("Select All By Account Code", e -> {
+                String acc = item.getAccountCode();
+                if (acc != null) {
+                    Set<QuarterlyActuals> sameAccountItems = existingItems.stream()
+                            .filter(i -> acc.equals(i.getAccountCode()))
+                            .collect(Collectors.toSet());
+                    sameAccountItems.forEach(targetGrid::select);
+                }
+            });
+
+            contextMenu.addItem("Remove From Activity", e -> {
+                // Get selected items from the source grid
+                Set<QuarterlyActuals> selectedItems = new HashSet<>(targetGrid.getSelectedItems());
+                if (selectedItems.isEmpty()) {
+                    Notification.show("No items selected.", 2000, Notification.Position.MIDDLE);
+                    return;
+                }
+
+                // Move selected items to the target grid
+                selectedItems.forEach(itemThis -> {
+
+                    targetProvider.getItems().remove(itemThis);
+                    sourceProvider.getItems().add(itemThis);
+                });
+
+                // Refresh both grids
+                sourceProvider.refreshAll();
+                targetProvider.refreshAll();
+
+                // Clear selection after transfer
+                targetGrid.deselectAll();
+
+                Notification.show(selectedItems.size() + " item(s) removed from activity.", 2000, Notification.Position.BOTTOM_CENTER);
+            });
+
+            return span;
+        }))
+                .setHeader("Account Code")
+                .setAutoWidth(true)
+                .setSortable(true)
+                .setFlexGrow(0);
         targetGrid.addColumn(QuarterlyActuals::getDescription).setHeader("Description").setSortable(true);
-        targetGrid.addColumn(qa -> formatBigDecimal(qa.getAmount())).setHeader("Amount").setSortable(true);
+        Grid.Column<QuarterlyActuals> amountColumn = targetGrid.addColumn(qa -> formatBigDecimal(qa.getAmount())).setHeader("Amount").setSortable(true);
         targetGrid.addColumn(QuarterlyActuals::getTransactionDateTime).setHeader("Trans Date").setSortable(true);
         targetGrid.addColumn(item -> {
             if (item.getTransactionDateTime() == null) {
@@ -827,19 +1031,19 @@ public class budgetWorkplanView extends Div {
         targetGrid.setSelectionMode(Grid.SelectionMode.MULTI);
         targetGrid.setItems(activity.getQuarterlyActuals());
 
-        // === Data Providers ===
-        List<QuarterlyActuals> sourceItems = QuarterlyActualsService.getQuarterlyActuals(activity.getDeptSection().getANL_CODE(), getPeriod.getFinancialYearPeriods(activity.getBudget(), qtr), activity);
-
-        GridListDataView<QuarterlyActuals> sourceDataView = sourceGrid.setItems(sourceItems);
-        GridListDataView<QuarterlyActuals> targetDataView = targetGrid.setItems(activity.getQuarterlyActuals());
-
-        List<QuarterlyActuals> targetItems = new ArrayList<>(activity.getQuarterlyActuals());
-
-        ListDataProvider<QuarterlyActuals> sourceProvider = new ListDataProvider<>(sourceItems);
-        ListDataProvider<QuarterlyActuals> targetProvider = new ListDataProvider<>(targetItems);
-
         sourceGrid.setDataProvider(sourceProvider);
         targetGrid.setDataProvider(targetProvider);
+
+        BigDecimal total = targetProvider.getItems().stream()
+                .map(QuarterlyActuals::getAmount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        amountColumn.setFooter("Total: " + formatBigDecimal(total));
+
+        targetProvider.addDataProviderListener(event -> {
+            updateAmountFooter(amountColumn, targetProvider);
+        });
 
         sourceGrid.setRowsDraggable(true);
         targetGrid.setRowsDraggable(true);
@@ -856,18 +1060,30 @@ public class budgetWorkplanView extends Div {
 
 // Drop logic
         targetGrid.addDropListener(e -> {
-            if (draggedItem != null && sourceItems.remove(draggedItem)) {
-                targetItems.add(draggedItem);
+            if (draggedItem != null) {
+                // Remove from source provider's data set
+                sourceProvider.getItems().remove(draggedItem);
+
+                // Add to target provider's data set
+                targetProvider.getItems().add(draggedItem);
+
+                // Refresh both
                 sourceProvider.refreshAll();
                 targetProvider.refreshAll();
+
+                draggedItem = null;
             }
         });
 
         sourceGrid.addDropListener(e -> {
-            if (draggedItem != null && targetItems.remove(draggedItem)) {
-                sourceItems.add(draggedItem);
+            if (draggedItem != null) {
+                targetProvider.getItems().remove(draggedItem);
+                sourceProvider.getItems().add(draggedItem);
+
                 sourceProvider.refreshAll();
                 targetProvider.refreshAll();
+
+                draggedItem = null;
             }
         });
 
@@ -904,28 +1120,150 @@ public class budgetWorkplanView extends Div {
         });
 
         // === Deliverables Section ===
-        HorizontalLayout deliverableLayout = new HorizontalLayout();
+        FormLayout deliverableLayout = new FormLayout();
+        HorizontalLayout lay = new HorizontalLayout();
         deliverableLayout.setWidthFull();
-        deliverableLayout.setAlignItems(FlexComponent.Alignment.END);
-        deliverableLayout.getStyle().set("margin-top", "10px");
+        deliverableLayout.getStyle()
+                .set("margin-top", "10px")
+                .set("padding", "6px")
+                .set("background-color", "#f9fafc")
+                .set("border-radius", "6px")
+                .set("box-shadow", "inset 0 1px 3px rgba(0,0,0,0.1)")
+                // 👇 Force columns to stretch evenly and fill 100%
+                .set("display", "grid")
+                .set("grid-template-columns", "repeat(auto-fit, minmax(300px, 1fr))")
+                .set("gap", "12px");
 
-        TextField deliverableField = new TextField("Add Deliverable");
-        deliverableField.setWidth("400px");
-        Button addDeliverableBtn = new Button("Add", e -> {
-            if (!deliverableField.getValue().isBlank()) {
-                if (activity.getDeliverable_outputs() == null) {
-                    activity.setDeliverable_outputs(new HashSet<>());
-                }
-                activity.getDeliverable_outputs().add(deliverableField.getValue());
-                deliverableField.clear();
-                Notification.show("Deliverable added.", 2000, Notification.Position.BOTTOM_START);
-            }
-        });
-        addDeliverableBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        deliverableLayout.add(deliverableField, addDeliverableBtn);
+        TextArea kpiField = new TextArea("KPI");
+        kpiField.setValue(activity.getPerformanceIndicator());
+        kpiField.setEnabled(false);
+        kpiField.setPlaceholder("% of ICT equipment procured and installed");
+        // kpiField.setWidth("400px");
+        TextArea outputField = new TextArea("Planned Activity Output");
+        outputField.setValue(activity.getOutput());
+        outputField.setEnabled(false);
+        outputField.setPlaceholder("% of ICT equipment procured and installed");
 
+        // outputField.setWidth("400px");
+        TextArea outcomeField = new TextArea("Planned Activity Outcome");
+        outcomeField.setValue(activity.getOutput());
+        outcomeField.setEnabled(false);
+        kpiField.setPlaceholder("% of ICT equipment procured and installed");
+        // outcomeField.setWidth("400px");
+
+        TextField annualTargetSpan = new TextField("Planned Annual Target");
+        annualTargetSpan.setEnabled(false);
+        String annualTargetValue = activity.getAnnualTarget() != null ? activity.getAnnualTarget().toString() : "";
+        annualTargetSpan.setValue(annualTargetValue);
+        annualTargetSpan.setPlaceholder("100%");
+
+        TextField cumAchievementsSpan = new TextField("Cumulative Achievements");
+        cumAchievementsSpan.setPlaceholder("90%");
+        TextField perc_of_release_SpentSpan = new TextField("% Target Achieved");
+        perc_of_release_SpentSpan.setPlaceholder("90%");
+
+        TextArea expl_of_variationField = new TextArea("Explanation for Variations");
+        expl_of_variationField.setPlaceholder("Delayed supplier delivery");
+        //expl_of_variationField.setWidth("400px");
+
+        switch (qtr) {
+            case 1:
+                cumAchievementsSpan.setValue(activity.getCum_achievements_qtr1() != null ? activity.getCum_achievements_qtr1() : "");
+                perc_of_release_SpentSpan.setValue(activity.getPerc_of_TargetAchieved_qtr1() != null ? activity.getPerc_of_TargetAchieved_qtr1() : "");
+                expl_of_variationField.setValue(activity.getExpl_of_variations_qtr1() != null ? activity.getExpl_of_variations_qtr1() : "");
+                break;
+
+            case 2:
+                cumAchievementsSpan.setValue(activity.getCum_achievements_qtr2() != null ? activity.getCum_achievements_qtr2() : "");
+                perc_of_release_SpentSpan.setValue(activity.getPerc_of_TargetAchieved_qtr2() != null ? activity.getPerc_of_TargetAchieved_qtr2() : "");
+                expl_of_variationField.setValue(activity.getExpl_of_variations_qtr2() != null ? activity.getExpl_of_variations_qtr2() : "");
+                break;
+
+            case 3:
+                cumAchievementsSpan.setValue(activity.getCum_achievements_qtr3() != null ? activity.getCum_achievements_qtr3() : "");
+                perc_of_release_SpentSpan.setValue(activity.getPerc_of_TargetAchieved_qtr3() != null ? activity.getPerc_of_TargetAchieved_qtr3() : "");
+                expl_of_variationField.setValue(activity.getExpl_of_variations_qtr3() != null ? activity.getExpl_of_variations_qtr3() : "");
+                break;
+
+            case 4:
+                cumAchievementsSpan.setValue(activity.getCum_achievements_qtr4() != null ? activity.getCum_achievements_qtr4() : "");
+                perc_of_release_SpentSpan.setValue(activity.getPerc_of_TargetAchieved_qtr4() != null ? activity.getPerc_of_TargetAchieved_qtr4() : "");
+                expl_of_variationField.setValue(activity.getExpl_of_variations_qtr4() != null ? activity.getExpl_of_variations_qtr4() : "");
+                break;
+
+            default:
+                cumAchievementsSpan.setValue("");
+                perc_of_release_SpentSpan.setValue("");
+                expl_of_variationField.setValue("");
+                break;
+        }
+
+        lay.add(kpiField, outputField, outcomeField);
+        // Set all text areas to the same nice style
+        Stream.of(kpiField, outputField, outcomeField, expl_of_variationField)
+                .forEach(area -> {
+                    area.setWidthFull();
+                    area.setRequiredIndicatorVisible(true);
+                    area.getStyle()
+                            .set("min-height", "90px")
+                            .set("border-radius", "6px")
+                            .set("background-color", "white")
+                            .set("padding", "1px")
+                            .set("box-shadow", "inset 0 1px 3px rgba(0,0,0,0.1)");
+                });
+
+// Same for text fields
+        Stream.of(annualTargetSpan, cumAchievementsSpan, perc_of_release_SpentSpan)
+                .forEach(field -> {
+                    field.setWidthFull();
+                    field.setRequiredIndicatorVisible(true);
+
+                });
+        deliverableLayout.add(lay, annualTargetSpan, cumAchievementsSpan, perc_of_release_SpentSpan, expl_of_variationField);
+        deliverableLayout.setResponsiveSteps(
+                new FormLayout.ResponsiveStep("0", 1, FormLayout.ResponsiveStep.LabelsPosition.ASIDE),
+                new FormLayout.ResponsiveStep("100px", 3, FormLayout.ResponsiveStep.LabelsPosition.ASIDE)
+        );
+        deliverableLayout.setWidthFull(); // 👈 ensures full parent width
+        deliverableLayout.getStyle().set("flex", "1");
+
+        // Make all components share equal width across the row
+        /*        deliverableLayout.setColspan(kpiField, 1);
+        deliverableLayout.setColspan(outputField, 1);
+        deliverableLayout.setColspan(outcomeField, 1);
+        deliverableLayout.setColspan(annualTargetSpan, 1);
+        deliverableLayout.setColspan(cumAchievementsSpan, 1);
+        deliverableLayout.setColspan(perc_of_release_SpentSpan, 1);*/
+// Explanation field should take full width across the 3 columns
+        deliverableLayout.setColspan(lay, 3);
+        deliverableLayout.setColspan(expl_of_variationField, 3);
         // === Buttons (Footer) ===
         Button saveBtn = new Button("Save", e -> {
+
+            List<Component> requiredFields = List.of(
+                    kpiField, outputField, outcomeField,
+                    annualTargetSpan, cumAchievementsSpan, perc_of_release_SpentSpan,
+                    expl_of_variationField
+            );
+
+            boolean hasError = false;
+            for (Component c : requiredFields) {
+                if (c instanceof TextArea ta && ta.getValue().trim().isEmpty()) {
+                    ta.getStyle().set("border-color", "var(--lumo-error-color)");
+                    hasError = true;
+                } else if (c instanceof TextField tf && tf.getValue().trim().isEmpty()) {
+                    tf.getStyle().set("border-color", "var(--lumo-error-color)");
+                    hasError = true;
+                } else {
+                    c.getElement().getStyle().remove("border-color");
+                }
+            }
+
+            if (hasError) {
+                Notification.show("Please fill in all required fields before saving.",
+                        3000, Notification.Position.MIDDLE);
+                return;
+            }
             // Clear existing actuals before re-assigning
             activity.getQuarterlyActuals().clear();
 
@@ -934,7 +1272,37 @@ public class budgetWorkplanView extends Div {
                 qa.setActivity(activity); // important for JPA consistency
                 activity.getQuarterlyActuals().add(qa);
             }
+            switch (qtr) {
+                case 1:
+                    activity.setQtr1A(sumOfQtr(activity.getQuarterlyActuals()));
+                    activity.setCum_achievements_qtr1(cumAchievementsSpan.getValue());
+                    activity.setPerc_of_TargetAchieved_qtr1(perc_of_release_SpentSpan.getValue());
+                    activity.setExpl_of_variations_qtr1(expl_of_variationField.getValue());
+                    break;
+                case 2:
+                    activity.setQtr2A(sumOfQtr(activity.getQuarterlyActuals()));
+                    activity.setCum_achievements_qtr2(cumAchievementsSpan.getValue());
+                    activity.setPerc_of_TargetAchieved_qtr2(perc_of_release_SpentSpan.getValue());
+                    activity.setExpl_of_variations_qtr2(expl_of_variationField.getValue());
+                    break;
+                case 3:
+                    activity.setQtr3A(sumOfQtr(activity.getQuarterlyActuals()));
+                    activity.setCum_achievements_qtr3(cumAchievementsSpan.getValue());
+                    activity.setPerc_of_TargetAchieved_qtr3(perc_of_release_SpentSpan.getValue());
+                    activity.setExpl_of_variations_qtr2(expl_of_variationField.getValue());
+                    break;
+                case 4:
+                    activity.setQtr4A(sumOfQtr(activity.getQuarterlyActuals()));
+                    activity.setCum_achievements_qtr4(cumAchievementsSpan.getValue());
+                    activity.setPerc_of_TargetAchieved_qtr4(perc_of_release_SpentSpan.getValue());
+                    activity.setExpl_of_variations_qtr2(expl_of_variationField.getValue());
+                    break;
+                default:
+                    break;
+            }
+
             sampleUrc_ActivitiesService.saveActivity(activity);
+            grid.setItems(activities);
             Notification.show("Changes saved successfully.", 3000, Notification.Position.BOTTOM_CENTER);
             dialog.close();
         });
@@ -959,12 +1327,12 @@ public class budgetWorkplanView extends Div {
         gridsLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
 
         VerticalLayout content = new VerticalLayout(
-                new H3("Quarterly Performance for Q" + qtr),
+                new H3("Quarterly Financial Performance for QTR " + qtr),
                 new Span("Drag items between tables to assign or unassign quarterly actuals."),
                 searchLayout, // 👈 Add this line
                 gridsLayout,
                 new Hr(),
-                new H4("Manage Deliverables"),
+                new H4("Quarterly Physical Performance for QTR " + qtr),
                 deliverableLayout,
                 footer
         );
@@ -975,6 +1343,28 @@ public class budgetWorkplanView extends Div {
 
         dialog.add(content);
         dialog.open();
+    }
+
+    public BigDecimal sumOfQtr(Set<QuarterlyActuals> actualsList) {
+        if (actualsList == null || actualsList.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        return actualsList.stream()
+                .filter(a -> a.getPeriod() != null) // Qtr1 = period 1
+                .map(QuarterlyActuals::getAmount)
+                .filter(amount -> amount != null)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private void updateAmountFooter(Grid.Column<QuarterlyActuals> amountColumn,
+            ListDataProvider<QuarterlyActuals> targetProvider) {
+        BigDecimal total = targetProvider.getItems().stream()
+                .map(QuarterlyActuals::getAmount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        amountColumn.setFooter("Total: " + formatBigDecimal(total));
     }
 
     private Grid Urc_ActivitiesGrid(List<Urc_Activities> listUrc_Activities) {
@@ -1023,6 +1413,18 @@ public class budgetWorkplanView extends Div {
 
     private String formatBigDecimal(BigDecimal value) {
         return value != null ? String.format("%,.2f", value) : "0.00";
+    }
+
+    private String formatBigDecimal2(BigDecimal value) {
+        if (value == null) {
+            return "0.00";
+        }
+
+        BigDecimal absValue = value.abs(); // Always positive for display
+        String formatted = String.format("%,.2f", absValue);
+
+        // If original value was negative, wrap in brackets
+        return value.signum() < 0 ? "(" + formatted + ")" : formatted;
     }
 
     private void createHeaderRowWorkplan(Workbook workbook, Sheet sheet) {

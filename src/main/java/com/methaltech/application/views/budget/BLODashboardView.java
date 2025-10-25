@@ -57,6 +57,7 @@ import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.server.StreamRegistration;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -87,6 +88,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 @Route(value = "blo-dashboard", layout = MainLayout.class)
 @PageTitle("Budget Liaison Officer Dashboard")
+@RouteAlias(value = "", layout = MainLayout.class)
 @SpringComponent
 @UIScope
 @RolesAllowed({"BLO", "ADMIN"})
