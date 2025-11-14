@@ -655,6 +655,7 @@ public class freightVolumeView extends Div {
                     });
 
                     handleCell(row, messages, info, i, 1, "Null Cargo Type Value", (cargot) -> {
+                        System.out.println(cargot.getCellType()+".........................");
                         info.setCargotype(cargot.getStringCellValue());
                     });
 

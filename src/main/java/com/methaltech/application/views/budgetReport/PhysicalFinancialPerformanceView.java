@@ -15,6 +15,7 @@ import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.PriorityArea;
 import com.methaltech.application.data.entity.bgtool.QuarterlyActuals;
 import com.methaltech.application.data.entity.bgtool.SectionBudgetPerformance;
+import com.methaltech.application.data.entity.bgtool.URC_Priority_Areas;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import com.methaltech.application.data.entity.bgtool.User;
@@ -237,9 +238,9 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             sectionMultiComboBox.setEnabled(false);
         } else {
             sectionMultiComboBox.setEnabled(true);
-            Optional<Budget> budgetchosen = chosenBudgetService.get(chosenBudget.getId());
+            Optional<SectionBudgetPerformance> budgetchosen = sectionBudgetPerformanceService.findByBudgetAndDeptSection(chosenBudget, chosenDsection);
             if (budgetchosen.isPresent()) {
-                perfo = budgetchosen.get().getSectionBudgetPerformance();
+                perfo = budgetchosen.get();
                 if (perfo != null) {
                     switch (qtr) {
                         case 1 -> {
@@ -341,18 +342,70 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                         return new ByteArrayInputStream(baos.toByteArray());
                     });
                     // Anchor must be added to the UI for the browser to allow download/open
-                    Anchor download = new Anchor(pdfResource, "");
-                    download.getElement().setAttribute("target", "_blank"); // open in new tab
-                    download.getElement().callJsFunction("click"); // trigger user action
+                    /*                    Anchor download = new Anchor(pdfResource, "");
+                    download.getElement().setAttribute("target", "_blank");
+                    download.getElement().callJsFunction("click");
+                    add(download);*/
 
-                    // add anchor to the UI temporarily (required for click to work)
+                    Anchor download = new Anchor(pdfResource, "Download PDF");
+                    download.getElement().setAttribute("download", true);
+                    download.getElement().setAttribute("target", "_blank"); // optional, open in new tab
                     add(download);
+
+                    download.getElement().callJsFunction("click");
+
+// Remove the anchor after 2 seconds
+                    getUI().ifPresent(ui
+                            -> ui.getPage().executeJs(
+                                    "setTimeout(() => $0.remove(), 2000)", download.getElement()
+                            )
+                    );
 
                 });
 
             }
+            List<UrcDeptSectionAnlDimbgt> getSubmittedDeptSectionsQtr = null;
+
+            switch (qtr) {
+                case 1:
+                    getSubmittedDeptSectionsQtr = sectionBudgetPerformanceService.getSubmittedDeptSectionsQtr1(chosenBudget);
+                    break;
+                case 2:
+                    getSubmittedDeptSectionsQtr = sectionBudgetPerformanceService.getSubmittedDeptSectionsQtr2(chosenBudget);
+                    break;
+                case 3:
+                    getSubmittedDeptSectionsQtr = sectionBudgetPerformanceService.getSubmittedDeptSectionsQtr3(chosenBudget);
+                    break;
+                case 4:
+                    getSubmittedDeptSectionsQtr = sectionBudgetPerformanceService.getSubmittedDeptSectionsQtr4(chosenBudget);
+                    break;
+                default:
+                    break;
+            }
+            if (user.getRoles().contains(Role.ADMIN)) {
+                sectionMultiComboBox.setItems(getSubmittedDeptSectionsQtr);
+            } else {
+                sectionMultiComboBox.setItems(retainCommonDeptSections(getSubmittedDeptSectionsQtr, user.getDeptsection().stream().toList()));
+            }
+
         }
 
+    }
+
+    public List<UrcDeptSectionAnlDimbgt> retainCommonDeptSections(
+            List<UrcDeptSectionAnlDimbgt> list1,
+            List<UrcDeptSectionAnlDimbgt> list2) {
+
+        // Defensive null checks
+        if (list1 == null || list2 == null) {
+            return Collections.emptyList();
+        }
+
+        // Use equals() and hashCode() from UrcDeptSectionAnlDimbgt for comparison
+        return list2.stream()
+                .filter(list1::contains)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     public boolean isQuarterDataComplete(SectionBudgetPerformance perf, int quarter) {
@@ -619,7 +672,6 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             sectionComboBox.setItems(filteredSections);
             sectionComboBox.setItemLabelGenerator(UrcDeptSectionAnlDimbgt::getNAME);
 
-            sectionMultiComboBox.setItems(filteredSections);
             sectionMultiComboBox.setItemLabelGenerator(UrcDeptSectionAnlDimbgt::getNAME);
         } else {
             sectionComboBox.setItems(user.getDeptsection());
@@ -802,6 +854,13 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                 GridVariant.LUMO_COLUMN_BORDERS,
                 GridVariant.LUMO_WRAP_CELL_CONTENT
         );
+        physicalGrid.addColumn(activity -> {
+            URC_Priority_Areas area = activity.getUrcPriorityAreas();
+            return (area != null && area.getName() != null) ? area.getName() : "—";
+        })
+                .setHeader("URC Programme")
+                .setAutoWidth(true)
+                .setFlexGrow(1);
 
         physicalGrid.addColumn(Urc_Activities::getName)
                 .setHeader("Workplan- Activity")
@@ -813,7 +872,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
         physicalGrid.addColumn(Urc_Activities::getAnnualTarget)
                 .setHeader("Annual Target")
-                .setAutoWidth(true);
+                .setFlexGrow(1);
 
         physicalGrid.addColumn(area -> {
             String getCum_achievements = "";
@@ -992,6 +1051,13 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         Button saveButton = new Button("Save", event -> {
             try {
                 if (chosenDsection != null && chosenBudget != null && qtr != 0) {
+
+                    Optional<SectionBudgetPerformance> existing = sectionBudgetPerformanceService.findByBudgetAndDeptSection(chosenBudget, chosenDsection);
+                    if (existing.isPresent()) {
+                        budgetPer = existing.get();
+                    } else {
+                        budgetPer = new SectionBudgetPerformance();
+                    }
                     binderSectionBudgetPerformance.writeBean(budgetPer);
                     budgetPer.setBudget(chosenBudget);
                     budgetPer.setDeptSection(chosenDsection);
@@ -1045,16 +1111,17 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                         }
                     }
                 }
+
                 if (totalActualExpenditure.abs().doubleValue() >= cumRealiseSpent.abs().doubleValue()) {
+
                     sectionBudgetPerformanceService.save(budgetPer);
                     refreshFinancialGrid();
                     showNotification("Saved successfully!", NotificationVariant.LUMO_SUCCESS);
                 } else {
-                    System.out.println(totalActualExpenditure.abs() + " Actuals | " + cumRealiseSpent.abs() + " Actauls DB");
                     showNotification("Check you expenditures to tally", NotificationVariant.LUMO_WARNING);
                 }
-                //  chosenBudgetService.update(budget);
 
+                //  chosenBudgetService.update(budget);
                 dialog.close();
             } catch (ValidationException ex) {
                 showNotification("Validation error: " + ex.getMessage(), NotificationVariant.LUMO_ERROR);

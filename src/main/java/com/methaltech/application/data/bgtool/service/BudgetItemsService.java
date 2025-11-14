@@ -1,5 +1,6 @@
 package com.methaltech.application.data.bgtool.service;
 
+import com.methaltech.application.data.BudgetItemsSummaryProjection;
 import com.methaltech.application.data.Display;
 import com.methaltech.application.data.MonthlySumResponseFreight;
 import com.methaltech.application.data.PeriodExtractor;
@@ -332,6 +333,10 @@ public class BudgetItemsService {
     public List<BudgetItems> findByOrgAndBudgetAndSection3(Set<Organisation> budgetType, Budget budget, Set<UrcDeptSectionAnlDimbgt> deptUnit, Coalevel1 coalevel1, COA coa) {
 
         return repository.findByOrgAndBudgetAndSection3(coalevel1, budgetType, budget, deptUnit, coa);
+    }
+
+    public List<BudgetItems> findDeptItemsForActivityWith2or3Coa(Budget budget, Urc_Activities activity, Set<Organisation> budgetType) {
+        return repository.findDeptItemsForActivityWith2or3Coa(budget, activity, budgetType);
     }
 
     public BudgetItems getBudgetItemsByAnalcode(Long analcode) {
@@ -1992,6 +1997,14 @@ public class BudgetItemsService {
         String sources = repository
                 .findDistinctFundSourcesByBudgetActivityAndTypes(budgetId, activityId, budgetTypeIds);
         return sources != null ? sources : "Not Specified";
+    }
+
+    public List<BudgetItemsSummaryProjection> getDistinctBudgetItemsByCoa(
+            Budget budget,
+            Urc_Activities activity,
+            Set<Organisation> deptUnits
+    ) {
+        return repository.findDistinctByCoacodeWithSums(budget, activity, deptUnits);
     }
 
 }

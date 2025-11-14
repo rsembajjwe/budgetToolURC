@@ -5,7 +5,6 @@ import com.methaltech.application.data.MonthlySumResponseFreight;
 import com.methaltech.application.data.PeriodExtractor;
 import com.methaltech.application.data.Qtr;
 import com.methaltech.application.data.Quarters;
-import com.methaltech.application.data.Report;
 import com.methaltech.application.data.bgtool.repository.BudgetRepository;
 import com.methaltech.application.data.bgtool.repository.SamplePersonService;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
@@ -65,14 +64,18 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.server.VaadinSession;
 import jakarta.annotation.security.RolesAllowed;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -138,10 +141,10 @@ public class BudgetReportsView extends Div {
     private MultiSelectComboBox<Organisation> budgetType2 = new MultiSelectComboBox<>("Budget Type");
     private User user;
     private final UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService;
-    List<Report> reportColumns = new ArrayList<>();
+    //List<Report> reportColumns = new ArrayList<>();
     List<CustomDetailedBudgetReportImp> gridCustomDetailedBudgetReportImpItems = new ArrayList<>();
-    private MultiSelectComboBox<Report> reportColumnsCombo = new MultiSelectComboBox<>("Report Columns");
-    private MultiSelectComboBox<Report> reportColumnsCombo2 = new MultiSelectComboBox<>("Report Columns");
+    //private MultiSelectComboBox<Report> reportColumnsCombo = new MultiSelectComboBox<>("Report Columns");
+    //private MultiSelectComboBox<Report> reportColumnsCombo2 = new MultiSelectComboBox<>("Report Columns");
     private CustomDetailedBudgetReportImp sampleCustomDetailedBudgetReportImp = new CustomDetailedBudgetReportImp();
     private Grid<CustomDetailedBudgetReportImp> gridCustomDetailedBudgetReportImp = new Grid<>(CustomDetailedBudgetReportImp.class, false);
     private Grid<CustomDetailedBudgetReport> gridCustomDetailedBudgetReport = new Grid<>(CustomDetailedBudgetReport.class, false);
@@ -174,7 +177,7 @@ public class BudgetReportsView extends Div {
         this.sampleUrcBSalfldgService = sampleUrcBSalfldgService;
         this.repository = repository;
 
-        reportColumns.add(Report.BASIC);
+        /*        reportColumns.add(Report.BASIC);
         reportColumns.add(Report.QTR1);
         reportColumns.add(Report.QTR2);
         reportColumns.add(Report.QTR3);
@@ -183,10 +186,9 @@ public class BudgetReportsView extends Div {
         reportColumns.add(Report.TRAINING_DETAILS);
         reportColumnsCombo.setItems(reportColumns);
         reportColumnsCombo.setValue(Report.BASIC);
-
+        
         reportColumnsCombo2.setItems(reportColumns);
-        reportColumnsCombo2.setValue(Report.BASIC);
-
+        reportColumnsCombo2.setValue(Report.BASIC);*/
         VerticalLayout sheet1 = new VerticalLayout();
         VerticalLayout sheet2 = new VerticalLayout();
         TabSheet tabSheet = new TabSheet();
@@ -228,10 +230,10 @@ public class BudgetReportsView extends Div {
         AccordionPanel panel0 = new AccordionPanel("Programme Budget");
         AccordionPanel panel1 = new AccordionPanel("Activity Budget");
         AccordionPanel panel2 = new AccordionPanel("Budget By Account Code");
-        AccordionPanel panel3 = new AccordionPanel("Income Budget");
+        /*        AccordionPanel panel3 = new AccordionPanel("Income Budget");
         AccordionPanel panel4 = new AccordionPanel("Revenue Expenditure Budget");
         AccordionPanel panel5 = new AccordionPanel("Capital Expenditure Budget");
-        AccordionPanel panel6 = new AccordionPanel("Summary Budget");
+        AccordionPanel panel6 = new AccordionPanel("Summary Budget");*/
         // Add content to the panels
         panel0.addContent(new Button("Budget Activities in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel0.addContent(new Button("Budget Activities in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
@@ -242,62 +244,62 @@ public class BudgetReportsView extends Div {
         panel2.addContent(new Button("Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleAccountCodeDetailClick()));
         panel2.addContent(new Button("Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
 
-        panel3.addContent(new Button("Income Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
+        /*                panel3.addContent(new Button("Income Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel3.addContent(new Button("Income Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-
+        
         panel4.addContent(new Button("Revenue Expenditure Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel4.addContent(new Button("Revenue Expenditure Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel4.addContent(new Button("Revenue Expenditure Budget By Account Code in Detail By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel4.addContent(new Button("Revenue Expenditure Budget By Account Code in Summary  By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-
+        
         panel5.addContent(new Button("Capital Expenditure Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel5.addContent(new Button("Capital Expenditure Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel5.addContent(new Button("Capital Expenditure Budget By Account Code in Detail By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel5.addContent(new Button("Capital Expenditure Budget By Account Code in Summary  By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-
+        
         panel6.addContent(new Button("Summary Budget", new Icon(VaadinIcon.DOWNLOAD), e -> handleSummaryBudgetClick()));
         panel6.addContent(new Button("Quarterly Summary Budget", new Icon(VaadinIcon.DOWNLOAD), e -> handleQtrSummaryBudgetClick()));
         panel6.addContent(new Button("Quarterly Summary Performance Budget", new Icon(VaadinIcon.DOWNLOAD), e -> handleActualsQtrSummaryBudgetClick()));
-        panel6.addContent(new Button("Summary Analysis Budget", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
+        panel6.addContent(new Button("Summary Analysis Budget", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));*/
         // Add the panels to the Accordion
         accordion.add(panel0);
         accordion.add(panel1);
         accordion.add(panel2);
-        accordion.add(panel3);
+        /*        accordion.add(panel3);
         accordion.add(panel4);
         accordion.add(panel5);
-        accordion.add(panel6);
+        accordion.add(panel6);*/
 
         Accordion accordion2 = new Accordion();
         accordion2.setWidthFull();
-        AccordionPanel panel02 = new AccordionPanel("Programme Budget");
-        AccordionPanel panel12 = new AccordionPanel("Activity Budget");
-        AccordionPanel panel22 = new AccordionPanel("Budget By Account Code");
-        AccordionPanel panel32 = new AccordionPanel("Income Budget");
+        AccordionPanel panel02 = new AccordionPanel("Custom Programme Budget");
+        AccordionPanel panel12 = new AccordionPanel("Custom Activity Budget");
+        AccordionPanel panel22 = new AccordionPanel("Custom Budget By Account Code");
+        /*        AccordionPanel panel32 = new AccordionPanel("Income Budget");
         AccordionPanel panel42 = new AccordionPanel("Revenue Expenditure Budget");
-        AccordionPanel panel52 = new AccordionPanel("Capital Expenditure Budget");
+        AccordionPanel panel52 = new AccordionPanel("Capital Expenditure Budget");*/
         // Add content to the panels
         panel02.addContent(new Button("Budget Activities in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel02.addContent(new Button("Budget Activities in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
 
-        panel12.addContent(new Button("Budget Activities in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel12.addContent(new Button("Budget Activities in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
+        panel12.addContent(new Button("Budget Activities with Codes in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleCustomActivityByCOASummaryPDFClick()));
+        panel12.addContent(new Button("Budget Activities in Summary", new Icon(VaadinIcon.DOWNLOAD_ALT), e -> handleCustomActivitySummaryPDFClick()));
 
         panel22.addContent(new Button("Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleCustomAccountCodeDetailClick()));
         panel22.addContent(new Button("Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
 
-        panel32.addContent(new Button("Income Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
+        /*        panel32.addContent(new Button("Income Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel32.addContent(new Button("Income Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-
+        
         panel42.addContent(new Button("Revenue Expenditure Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel42.addContent(new Button("Revenue Expenditure Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel42.addContent(new Button("Revenue Expenditure Budget By Account Code in Detail By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel42.addContent(new Button("Revenue Expenditure Budget By Account Code in Summary  By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-
+        
         panel52.addContent(new Button("Capital Expenditure Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel52.addContent(new Button("Capital Expenditure Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel52.addContent(new Button("Capital Expenditure Budget By Account Code in Detail By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel52.addContent(new Button("Capital Expenditure Budget By Account Code in Summary  By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
+        panel52.addContent(new Button("Capital Expenditure Budget By Account Code in Summary  By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));*/
         // Add the panels to the Accordion
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
         image2.setWidthFull();
@@ -306,20 +308,20 @@ public class BudgetReportsView extends Div {
         accordion2.add(panel02);
         accordion2.add(panel12);
         accordion2.add(panel22);
-        accordion2.add(panel32);
+        /*        accordion2.add(panel32);
         accordion2.add(panel42);
-        accordion2.add(panel52);
+        accordion2.add(panel52);*/
 
         HorizontalLayout hlay = new HorizontalLayout();
         hlay.setWidthFull();
-        hlay.add(comboBox, budgetType, sections, reportColumnsCombo);
+        hlay.add(comboBox, budgetType, sections);
         hlay.setVerticalComponentAlignment(FlexComponent.Alignment.BASELINE, comboBox);
         hlay.setAlignItems(FlexComponent.Alignment.BASELINE);
         sheet1.add(hlay, accordion);
 
         HorizontalLayout hlay2 = new HorizontalLayout();
         hlay2.setWidthFull();
-        hlay2.add(comboBox2, budgetType2, reportColumnsCombo2);
+        hlay2.add(comboBox2, budgetType2);
         hlay2.setVerticalComponentAlignment(FlexComponent.Alignment.BASELINE, comboBox2);
         hlay2.setAlignItems(FlexComponent.Alignment.BASELINE);
         sheet2.add(hlay2, accordion2);
@@ -529,6 +531,128 @@ public class BudgetReportsView extends Div {
         } else {
             exportAndDownloadCustomAccountcodeBudgetItems2(comboBox2.getValue());
         }
+    }
+
+    private void handleCustomActivitySummaryPDFClick() {
+        // Handle the click event here, e.g., show a notification or navigate to another view
+        if (comboBox2.isEmpty() || budgetType2.isEmpty() || gridCustomDetailedBudgetReportImp.asSingleSelect().isEmpty()) {
+            warningNotification("Make sure that Neither Section nor Budget nor Budget Type is empty");
+        } else {
+            CustomDetailedBudgetReportImp rep = gridCustomDetailedBudgetReportImp.asSingleSelect().getValue();
+            createOpenBudgetSummaryPDFReport(comboBox2.getValue(), rep.getReportname());
+        }
+    }
+
+    private void handleCustomActivityByCOASummaryPDFClick() {
+        // Handle the click event here, e.g., show a notification or navigate to another view
+        if (comboBox2.isEmpty() || budgetType2.isEmpty() || gridCustomDetailedBudgetReportImp.asSingleSelect().isEmpty()) {
+            warningNotification("Make sure that Neither Section nor Budget nor Budget Type is empty");
+        } else {
+            CustomDetailedBudgetReportImp rep = gridCustomDetailedBudgetReportImp.asSingleSelect().getValue();
+            createOpenBudgetSummaryByActivityByCOAPDFReport(comboBox2.getValue(), rep.getReportname());
+        }
+    }
+
+    private void createOpenBudgetSummaryByActivityByCOAPDFReport(Budget budget, String name) {
+        BudgetReportGeneratorPDF generate = new BudgetReportGeneratorPDF(
+                sampleUrc_ActivitiesService,
+                sampleCustomDetailedBudgetReportService,
+                sampleBudgetItemsService, budgetType2.getValue()
+        );
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+        String timestamp = LocalDateTime.now().format(dtf);
+        StreamResource resource = new StreamResource(name + "_" + timestamp + " budget-coa-report.pdf", () -> {
+            PipedInputStream inputStream = new PipedInputStream();
+            try {
+                PipedOutputStream outputStream = new PipedOutputStream(inputStream);
+                new Thread(() -> {
+                    try {
+                        generate.streamCustomBudgetByActivityByCOAPdfReport(
+                                budget,
+                                sampleCustomDetailedBudgetReportImp,
+                                outputStream
+                        );
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } finally {
+                        try {
+                            outputStream.close();
+                        } catch (IOException ignored) {
+                        }
+                    }
+                }).start();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return new ByteArrayInputStream(new byte[0]);
+            }
+
+            return inputStream;
+        });
+
+        Anchor download = new Anchor(resource, "Download PDF");
+        download.getElement().setAttribute("download", true);
+        download.getElement().setAttribute("target", "_blank"); // optional, open in new tab
+        add(download);
+
+        download.getElement().callJsFunction("click");
+
+// Remove the anchor after 2 seconds
+        getUI().ifPresent(ui
+                -> ui.getPage().executeJs(
+                        "setTimeout(() => $0.remove(), 2000)", download.getElement()
+                )
+        );
+    }
+
+    private void createOpenBudgetSummaryPDFReport(Budget budget, String name) {
+        BudgetReportGeneratorPDF generate = new BudgetReportGeneratorPDF(
+                sampleUrc_ActivitiesService,
+                sampleCustomDetailedBudgetReportService,
+                sampleBudgetItemsService, budgetType2.getValue()
+        );
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+        String timestamp = LocalDateTime.now().format(dtf);
+        StreamResource resource = new StreamResource(name + "_" + timestamp + " budget-report.pdf", () -> {
+            PipedInputStream inputStream = new PipedInputStream();
+            try {
+                PipedOutputStream outputStream = new PipedOutputStream(inputStream);
+                new Thread(() -> {
+                    try {
+                        generate.streamCustomBudgetSummaryPdfReport(
+                                budget,
+                                sampleCustomDetailedBudgetReportImp,
+                                outputStream
+                        );
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } finally {
+                        try {
+                            outputStream.close();
+                        } catch (IOException ignored) {
+                        }
+                    }
+                }).start();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return new ByteArrayInputStream(new byte[0]);
+            }
+
+            return inputStream;
+        });
+
+        Anchor download = new Anchor(resource, "Download PDF");
+        download.getElement().setAttribute("download", true);
+        download.getElement().setAttribute("target", "_blank"); // optional, open in new tab
+        add(download);
+
+        download.getElement().callJsFunction("click");
+
+// Remove the anchor after 2 seconds
+        getUI().ifPresent(ui
+                -> ui.getPage().executeJs(
+                        "setTimeout(() => $0.remove(), 2000)", download.getElement()
+                )
+        );
     }
 
     public Notification warningNotification(String warning) {
@@ -3294,10 +3418,7 @@ public class BudgetReportsView extends Div {
             sheet.getPrintSetup().setLandscape(true);
 
             // columns=reportColumnsCombo.select(items)
-            if (reportColumnsCombo.isSelected(Report.QTR1) && reportColumnsCombo.isSelected(Report.BASIC) && reportColumnsCombo.isSelected(Report.QTR1) && reportColumnsCombo.isSelected(Report.QTR2) && reportColumnsCombo.isSelected(Report.QTR3) && reportColumnsCombo.isSelected(Report.QTR4) && reportColumnsCombo.isSelected(Report.SECTION) && reportColumnsCombo.isSelected(Report.TRAINING_DETAILS)) {
-                createHeaderAndBodyAccountCodeDetailByBudgetRow(workbook, sheet);
-            }
-
+            createHeaderAndBodyAccountCodeDetailByBudgetRow(workbook, sheet);
             //createDataRows(sheet, people);
             // Write the workbook to a byte array
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -3321,7 +3442,7 @@ public class BudgetReportsView extends Div {
     private void exportAndDownloadCustomAccountcodeBudgetItems2(Budget budget) {
         try (Workbook workbook = new XSSFWorkbook()) {
             // columns=reportColumnsCombo.select(items)
-            if (reportColumnsCombo2.isSelected(Report.QTR1) && reportColumnsCombo2.isSelected(Report.BASIC) && reportColumnsCombo2.isSelected(Report.QTR1) && reportColumnsCombo2.isSelected(Report.QTR2) && reportColumnsCombo2.isSelected(Report.QTR3) && reportColumnsCombo2.isSelected(Report.QTR4) && reportColumnsCombo2.isSelected(Report.SECTION) && reportColumnsCombo2.isSelected(Report.TRAINING_DETAILS) && !gridCustomDetailedBudgetReportImp.asSingleSelect().isEmpty()) {
+            if (!gridCustomDetailedBudgetReportImp.asSingleSelect().isEmpty()) {
 
                 CustomDetailedBudgetReportImp reportImp = gridCustomDetailedBudgetReportImp.asSingleSelect().getValue();
                 if (reportImp != null) {

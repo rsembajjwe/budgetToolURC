@@ -36,22 +36,4 @@ public class Budget implements Serializable {
     private LocalDate closeDate;
     private String description;
     private boolean active;
-    // One-to-one: budget owns nothing here, mappedBy points to field in SectionBudgetPerformance
-    @OneToOne(mappedBy = "budget", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private SectionBudgetPerformance sectionBudgetPerformance;
-
-    // helper
-    public void setSectionBudgetPerformance(SectionBudgetPerformance perf) {
-        if (perf == null) {
-            if (this.sectionBudgetPerformance != null) {
-                this.sectionBudgetPerformance.setBudget(null);
-            }
-            this.sectionBudgetPerformance = null;
-        } else {
-            perf.setBudget(this);
-            this.sectionBudgetPerformance = perf;
-        }
-    }
-
-
 }

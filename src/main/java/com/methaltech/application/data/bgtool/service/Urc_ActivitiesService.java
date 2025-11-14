@@ -9,6 +9,7 @@ import com.methaltech.application.data.entity.bgtool.StaffSalary;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -79,6 +80,10 @@ public class Urc_ActivitiesService {
     public List<Urc_Activities> findActivitiesByPriorityAreas(URC_Priority_Areas urcPriorityAreas) {
         return repository.findByUrcPriorityAreas(urcPriorityAreas);
     }
+    
+    public List<Urc_Activities> findWithAllJoinsByBudgetAndSectionSet(Budget budget,Set<UrcDeptSectionAnlDimbgt> sections) {
+        return repository.findWithAllJoinsByBudgetAndSectionSet(budget,sections);
+    }    
 
     public List<Urc_Activities> findByUrcPriorityAreas(URC_Priority_Areas urcPriorityAreas) {
         return repository.findByUrcPriorityAreas(urcPriorityAreas);

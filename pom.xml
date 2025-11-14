@@ -137,6 +137,7 @@
             <groupId>com.itextpdf</groupId>
             <artifactId>kernel</artifactId>
             <version>9.2.0</version>
+            <type>jar</type>
         </dependency>
 
         <dependency>

@@ -6,6 +6,7 @@ import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -45,6 +46,20 @@ public interface Urc_ActivitiesRepository extends JpaRepository<Urc_Activities, 
             @Param("budget") Budget budget,
             @Param("urcPriorityAreas") URC_Priority_Areas urcPriorityAreas,
             @Param("deptSections") List<UrcDeptSectionAnlDimbgt> deptSections);
+
+    @Query("""
+    SELECT DISTINCT a FROM Urc_Activities a
+    JOIN FETCH a.urcPriorityAreas pa
+    JOIN FETCH pa.priorityArea pr 
+    JOIN FETCH a.deptSection ds
+    JOIN FETCH a.budget b
+    LEFT JOIN FETCH a.quarterlyActuals q       
+    WHERE a.budget = :budget
+      AND a.deptSection IN :deptSections
+""")
+    List<Urc_Activities> findWithAllJoinsByBudgetAndSectionSet(
+            @Param("budget") Budget budget,
+            @Param("deptSections") Set<UrcDeptSectionAnlDimbgt> deptSections);
 
     List<Urc_Activities> findByBudgetAndUrcPriorityAreasAndDeptSectionIn(Budget budget, URC_Priority_Areas urcPriorityAreas, List<UrcDeptSectionAnlDimbgt> deptSections);
 

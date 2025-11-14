@@ -1,4 +1,3 @@
-
 package com.methaltech.application.data.bgtool.repository;
 
 import com.methaltech.application.data.entity.bgtool.Budget;
@@ -13,9 +12,17 @@ import java.util.Optional;
 @Repository
 public interface SectionBudgetPerformanceRepository extends JpaRepository<SectionBudgetPerformance, Long> {
 
-    Optional<SectionBudgetPerformance> findByBudgetAndDeptSection(Budget budget, UrcDeptSectionAnlDimbgt deptSection);
+    List<SectionBudgetPerformance> findByBudgetAndDeptSection(Budget budget, UrcDeptSectionAnlDimbgt deptSection);
 
     List<SectionBudgetPerformance> findByBudget(Budget budget);
 
     List<SectionBudgetPerformance> findByDeptSection(UrcDeptSectionAnlDimbgt deptSection);
+
+    List<SectionBudgetPerformance> findAllByBudgetAndSubmitQtr1(Budget budget, Boolean submitQtr1);
+
+    List<SectionBudgetPerformance> findAllByBudgetAndSubmitQtr2(Budget budget, Boolean submitQtr2);
+
+    List<SectionBudgetPerformance> findAllByBudgetAndSubmitQtr3(Budget budget, Boolean submitQtr3);
+
+    List<SectionBudgetPerformance> findAllByBudgetAndSubmitQtr4(Budget budget, Boolean submitQtr4);
 }

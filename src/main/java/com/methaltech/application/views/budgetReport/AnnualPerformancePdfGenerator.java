@@ -1,5 +1,6 @@
 package com.methaltech.application.views.budgetReport;
 
+
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.font.PdfFont;
@@ -7,6 +8,7 @@ import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
 import com.itextpdf.layout.Canvas;
@@ -89,64 +91,129 @@ public class AnnualPerformancePdfGenerator {
      * @param outputStream Output stream where the PDF will be written
      * @throws IOException
      */
+    /*    public void generateAnnualReportPdf(OutputStream outputStream) throws IOException {
+    PdfWriter writer = new PdfWriter(outputStream);
+    PdfDocument pdf = new PdfDocument(writer);
+    Document document = new Document(pdf, PageSize.A4.rotate());
+    document.setMargins(40, 40, 40, 40);
+    PdfFont boldFont = PdfFontFactory.createFont(StandardFonts.TIMES_BOLD);
+    PdfFont itallicFont = PdfFontFactory.createFont(StandardFonts.TIMES_ITALIC);
+    PdfFont normalFont = PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN);
+    
+    // === Title ===
+    Paragraph title;
+    title = new Paragraph()
+    .add("UGANDA RAILWAYS CORPORATION\n").setFont(boldFont)
+    .add(departmentName.getNAME().toUpperCase() + "\n").setFont(boldFont)
+    .add("FINANCIAL & PHYSICAL PERFORMANCE REPORT " + budget.getFinancialYear() + " " + quarter.toUpperCase()).setFont(boldFont)
+    .setFontSize(12)
+    .setTextAlignment(TextAlignment.CENTER);
+    
+    document.add(title);
+    document.add(new Paragraph("\n"));
+    
+    try {
+    // === Financial Performance Table ===
+    addFinancialPerformanceTable(document);
+    
+    document.add(new Paragraph("\n")); // spacing
+    // === Physical Performance Table ===
+    addPhysicalPerformanceTable(document, acts);
+    
+    } catch (Exception e) {
+    e.printStackTrace();
+    } finally {
+    // === Footer ===
+    // === Footer ===
+    // === Footer ===
+    int numberOfPages = pdf.getNumberOfPages();
+    String timeStamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    
+    for (int i = 1; i <= numberOfPages; i++) {
+    String footerText = String.format(
+    "Generated from Budget Tool | %s | Page %d of %d",
+    timeStamp, i, numberOfPages
+    );
+    
+    Paragraph footer = new Paragraph(footerText)
+    .setFontSize(8)
+    .setTextAlignment(TextAlignment.CENTER);
+    
+    float x = pdf.getPage(i).getPageSize().getWidth() / 2;
+    float y = 20; // 20 pts from bottom
+    
+    // ✅ Use page rectangle here
+    Rectangle pageSize = pdf.getPage(i).getPageSize();
+    new Canvas(new PdfCanvas(pdf.getPage(i)), pageSize)
+    .showTextAligned(footer, x, y, TextAlignment.CENTER);
+    }
+    
+    document.close();
+    }
+    }*/
     public void generateAnnualReportPdf(OutputStream outputStream) throws IOException {
-        PdfWriter writer = new PdfWriter(outputStream);
-        PdfDocument pdf = new PdfDocument(writer);
-        Document document = new Document(pdf, PageSize.A4.rotate());
-        document.setMargins(40, 40, 40, 40);
-        PdfFont boldFont = PdfFontFactory.createFont(StandardFonts.TIMES_BOLD);
-        PdfFont itallicFont = PdfFontFactory.createFont(StandardFonts.TIMES_ITALIC);
-        PdfFont normalFont = PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN);
-
-        // === Title ===
-        Paragraph title;
-        title = new Paragraph()
-                .add("UGANDA RAILWAYS CORPORATION\n").setFont(boldFont)
-                .add(departmentName.getNAME().toUpperCase() + "\n").setFont(boldFont)
-                .add("FINANCIAL & PHYSICAL PERFORMANCE REPORT " + budget.getFinancialYear() + " " + quarter.toUpperCase()).setFont(boldFont)
-                .setFontSize(12)
-                .setTextAlignment(TextAlignment.CENTER);
-
-        document.add(title);
-        document.add(new Paragraph("\n"));
-
         try {
-            // === Financial Performance Table ===
+            System.out.println("Step 1: Creating PDF writer");
+            PdfWriter writer = new PdfWriter(outputStream);
+            System.out.println("Step 2: Creating PDF document");
+            PdfDocument pdf = new PdfDocument(writer);
+            System.out.println("Step 3: Creating document");
+            Document document = new Document(pdf, PageSize.A4.rotate());
+            document.setMargins(40, 40, 40, 40);
+
+            System.out.println("Step 4: Creating fonts");
+            PdfFont boldFont = PdfFontFactory.createFont(StandardFonts.TIMES_BOLD);
+            PdfFont normalFont = PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN);
+
+            System.out.println("Step 5: Creating title");
+            Paragraph title = new Paragraph()
+                    .add("UGANDA RAILWAYS CORPORATION\n").setFont(boldFont)
+                    .add((departmentName != null ? departmentName.getNAME() : "N/A").toUpperCase() + "\n").setFont(boldFont)
+                    .add("FINANCIAL & PHYSICAL PERFORMANCE REPORT "
+                            + (budget != null ? budget.getFinancialYear() : "N/A") + " "
+                            + (quarter != null ? quarter.toUpperCase() : "N/A"))
+                    .setFont(boldFont)
+                    .setFontSize(12)
+                    .setTextAlignment(TextAlignment.CENTER);
+
+            System.out.println("Step 6: Adding title to document");
+            document.add(title);
+            document.add(new Paragraph("\n"));
+
+            System.out.println("Step 7: Adding financial table");
             addFinancialPerformanceTable(document);
+            document.add(new Paragraph("\n"));
 
-            document.add(new Paragraph("\n")); // spacing
-            // === Physical Performance Table ===
-            addPhysicalPerformanceTable(document, acts);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // === Footer ===
-// === Footer ===
-// === Footer ===
-            int numberOfPages = pdf.getNumberOfPages();
-            String timeStamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-
-            for (int i = 1; i <= numberOfPages; i++) {
-                String footerText = String.format(
-                        "Generated from Budget Tool | %s | Page %d of %d",
-                        timeStamp, i, numberOfPages
-                );
-
-                Paragraph footer = new Paragraph(footerText)
-                        .setFontSize(8)
-                        .setTextAlignment(TextAlignment.CENTER);
-
-                float x = pdf.getPage(i).getPageSize().getWidth() / 2;
-                float y = 20; // 20 pts from bottom
-
-                // ✅ Use page rectangle here
-                Rectangle pageSize = pdf.getPage(i).getPageSize();
-                new Canvas(new PdfCanvas(pdf.getPage(i)), pageSize)
-                        .showTextAligned(footer, x, y, TextAlignment.CENTER);
+            System.out.println("Step 8: Adding physical table");
+            if (acts != null) {
+                addPhysicalPerformanceTable(document, acts);
+                document.add(new Paragraph("\n"));
             }
 
+            System.out.println("Step 9: Adding footers");
+            if (normalFont == null) {
+                System.err.println("ERROR: normalFont is null!");
+                normalFont = PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN);
+            }
+
+            String timeStamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            int numberOfPages = pdf.getNumberOfPages();
+            System.out.println("Number of pages: " + numberOfPages);
+
+            pdf.close();
+            System.out.println("PDF created successfully with footers!");
+
+            System.out.println("Step 10: Closing document");
             document.close();
+            System.out.println("PDF generation completed successfully");
+        } catch (NullPointerException e) {
+            System.err.println("NPE in PDF generation");
+            e.printStackTrace();
+            throw e;
+        } catch (Exception e) {
+            System.err.println("Error in PDF generation: " + e.getMessage());
+            e.printStackTrace();
+            throw new IOException(e);
         }
     }
 

@@ -9,7 +9,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -17,15 +16,9 @@ import lombok.ToString;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
-@Table(
-        name = "section_budget_performance",
-        uniqueConstraints = {
-            @UniqueConstraint(columnNames = "budget_id")
-        }
-)
+@Table( name = "section_budget_performance")
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -42,12 +35,12 @@ public class SectionBudgetPerformance implements Serializable {
     /**
      * The department/section related to this performance
      */
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "dsection_code", referencedColumnName = "ANL_CODE", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "dsection_ids")
     private UrcDeptSectionAnlDimbgt deptSection;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "budget_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "budget_ids")
     private Budget budget;
 
     // === Financial Data Fields ===
