@@ -46,6 +46,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.grid.FooterRow;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Anchor;
@@ -73,12 +74,15 @@ import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -147,10 +151,15 @@ public class BudgetReportsView extends Div {
     //private MultiSelectComboBox<Report> reportColumnsCombo2 = new MultiSelectComboBox<>("Report Columns");
     private CustomDetailedBudgetReportImp sampleCustomDetailedBudgetReportImp = new CustomDetailedBudgetReportImp();
     private Grid<CustomDetailedBudgetReportImp> gridCustomDetailedBudgetReportImp = new Grid<>(CustomDetailedBudgetReportImp.class, false);
+    private final ComboBox<CustomDetailedBudgetReportImp> CustomDetailedBudgetReportImpcomboBox = new ComboBox<>("Report Name");
     private Grid<CustomDetailedBudgetReport> gridCustomDetailedBudgetReport = new Grid<>(CustomDetailedBudgetReport.class, false);
     private TextField CustomDetailedBudgetReporttextField = new TextField();
     private MultiSelectComboBox<UrcDeptSectionAnlDimbgt> CustomDetailedBudgetReportcombo = new MultiSelectComboBox<>("Report Columns");
     private final BudgetRepository repository;
+    VerticalLayout dataLayout = new VerticalLayout();
+    Grid<Organisation> fundSourceGrid = new Grid<>(Organisation.class, false);
+    BigDecimal totalIncome = BigDecimal.ZERO;
+    BigDecimal totalExp = BigDecimal.ZERO;
 
     public BudgetReportsView(UserService userService, BudgetService budgetService,
             SamplePersonService samplePersonService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, OrganisationService sampleOrganisationService,
@@ -177,22 +186,13 @@ public class BudgetReportsView extends Div {
         this.sampleUrcBSalfldgService = sampleUrcBSalfldgService;
         this.repository = repository;
 
-        /*        reportColumns.add(Report.BASIC);
-        reportColumns.add(Report.QTR1);
-        reportColumns.add(Report.QTR2);
-        reportColumns.add(Report.QTR3);
-        reportColumns.add(Report.QTR4);
-        reportColumns.add(Report.SECTION);
-        reportColumns.add(Report.TRAINING_DETAILS);
-        reportColumnsCombo.setItems(reportColumns);
-        reportColumnsCombo.setValue(Report.BASIC);
-        
-        reportColumnsCombo2.setItems(reportColumns);
-        reportColumnsCombo2.setValue(Report.BASIC);*/
         VerticalLayout sheet1 = new VerticalLayout();
         VerticalLayout sheet2 = new VerticalLayout();
         TabSheet tabSheet = new TabSheet();
         tabSheet.setWidthFull();
+
+        TabSheet tabSheet2 = new TabSheet();
+        tabSheet2.setWidthFull();
         //gridCustomDetailedBudgetReportImpItems = sampleCustomDetailedBudgetReportImpService.getAllReportsImpByUser(user);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
@@ -222,6 +222,7 @@ public class BudgetReportsView extends Div {
         }
         CustomDetailedBudgetReportcombo.setItems(user.getDeptsection());
         CustomDetailedBudgetReportcombo.setItemLabelGenerator(UrcDeptSectionAnlDimbgt::getNAME);
+        CustomDetailedBudgetReportImpcomboBox.setItemLabelGenerator(CustomDetailedBudgetReportImp::getReportname);
         refreshCustomDetailedBudgetReportImpItems();
         budgetType.setItemLabelGenerator(Organisation::getName);
         budgetType2.setItemLabelGenerator(Organisation::getName);
@@ -230,10 +231,7 @@ public class BudgetReportsView extends Div {
         AccordionPanel panel0 = new AccordionPanel("Programme Budget");
         AccordionPanel panel1 = new AccordionPanel("Activity Budget");
         AccordionPanel panel2 = new AccordionPanel("Budget By Account Code");
-        /*        AccordionPanel panel3 = new AccordionPanel("Income Budget");
-        AccordionPanel panel4 = new AccordionPanel("Revenue Expenditure Budget");
-        AccordionPanel panel5 = new AccordionPanel("Capital Expenditure Budget");
-        AccordionPanel panel6 = new AccordionPanel("Summary Budget");*/
+
         // Add content to the panels
         panel0.addContent(new Button("Budget Activities in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel0.addContent(new Button("Budget Activities in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
@@ -244,73 +242,40 @@ public class BudgetReportsView extends Div {
         panel2.addContent(new Button("Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleAccountCodeDetailClick()));
         panel2.addContent(new Button("Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
 
-        /*                panel3.addContent(new Button("Income Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel3.addContent(new Button("Income Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        
-        panel4.addContent(new Button("Revenue Expenditure Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel4.addContent(new Button("Revenue Expenditure Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel4.addContent(new Button("Revenue Expenditure Budget By Account Code in Detail By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel4.addContent(new Button("Revenue Expenditure Budget By Account Code in Summary  By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        
-        panel5.addContent(new Button("Capital Expenditure Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel5.addContent(new Button("Capital Expenditure Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel5.addContent(new Button("Capital Expenditure Budget By Account Code in Detail By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel5.addContent(new Button("Capital Expenditure Budget By Account Code in Summary  By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        
-        panel6.addContent(new Button("Summary Budget", new Icon(VaadinIcon.DOWNLOAD), e -> handleSummaryBudgetClick()));
-        panel6.addContent(new Button("Quarterly Summary Budget", new Icon(VaadinIcon.DOWNLOAD), e -> handleQtrSummaryBudgetClick()));
-        panel6.addContent(new Button("Quarterly Summary Performance Budget", new Icon(VaadinIcon.DOWNLOAD), e -> handleActualsQtrSummaryBudgetClick()));
-        panel6.addContent(new Button("Summary Analysis Budget", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));*/
         // Add the panels to the Accordion
         accordion.add(panel0);
         accordion.add(panel1);
         accordion.add(panel2);
-        /*        accordion.add(panel3);
-        accordion.add(panel4);
-        accordion.add(panel5);
-        accordion.add(panel6);*/
 
         Accordion accordion2 = new Accordion();
         accordion2.setWidthFull();
         AccordionPanel panel02 = new AccordionPanel("Custom Programme Budget");
         AccordionPanel panel12 = new AccordionPanel("Custom Activity Budget");
         AccordionPanel panel22 = new AccordionPanel("Custom Budget By Account Code");
-        /*        AccordionPanel panel32 = new AccordionPanel("Income Budget");
-        AccordionPanel panel42 = new AccordionPanel("Revenue Expenditure Budget");
-        AccordionPanel panel52 = new AccordionPanel("Capital Expenditure Budget");*/
+        AccordionPanel panel33 = new AccordionPanel("Funding Source Envelope");
+
         // Add content to the panels
         panel02.addContent(new Button("Budget Activities in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
         panel02.addContent(new Button("Budget Activities in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
 
-        panel12.addContent(new Button("Budget Activities with Codes in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleCustomActivityByCOASummaryPDFClick()));
-        panel12.addContent(new Button("Budget Activities in Summary", new Icon(VaadinIcon.DOWNLOAD_ALT), e -> handleCustomActivitySummaryPDFClick()));
+        panel12.addContent(new Button("Budget Activities with Codes in Detail", VaadinIcon.FILE_PRESENTATION.create(), e -> handleCustomActivityByCOASummaryPDFClick()));
+        panel12.addContent(new Button("Budget Activities in Summary", VaadinIcon.FILE_PRESENTATION.create(), e -> handleCustomActivitySummaryPDFClick()));
 
         panel22.addContent(new Button("Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleCustomAccountCodeDetailClick()));
-        panel22.addContent(new Button("Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
+        //panel22.addContent(new Button("Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
+        panel22.addContent(new Button("Budget Summary By Account Code", VaadinIcon.FILE_PRESENTATION.create(), e -> handleBudgetSummaryByAccountCodeClick()));
+        panel33.addContent(new Button("View By Fund Source", VaadinIcon.FILE_PRESENTATION.create(), e -> setFundSourcedataLayout()));
+        panel33.addContent(new Button("Fund Source Vs Expenditure", VaadinIcon.FILE_PRESENTATION.create(), e -> setFundSourceExpdataLayout()));
 
-        /*        panel32.addContent(new Button("Income Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel32.addContent(new Button("Income Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        
-        panel42.addContent(new Button("Revenue Expenditure Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel42.addContent(new Button("Revenue Expenditure Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel42.addContent(new Button("Revenue Expenditure Budget By Account Code in Detail By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel42.addContent(new Button("Revenue Expenditure Budget By Account Code in Summary  By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        
-        panel52.addContent(new Button("Capital Expenditure Budget By Account Code in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel52.addContent(new Button("Capital Expenditure Budget By Account Code in Summary", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel52.addContent(new Button("Capital Expenditure Budget By Account Code in Detail By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
-        panel52.addContent(new Button("Capital Expenditure Budget By Account Code in Summary  By Activity", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));*/
         // Add the panels to the Accordion
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
         image2.setWidthFull();
         image2.getStyle().set("margin", "0").set("padding", "0");
         add(image2);
-        accordion2.add(panel02);
+        //accordion2.add(panel02);
         accordion2.add(panel12);
         accordion2.add(panel22);
-        /*        accordion2.add(panel32);
-        accordion2.add(panel42);
-        accordion2.add(panel52);*/
+        accordion2.add(panel33);
 
         HorizontalLayout hlay = new HorizontalLayout();
         hlay.setWidthFull();
@@ -321,7 +286,7 @@ public class BudgetReportsView extends Div {
 
         HorizontalLayout hlay2 = new HorizontalLayout();
         hlay2.setWidthFull();
-        hlay2.add(comboBox2, budgetType2);
+        hlay2.add(comboBox2, budgetType2, CustomDetailedBudgetReportImpcomboBox);
         hlay2.setVerticalComponentAlignment(FlexComponent.Alignment.BASELINE, comboBox2);
         hlay2.setAlignItems(FlexComponent.Alignment.BASELINE);
         sheet2.add(hlay2, accordion2);
@@ -336,7 +301,11 @@ public class BudgetReportsView extends Div {
         splitLayout2.setSplitterPosition(50);
         splitLayout2.setOrientation(SplitLayout.Orientation.VERTICAL);
 
-        SplitLayout splitLayout = new SplitLayout(sheet2, splitLayout2);
+        //SplitLayout splitLayout = new SplitLayout(sheet2, splitLayout2);
+        SplitLayout splitLayout = new SplitLayout(sheet2, tabSheet2);
+        tabSheet2.add("Report View", dataLayout);
+        tabSheet2.add("Custom Report Settings", splitLayout2);
+
         splitLayout.setHeightFull();
         splitLayout.setSplitterPosition(30);
 
@@ -352,6 +321,10 @@ public class BudgetReportsView extends Div {
         CustomDetailedBudgetReportImptextField.setWidthFull();
         //CustomDetailedBudgetReportImptextField.setClearButtonVisible(true);
         //CustomDetailedBudgetReportImptextField.setPrefixComponent(VaadinIcon.CLOSE_CIRCLE_O.create());
+
+        CustomDetailedBudgetReportImpcomboBox.addValueChangeListener(e -> {
+            sampleCustomDetailedBudgetReportImp = e.getValue();
+        });
 
         gridCustomDetailedBudgetReportImp.asSingleSelect().addValueChangeListener(e -> {
             gridCustomDetailedBudgetReport.deselectAll();
@@ -460,6 +433,176 @@ public class BudgetReportsView extends Div {
         CustomDetailedBudgetReportcombo.clear();
     }
 
+    public void setFundSourcedataLayout() {
+        dataLayout.removeAll();
+
+        if (comboBox2.isEmpty() || budgetType2.isEmpty() || CustomDetailedBudgetReportImpcomboBox.isEmpty()) {
+            warningNotification("Make sure that Neither Section nor Budget nor Budget Type is empty");
+            return;
+        }
+
+        fundSourceGrid = new Grid<>(Organisation.class, false);
+
+        // Columns
+        Grid.Column<Organisation> fundSourceCol
+                = fundSourceGrid.addColumn(Organisation::getName)
+                        .setHeader("Fund Source")
+                        .setWidth("250px")
+                        .setFlexGrow(0);
+
+        List<CustomDetailedBudgetReport> reps
+                = sampleCustomDetailedBudgetReportService
+                        .findByBudgetreport(sampleCustomDetailedBudgetReportImp);
+
+        Set<UrcDeptSectionAnlDimbgt> sections
+                = sampleCustomDetailedBudgetReportService.getCombinedDeptSections(reps);
+
+        // TOTAL INCOME (ALL FUND SOURCES)
+        BigDecimal grandTotalIncome
+                = sampleBudgetItemsService
+                        .calculateTotalByBudgetAndBudgetTypesByIncome(
+                                comboBox2.getValue(), sections);
+
+        // Amount column
+        Grid.Column<Organisation> amountCol
+                = fundSourceGrid.addColumn(report -> {
+                    BigDecimal amount
+                            = sampleBudgetItemsService
+                                    .calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(
+                                            comboBox2.getValue(), sections, report);
+
+                    return formatCurrency(amount);
+                }).setHeader("Amount / UGX");
+
+        // Percentage column
+        Grid.Column<Organisation> percentageCol
+                = fundSourceGrid.addColumn(report -> {
+                    BigDecimal amount
+                            = sampleBudgetItemsService
+                                    .calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(
+                                            comboBox2.getValue(), sections, report);
+
+                    return calculatePercentage(amount, grandTotalIncome);
+                }).setHeader("%age Contribution");
+
+        // Themes
+        fundSourceGrid.addThemeVariants(
+                GridVariant.LUMO_WRAP_CELL_CONTENT,
+                GridVariant.LUMO_ROW_STRIPES
+        );
+
+        List<Organisation> filteredItems = budgetType2.getSelectedItems().stream()
+                .filter(org -> {
+                    BigDecimal amount = sampleBudgetItemsService
+                            .calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(
+                                    comboBox2.getValue(), sections, org);
+                    return amount != null && amount.compareTo(BigDecimal.ZERO) != 0;
+                })
+                .toList();
+
+        fundSourceGrid.setItems(filteredItems);
+
+// ================= FOOTER =================
+        BigDecimal footerTotalAmount = budgetType2.getSelectedItems().stream()
+                .map(org -> sampleBudgetItemsService
+                .calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(
+                        comboBox2.getValue(), sections, org))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        String footerPercentage
+                = calculatePercentage(footerTotalAmount, grandTotalIncome);
+
+        FooterRow footerRow = fundSourceGrid.appendFooterRow();
+        footerRow.getCell(fundSourceCol).setText("TOTAL");
+        footerRow.getCell(amountCol).setText(formatCurrency(footerTotalAmount));
+        footerRow.getCell(percentageCol).setText(footerPercentage);
+
+        dataLayout.add(fundSourceGrid);
+    }
+
+    public void setFundSourceExpdataLayout() {
+        dataLayout.removeAll();
+        if (comboBox2.isEmpty() || budgetType2.isEmpty() || CustomDetailedBudgetReportImpcomboBox.isEmpty()) {
+            warningNotification("Make sure that Neither Section nor Budget nor Budget Type is empty");
+        } else {
+            fundSourceGrid = new Grid<>(Organisation.class, false);
+            Grid.Column<Organisation> fundSourceCol
+                    = fundSourceGrid.addColumn(Organisation::getName).setHeader("Fund Source").setWidth("250px").setFlexGrow(0);
+
+            List<CustomDetailedBudgetReport> reps = sampleCustomDetailedBudgetReportService.findByBudgetreport(sampleCustomDetailedBudgetReportImp);
+            Set<UrcDeptSectionAnlDimbgt> sections = sampleCustomDetailedBudgetReportService.getCombinedDeptSections(reps);
+
+            BigDecimal totalIncome = sampleBudgetItemsService.calculateTotalByBudgetAndBudgetTypesByIncome(comboBox2.getValue(), sections);
+            Grid.Column<Organisation> amountCol = fundSourceGrid.addColumn(report -> {
+                this.totalIncome = sampleBudgetItemsService.calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(comboBox2.getValue(), sections, report);
+                return formatCurrency(this.totalIncome);
+            }).setHeader("Revenue/UGX");
+            Grid.Column<Organisation> budgetCol = fundSourceGrid.addColumn(report -> {
+                totalExp = sampleBudgetItemsService.calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByExp(comboBox2.getValue(), sections, report);
+                return formatCurrency(totalExp);
+            }).setHeader("Budget/UGX");
+            Grid.Column<Organisation> perCol = fundSourceGrid.addColumn(report -> calculatePercentage(this.totalIncome, totalIncome)).setHeader("%age Contibution");
+            fundSourceGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
+
+            BigDecimal footerTotalAmount = budgetType2.getSelectedItems().stream()
+                    .map(org -> sampleBudgetItemsService
+                    .calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(
+                            comboBox2.getValue(), sections, org))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            BigDecimal footerTotalBudget = budgetType2.getSelectedItems().stream()
+                    .map(org -> sampleBudgetItemsService
+                    .calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByExp(
+                            comboBox2.getValue(), sections, org))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);            
+
+            String footerPercentage
+                    = calculatePercentage(footerTotalAmount, totalIncome);
+
+            FooterRow footerRow = fundSourceGrid.appendFooterRow();
+            footerRow.getCell(fundSourceCol).setText("TOTAL");
+            footerRow.getCell(amountCol).setText(formatCurrency(footerTotalAmount));
+            footerRow.getCell(budgetCol).setText(formatCurrency(footerTotalBudget));
+            footerRow.getCell(perCol).setText(footerPercentage);
+
+            List<Organisation> filteredItems = budgetType2.getSelectedItems().stream()
+                    .filter(org -> {
+                        BigDecimal amount = sampleBudgetItemsService
+                                .calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(
+                                        comboBox2.getValue(), sections, org);
+                        return amount != null && amount.compareTo(BigDecimal.ZERO) != 0;
+                    })
+                    .toList();
+
+            fundSourceGrid.setItems(filteredItems);
+            dataLayout.add(fundSourceGrid);
+
+        }
+
+    }
+
+    private String formatCurrency(BigDecimal amount) {
+        NumberFormat formatter = NumberFormat.getInstance(Locale.US);
+        formatter.setMaximumFractionDigits(1);
+        return formatter.format(amount);
+    }
+
+    public String calculatePercentage(
+            BigDecimal value,
+            BigDecimal total) {
+        DecimalFormat PERCENT_FORMAT
+                = new DecimalFormat("#,##0.00'%'");
+        if (value == null || total == null || total.compareTo(BigDecimal.ZERO) == 0) {
+            return "0.00%";
+        }
+
+        BigDecimal percentage = value
+                .multiply(BigDecimal.valueOf(100))
+                .divide(total, 4, RoundingMode.HALF_UP);
+
+        return PERCENT_FORMAT.format(percentage);
+    }
+
     private String formatDeptSection(CustomDetailedBudgetReport report) {
         if (report != null) {
             return report.getDeptsection().stream()
@@ -472,6 +615,8 @@ public class BudgetReportsView extends Div {
     private void refreshCustomDetailedBudgetReportImpItems() {
         gridCustomDetailedBudgetReportImp.deselectAll();
         gridCustomDetailedBudgetReportImp.setItems(sampleCustomDetailedBudgetReportImpService.getAllReportsImpByUser(user));
+        CustomDetailedBudgetReportImpcomboBox.setItems(sampleCustomDetailedBudgetReportImpService.getAllReportsImpByUser(user));
+
     }
 
     private void refreshCustomDetailedBudgetReportItems(CustomDetailedBudgetReportImp budgetreport) {
@@ -526,7 +671,7 @@ public class BudgetReportsView extends Div {
 
     private void handleCustomAccountCodeDetailClick() {
         // Handle the click event here, e.g., show a notification or navigate to another view
-        if (comboBox2.isEmpty() || budgetType2.isEmpty() || gridCustomDetailedBudgetReportImp.asSingleSelect().isEmpty()) {
+        if (comboBox2.isEmpty() || budgetType2.isEmpty() || CustomDetailedBudgetReportImpcomboBox.isEmpty()) {
             warningNotification("Make sure that Neither Section nor Budget nor Budget Type is empty 444");
         } else {
             exportAndDownloadCustomAccountcodeBudgetItems2(comboBox2.getValue());
@@ -535,20 +680,31 @@ public class BudgetReportsView extends Div {
 
     private void handleCustomActivitySummaryPDFClick() {
         // Handle the click event here, e.g., show a notification or navigate to another view
-        if (comboBox2.isEmpty() || budgetType2.isEmpty() || gridCustomDetailedBudgetReportImp.asSingleSelect().isEmpty()) {
+        if (comboBox2.isEmpty() || budgetType2.isEmpty() || CustomDetailedBudgetReportImpcomboBox.isEmpty()) {
             warningNotification("Make sure that Neither Section nor Budget nor Budget Type is empty");
         } else {
-            CustomDetailedBudgetReportImp rep = gridCustomDetailedBudgetReportImp.asSingleSelect().getValue();
+            CustomDetailedBudgetReportImp rep = CustomDetailedBudgetReportImpcomboBox.getValue();
             createOpenBudgetSummaryPDFReport(comboBox2.getValue(), rep.getReportname());
+        }
+    }
+
+    private void handleBudgetSummaryByAccountCodeClick() {
+        // Handle the click event here, e.g., show a notification or navigate to another view
+        if (comboBox2.isEmpty() || budgetType2.isEmpty() || CustomDetailedBudgetReportImpcomboBox.isEmpty()) {
+            warningNotification("Make sure that Neither Section nor Budget nor Budget Type is empty");
+        } else {
+            CustomDetailedBudgetReportImp rep = CustomDetailedBudgetReportImpcomboBox.getValue();
+            //gridCustomDetailedBudgetReport.
+            createOpenBudgetSummaryReport(comboBox2.getValue(), rep.getReportname());
         }
     }
 
     private void handleCustomActivityByCOASummaryPDFClick() {
         // Handle the click event here, e.g., show a notification or navigate to another view
-        if (comboBox2.isEmpty() || budgetType2.isEmpty() || gridCustomDetailedBudgetReportImp.asSingleSelect().isEmpty()) {
+        if (comboBox2.isEmpty() || budgetType2.isEmpty() || CustomDetailedBudgetReportImpcomboBox.isEmpty()) {
             warningNotification("Make sure that Neither Section nor Budget nor Budget Type is empty");
         } else {
-            CustomDetailedBudgetReportImp rep = gridCustomDetailedBudgetReportImp.asSingleSelect().getValue();
+            CustomDetailedBudgetReportImp rep = CustomDetailedBudgetReportImpcomboBox.getValue();
             createOpenBudgetSummaryByActivityByCOAPDFReport(comboBox2.getValue(), rep.getReportname());
         }
     }
@@ -602,6 +758,47 @@ public class BudgetReportsView extends Div {
                         "setTimeout(() => $0.remove(), 2000)", download.getElement()
                 )
         );
+    }
+
+    private void createOpenBudgetSummaryReport(Budget budget, String name) {
+        BudgetReportGeneratorPDF generate = new BudgetReportGeneratorPDF(
+                sampleUrc_ActivitiesService,
+                sampleCustomDetailedBudgetReportService,
+                sampleBudgetItemsService, budgetType2.getValue()
+        );
+
+        List<CustomDetailedBudgetReport> summaryBudget
+                = sampleCustomDetailedBudgetReportService.findByBudgetreport(sampleCustomDetailedBudgetReportImp);
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+        String timestamp = LocalDateTime.now().format(dtf);
+
+        StreamResource resource = new StreamResource(
+                name + "_" + timestamp + "_Summary_budget-coa-report.pdf",
+                () -> {
+                    try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                        generate.buildBudgetSummaryTable(summaryBudget, budget, budgetType2.getValue(), baos);
+                        return new ByteArrayInputStream(baos.toByteArray());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return new ByteArrayInputStream(new byte[0]);
+                    }
+                });
+
+        resource.setContentType("application/pdf");
+        resource.setCacheTime(0);
+
+        Anchor download = new Anchor(resource, "Download PDF");
+        download.getElement().setAttribute("download", true);
+        download.getElement().setAttribute("target", "_blank");
+        add(download);
+
+        download.getElement().callJsFunction("click");
+
+        // Remove anchor after 2 seconds
+        getUI().ifPresent(ui -> ui.getPage().executeJs(
+                "setTimeout(() => $0.remove(), 2000)", download.getElement()
+        ));
     }
 
     private void createOpenBudgetSummaryPDFReport(Budget budget, String name) {
@@ -2676,7 +2873,7 @@ public class BudgetReportsView extends Div {
                     CellStyle style21 = incometotal2.getSheet().getWorkbook().createCellStyle();
                     style21.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
                     mm.createCell((short) 0).setCellValue("");
-                    mm.createCell((short) 1).setCellValue(tt.getCoacode().getName() + " (" + tt.getCoacode().getCode().trim() + ")");
+                    mm.createCell((short) 1).setCellValue(tt.getActivity().getName() + " (" + tt.getActivity().getActivityCode().trim() + ")");
                     mm.createCell((short) 2).setCellValue(tt.getItem());
                     Cell cell3 = mm.createCell((short) 3);
                     cell3.setCellType(CellType.NUMERIC);
@@ -2955,7 +3152,7 @@ public class BudgetReportsView extends Div {
                     CellStyle style2 = incometotal2.getSheet().getWorkbook().createCellStyle();
                     style2.setDataFormat((short) BuiltinFormats.getBuiltinFormat("#,##0.00"));
                     mm.createCell((short) 0).setCellValue("");
-                    mm.createCell((short) 1).setCellValue(tt.getCoacode().getName() + " (" + tt.getCoacode().getCode().trim() + ")");
+                    mm.createCell((short) 1).setCellValue(tt.getActivity().getName() + " (" + tt.getActivity().getActivityCode().trim() + ")");
                     mm.createCell((short) 2).setCellValue(tt.getItem());
                     Cell cell3 = mm.createCell((short) 3);
                     cell3.setCellType(CellType.NUMERIC);
@@ -3442,9 +3639,9 @@ public class BudgetReportsView extends Div {
     private void exportAndDownloadCustomAccountcodeBudgetItems2(Budget budget) {
         try (Workbook workbook = new XSSFWorkbook()) {
             // columns=reportColumnsCombo.select(items)
-            if (!gridCustomDetailedBudgetReportImp.asSingleSelect().isEmpty()) {
+            if (!CustomDetailedBudgetReportImpcomboBox.isEmpty()) {
 
-                CustomDetailedBudgetReportImp reportImp = gridCustomDetailedBudgetReportImp.asSingleSelect().getValue();
+                CustomDetailedBudgetReportImp reportImp = CustomDetailedBudgetReportImpcomboBox.getValue();
                 if (reportImp != null) {
                     List<CustomDetailedBudgetReport> report = sampleCustomDetailedBudgetReportService.findByBudgetreport(reportImp);
                     for (CustomDetailedBudgetReport w : report) {

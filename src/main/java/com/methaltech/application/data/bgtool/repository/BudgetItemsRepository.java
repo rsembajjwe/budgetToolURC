@@ -548,6 +548,40 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("budgetType") Set<Organisation> budgetType
     );
 
+    @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.budgetType = :budgetType "
+            + "AND b.coacode.code LIKE '1%' "
+            + "AND b.deptUnit IN :deptUnits")
+    BigDecimal calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(
+            @Param("budget") Budget budget,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            @Param("budgetType") Organisation budgetType
+    );
+    
+    @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.budgetType = :budgetType "
+            + "AND (b.coacode.code LIKE '2%' OR b.coacode.code LIKE '3%') "
+            + "AND b.deptUnit IN :deptUnits")
+    BigDecimal calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByExp(
+            @Param("budget") Budget budget,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            @Param("budgetType") Organisation budgetType
+    );    
+    
+    @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget "
+            + "AND b.coacode.code LIKE '1%' "
+            + "AND b.deptUnit IN :deptUnits")
+    BigDecimal calculateTotalByBudgetAndDeptUnitsByIncome(
+            @Param("budget") Budget budget,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits
+    );    
+
     @Query("SELECT COALESCE(SUM(b.jul + b.aug + b.sep ), 0) "
             + "FROM BudgetItems b "
             + "WHERE b.budget = :budget "
@@ -1458,6 +1492,31 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
     List<BudgetItemsSummaryProjection> findDistinctByCoacodeWithSums(
             @Param("budget") Budget budget,
             @Param("activity") Urc_Activities activity, @Param("budgetTypes") Set<Organisation> budgetTypes
+    );
+
+    @Query("""
+    SELECT b.coacode AS coacode,
+           SUM(b.jan + b.feb + b.mar +
+               b.apr + b.may + b.jun +
+               b.jul + b.aug + b.sep +
+               b.oct + b.nov + b.dec) AS total,
+           SUM(b.jan + b.feb + b.mar) AS qtr1,
+           SUM(b.apr + b.may + b.jun) AS qtr2,
+           SUM(b.jul + b.aug + b.sep) AS qtr3,
+           SUM(b.oct + b.nov + b.dec) AS qtr4
+      FROM BudgetItems b
+     WHERE b.budget = :budget
+       AND b.deptUnit IN (:deptUnits)
+       AND b.budgetType IN (:budgetTypes)
+       AND b.coacode.code LIKE :prefix
+  GROUP BY b.coacode
+  ORDER BY b.coacode.code
+""")
+    List<BudgetItemsSummaryProjection> findCoaSummaryByPrefix(
+            @Param("budget") Budget budget,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            @Param("budgetTypes") Set<Organisation> budgetTypes,
+            @Param("prefix") String prefix
     );
 
 }

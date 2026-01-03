@@ -8,7 +8,6 @@ import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
-import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
@@ -18,6 +17,7 @@ import com.itextpdf.layout.properties.VerticalAlignment;
 import com.methaltech.application.data.BudgetCalculator;
 import com.methaltech.application.data.BudgetItemsSummaryProjection;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
+import com.methaltech.application.data.bgtool.service.BudgetItemsService.BudgetReportSummary;
 import com.methaltech.application.data.bgtool.service.CustomDetailedBudgetReportService;
 import com.methaltech.application.data.bgtool.service.Urc_ActivitiesService;
 import com.methaltech.application.data.entity.bgtool.Budget;
@@ -26,7 +26,6 @@ import com.methaltech.application.data.entity.bgtool.CustomDetailedBudgetReport;
 import com.methaltech.application.data.entity.bgtool.CustomDetailedBudgetReportImp;
 import com.methaltech.application.data.entity.bgtool.Organisation;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
@@ -111,6 +110,7 @@ public class BudgetReportGeneratorPDF {
             6.3f, // Q3
             6.3f // Q4
         };
+        List<BudgetItems> budgetListTotalA = new ArrayList<>();
 
         List<CustomDetailedBudgetReport> budgetreport = ReportService.findByBudgetreport(reports);
 
@@ -171,6 +171,7 @@ public class BudgetReportGeneratorPDF {
 
                         List<BudgetItems> budgetList = sampleBudgetItemsService.findDeptItemsForActivityWith2or3Coa(act.getBudget(), act, budgetTypes);
                         budgetListTotal.addAll(budgetList);
+                        budgetListTotalA.addAll(budgetList);
                         BudgetCalculator calculateBudget = new BudgetCalculator();
                         Map<String, BigDecimal> totals = calculateBudget.calculateQuarterlyAndTotalBudget(budgetList);
 
@@ -182,6 +183,7 @@ public class BudgetReportGeneratorPDF {
                     }
 
                 }
+                document.add(new Paragraph("\n"));
                 Cell totalCell = new Cell(1, 6) // rowSpan = 1, colSpan = 5
                         .add(new Paragraph(rep.getSheetname().toUpperCase() + " BUDGET")
                                 .setFont(boldFont)
@@ -200,7 +202,36 @@ public class BudgetReportGeneratorPDF {
             }
 
         }
+        // ──────────────────────────────────────────────────
+        // 4. TOTAL ROW (START FROM COLUMN 2)
+        // ──────────────────────────────────────────────────
+        BudgetCalculator calc = new BudgetCalculator();
+        Map<String, BigDecimal> totals = calc.calculateQuarterlyAndTotalBudget(budgetListTotalA);
 
+        Table totalRow = new Table(columnWidths).useAllAvailableWidth();
+        //totalRow.addCell(blank()); // indent
+
+        Cell totalLabel = new Cell(0, 6)
+                .add(new Paragraph(reports.getReportname() + " TOTAL").setFont(boldFont))
+                .setBackgroundColor(ColorConstants.ORANGE);
+
+        document.add(new Paragraph("\n"));
+        Cell totalCell = new Cell(1, 6) // rowSpan = 1, colSpan = 5
+                .add(new Paragraph(reports.getReportname().toUpperCase() + " TOTAL")
+                        .setFont(boldFont)
+                        .setTextAlignment(TextAlignment.LEFT))
+                .setVerticalAlignment(VerticalAlignment.MIDDLE);
+
+        totalRow.addCell(totalCell);
+
+        totalRow.addCell(money(totals.get("TOTAL")).setBackgroundColor(ColorConstants.ORANGE).setFont(boldFont));
+        totalRow.addCell(money(totals.get("Q1")).setBackgroundColor(ColorConstants.ORANGE).setFont(boldFont));
+        totalRow.addCell(money(totals.get("Q2")).setBackgroundColor(ColorConstants.ORANGE).setFont(boldFont));
+        totalRow.addCell(money(totals.get("Q3")).setBackgroundColor(ColorConstants.ORANGE).setFont(boldFont));
+        totalRow.addCell(money(totals.get("Q4")).setBackgroundColor(ColorConstants.ORANGE).setFont(boldFont));
+
+        document.add(totalRow);
+        document.add(new Paragraph("\n"));
         document.close();
     }
 
@@ -324,9 +355,9 @@ public class BudgetReportGeneratorPDF {
                     //    (START FROM 2nd COLUMN)
                     // ──────────────────────────────────────────────────
                     Table coaTitleRow = new Table(mainCols).useAllAvailableWidth();
-                    coaTitleRow.addCell(blank()); // 1st column
+                    //coaTitleRow.addCell(blank()); // 1st column
 
-                    Cell coaTitleCell = new Cell(1, 10)
+                    Cell coaTitleCell = new Cell(1, 11)
                             .add(new Paragraph("BUDGET BY ACCOUNT CODE")
                                     .setFont(boldFont).setFontSize(9));
 
@@ -338,31 +369,40 @@ public class BudgetReportGeneratorPDF {
                     // ──────────────────────────────────────────────────
                     float[] coaCols = {80f, 150f, 90f, 60f, 60f, 60f, 60f, 60f};
                     Table coaTable = new Table(coaCols).useAllAvailableWidth();
+                    List<BudgetItemsSummaryProjection> coaSummary = sampleBudgetItemsService.getDistinctBudgetItemsByCoa(act.getBudget(), act, budgetTypes);
 
-                    List<BudgetItemsSummaryProjection> coaSummary
-                            = sampleBudgetItemsService.getDistinctBudgetItemsByCoa(
-                                    act.getBudget(), act, budgetTypes);
+// -------- HEADER --------
+// Row 1
+                    coaTable.addHeaderCell(headerSmall("CODE")).setFont(boldFont);
+                    coaTable.addHeaderCell(new Cell(1, 2) // DESCRIPTION spans 2 columns
+                            .add(new Paragraph("DESCRIPTION").setFont(boldFont).setFontSize(9))
+                            .setBackgroundColor(ColorConstants.LIGHT_GRAY)
+                    );
+                    coaTable.addHeaderCell(headerSmall("TOTAL")).setFont(boldFont);
+                    coaTable.addHeaderCell(headerSmall("QTR1")).setFont(boldFont);
+                    coaTable.addHeaderCell(headerSmall("QTR2")).setFont(boldFont);
+                    coaTable.addHeaderCell(headerSmall("QTR3")).setFont(boldFont);
+                    coaTable.addHeaderCell(headerSmall("QTR4")).setFont(boldFont);
 
-                    // Dummy left indent column
-                    coaTable.addCell(blank());
-
-                    coaTable.addCell(headerSmall("CODE"));
-                    coaTable.addCell(headerSmall("DESCRIPTION"));
-                    coaTable.addCell(headerSmall("TOTAL"));
-                    coaTable.addCell(headerSmall("QTR1"));
-                    coaTable.addCell(headerSmall("QTR2"));
-                    coaTable.addCell(headerSmall("QTR3"));
-                    coaTable.addCell(headerSmall("QTR4"));
-
+// Row 2 (EMPTY LABELS for the DESCRIPTION columns)
+                    // coaTable.addHeaderCell(headerSmall("")).setFont(boldFont);  // under DESCRIPTION col 1
+                    //coaTable.addHeaderCell(headerSmall("")).setFont(boldFont);  // under DESCRIPTION col 2
+// -------- ROWS --------
                     for (BudgetItemsSummaryProjection item : coaSummary) {
-                        coaTable.addCell(blank());
+
                         coaTable.addCell(textSmall(item.getCoacode().getCode()));
-                        coaTable.addCell(textSmall(item.getCoacode().getName()));
-                        coaTable.addCell(moneySmall(item.getTotal()));
-                        coaTable.addCell(moneySmall(item.getQtr1()));
-                        coaTable.addCell(moneySmall(item.getQtr2()));
-                        coaTable.addCell(moneySmall(item.getQtr3()));
-                        coaTable.addCell(moneySmall(item.getQtr4()));
+
+                        // DESCRIPTION spans 2 columns
+                        coaTable.addCell(new Cell(1, 2)
+                                .add(new Paragraph(item.getCoacode().getName())
+                                        .setFont(normalFont).setFontSize(9))
+                        );
+
+                        coaTable.addCell(moneySmall(item.getTotal())).setFont(normalFont);
+                        coaTable.addCell(moneySmall(item.getQtr1())).setFont(normalFont);
+                        coaTable.addCell(moneySmall(item.getQtr2())).setFont(normalFont);
+                        coaTable.addCell(moneySmall(item.getQtr3())).setFont(normalFont);
+                        coaTable.addCell(moneySmall(item.getQtr4())).setFont(normalFont);
                     }
 
                     document.add(coaTable);
@@ -379,7 +419,7 @@ public class BudgetReportGeneratorPDF {
             Map<String, BigDecimal> totals = calc.calculateQuarterlyAndTotalBudget(allItemsForTotals);
 
             Table totalRow = new Table(mainCols).useAllAvailableWidth();
-            totalRow.addCell(blank()); // indent
+            // totalRow.addCell(blank()); // indent
 
             Cell totalLabel = new Cell(1, 5)
                     .add(new Paragraph(rep.getSheetname() + " TOTAL").setFont(boldFont))
@@ -387,7 +427,7 @@ public class BudgetReportGeneratorPDF {
 
             totalRow.addCell(totalLabel);
 
-            totalRow.addCell(money(totals.get("TOTAL")) .setBackgroundColor(ColorConstants.LIGHT_GRAY).setFont(boldFont));
+            totalRow.addCell(money(totals.get("TOTAL")).setBackgroundColor(ColorConstants.LIGHT_GRAY).setFont(boldFont));
             totalRow.addCell(money(totals.get("Q1")).setBackgroundColor(ColorConstants.LIGHT_GRAY).setFont(boldFont));
             totalRow.addCell(money(totals.get("Q2")).setBackgroundColor(ColorConstants.LIGHT_GRAY).setFont(boldFont));
             totalRow.addCell(money(totals.get("Q3")).setBackgroundColor(ColorConstants.LIGHT_GRAY).setFont(boldFont));
@@ -409,7 +449,7 @@ public class BudgetReportGeneratorPDF {
     }
 
     private Cell subCell(String text, PdfFont font) {
-        return new Cell().add(new Paragraph(text).setFont(font).setFontSize(8));
+        return new Cell().add(new Paragraph(text).setFont(font).setFontSize(9));
     }
 
     private Cell amountCell(BigDecimal amount, PdfFont font) {
@@ -430,23 +470,126 @@ public class BudgetReportGeneratorPDF {
         return new Cell().add(new Paragraph(v).setFontSize(9));
     }
 
+    private Cell moneyTotal(BigDecimal val, PdfFont font) {
+        String v = val == null ? "-" : String.format("%,d", val.longValue());
+        return new Cell().add(new Paragraph(v).setFont(font).setFontSize(9));
+    }
+
     private Cell blank() {
         return new Cell().add(new Paragraph(""));
     }
 
     private Cell headerSmall(String text) {
-        return new Cell().add(new Paragraph(text).setFontSize(7))
+        return new Cell().add(new Paragraph(text).setFontSize(9))
                 .setBackgroundColor(ColorConstants.LIGHT_GRAY)
                 .setTextAlignment(TextAlignment.CENTER);
     }
 
     private Cell textSmall(String value) {
-        return new Cell().add(new Paragraph(value).setFontSize(7));
+        return new Cell().add(new Paragraph(value).setFontSize(9));
     }
 
     private Cell moneySmall(BigDecimal val) {
         String v = val == null ? "-" : String.format("%,d", val.longValue());
-        return new Cell().add(new Paragraph(v).setFontSize(7));
+        return new Cell().add(new Paragraph(v).setFontSize(9));
+    }
+
+    public void buildBudgetSummaryTable(List<CustomDetailedBudgetReport> summaryBudget, Budget budget, Set<Organisation> org, OutputStream outputStream) throws IOException {
+
+        PdfWriter writer = new PdfWriter(outputStream);
+        PdfDocument pdf = new PdfDocument(writer);
+        Document document = new Document(pdf, PageSize.A4.rotate());
+        document.setMargins(30, 30, 30, 30);
+
+        PdfFont bold = PdfFontFactory.createFont(StandardFonts.TIMES_BOLD);
+        PdfFont normal = PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN);
+        PdfFont itallic = PdfFontFactory.createFont(StandardFonts.TIMES_BOLDITALIC);
+
+        float[] cols = {80, 200, 80, 60, 60, 60, 60};
+
+        for (CustomDetailedBudgetReport cust : summaryBudget) {
+            BudgetReportSummary summary = sampleBudgetItemsService.generateBudgetSummary(budget, cust.getDeptsection(), org);
+            Table table = new Table(cols).useAllAvailableWidth();
+
+            // Header
+            table.addHeaderCell(header("CODE", bold));
+            table.addHeaderCell(header("DESCRIPTION", bold));
+            table.addHeaderCell(header("TOTAL", bold));
+            table.addHeaderCell(header("QTR1", bold));
+            table.addHeaderCell(header("QTR2", bold));
+            table.addHeaderCell(header("QTR3", bold));
+            table.addHeaderCell(header("QTR4", bold));
+
+            // === INCOME SECTION (COA starts with 1) ===
+            addSection(table, "INCOME", summary.income(), summary.totalIncome(), bold, normal);
+
+            // === OPERATING EXPENDITURE (COA starts with 2) ===
+            addSection(table, "OPERATING EXPENDITURE", summary.operating(), summary.totalOperating(), bold, normal);
+
+            // === CAPITAL EXPENDITURE (COA starts with 3) ===
+            addSection(table, "CAPITAL EXPENDITURE", summary.capital(), summary.totalCapital(), bold, normal);
+
+            // === FINAL TOTAL EXPENDITURE ===
+            BigDecimal finalTotal = summary.totalExpenditure();
+
+            Cell finalRow = new Cell(1, 2)
+                    .add(new Paragraph("TOTAL EXPENDITURE").setFont(bold))
+                    .setBackgroundColor(ColorConstants.LIGHT_GRAY);
+            table.addCell(finalRow);
+            table.addCell(moneyTotal(finalTotal, bold));
+            table.addCell(blank());
+            table.addCell(blank());
+            table.addCell(blank());
+            table.addCell(blank());
+
+            document.add(table);
+        }
+        document.close();
+
+    }
+
+    private void addSection(Table table,
+            String title,
+            List<BudgetItemsSummaryProjection> list,
+            BigDecimal aggregate,
+            PdfFont bold,
+            PdfFont normal) {
+
+        // Section title row
+        Cell sec = new Cell(1, 7)
+                .add(new Paragraph(title).setFont(bold))
+                .setBackgroundColor(ColorConstants.YELLOW);
+        table.addCell(sec);
+
+        // Individual COA rows
+        for (BudgetItemsSummaryProjection p : list) {
+            table.addCell(text(p.getCoacode().getCode(), normal));
+            table.addCell(text(p.getCoacode().getName(), normal));
+            table.addCell(moneyTotal(p.getTotal(), normal));
+            table.addCell(moneyTotal(p.getQtr1(), normal));
+            table.addCell(moneyTotal(p.getQtr2(), normal));
+            table.addCell(moneyTotal(p.getQtr3(), normal));
+            table.addCell(moneyTotal(p.getQtr4(), normal));
+        }
+
+        // Aggregate row
+        Cell totalLabel = new Cell(1, 2)
+                .add(new Paragraph("TOTAL " + title).setFont(bold))
+                .setBackgroundColor(ColorConstants.LIGHT_GRAY);
+        table.addCell(totalLabel);
+
+        table.addCell(moneyTotal(aggregate, bold));
+        table.addCell(blank());
+        table.addCell(blank());
+        table.addCell(blank());
+        table.addCell(blank());
+    }
+
+    private Cell header(String text, PdfFont font) {
+        return new Cell()
+                .add(new Paragraph(text).setFont(font).setFontSize(9))
+                .setBackgroundColor(ColorConstants.LIGHT_GRAY)
+                .setTextAlignment(TextAlignment.CENTER);
     }
 
 }

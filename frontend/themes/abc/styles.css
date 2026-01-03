@@ -43,3 +43,6 @@
     --lumo-size-xs: 1.5rem;
 
 }
+vaadin-grid::part(footer-cell) {
+    font-weight: 600;
+}

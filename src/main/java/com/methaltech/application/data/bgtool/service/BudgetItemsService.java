@@ -424,6 +424,29 @@ public class BudgetItemsService {
         return repository.calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypes(budget, activity, deptUnits, budgetType);
     }
 
+    public BigDecimal calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(
+            Budget budget,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            Organisation budgetType
+    ) {
+        return repository.calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(budget, deptUnits, budgetType);
+    }
+    
+    public BigDecimal calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByExp(
+            Budget budget,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            Organisation budgetType
+    ) {
+        return repository.calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByExp(budget, deptUnits, budgetType);
+    }    
+
+    public BigDecimal calculateTotalByBudgetAndBudgetTypesByIncome(
+            Budget budget,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits
+    ) {
+        return repository.calculateTotalByBudgetAndDeptUnitsByIncome(budget, deptUnits);
+    }
+
     public BigDecimal calculateTotalByBudgetAndActivityAndDeptUnitsAndBudgetTypesQtr1(
             Budget budget,
             Urc_Activities activity,
@@ -2005,6 +2028,47 @@ public class BudgetItemsService {
             Set<Organisation> deptUnits
     ) {
         return repository.findDistinctByCoacodeWithSums(budget, activity, deptUnits);
+    }
+
+    public record BudgetReportSummary(
+            List<BudgetItemsSummaryProjection> income,
+            List<BudgetItemsSummaryProjection> operating,
+            List<BudgetItemsSummaryProjection> capital) {
+
+        public BigDecimal totalIncome() {
+            return income.stream().map(BudgetItemsSummaryProjection::getTotal)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
+
+        public BigDecimal totalOperating() {
+            return operating.stream().map(BudgetItemsSummaryProjection::getTotal)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
+
+        public BigDecimal totalCapital() {
+            return capital.stream().map(BudgetItemsSummaryProjection::getTotal)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
+
+        public BigDecimal totalExpenditure() {
+            return totalOperating().add(totalCapital());
+        }
+    }
+
+    public BudgetReportSummary generateBudgetSummary(Budget budget,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            Set<Organisation> budgetTypes) {
+
+        List<BudgetItemsSummaryProjection> income
+                = repository.findCoaSummaryByPrefix(budget, deptUnits, budgetTypes, "1%");
+
+        List<BudgetItemsSummaryProjection> operating
+                = repository.findCoaSummaryByPrefix(budget, deptUnits, budgetTypes, "2%");
+
+        List<BudgetItemsSummaryProjection> capital
+                = repository.findCoaSummaryByPrefix(budget, deptUnits, budgetTypes, "3%");
+
+        return new BudgetReportSummary(income, operating, capital);
     }
 
 }

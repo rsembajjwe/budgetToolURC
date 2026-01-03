@@ -6,6 +6,7 @@ import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.DeptSectionMerger;
 import com.methaltech.application.data.livedata.repository.SALFLDGRepository;
 import com.methaltech.application.data.livedata.service.SALFLDGService;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.ArrayList;
@@ -15,8 +16,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.net.ssl.SSLContext;
 
 public class test {
 
@@ -30,23 +34,34 @@ public class test {
     }
 
     public static void main(String[] args) {
-        String input = "FY2024-2025";
-        String month = "Jan"; // Example month from the list
-
-        // int year = extractYear(input);
-        //int result = generateCode(year, month);
-        int result = generateCode2(input, "Jul");
-        /*        System.out.println("Result: " + result);
-        //strings();
-        
-        System.out.println("Result: " + getYears().get(0));
-        System.out.println("Result: " + getYears().get(1));
-        
-        System.out.println("Result3: " + generateCode4(input, "Jun"));
-        System.out.println("Result31: " + generateCode5(input, "Jun"));*/
-        for (int i = 1; i <= 99; i++) {
+        try {
+            String input = "FY2024-2025";
+            String month = "Jan"; // Example month from the list
+            
+            // int year = extractYear(input);
+            //int result = generateCode(year, month);
+            int result = generateCode2(input, "Jul");
+            /*        System.out.println("Result: " + result);
+            //strings();
+            
+            System.out.println("Result: " + getYears().get(0));
+            System.out.println("Result: " + getYears().get(1));
+            
+            System.out.println("Result3: " + generateCode4(input, "Jun"));
+            System.out.println("Result31: " + generateCode5(input, "Jun"));*/
+            /*        for (int i = 1; i <= 99; i++) {
             String result2 = generateString(i);
             System.out.println(result2);
+            }*/
+            SSLContext context = SSLContext.getDefault();
+            String[] protocols = context.getSupportedSSLParameters().getProtocols();
+            
+            System.out.println("Supported TLS protocols:");
+            for (String protocol : protocols) {
+                System.out.println(protocol);
+            }
+        } catch (NoSuchAlgorithmException ex) {
+            Logger.getLogger(test.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }
