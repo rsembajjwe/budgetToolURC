@@ -25,11 +25,18 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
     Optional<Budget> findTopByOrderByIdDesc();*/
     @Query(value = "SELECT TOP 1 * FROM budget ORDER BY id DESC", nativeQuery = true)
     Optional<Budget> findTopByOrderByIdDesc();
-    
+
     // Step 1: Get the most frequent financialYear
     @Query("SELECT b FROM Budget b GROUP BY b.financialYear ORDER BY COUNT(b) DESC")
     Optional<Budget> findTopFinancialYearByCount();
 
     // Step 2: Get any one Budget with that financialYear
-    Optional<Budget> findFirstByFinancialYear(String financialYear);  
+    Optional<Budget> findFirstByFinancialYear(String financialYear);
+
+    @Query("""
+        SELECT b
+        FROM Budget b
+        WHERE FUNCTION('YEAR', b.startDate) = :year
+    """)
+    Optional<Budget> findByStartDateYear(@Param("year") int year);
 }

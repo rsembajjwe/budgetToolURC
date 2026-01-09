@@ -44,6 +44,7 @@ import jakarta.annotation.security.RolesAllowed;
 import org.springframework.data.domain.PageRequest;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -155,6 +156,7 @@ public class freightVolumeView extends Div {
 
     private Button save = new Button("Save");
     private Button cancel = new Button("Cancel");
+    private Button delAll = new Button("Delete All Volumes");
     Span span = new Span();
 
     SplitLayout splitLayout = new SplitLayout();
@@ -269,6 +271,7 @@ public class freightVolumeView extends Div {
             if (!e.getValue().isActive()) {
                 save.setEnabled(false);
                 cancel.setEnabled(false);
+                delAll.setEnabled(false);
                 upload.setVisible(false);
             }
             if (!comboBoxBudget.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxCOA.isEmpty()) {
@@ -374,7 +377,7 @@ public class freightVolumeView extends Div {
                 apr, may, jun, total);
         HorizontalLayout lay = new HorizontalLayout();
         lay.setAlignItems(FlexComponent.Alignment.BASELINE);
-        lay.add(save, cancel);
+        lay.add(save, cancel, delAll);
 
         // binder.bindInstanceFields(this);
         save.addClickListener(event -> {
@@ -404,6 +407,58 @@ public class freightVolumeView extends Div {
 
         });
         cancel.addClickListener(event -> cancel());
+        delAll.addSingleClickListener(e -> {
+
+            if (comboBoxD_Section.isEmpty()
+                    || comboBoxBudget.isEmpty()
+                    || comboBoxCOA.isEmpty()
+                    || comboBoxOrganisation.isEmpty()) {
+
+                Notification.show(
+                        "Please select Section, Budget, COA and Organisation",
+                        3000,
+                        Notification.Position.MIDDLE
+                );
+                return;
+            }
+
+            ConfirmDialog dialog = new ConfirmDialog();
+            dialog.setHeader("Confirm Deletion");
+            dialog.setText("""
+        Are you sure you want to delete all records
+        for the selected Section, Budget, COA and Organisation?
+        This action cannot be undone.
+        """);
+
+            dialog.setCancelable(true);
+            dialog.setConfirmText("Delete");
+            dialog.setConfirmButtonTheme("error primary");
+
+            dialog.addConfirmListener(event -> {
+                // 🔥 Perform delete here
+                List<COA> coas = sampleFreightVolumesService.getDistinctCoacodesByBudget(comboBoxBudget.getValue());
+                int del = sampleBudgetItemsService.deleteByBudgetAndCoas(comboBoxBudget.getValue(), coas);
+                if (del > 0) {
+                   sampleFreightVolumesService.deleteByBudget(comboBoxBudget.getValue());
+                    Notification.show(
+                            "Records deleted successfully",
+                            3000,
+                            Notification.Position.BOTTOM_START
+                    );
+                } else {
+                    Notification.show(
+                            "Records deletion failed",
+                            3000,
+                            Notification.Position.BOTTOM_START
+                    );
+                }
+                dialog.close();
+
+            });
+
+            dialog.open();
+        });
+
         v.add(form, lay);
         return v;
     }
@@ -655,7 +710,7 @@ public class freightVolumeView extends Div {
                     });
 
                     handleCell(row, messages, info, i, 1, "Null Cargo Type Value", (cargot) -> {
-                        System.out.println(cargot.getCellType()+".........................");
+                        System.out.println(cargot.getCellType() + ".........................");
                         info.setCargotype(cargot.getStringCellValue());
                     });
 

@@ -559,7 +559,7 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
             @Param("budgetType") Organisation budgetType
     );
-    
+
     @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
             + "FROM BudgetItems b "
             + "WHERE b.budget = :budget "
@@ -570,8 +570,8 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("budget") Budget budget,
             @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
             @Param("budgetType") Organisation budgetType
-    );    
-    
+    );
+
     @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
             + "FROM BudgetItems b "
             + "WHERE b.budget = :budget "
@@ -580,7 +580,7 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
     BigDecimal calculateTotalByBudgetAndDeptUnitsByIncome(
             @Param("budget") Budget budget,
             @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits
-    );    
+    );
 
     @Query("SELECT COALESCE(SUM(b.jul + b.aug + b.sep ), 0) "
             + "FROM BudgetItems b "
@@ -1518,5 +1518,26 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("budgetTypes") Set<Organisation> budgetTypes,
             @Param("prefix") String prefix
     );
+
+    /**
+     * Fetch BudgetItem IDs by budget and COA list
+     */
+    @Query("""
+        SELECT b.id
+        FROM BudgetItems b
+        WHERE b.budget = :budget
+          AND b.coacode IN :coas
+    """)
+    List<Long> findIdsByBudgetAndCoacodeIn(
+            @Param("budget") Budget budget,
+            @Param("coas") List<COA> coas
+    );
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        DELETE FROM BudgetItems b
+        WHERE b.id IN :ids
+    """)
+    int deleteByIdIn(@Param("ids") List<Long> ids);
 
 }

@@ -431,14 +431,14 @@ public class BudgetItemsService {
     ) {
         return repository.calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(budget, deptUnits, budgetType);
     }
-    
+
     public BigDecimal calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByExp(
             Budget budget,
             Set<UrcDeptSectionAnlDimbgt> deptUnits,
             Organisation budgetType
     ) {
         return repository.calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByExp(budget, deptUnits, budgetType);
-    }    
+    }
 
     public BigDecimal calculateTotalByBudgetAndBudgetTypesByIncome(
             Budget budget,
@@ -2069,6 +2069,25 @@ public class BudgetItemsService {
                 = repository.findCoaSummaryByPrefix(budget, deptUnits, budgetTypes, "3%");
 
         return new BudgetReportSummary(income, operating, capital);
+    }
+
+    @Transactional // 🔥 REQUIRED
+    public int deleteByBudgetAndCoas(Budget budget, List<COA> coas) {
+
+        Objects.requireNonNull(budget, "Budget must not be null");
+
+        if (coas == null || coas.isEmpty()) {
+            return 0;
+        }
+
+        List<Long> ids
+                = repository.findIdsByBudgetAndCoacodeIn(budget, coas);
+
+        if (ids.isEmpty()) {
+            return 0;
+        }
+
+        return repository.deleteByIdIn(ids);
     }
 
 }

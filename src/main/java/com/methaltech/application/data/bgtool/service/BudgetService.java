@@ -32,6 +32,7 @@ import com.methaltech.application.data.entity.livedata.UrcDeptSectionAnlDim;
 import com.methaltech.application.data.livedata.repository.UrcDepartmentAnlDimRepository;
 import com.methaltech.application.data.livedata.service.SALFLDGService;
 import com.methaltech.application.data.livedata.service.UrcDeptSectionAnlDimService;
+import jakarta.persistence.EntityNotFoundException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Month;
@@ -422,7 +423,7 @@ public class BudgetService {
         }).collect(Collectors.toList());
     }
 
-    public List<SectionBudget> getDepartmentSections(String departmentCode,Budget budget) {
+    public List<SectionBudget> getDepartmentSections(String departmentCode, Budget budget) {
         // Find the department first to get its category
         UrcDepartmentAnlDim department = urcDepartmentAnlDimRepository.findByANL_CODE(departmentCode);
         List<UrcDeptSectionAnlDimbgt> sections = new ArrayList<>();
@@ -456,7 +457,7 @@ public class BudgetService {
             double spentAmount = baseBudget * spentPercentage;
             double committedPercentage = 0.0; // 5% to 20%
             double committedAmount = 0.0;
-            baseBudget = budgetItemsService.calculateTotalDeptExpenditure2(budget, section).doubleValue();  
+            baseBudget = budgetItemsService.calculateTotalDeptExpenditure2(budget, section).doubleValue();
             spentAmount = sampleSALFLDGService.getTotalAmountByPeriods2(getFinancialYearPeriods(budget), section.getANL_CODE()).negate().doubleValue();
             SectionBudget sectionBudget = new SectionBudget(section, baseBudget, spentAmount, committedAmount);
             sectionBudget.setDepartmentCode(departmentCode);
@@ -708,6 +709,16 @@ public class BudgetService {
                 .filter(Objects::nonNull) // Remove null codes
                 .map(String::trim) // Trim whitespace
                 .collect(Collectors.toSet());
+    }
+
+    public Budget getBudgetByStartYear(int year) {
+        int previousYear = year - 1;
+        return repository.findByStartDateYear(previousYear)
+                .orElseThrow(()
+                        -> new EntityNotFoundException(
+                        "Budget not found for start year: " + previousYear
+                )
+                );
     }
 
 }

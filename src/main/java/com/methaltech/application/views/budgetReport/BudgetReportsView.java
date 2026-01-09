@@ -1,5 +1,6 @@
 package com.methaltech.application.views.budgetReport;
 
+import com.itextpdf.io.font.constants.StandardFonts;
 import com.methaltech.application.data.Display;
 import com.methaltech.application.data.MonthlySumResponseFreight;
 import com.methaltech.application.data.PeriodExtractor;
@@ -49,7 +50,6 @@ import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.grid.FooterRow;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.icon.Icon;
@@ -64,12 +64,8 @@ import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.StreamResource;
-import com.vaadin.flow.server.VaadinSession;
 import jakarta.annotation.security.RolesAllowed;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -111,6 +107,25 @@ import org.apache.poi.ss.util.RegionUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.pdf.*;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.Style;
+import com.itextpdf.layout.element.*;
+import com.itextpdf.layout.properties.*;
+import com.methaltech.application.data.entity.bgtool.PerformanceRow;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
+import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.treegrid.TreeGrid;
+import com.vaadin.flow.data.provider.hierarchy.TreeData;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 
 @PageTitle("Budget Reports Downloads")
 @Route(value = "budgetReport", layout = MainLayout.class)
@@ -157,6 +172,7 @@ public class BudgetReportsView extends Div {
     private MultiSelectComboBox<UrcDeptSectionAnlDimbgt> CustomDetailedBudgetReportcombo = new MultiSelectComboBox<>("Report Columns");
     private final BudgetRepository repository;
     VerticalLayout dataLayout = new VerticalLayout();
+    HorizontalLayout datasubLayout = new HorizontalLayout();
     Grid<Organisation> fundSourceGrid = new Grid<>(Organisation.class, false);
     BigDecimal totalIncome = BigDecimal.ZERO;
     BigDecimal totalExp = BigDecimal.ZERO;
@@ -253,6 +269,7 @@ public class BudgetReportsView extends Div {
         AccordionPanel panel12 = new AccordionPanel("Custom Activity Budget");
         AccordionPanel panel22 = new AccordionPanel("Custom Budget By Account Code");
         AccordionPanel panel33 = new AccordionPanel("Funding Source Envelope");
+        AccordionPanel panel44 = new AccordionPanel("Volumes Report");
 
         // Add content to the panels
         panel02.addContent(new Button("Budget Activities in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
@@ -266,6 +283,7 @@ public class BudgetReportsView extends Div {
         panel22.addContent(new Button("Budget Summary By Account Code", VaadinIcon.FILE_PRESENTATION.create(), e -> handleBudgetSummaryByAccountCodeClick()));
         panel33.addContent(new Button("View By Fund Source", VaadinIcon.FILE_PRESENTATION.create(), e -> setFundSourcedataLayout()));
         panel33.addContent(new Button("Fund Source Vs Expenditure", VaadinIcon.FILE_PRESENTATION.create(), e -> setFundSourceExpdataLayout()));
+        panel44.addContent(new Button("Tonnage & Passenger Performance", VaadinIcon.FILE_PRESENTATION.create(), e -> setVolumesdataLayout()));
 
         // Add the panels to the Accordion
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
@@ -276,6 +294,7 @@ public class BudgetReportsView extends Div {
         accordion2.add(panel12);
         accordion2.add(panel22);
         accordion2.add(panel33);
+        accordion2.add(panel44);
 
         HorizontalLayout hlay = new HorizontalLayout();
         hlay.setWidthFull();
@@ -433,7 +452,142 @@ public class BudgetReportsView extends Div {
         CustomDetailedBudgetReportcombo.clear();
     }
 
+    public void setVolumesdataLayout() {
+        datasubLayout.removeAll();
+        dataLayout.removeAll();
+        if (comboBox2.isEmpty()) {
+            warningNotification("Make sure that a Budget is selected");
+            return;
+        }
+
+        TreeGrid<PerformanceRow> grid = new TreeGrid<>();
+
+        grid.addHierarchyColumn(PerformanceRow::getLabel)
+                .setHeader("Details")
+                .setAutoWidth(true)
+                .setFlexGrow(2)
+                .setRenderer(new ComponentRenderer<>(row -> {
+                    Span span = new Span(row.getLabel());
+
+                    if ("VOLUMES".equals(row.getLabel())
+                            || "Northern Route".equals(row.getLabel())
+                            || "Southern Route".equals(row.getLabel())
+                            || row.getLabel().startsWith("TOTAL")) {
+                        span.getStyle().set("font-weight", "600");
+                    }
+
+                    return span;
+                }));
+        int chosenYear = comboBox2.getValue().getStartDate().getYear();
+        Optional<Budget> previousBudgt = repository.findByStartDateYear(chosenYear - 1);
+        Budget previousBudget = null;
+        if (previousBudgt.isPresent()) {
+            previousBudget = previousBudgt.get();
+        }
+
+        grid.addColumn(PerformanceRow::getPreviousBudgetApproved)
+                .setHeader(previousBudget.getFinancialYear() + " Approved (MTs)")
+                .setTextAlign(ColumnTextAlign.END);
+
+        grid.addColumn(PerformanceRow::getPreviousBudgeActual)
+                .setHeader(previousBudget.getFinancialYear() + " Actual (MTs)")
+                .setTextAlign(ColumnTextAlign.END);
+
+        grid.addColumn(PerformanceRow::getChosenBudget)
+                .setHeader(comboBox2.getValue().getFinancialYear() + " Budget (MTs)")
+                .setTextAlign(ColumnTextAlign.END);
+
+        TreeData<PerformanceRow> data = new TreeData<>();
+
+        PerformanceRow volumes = new PerformanceRow("VOLUMES");
+        PerformanceRow northern = new PerformanceRow("Northern Route");
+        PerformanceRow southern = new PerformanceRow("Southern Route");
+
+        COA northernimportsChosen = sampleCoaService.findByCodeAndBudget("111101", comboBox2.getValue());
+        COA northernexportsChosen = sampleCoaService.findByCodeAndBudget("111102", comboBox2.getValue());
+        COA northernlocalChosen = sampleCoaService.findByCodeAndBudget("111103", comboBox2.getValue());
+        List<COA> northernroutes = new ArrayList<>();
+        northernroutes.add(northernlocalChosen);
+        northernroutes.add(northernexportsChosen);
+        northernroutes.add(northernlocalChosen);
+
+        COA southernimportsChosen = sampleCoaService.findByCodeAndBudget("111104", comboBox2.getValue());
+        COA southernexportsChosen = sampleCoaService.findByCodeAndBudget("111105", comboBox2.getValue());
+        COA southernlocalChosen = sampleCoaService.findByCodeAndBudget("111106", comboBox2.getValue());
+        List<COA> southernroutes = new ArrayList<>();
+        southernroutes.add(southernlocalChosen);
+        southernroutes.add(southernexportsChosen);
+        southernroutes.add(southernlocalChosen);
+
+        if (previousBudget != null) {
+            COA northernimportsPrevious = sampleCoaService.findByCodeAndBudget("111101", previousBudget);
+            COA northernexportsPrevious = sampleCoaService.findByCodeAndBudget("111102", previousBudget);
+            COA northernlocalPrevious = sampleCoaService.findByCodeAndBudget("111103", previousBudget);
+            List<COA> northernroutesPrevious = new ArrayList<>();
+            northernroutesPrevious.add(northernlocalPrevious);
+            northernroutesPrevious.add(northernexportsPrevious);
+            northernroutesPrevious.add(northernlocalPrevious);
+
+            COA southernimportsPrevious = sampleCoaService.findByCodeAndBudget("111104", previousBudget);
+            COA southernexportsPrevious = sampleCoaService.findByCodeAndBudget("111105", previousBudget);
+            COA southernlocalPrevious = sampleCoaService.findByCodeAndBudget("111106", previousBudget);
+            List<COA> southernroutesPrevious = new ArrayList<>();
+            southernroutesPrevious.add(southernlocalPrevious);
+            southernroutesPrevious.add(southernexportsPrevious);
+            southernroutesPrevious.add(southernlocalPrevious);
+        }
+
+        data.addRootItems(volumes);
+
+        data.addItem(volumes, northern);
+        data.addItem(northern, new PerformanceRow("Net Tons – Exports", BigDecimal.TEN, BigDecimal.TEN, sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), northernexportsChosen)));
+        data.addItem(northern, new PerformanceRow("Net Tons – Imports", BigDecimal.TEN, BigDecimal.TEN, sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), northernimportsChosen)));
+        data.addItem(northern, new PerformanceRow("Local Net Tons", BigDecimal.TEN, BigDecimal.TEN, sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), northernlocalChosen)));
+        data.addItem(northern, new PerformanceRow("TOTAL TONS NORTHERN", BigDecimal.TEN, BigDecimal.TEN, sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(comboBox2.getValue(), northernroutes)));
+
+        data.addItem(volumes, southern);
+        data.addItem(southern, new PerformanceRow("Net Tons – Exports", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
+        data.addItem(southern, new PerformanceRow("Net Tons – Imports", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
+        data.addItem(southern, new PerformanceRow("Local Net Tons", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
+        data.addItem(southern, new PerformanceRow("TOTAL TONS SOUTHERN", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
+
+        data.addItem(volumes, new PerformanceRow("TOTAL TONS", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
+
+// Passengers
+        PerformanceRow passengers = new PerformanceRow("PASSENGERS");
+        data.addRootItems(passengers);
+        data.addItem(passengers, new PerformanceRow("Passengers Kampala–Namanve Route", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
+        data.addItem(passengers, new PerformanceRow("Passengers Kampala – Other Routes", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
+        data.addItem(passengers, new PerformanceRow("TOTAL PASSENGERS", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
+
+        grid.setTreeData(data);
+        grid.expand(volumes, northern, southern, passengers);
+        grid.setPartNameGenerator(row -> {
+            if (row.getLabel() == null) {
+                return null;
+            }
+
+            String label = row.getLabel();
+
+            if (label.equals("VOLUMES")
+                    || label.equals("Northern Route")
+                    || label.equals("Southern Route")) {
+                return "section-row";
+            }
+
+            if (label.startsWith("TOTAL")) {
+                return "total-row";
+            }
+
+            return null;
+        });
+
+        dataLayout.add(grid);
+
+    }
+
     public void setFundSourcedataLayout() {
+        datasubLayout.removeAll();
         dataLayout.removeAll();
 
         if (comboBox2.isEmpty() || budgetType2.isEmpty() || CustomDetailedBudgetReportImpcomboBox.isEmpty()) {
@@ -518,9 +672,19 @@ public class BudgetReportsView extends Div {
         footerRow.getCell(percentageCol).setText(footerPercentage);
 
         dataLayout.add(fundSourceGrid);
+        try {
+            generateFundSourcePdf(filteredItems, sections, grandTotalIncome);
+            generateFundSourceIncomeExcel(filteredItems, sections, grandTotalIncome);
+            dataLayout.add(datasubLayout);
+
+        } catch (IOException ex) {
+            Logger.getLogger(BudgetReportsView.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
     }
 
     public void setFundSourceExpdataLayout() {
+        datasubLayout.removeAll();
         dataLayout.removeAll();
         if (comboBox2.isEmpty() || budgetType2.isEmpty() || CustomDetailedBudgetReportImpcomboBox.isEmpty()) {
             warningNotification("Make sure that Neither Section nor Budget nor Budget Type is empty");
@@ -549,12 +713,12 @@ public class BudgetReportsView extends Div {
                     .calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(
                             comboBox2.getValue(), sections, org))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-            
+
             BigDecimal footerTotalBudget = budgetType2.getSelectedItems().stream()
                     .map(org -> sampleBudgetItemsService
                     .calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByExp(
                             comboBox2.getValue(), sections, org))
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);            
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             String footerPercentage
                     = calculatePercentage(footerTotalAmount, totalIncome);
@@ -576,6 +740,12 @@ public class BudgetReportsView extends Div {
 
             fundSourceGrid.setItems(filteredItems);
             dataLayout.add(fundSourceGrid);
+            try {
+                generateFundSourceExpPdf(filteredItems, sections, totalIncome);
+                dataLayout.add(datasubLayout);
+            } catch (IOException ex) {
+                Logger.getLogger(BudgetReportsView.class.getName()).log(Level.SEVERE, null, ex);
+            }
 
         }
 
@@ -11962,32 +12132,379 @@ public class BudgetReportsView extends Div {
         return years;
     }
 
-    /*    private BigDecimal getQtrsSun(String coa, Quarters quarters) {
-    BigDecimal qtrTotal = BigDecimal.ZERO;
-    switch (quarters) {
-    case Qtr1:
-    qtrTotal = sampleUrcBSalfldgService.findTotalAmountByAccntCodeAndPeriodIn(coa, extActuals.getListOfPeriodByFY(comboBox.getValue().getFinancialYear(), Quarters.Qtr1))
-    .add(sampleUrcBSalfldgService.findTotalAmountByAccntCodeAndPeriodIn(coa, extActuals.getListOfPeriodByFY(comboBox.getValue().getFinancialYear(), Quarters.Qtr1)))
-    .add(sampleUrcBSalfldgService.findTotalAmountByAccntCodeAndPeriodIn(coa, extActuals.getListOfPeriodByFY(comboBox.getValue().getFinancialYear(), Quarters.Qtr1)));
-    return qtrTotal;
-    case Qtr2:
-    qtrTotal = sampleUrcBSalfldgService.findTotalAmountByAccntCodeAndPeriodIn(coa, extActuals.getListOfPeriodByFY(comboBox.getValue().getFinancialYear(), Quarters.Qtr2))
-    .add(sampleUrcBSalfldgService.findTotalAmountByAccntCodeAndPeriodIn(coa, extActuals.getListOfPeriodByFY(comboBox.getValue().getFinancialYear(), Quarters.Qtr2)))
-    .add(sampleUrcBSalfldgService.findTotalAmountByAccntCodeAndPeriodIn(coa, extActuals.getListOfPeriodByFY(comboBox.getValue().getFinancialYear(), Quarters.Qtr2)));
-    return qtrTotal;
-    case Qtr3:
-    qtrTotal = sampleUrcBSalfldgService.findTotalAmountByAccntCodeAndPeriodIn(coa, extActuals.getListOfPeriodByFY(comboBox.getValue().getFinancialYear(), Quarters.Qtr3))
-    .add(sampleUrcBSalfldgService.findTotalAmountByAccntCodeAndPeriodIn(coa, extActuals.getListOfPeriodByFY(comboBox.getValue().getFinancialYear(),Quarters.Qtr3)))
-    .add(sampleUrcBSalfldgService.findTotalAmountByAccntCodeAndPeriodIn(coa, extActuals.getListOfPeriodByFY(comboBox.getValue().getFinancialYear(), Quarters.Qtr3)));
-    return qtrTotal;
-    case Qtr4:
-    qtrTotal = sampleUrcBSalfldgService.findTotalAmountByAccntCodeAndPeriodIn(coa, extActuals.getListOfPeriodByFY(comboBox.getValue().getFinancialYear(), Quarters.Qtr4))
-    .add(sampleUrcBSalfldgService.findTotalAmountByAccntCodeAndPeriodIn(coa, extActuals.getListOfPeriodByFY(comboBox.getValue().getFinancialYear(), Quarters.Qtr4)))
-    .add(sampleUrcBSalfldgService.findTotalAmountByAccntCodeAndPeriodIn(coa, extActuals.getListOfPeriodByFY(comboBox.getValue().getFinancialYear(), Quarters.Qtr4)));
-    return qtrTotal;
-    default:
-    return BigDecimal.ZERO;
+    private void generateFundSourcePdf(
+            List<Organisation> organisations,
+            Set<UrcDeptSectionAnlDimbgt> sections,
+            BigDecimal grandTotalIncome) throws IOException {
+
+        PdfFont bold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+        PdfFont normal = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+        PdfFont itallic = PdfFontFactory.createFont(StandardFonts.HELVETICA_OBLIQUE);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        PdfWriter writer = new PdfWriter(baos);
+        PdfDocument pdfDoc = new PdfDocument(writer);
+        Document document = new Document(pdfDoc);
+
+        // ================= TITLE =================
+        Paragraph title = new Paragraph("URC Funding Sources")
+                .setFont(bold)
+                .setFontSize(16)
+                .setTextAlignment(TextAlignment.LEFT)
+                .setMarginBottom(15);
+
+        document.add(title);
+
+        // ================= TABLE =================
+        Table table = new Table(new float[]{4, 3, 3});
+        table.setWidth(UnitValue.createPercentValue(100));
+
+        // Header styling
+        Style headerStyle = new Style()
+                .setBackgroundColor(ColorConstants.YELLOW)
+                .setFont(bold)
+                .setTextAlignment(TextAlignment.CENTER);
+
+        table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("Fund Source")).addStyle(headerStyle));
+        table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("Amount (UGX)")).addStyle(headerStyle));
+        table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("% Contribution")).addStyle(headerStyle));
+
+        // ================= DATA ROWS =================
+        BigDecimal footerTotalAmount = BigDecimal.ZERO;
+
+        for (Organisation org : organisations) {
+
+            BigDecimal amount
+                    = sampleBudgetItemsService
+                            .calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(
+                                    comboBox2.getValue(), sections, org);
+
+            footerTotalAmount = footerTotalAmount.add(amount);
+
+            table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(org.getName())));
+            table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(formatCurrency(amount))));
+            table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(calculatePercentage(amount, grandTotalIncome))));
+        }
+
+        // ================= FOOTER =================
+        Style footerStyle = new Style()
+                .setBackgroundColor(ColorConstants.YELLOW)
+                .setFont(bold);
+
+        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("TOTAL")).addStyle(footerStyle));
+        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(formatCurrency(footerTotalAmount))).addStyle(footerStyle));
+        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(
+                calculatePercentage(footerTotalAmount, grandTotalIncome)
+        )).addStyle(footerStyle));
+
+        document.add(table);
+        document.close();
+
+        // ================= DOWNLOAD =================
+        StreamResource resource = new StreamResource(
+                "URC_Funding_Sources.pdf",
+                () -> new ByteArrayInputStream(baos.toByteArray())
+        );
+
+        Anchor downloadLink = new Anchor(resource, "");
+        downloadLink.getElement().setAttribute("download", true);
+        downloadLink.add(new Button("Download PDF"));
+        datasubLayout.add(downloadLink);
+        // dataLayout.add(downloadLink);
     }
-    
-    } */
+
+    private void generateFundSourceExpPdf(
+            List<Organisation> organisations,
+            Set<UrcDeptSectionAnlDimbgt> sections,
+            BigDecimal totalIncome) throws IOException {
+
+        PdfFont bold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+        PdfFont normal = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        PdfWriter writer = new PdfWriter(baos);
+        PdfDocument pdfDoc = new PdfDocument(writer);
+        Document document = new Document(pdfDoc);
+
+        // ================= TITLE =================
+        document.add(
+                new Paragraph("URC Funding Sources – Income vs Expenditure")
+                        .setFont(bold)
+                        .setFontSize(16)
+                        .setMarginBottom(15)
+        );
+
+        // ================= TABLE =================
+        Table table = new Table(new float[]{4, 3, 3, 2});
+        table.setWidth(UnitValue.createPercentValue(100));
+
+        Style headerStyle = new Style()
+                .setBackgroundColor(ColorConstants.YELLOW)
+                .setFont(bold)
+                .setTextAlignment(TextAlignment.CENTER)
+                .setPadding(5);
+
+        table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("Fund Source")).addStyle(headerStyle));
+        table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("Revenue (UGX)")).addStyle(headerStyle));
+        table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("Budget (UGX)")).addStyle(headerStyle));
+        table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("% Contribution")).addStyle(headerStyle));
+
+        // ================= DATA =================
+        BigDecimal footerTotalRevenue = BigDecimal.ZERO;
+        BigDecimal footerTotalBudget = BigDecimal.ZERO;
+
+        for (Organisation org : organisations) {
+
+            BigDecimal revenue = sampleBudgetItemsService
+                    .calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(
+                            comboBox2.getValue(), sections, org);
+
+            if (revenue == null || revenue.compareTo(BigDecimal.ZERO) == 0) {
+                continue; // keep PDF consistent with grid
+            }
+
+            BigDecimal budget = sampleBudgetItemsService
+                    .calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByExp(
+                            comboBox2.getValue(), sections, org);
+
+            footerTotalRevenue = footerTotalRevenue.add(revenue);
+            footerTotalBudget = footerTotalBudget.add(budget);
+
+            table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(org.getName()).setFont(normal)));
+            table.addCell(new com.itextpdf.layout.element.Cell()
+                    .add(new Paragraph(formatCurrency(revenue)).setFont(normal))
+                    .setTextAlignment(TextAlignment.RIGHT));
+            table.addCell(new com.itextpdf.layout.element.Cell()
+                    .add(new Paragraph(formatCurrency(budget)).setFont(normal))
+                    .setTextAlignment(TextAlignment.RIGHT));
+            table.addCell(new com.itextpdf.layout.element.Cell()
+                    .add(new Paragraph(calculatePercentage(revenue, totalIncome)).setFont(normal))
+                    .setTextAlignment(TextAlignment.RIGHT));
+        }
+
+        // ================= FOOTER =================
+        Style footerStyle = new Style()
+                .setBackgroundColor(ColorConstants.YELLOW)
+                .setFont(bold)
+                .setPadding(5);
+
+        table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("TOTAL")).addStyle(footerStyle));
+        table.addCell(new com.itextpdf.layout.element.Cell()
+                .add(new Paragraph(formatCurrency(footerTotalRevenue)))
+                .addStyle(footerStyle)
+                .setTextAlignment(TextAlignment.RIGHT));
+        table.addCell(new com.itextpdf.layout.element.Cell()
+                .add(new Paragraph(formatCurrency(footerTotalBudget)))
+                .addStyle(footerStyle)
+                .setTextAlignment(TextAlignment.RIGHT));
+        table.addCell(new com.itextpdf.layout.element.Cell()
+                .add(new Paragraph(
+                        calculatePercentage(footerTotalRevenue, totalIncome)))
+                .addStyle(footerStyle)
+                .setTextAlignment(TextAlignment.RIGHT));
+
+        document.add(table);
+        document.close();
+
+        // ================= DOWNLOAD =================
+        StreamResource resource = new StreamResource(
+                "URC_Funding_Sources_Income_vs_Expenditure.pdf",
+                () -> new ByteArrayInputStream(baos.toByteArray())
+        );
+
+        Anchor downloadLink = new Anchor(resource, "");
+        downloadLink.getElement().setAttribute("download", true);
+        downloadLink.add(new Button("Download PDF"));
+        datasubLayout.add(downloadLink);
+        // dataLayout.add(downloadLink);
+    }
+
+    private void generateFundSourceIncomeExcel(
+            List<Organisation> organisations,
+            Set<UrcDeptSectionAnlDimbgt> sections,
+            BigDecimal grandTotalIncome) throws IOException {
+
+        Workbook wb = new XSSFWorkbook();
+        Sheet sheet = wb.createSheet("Funding Sources");
+
+        CellStyle headerStyle = headerFooterStyle(wb);
+
+        int rowIdx = 0;
+
+        // ===== TITLE =====
+        Row titleRow = sheet.createRow(rowIdx++);
+        titleRow.createCell(0).setCellValue("URC Funding Sources");
+        titleRow.getCell(0).setCellStyle(headerStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 2));
+
+        rowIdx++;
+
+        // ===== HEADER =====
+        Row header = sheet.createRow(rowIdx++);
+        header.createCell(0).setCellValue("Fund Source");
+        header.createCell(1).setCellValue("Amount (UGX)");
+        header.createCell(2).setCellValue("% Contribution");
+
+        header.forEach(c -> c.setCellStyle(headerStyle));
+
+        BigDecimal totalAmount = BigDecimal.ZERO;
+
+        // ===== DATA =====
+        for (Organisation org : organisations) {
+
+            BigDecimal amount = sampleBudgetItemsService
+                    .calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(
+                            comboBox2.getValue(), sections, org);
+
+            if (amount == null || amount.compareTo(BigDecimal.ZERO) == 0) {
+                continue;
+            }
+
+            totalAmount = totalAmount.add(amount);
+
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(org.getName());
+            row.createCell(1).setCellValue(amount.doubleValue());
+            row.createCell(2).setCellValue(
+                    calculatePercentage(amount, grandTotalIncome)
+            );
+        }
+
+        // ===== FOOTER =====
+        Row footer = sheet.createRow(rowIdx);
+        footer.createCell(0).setCellValue("TOTAL");
+        footer.createCell(1).setCellValue(totalAmount.doubleValue());
+        footer.createCell(2).setCellValue(
+                calculatePercentage(totalAmount, grandTotalIncome)
+        );
+
+        footer.forEach(c -> c.setCellStyle(headerStyle));
+
+        sheet.autoSizeColumn(0);
+        sheet.autoSizeColumn(1);
+        sheet.autoSizeColumn(2);
+
+        // ===== DOWNLOAD =====
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        wb.write(baos);
+        wb.close();
+
+        StreamResource resource = new StreamResource(
+                "URC_Funding_Sources.xlsx",
+                () -> new ByteArrayInputStream(baos.toByteArray())
+        );
+
+        Anchor download = new Anchor(resource, "Download Excel");
+        download.getElement().setAttribute("download", true);
+        datasubLayout.add(download);
+        // dataLayout.add(download);
+    }
+
+    private void generateFundSourceIncomeExpExcel(
+            List<Organisation> organisations,
+            Set<UrcDeptSectionAnlDimbgt> sections,
+            BigDecimal totalIncome) throws IOException {
+
+        Workbook wb = new XSSFWorkbook();
+        Sheet sheet = wb.createSheet("Income vs Expenditure");
+
+        CellStyle headerStyle = headerFooterStyle(wb);
+
+        int rowIdx = 0;
+
+        // ===== TITLE =====
+        Row titleRow = sheet.createRow(rowIdx++);
+        titleRow.createCell(0).setCellValue("URC Funding Sources – Income vs Expenditure");
+        titleRow.getCell(0).setCellStyle(headerStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 3));
+
+        rowIdx++;
+
+        // ===== HEADER =====
+        Row header = sheet.createRow(rowIdx++);
+        header.createCell(0).setCellValue("Fund Source");
+        header.createCell(1).setCellValue("Revenue (UGX)");
+        header.createCell(2).setCellValue("Budget (UGX)");
+        header.createCell(3).setCellValue("% Contribution");
+
+        header.forEach(c -> c.setCellStyle(headerStyle));
+
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+        BigDecimal totalBudget = BigDecimal.ZERO;
+
+        // ===== DATA =====
+        for (Organisation org : organisations) {
+
+            BigDecimal revenue = sampleBudgetItemsService
+                    .calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByIncome(
+                            comboBox2.getValue(), sections, org);
+
+            if (revenue == null || revenue.compareTo(BigDecimal.ZERO) == 0) {
+                continue;
+            }
+
+            BigDecimal budget = sampleBudgetItemsService
+                    .calculateTotalByBudgetAndDeptUnitsAndBudgetTypesByExp(
+                            comboBox2.getValue(), sections, org);
+
+            totalRevenue = totalRevenue.add(revenue);
+            totalBudget = totalBudget.add(budget);
+
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(org.getName());
+            row.createCell(1).setCellValue(revenue.doubleValue());
+            row.createCell(2).setCellValue(budget.doubleValue());
+            row.createCell(3).setCellValue(
+                    calculatePercentage(revenue, totalIncome)
+            );
+        }
+
+        // ===== FOOTER =====
+        Row footer = sheet.createRow(rowIdx);
+        footer.createCell(0).setCellValue("TOTAL");
+        footer.createCell(1).setCellValue(totalRevenue.doubleValue());
+        footer.createCell(2).setCellValue(totalBudget.doubleValue());
+        footer.createCell(3).setCellValue(
+                calculatePercentage(totalRevenue, totalIncome)
+        );
+
+        footer.forEach(c -> c.setCellStyle(headerStyle));
+
+        sheet.autoSizeColumn(0);
+        sheet.autoSizeColumn(1);
+        sheet.autoSizeColumn(2);
+        sheet.autoSizeColumn(3);
+
+        // ===== DOWNLOAD =====
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        wb.write(baos);
+        wb.close();
+
+        StreamResource resource = new StreamResource(
+                "URC_Funding_Sources_Income_vs_Expenditure.xlsx",
+                () -> new ByteArrayInputStream(baos.toByteArray())
+        );
+
+        Anchor download = new Anchor(resource, "Download Excel");
+        download.getElement().setAttribute("download", true);
+        dataLayout.add(download);
+    }
+
+    private CellStyle headerFooterStyle(Workbook wb) {
+        CellStyle style = wb.createCellStyle();
+        Font font = wb.createFont();
+        font.setBold(true);
+        style.setFont(font);
+        style.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        return style;
+    }
+
 }

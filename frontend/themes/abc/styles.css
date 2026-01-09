@@ -21,6 +21,7 @@
 @import url('./views/budget-control-styles.css');
 @import url('./views/requisition-styles.css');
 @import url('./views/ppda-requisition-dialog.css');
+@import url('./views/report-view.css');
 @import url('./views/activity-selection-dialogue.css');    html {
     --lumo-font-size: 1rem;
     --lumo-font-size-xxxl: 1.75rem;
@@ -46,3 +47,13 @@
 vaadin-grid::part(footer-cell) {
     font-weight: 600;
 }
+vaadin-grid ::part(section-row) {
+    font-weight: 600;
+}
+
+vaadin-grid ::part(total-row) {
+    font-weight: 700;
+}
+
+
+

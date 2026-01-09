@@ -1,0 +1,7 @@
+vaadin-tree-grid::part(row total-row) {
+    font-weight: 600;
+    background-color: var(--lumo-contrast-5pct);
+    border-top: 1px solid var(--lumo-contrast-20pct);
+}
+
+

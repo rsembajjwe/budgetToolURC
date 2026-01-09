@@ -9,7 +9,10 @@ import java.math.BigDecimal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class FreightVolumesService {
@@ -32,7 +35,7 @@ public class FreightVolumesService {
     public List<FreightVolumes> getAllFreightVolumesByBudget(Budget budget) {
         return freightVolumesRepository.findByBudget(budget);
     }
-    
+
     public Optional<FreightVolumes> getFreightVolumeById(Long id) {
         return freightVolumesRepository.findById(id);
     }
@@ -80,5 +83,16 @@ public class FreightVolumesService {
 
     public MonthlySumResponseFreight getTotals(Budget budget, List<COA> coacode) {
         return freightVolumesRepository.getMonthlySumsByBudgetAndCoacodes(budget, coacode);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public int deleteByBudget(Budget budget) {
+        return freightVolumesRepository.deleteByBudget(budget);
+    }
+
+    @Transactional(readOnly = true)
+    public List<COA> getDistinctCoacodesByBudget(Budget budget) {
+        Objects.requireNonNull(budget, "Budget must not be null");
+        return freightVolumesRepository.findDistinctCoacodeByBudget(budget);
     }
 }
