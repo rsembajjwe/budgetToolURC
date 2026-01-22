@@ -54,6 +54,9 @@ vaadin-grid ::part(section-row) {
 vaadin-grid ::part(total-row) {
     font-weight: 700;
 }
-
+.totals-row {
+    font-weight: bold;
+    background-color: #f0f0f0;
+}
 
 

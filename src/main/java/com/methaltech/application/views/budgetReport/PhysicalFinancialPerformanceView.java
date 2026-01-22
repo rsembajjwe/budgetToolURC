@@ -291,7 +291,6 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                 } else {
                     submitButton.setText("Submit");
                     downloadButton.setEnabled(false);
-                    System.out.println("Download no");
                     submitButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
                 }
                 if (((isQuarterDataComplete(perfo, qtr) == true) || areActivitiesCompleteForQuarter(acts, qtr) == true) && submit == false) {
@@ -695,7 +694,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
     private void configureFinancialGridByPriorityArea() {
         financialGrid.removeAllColumns();
-        financialGrid.setSizeFull();
+        financialGrid.setSizeFull();financialGrid.setAllRowsVisible(true);
         financialGrid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_COLUMN_BORDERS, GridVariant.LUMO_WRAP_CELL_CONTENT);
 
         financialGrid.addColumn(PriorityArea::getName).setHeader("NDP Programme").setFlexGrow(2);
@@ -708,7 +707,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
             tooltip.setManual(false); // show on hover            
             return span;
-        })).setHeader("Planned Output/Budget (UGX)").setAutoWidth(true);
+        })).setHeader("Planned Output / Budget (UGX)");
 
         financialGrid.addColumn(new ComponentRenderer<>(area -> {
             Span span = new Span();
@@ -718,7 +717,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
             tooltip.setManual(false); // show on hover            
             return span;
-        })).setHeader("Approved Budget (UGX)").setAutoWidth(true);
+        })).setHeader("Approved Budget (UGX)");
 
         financialGrid.addColumn(new ComponentRenderer<>(area -> {
             BigDecimal cumRealise = BigDecimal.ZERO;
@@ -745,7 +744,6 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
             }
             Span span = new Span(formatBigDecimal(cumRealise));
-            System.out.println(formatBigDecimal(cumRealise));
             span.getStyle()
                     .set("font-weight", "500")
                     .set("color", "#2E3A59")
@@ -759,7 +757,6 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             return span;
         }))
                 .setHeader("Cumulative Funds Released (UGX)")
-                .setAutoWidth(true)
                 .setFlexGrow(0);
 
         financialGrid.addColumn(new ComponentRenderer<>(area -> {
@@ -778,7 +775,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             tooltip.setManual(false); // show on hover            
 
             return label;
-        })).setHeader("Release Spent (UGX)BNs").setAutoWidth(true);
+        })).setHeader("Release Spent (UGX) BNs");
 
         financialGrid.addColumn(area -> {
             String reason = "";
@@ -803,7 +800,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
             }
             return reason.isBlank() ? "—" : reason;
-        }).setHeader("% of Release Spent").setAutoWidth(true);
+        }).setHeader("% of Release Spent");
 
         financialGrid.addColumn(area -> {
             String reason = "";
@@ -831,11 +828,10 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
             return reason.isBlank() ? "—" : reason;
         })
-                .setHeader("Reasons for Under/Over Absorption")
-                .setFlexGrow(2)
-                .setAutoWidth(true);
+                .setHeader("Reasons for Under / Over Absorption")
+                .setFlexGrow(0);
 
-        financialGrid.setHeight("200px"); // Adjust as needed
+        financialGrid.setHeight("300px"); // Adjust as needed
     }
 
     public String formatInBillions(BigDecimal amount) {
@@ -896,7 +892,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             }
 
             return getCum_achievements;
-        }).setHeader("Cumulative Achievements").setFlexGrow(2);
+        }).setHeader("Cumulative Achievements").setFlexGrow(0);
 
         physicalGrid.addColumn(area -> {
             String getCum_achievements = "";
@@ -994,7 +990,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                 cumulativeReleased.setHelperText("");
             }
         });
-        TextField reason_for_over = new TextField("Reasons for under/over absorption");
+        TextField reason_for_over = new TextField("Reasons for under / over absorption");
 
         cumulativeReleased.setWidthFull();
         reason_for_over.setWidthFull();

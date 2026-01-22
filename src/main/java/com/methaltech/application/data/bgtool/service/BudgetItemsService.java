@@ -2090,4 +2090,16 @@ public class BudgetItemsService {
         return repository.deleteByIdIn(ids);
     }
 
+    @Transactional(readOnly = true)
+    public BigDecimal getMonthlyTotalByCoa(Budget budget, COA coa) {
+        BigDecimal total = repository.getTotalByBudgetAndCoa(budget, coa);
+
+        if (total == null || total.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+
+        // Divide by 2000 and round to 2 decimal places
+        return total.divide(BigDecimal.valueOf(2000), 2, BigDecimal.ROUND_HALF_UP);
+    }
+
 }

@@ -284,6 +284,18 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
             @Param("periods") Set<Integer> periods,
             @Param("accntCodes") Set<String> accntCodes
     );
+    
+     @Query(value = """
+    SELECT COALESCE(SUM(AMOUNT), 0)
+    FROM URC_A_SALFLDG_View
+    WHERE 
+        PERIOD IN (:periods)
+        AND ACCNT_CODE = (:accntCodes)
+""", nativeQuery = true)
+    BigDecimal findTotalAmountByPeriodsAndAccntCode(
+            @Param("periods") Set<Integer> periods,
+            @Param("accntCodes") String accntCodes
+    );   
 
     @Query("SELECT COALESCE(SUM(s.amount), 0) "
             + "FROM SALFLDG s "

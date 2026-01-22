@@ -110,22 +110,39 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.*;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.Style;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.*;
+import com.methaltech.application.data.bgtool.service.QtrReleasesReportService;
+import com.methaltech.application.data.bgtool.service.QtrReleasesService;
+import com.methaltech.application.data.bgtool.service.SectionBudgetPerformanceService;
 import com.methaltech.application.data.entity.bgtool.PerformanceRow;
+import com.methaltech.application.data.entity.bgtool.PriorityArea;
+import com.methaltech.application.data.entity.bgtool.QtrReleases;
+import com.methaltech.application.data.entity.bgtool.SectionBudgetPerformance;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
+import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.component.textfield.BigDecimalField;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.treegrid.TreeGrid;
+import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.hierarchy.TreeData;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.Map;
+import lombok.Getter;
 
 @PageTitle("Budget Reports Downloads")
 @Route(value = "budgetReport", layout = MainLayout.class)
@@ -150,6 +167,8 @@ public class BudgetReportsView extends Div {
     private final Urc_ActivitiesService sampleUrc_ActivitiesService;
     private final SALFLDGService samopleSALFLDGService;
     private final UrcBSalfldgService sampleUrcBSalfldgService;
+    private final QtrReleasesService qtrReleasesService;
+    private final QtrReleasesReportService qtrReleasesReport;
     private final List<SamplePerson> person = new ArrayList<>();
     private List<URC_Priority_Areas> programmes = new ArrayList<>();
     private List<Urc_Activities> programmesActivities = new ArrayList<>();
@@ -176,6 +195,18 @@ public class BudgetReportsView extends Div {
     Grid<Organisation> fundSourceGrid = new Grid<>(Organisation.class, false);
     BigDecimal totalIncome = BigDecimal.ZERO;
     BigDecimal totalExp = BigDecimal.ZERO;
+    private final SectionBudgetPerformanceService sectionBudgetPerformanceService;
+    int qtr = 0;
+    BigDecimal cumRealise = BigDecimal.ZERO;
+    BigDecimal actualRealise = BigDecimal.ZERO;
+    List<PriorityArea> priorityAreas = new ArrayList<>();
+
+    private final ComboBox<Budget> budgetCombo = new ComboBox<>("Budget");
+    private final Accordion accordion = new Accordion();
+    Button pdfBtn = new Button("All Download PDF");
+    Button excelBtn = new Button("Download Excel");
+    private final Anchor pdfDownloadAnchor = new Anchor();
+
 
     public BudgetReportsView(UserService userService, BudgetService budgetService,
             SamplePersonService samplePersonService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, OrganisationService sampleOrganisationService,
@@ -183,7 +214,8 @@ public class BudgetReportsView extends Div {
             Urc_ActivitiesService sampleUrc_ActivitiesService, CustomDetailedBudgetReportImpService sampleCustomDetailedBudgetReportImpService,
             CustomDetailedBudgetReportService sampleCustomDetailedBudgetReportService, UrcAcntService urcAcntService,
             FreightVolumesService sampleFreightVolumesService, CoaService sampleCoaService, SALFLDGService samopleSALFLDGService,
-            UrcBSalfldgService sampleUrcBSalfldgService, BudgetRepository repository) {
+            UrcBSalfldgService sampleUrcBSalfldgService, BudgetRepository repository, SectionBudgetPerformanceService sectionBudgetPerformanceService,
+            QtrReleasesService qtrReleasesService, QtrReleasesReportService qtrReleasesReport) {
         this.userService = userService;
         this.budgetService = budgetService;
         this.samplePersonService = samplePersonService;
@@ -201,6 +233,9 @@ public class BudgetReportsView extends Div {
         this.samopleSALFLDGService = samopleSALFLDGService;
         this.sampleUrcBSalfldgService = sampleUrcBSalfldgService;
         this.repository = repository;
+        this.sectionBudgetPerformanceService = sectionBudgetPerformanceService;
+        this.qtrReleasesService = qtrReleasesService;
+        this.qtrReleasesReport = qtrReleasesReport;
 
         VerticalLayout sheet1 = new VerticalLayout();
         VerticalLayout sheet2 = new VerticalLayout();
@@ -222,6 +257,7 @@ public class BudgetReportsView extends Div {
         sections.setItems(user.getDeptsection());
         sections.setItemLabelGenerator(UrcDeptSectionAnlDimbgt::getNAME);
         sections.setWidthFull();
+        dataLayout.setHeight("90%");
         comboBox.addValueChangeListener(e -> {
             budgetType.setItems(sampleOrganisationService.getOrganisationsByBudget(e.getValue()));
         });
@@ -270,6 +306,7 @@ public class BudgetReportsView extends Div {
         AccordionPanel panel22 = new AccordionPanel("Custom Budget By Account Code");
         AccordionPanel panel33 = new AccordionPanel("Funding Source Envelope");
         AccordionPanel panel44 = new AccordionPanel("Volumes Report");
+        AccordionPanel panel55 = new AccordionPanel("Performance Report");
 
         // Add content to the panels
         panel02.addContent(new Button("Budget Activities in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
@@ -284,6 +321,7 @@ public class BudgetReportsView extends Div {
         panel33.addContent(new Button("View By Fund Source", VaadinIcon.FILE_PRESENTATION.create(), e -> setFundSourcedataLayout()));
         panel33.addContent(new Button("Fund Source Vs Expenditure", VaadinIcon.FILE_PRESENTATION.create(), e -> setFundSourceExpdataLayout()));
         panel44.addContent(new Button("Tonnage & Passenger Performance", VaadinIcon.FILE_PRESENTATION.create(), e -> setVolumesdataLayout()));
+        panel55.addContent(new Button("Budget Performance", VaadinIcon.FILE_PRESENTATION.create(), e -> setPerformanceLayout()));
 
         // Add the panels to the Accordion
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
@@ -295,6 +333,7 @@ public class BudgetReportsView extends Div {
         accordion2.add(panel22);
         accordion2.add(panel33);
         accordion2.add(panel44);
+        accordion2.add(panel55);
 
         HorizontalLayout hlay = new HorizontalLayout();
         hlay.setWidthFull();
@@ -324,6 +363,7 @@ public class BudgetReportsView extends Div {
         SplitLayout splitLayout = new SplitLayout(sheet2, tabSheet2);
         tabSheet2.add("Report View", dataLayout);
         tabSheet2.add("Custom Report Settings", splitLayout2);
+        tabSheet2.add("Funds Release Settings", setReleaseFundsLayout());
 
         splitLayout.setHeightFull();
         splitLayout.setSplitterPosition(30);
@@ -452,6 +492,180 @@ public class BudgetReportsView extends Div {
         CustomDetailedBudgetReportcombo.clear();
     }
 
+    public VerticalLayout setReleaseFundsLayout() {
+        VerticalLayout realiseAccodion = new VerticalLayout();
+        realiseAccodion.add(new H3("Quarter Releases per Fund Source (by Section)"));
+        configureBudgetSelector();
+        realiseAccodion.add(buildTopBar());
+
+        accordion.setWidthFull();
+        realiseAccodion.add(accordion);
+
+        refreshAccordion();
+        return realiseAccodion;
+    }
+
+    private String formatBigDecimal(BigDecimal value) {
+        return value != null ? String.format("%,.2f", value) : "0.00";
+    }
+
+    public void setPerformanceLayout() {
+        datasubLayout.removeAll();
+        dataLayout.removeAll();
+        ComboBox<String> qtrComboBox = new ComboBox<>("Select Quarter");
+
+        qtrComboBox.setItems("Qtr 1", "Qtr 2", "Qtr 3", "Qtr 4");
+        qtrComboBox.setClearButtonVisible(true);
+
+        if (comboBox2.isEmpty() || budgetType2.isEmpty() || CustomDetailedBudgetReportImpcomboBox.isEmpty()) {
+            warningNotification("Make sure that Neither Section nor Budget nor Budget Type is empty");
+            return;
+        }
+
+        List<CustomDetailedBudgetReport> findByBudgetreport = sampleCustomDetailedBudgetReportService.findByBudgetreport(CustomDetailedBudgetReportImpcomboBox.getValue());
+
+        for (CustomDetailedBudgetReport e : findByBudgetreport) {
+            H2 header1 = new H2("UGANDA RAILWAYS CORPORATION");
+            H3 header2 = new H3("FINANCIAL & PHYSICAL PERFORMANCE REPORT");
+            H3 header3 = new H3(comboBox2.getValue().getFinancialYear().toUpperCase());
+            H3 financialHeader = new H3("1. FINANCIAL PERFORMANCE");
+
+            H3 header4 = new H3(e.getSheetname().toUpperCase());
+
+            BigDecimal[] computeGrandExpenditureTotals = sampleBudgetItemsService.computeGrandExpenditureTotals(comboBox2.getValue(), e.getDeptsection());
+            Grid<PriorityArea> financialGrid = new Grid<>(PriorityArea.class, false);
+            financialGrid.removeAllColumns();
+            financialGrid.setSizeFull();
+            financialGrid.setAllRowsVisible(true);
+            financialGrid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_COLUMN_BORDERS, GridVariant.LUMO_WRAP_CELL_CONTENT);
+
+            financialGrid.addColumn(PriorityArea::getName).setHeader("NDP Programme").setFlexGrow(2);
+
+            financialGrid.addColumn(new ComponentRenderer<>(area -> {
+                Span span = new Span();
+                span.setText(formatBigDecimal(computeGrandExpenditureTotals[0]));
+                Tooltip tooltip = Tooltip.forComponent(span);
+                tooltip.setText("Total Budget: " + formatBigDecimal(computeGrandExpenditureTotals[0]));
+                tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
+                tooltip.setManual(false); // show on hover            
+                return span;
+            })).setHeader("Planned Output / Budget (UGX)");
+
+            financialGrid.addColumn(new ComponentRenderer<>(area -> {
+                Span span = new Span();
+                span.setText(formatBigDecimal(computeGrandExpenditureTotals[0]));
+                Tooltip tooltip = Tooltip.forComponent(span);
+                tooltip.setText("Approved Budget: " + formatBigDecimal(computeGrandExpenditureTotals[0]));
+                tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
+                tooltip.setManual(false); // show on hover            
+                return span;
+            })).setHeader("Approved Budget (UGX)");
+
+            financialGrid.addColumn(new ComponentRenderer<>(area -> {
+
+                if (comboBox2.getValue() != null) {
+                    // cumRealise = samopleSALFLDGService.getTotalAmountByPeriods(samopleSALFLDGService.getFinancialYearPeriodsCummulative(comboBox2.getValue(), qtr), samopleSALFLDGService.extractTrimmedAnlCodes(e.getDeptsection()));
+                    cumRealise = BigDecimal.ZERO;
+                } else {
+                    cumRealise = BigDecimal.ZERO;
+                }
+
+                Span span = new Span(formatBigDecimal(cumRealise));
+                span.getStyle()
+                        .set("font-weight", "500")
+                        .set("color", "#2E3A59")
+                        .set("font-size", "var(--lumo-font-size-s)");
+
+                Tooltip tooltip = Tooltip.forComponent(span);
+                tooltip.setText("Cumulative Funds Released: " + formatBigDecimal(cumRealise));
+                tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
+                tooltip.setManual(false); // show on hover
+
+                return span;
+            })).setHeader("Cumulative Funds Released (UGX)")
+                    .setFlexGrow(0);
+
+            financialGrid.addColumn(new ComponentRenderer<>(area -> {
+                if (comboBox2.getValue() != null) {
+                    // cumRealise = samopleSALFLDGService.getTotalAmountByPeriods(samopleSALFLDGService.getFinancialYearPeriods(comboBox2.getValue(), qtr), samopleSALFLDGService.extractTrimmedAnlCodes(e.getDeptsection()));
+                    actualRealise = samopleSALFLDGService.getTotalAmountByPeriods(samopleSALFLDGService.getFinancialYearPeriodsCummulative(comboBox2.getValue(), qtr), samopleSALFLDGService.extractTrimmedAnlCodes(e.getDeptsection()));
+                } else {
+                    actualRealise = BigDecimal.ZERO;
+                }
+                Span label = new Span(formatBigDecimal(actualRealise.abs()));
+                if (actualRealise.abs().doubleValue() > cumRealise.abs().doubleValue()) {
+                    label.getStyle().set("color", "red");
+                    label.getStyle().set("font-weight", "bold");
+                    label.getElement().setProperty("title", "⚠ Warning: Over Spent");
+
+                } else if (actualRealise.abs().doubleValue() < cumRealise.abs().doubleValue()) {
+                    label.getStyle().set("color", "green");
+                    label.getStyle().set("font-weight", "bold");
+                    //label.getElement().setProperty("title", "⚠ Warning: Below You Actual Expenditure");
+
+                }
+
+                label.setText(formatBigDecimal(actualRealise.abs()));
+                Tooltip tooltip = Tooltip.forComponent(label);
+                tooltip.setText("Release Spent: " + formatBigDecimal(actualRealise.abs()));
+                tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
+                tooltip.setManual(false); // show on hover            
+
+                return label;
+            })).setHeader("Release Spent (UGX) BNs");
+
+            financialGrid.addColumn(area -> {
+                String reason = "";
+
+                reason = calculatePercentage(actualRealise, cumRealise);
+                return reason.isBlank() ? "—" : reason;
+            }).setHeader("% of Release Spent");
+
+            financialGrid.addColumn(area -> {
+                String reason = "";
+                return reason.isBlank() ? "—" : reason;
+            })
+                    .setHeader("Reasons for Under / Over Absorption")
+                    .setFlexGrow(0);
+
+            financialGrid.setHeight("300px"); // Adjust as needed   
+
+            qtrComboBox.addValueChangeListener(ex -> {
+                String qt = ex.getValue();
+
+                if (qt == null) {
+                    qtr = 0;
+                } else {
+                    switch (qt) {
+                        case "Qtr 1" ->
+                            qtr = 1;
+                        case "Qtr 2" ->
+                            qtr = 2;
+                        case "Qtr 3" ->
+                            qtr = 3;
+                        case "Qtr 4" ->
+                            qtr = 4;
+                        default ->
+                            qtr = 0;
+                    }
+                }
+                priorityAreas = sampleURC_Priority_AreasService.getDistinctPriorityAreasByBudget(comboBox2.getValue().getStartDate());
+                financialGrid.setItems(priorityAreas);
+                financialGrid.getDataProvider().refreshAll();
+                //refreshFinancialGrid();
+                //configureSubmit();
+                //financialGrid.getDataProvider().refreshAll();
+                // physicalGrid.getDataProvider().refreshAll();
+                // ✅ Always check after update
+                //disableElements();
+            });
+            HorizontalLayout menu = new HorizontalLayout(qtrComboBox);
+            dataLayout.add(header1, header2, header3, header4, menu, financialHeader, financialGrid);
+
+        }
+
+    }
+
     public void setVolumesdataLayout() {
         datasubLayout.removeAll();
         dataLayout.removeAll();
@@ -485,16 +699,19 @@ public class BudgetReportsView extends Div {
             previousBudget = previousBudgt.get();
         }
 
+        String prevFy = fyLabel(previousBudget, "_");
+        String currFy = fyLabel(comboBox2.getValue(), "Selected FY");
+
         grid.addColumn(PerformanceRow::getPreviousBudgetApproved)
-                .setHeader(previousBudget.getFinancialYear() + " Approved (MTs)")
+                .setHeader(prevFy + " Approved (MTs)")
                 .setTextAlign(ColumnTextAlign.END);
 
         grid.addColumn(PerformanceRow::getPreviousBudgeActual)
-                .setHeader(previousBudget.getFinancialYear() + " Actual (MTs)")
+                .setHeader(prevFy + " Actual (MTs)")
                 .setTextAlign(ColumnTextAlign.END);
 
         grid.addColumn(PerformanceRow::getChosenBudget)
-                .setHeader(comboBox2.getValue().getFinancialYear() + " Budget (MTs)")
+                .setHeader(currFy + " Budget (MTs)")
                 .setTextAlign(ColumnTextAlign.END);
 
         TreeData<PerformanceRow> data = new TreeData<>();
@@ -509,56 +726,83 @@ public class BudgetReportsView extends Div {
         List<COA> northernroutes = new ArrayList<>();
         northernroutes.add(northernlocalChosen);
         northernroutes.add(northernexportsChosen);
-        northernroutes.add(northernlocalChosen);
+        northernroutes.add(northernimportsChosen);
 
         COA southernimportsChosen = sampleCoaService.findByCodeAndBudget("111104", comboBox2.getValue());
         COA southernexportsChosen = sampleCoaService.findByCodeAndBudget("111105", comboBox2.getValue());
         COA southernlocalChosen = sampleCoaService.findByCodeAndBudget("111106", comboBox2.getValue());
+
+        COA passengerChosen = sampleCoaService.findByCodeAndBudget("111601", comboBox2.getValue());
+        COA passengerPrevious = sampleCoaService.findByCodeAndBudget("111601", previousBudget);
         List<COA> southernroutes = new ArrayList<>();
+        List<COA> allroutesChosen = new ArrayList<>();
         southernroutes.add(southernlocalChosen);
         southernroutes.add(southernexportsChosen);
-        southernroutes.add(southernlocalChosen);
+        southernroutes.add(southernimportsChosen);
+
+        COA northernimportsPrevious = null;
+        COA northernexportsPrevious = null;
+        COA northernlocalPrevious = null;
+        COA southernimportsPrevious = null;
+        COA southernexportsPrevious = null;
+        COA southernlocalPrevious = null;
+        List<COA> northernroutesPrevious = new ArrayList<>();
+        List<COA> southernroutesPrevious = new ArrayList<>();
+        List<COA> allroutesPrevious = new ArrayList<>();
+        String totalPassengerChosen = "";
+        String totalPassengerPrevious = "";
+        totalPassengerChosen = formatCurrency(sampleBudgetItemsService.getMonthlyTotalByCoa(comboBox2.getValue(), passengerChosen));
 
         if (previousBudget != null) {
-            COA northernimportsPrevious = sampleCoaService.findByCodeAndBudget("111101", previousBudget);
-            COA northernexportsPrevious = sampleCoaService.findByCodeAndBudget("111102", previousBudget);
-            COA northernlocalPrevious = sampleCoaService.findByCodeAndBudget("111103", previousBudget);
-            List<COA> northernroutesPrevious = new ArrayList<>();
+            northernimportsPrevious = sampleCoaService.findByCodeAndBudget("111101", previousBudget);
+            northernexportsPrevious = sampleCoaService.findByCodeAndBudget("111102", previousBudget);
+            northernlocalPrevious = sampleCoaService.findByCodeAndBudget("111103", previousBudget);
+
             northernroutesPrevious.add(northernlocalPrevious);
             northernroutesPrevious.add(northernexportsPrevious);
             northernroutesPrevious.add(northernlocalPrevious);
 
-            COA southernimportsPrevious = sampleCoaService.findByCodeAndBudget("111104", previousBudget);
-            COA southernexportsPrevious = sampleCoaService.findByCodeAndBudget("111105", previousBudget);
-            COA southernlocalPrevious = sampleCoaService.findByCodeAndBudget("111106", previousBudget);
-            List<COA> southernroutesPrevious = new ArrayList<>();
+            southernimportsPrevious = sampleCoaService.findByCodeAndBudget("111104", previousBudget);
+            southernexportsPrevious = sampleCoaService.findByCodeAndBudget("111105", previousBudget);
+            southernlocalPrevious = sampleCoaService.findByCodeAndBudget("111106", previousBudget);
+
             southernroutesPrevious.add(southernlocalPrevious);
             southernroutesPrevious.add(southernexportsPrevious);
             southernroutesPrevious.add(southernlocalPrevious);
+
+            allroutesPrevious.addAll(northernroutesPrevious);
+            allroutesPrevious.addAll(southernroutesPrevious);
+
+            allroutesChosen.addAll(southernroutes);
+            allroutesChosen.addAll(northernroutes);
+
+            totalPassengerPrevious = formatCurrency(sampleBudgetItemsService.getMonthlyTotalByCoa(previousBudget, passengerPrevious));
+        } else {
+            totalPassengerPrevious = "";
         }
 
         data.addRootItems(volumes);
 
         data.addItem(volumes, northern);
-        data.addItem(northern, new PerformanceRow("Net Tons – Exports", BigDecimal.TEN, BigDecimal.TEN, sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), northernexportsChosen)));
-        data.addItem(northern, new PerformanceRow("Net Tons – Imports", BigDecimal.TEN, BigDecimal.TEN, sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), northernimportsChosen)));
-        data.addItem(northern, new PerformanceRow("Local Net Tons", BigDecimal.TEN, BigDecimal.TEN, sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), northernlocalChosen)));
-        data.addItem(northern, new PerformanceRow("TOTAL TONS NORTHERN", BigDecimal.TEN, BigDecimal.TEN, sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(comboBox2.getValue(), northernroutes)));
+        data.addItem(northern, new PerformanceRow("Net Tons – Exports", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, northernexportsPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), northernexportsChosen))));
+        data.addItem(northern, new PerformanceRow("Net Tons – Imports", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, northernimportsPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), northernimportsChosen))));
+        data.addItem(northern, new PerformanceRow("Local Net Tons", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, northernlocalPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), northernlocalChosen))));
+        data.addItem(northern, new PerformanceRow("TOTAL TONS NORTHERN", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(previousBudget, northernroutesPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(comboBox2.getValue(), northernroutes))));
 
         data.addItem(volumes, southern);
-        data.addItem(southern, new PerformanceRow("Net Tons – Exports", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
-        data.addItem(southern, new PerformanceRow("Net Tons – Imports", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
-        data.addItem(southern, new PerformanceRow("Local Net Tons", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
-        data.addItem(southern, new PerformanceRow("TOTAL TONS SOUTHERN", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
+        data.addItem(southern, new PerformanceRow("Net Tons – Exports", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, southernexportsPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), southernexportsChosen))));
+        data.addItem(southern, new PerformanceRow("Net Tons – Imports", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, southernimportsPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), southernimportsChosen))));
+        data.addItem(southern, new PerformanceRow("Local Net Tons", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, southernlocalPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), southernlocalChosen))));
+        data.addItem(southern, new PerformanceRow("TOTAL TONS SOUTHERN", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(previousBudget, southernroutesPrevious)), formatCurrency(BigDecimal.ZERO), formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(comboBox2.getValue(), southernroutes))));
 
-        data.addItem(volumes, new PerformanceRow("TOTAL TONS", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
+        data.addItem(volumes, new PerformanceRow("TOTAL TONS", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(previousBudget, allroutesPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(comboBox2.getValue(), allroutesChosen))));
 
 // Passengers
         PerformanceRow passengers = new PerformanceRow("PASSENGERS");
         data.addRootItems(passengers);
-        data.addItem(passengers, new PerformanceRow("Passengers Kampala–Namanve Route", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
-        data.addItem(passengers, new PerformanceRow("Passengers Kampala – Other Routes", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
-        data.addItem(passengers, new PerformanceRow("TOTAL PASSENGERS", BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
+        data.addItem(passengers, new PerformanceRow("Passengers Kampala–Namanve Route", totalPassengerPrevious, formatCurrency(samopleSALFLDGService.findTotalAmountByPeriodsAndPassengerActuals(previousBudget)), totalPassengerChosen));
+        data.addItem(passengers, new PerformanceRow("Passengers Kampala – Other Routes", "-", "-", "-"));
+        data.addItem(passengers, new PerformanceRow("TOTAL PASSENGERS", totalPassengerPrevious, formatCurrency(samopleSALFLDGService.findTotalAmountByPeriodsAndPassengerActuals(previousBudget)), totalPassengerChosen));
 
         grid.setTreeData(data);
         grid.expand(volumes, northern, southern, passengers);
@@ -583,7 +827,62 @@ public class BudgetReportsView extends Div {
         });
 
         dataLayout.add(grid);
+        Button pdfBtn = new Button("Download PDF");
+        Button excelBtn = new Button("Download Excel");
+        datasubLayout.add(pdfBtn, excelBtn);
+        dataLayout.add(datasubLayout);
 
+        pdfBtn.addClickListener(e -> {
+            try {
+                List<PerformanceRow> rows = flattenTreeData(data);
+
+                byte[] pdf = generateVolumesPdf(
+                        rows,
+                        prevFy,
+                        currFy
+                );
+
+                StreamResource resource = new StreamResource(
+                        "Volumes_Report.pdf",
+                        () -> new ByteArrayInputStream(pdf)
+                );
+
+                Anchor download = new Anchor(resource, "");
+                download.getElement().setAttribute("download", true);
+                download.add(new Button("Click to download"));
+                download.getElement().callJsFunction("click");
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                warningNotification("Failed to generate PDF");
+            }
+        });
+
+        excelBtn.addClickListener(e -> {
+            try {
+                List<PerformanceRow> rows = flattenTreeData(data);
+                byte[] excel = generateVolumesExcel(rows, prevFy, currFy);
+
+                StreamResource resource = new StreamResource(
+                        "Volumes_Report.xlsx",
+                        () -> new ByteArrayInputStream(excel)
+                );
+
+                Anchor a = new Anchor(resource, "");
+                a.getElement().setAttribute("download", true);
+                a.add(new Button("Download"));
+                a.getElement().callJsFunction("click");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+    }
+
+    private String fyLabel(Budget budget, String fallback) {
+        return budget != null && budget.getFinancialYear() != null
+                ? budget.getFinancialYear()
+                : fallback;
     }
 
     public void setFundSourcedataLayout() {
@@ -780,6 +1079,59 @@ public class BudgetReportsView extends Div {
                     .collect(Collectors.joining(", "));
         }
         return "";
+    }
+
+    private List<PerformanceRow> flattenTreeData(TreeData<PerformanceRow> treeData) {
+        List<PerformanceRow> rows = new ArrayList<>();
+        for (PerformanceRow root : treeData.getRootItems()) {
+            collect(rows, treeData, root);
+        }
+        return rows;
+    }
+
+    private void collect(List<PerformanceRow> rows, TreeData<PerformanceRow> treeData, PerformanceRow parent) {
+        rows.add(parent);
+        for (PerformanceRow child : treeData.getChildren(parent)) {
+            collect(rows, treeData, child);
+        }
+    }
+
+    public byte[] generateVolumesExcel(List<PerformanceRow> rows,
+            String prevFy,
+            String currFy) throws IOException {
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Volumes");
+
+        int rowIdx = 0;
+
+        // Header
+        Row header = sheet.createRow(rowIdx++);
+        header.createCell(0).setCellValue("Details");
+        header.createCell(1).setCellValue(prevFy + " Approved (MTs)");
+        header.createCell(2).setCellValue(prevFy + " Actual (MTs)");
+        header.createCell(3).setCellValue(currFy + " Budget (MTs)");
+
+        for (PerformanceRow r : rows) {
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(nullSafe(r.getLabel()));
+            row.createCell(1).setCellValue(nullSafe(r.getPreviousBudgetApproved()));
+            row.createCell(2).setCellValue(nullSafe(r.getPreviousBudgeActual()));
+            row.createCell(3).setCellValue(nullSafe(r.getChosenBudget()));
+        }
+
+        for (int i = 0; i < 4; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        workbook.write(out);
+        workbook.close();
+        return out.toByteArray();
+    }
+
+    private String nullSafe(String v) {
+        return v == null ? "" : v;
     }
 
     private void refreshCustomDetailedBudgetReportImpItems() {
@@ -12214,6 +12566,74 @@ public class BudgetReportsView extends Div {
         // dataLayout.add(downloadLink);
     }
 
+    public byte[] generateVolumesPdf(List<PerformanceRow> rows,
+            String prevFy,
+            String currFy) throws IOException {
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        PdfWriter writer = new PdfWriter(baos);
+        PdfDocument pdfDoc = new PdfDocument(writer);
+        pdfDoc.setDefaultPageSize(PageSize.A4.rotate());
+
+        Document document = new Document(pdfDoc);
+
+        PdfFont bold = PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD);
+        PdfFont normal = PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA);
+
+        // Title
+        document.add(
+                new Paragraph("VOLUMES & PASSENGER PERFORMANCE REPORT")
+                        .setFont(bold)
+                        .setFontSize(14)
+                        .setTextAlignment(TextAlignment.CENTER)
+        );
+
+        document.add(new Paragraph("\n"));
+
+        // 4-column table
+        Table table = new Table(UnitValue.createPercentArray(new float[]{40, 20, 20, 20}))
+                .useAllAvailableWidth();
+
+        // Header row
+        addHeader(table, "Details", bold);
+        addHeader(table, prevFy + " Approved (MTs)", bold);
+        addHeader(table, prevFy + " Actual (MTs)", bold);
+        addHeader(table, currFy + " Budget (MTs)", bold);
+
+        // Data rows
+        for (PerformanceRow row : rows) {
+            boolean isTotal = row.getLabel() != null && row.getLabel().startsWith("TOTAL");
+            PdfFont rowFont = isTotal ? bold : normal;
+
+            addCell(table, row.getLabel(), rowFont, TextAlignment.LEFT);
+            addCell(table, row.getPreviousBudgetApproved(), rowFont, TextAlignment.RIGHT);
+            addCell(table, row.getPreviousBudgeActual(), rowFont, TextAlignment.RIGHT);
+            addCell(table, row.getChosenBudget(), rowFont, TextAlignment.RIGHT);
+        }
+
+        document.add(table);
+        document.close();
+
+        return baos.toByteArray();
+    }
+
+    private void addHeader(Table table, String text, PdfFont font) {
+        table.addHeaderCell(
+                new com.itextpdf.layout.element.Cell()
+                        .add(new Paragraph(text).setFont(font))
+                        .setTextAlignment(TextAlignment.CENTER)
+        );
+    }
+
+    private void addCell(Table table, String text, PdfFont font, TextAlignment align) {
+        table.addCell(
+                new com.itextpdf.layout.element.Cell()
+                        .add(new Paragraph(text == null ? "" : text).setFont(font))
+                        .setTextAlignment(align)
+        );
+    }
+
     private void generateFundSourceExpPdf(
             List<Organisation> organisations,
             Set<UrcDeptSectionAnlDimbgt> sections,
@@ -12505,6 +12925,529 @@ public class BudgetReportsView extends Div {
         style.setBorderLeft(BorderStyle.THIN);
         style.setBorderRight(BorderStyle.THIN);
         return style;
+    }
+
+    private void configureBudgetSelector() {
+        List<Budget> budgets = budgetService.getBudgets();
+        budgetCombo.setItems(budgets);
+        budgetCombo.setItemLabelGenerator(b -> b.getFinancialYear() != null ? b.getFinancialYear() : "Budget #" + b.getId());
+        budgetCombo.setWidth("350px");
+        budgetCombo.setRequired(true);
+
+        pdfBtn.setEnabled(false);
+        excelBtn.setEnabled(false);
+        budgetCombo.addValueChangeListener(e -> {
+            refreshAccordion();
+            if (e.getValue() == null) {
+                pdfBtn.setEnabled(false);
+                excelBtn.setEnabled(false);
+            } else {
+                pdfBtn.setEnabled(true);
+                excelBtn.setEnabled(true);
+            }
+        });
+    }
+
+    private HorizontalLayout buildTopBar() {
+        Button refresh = new Button("Reload", e -> refreshAccordion());
+
+        pdfDownloadAnchor.setText(""); // no visible text
+        pdfDownloadAnchor.getStyle().set("display", "none"); // hide it
+
+        pdfBtn.addClickListener(e -> {
+            StreamResource pdf = new StreamResource("Qtr-Releases.pdf", () -> {
+                byte[] bytes = qtrReleasesReport.buildPdfItext7ByFundSourceByBudget(
+                        budgetCombo.getValue(),
+                        budgetType2.getSelectedItems()
+                );
+                return new ByteArrayInputStream(bytes);
+            });
+
+            pdfDownloadAnchor.setHref(pdf);
+            pdfDownloadAnchor.getElement().setAttribute("download", true);
+
+            // trigger click
+            pdfDownloadAnchor.getElement().callJsFunction("click");
+        });
+
+        HorizontalLayout top = new HorizontalLayout(budgetCombo, refresh, pdfBtn, excelBtn, pdfDownloadAnchor);
+        top.setWidthFull();
+        top.setAlignItems(FlexComponent.Alignment.END);
+        return top;
+    }
+
+    private void refreshAccordion() {
+        accordion.getChildren().forEach(component -> component.removeFromParent());
+
+        Budget budget = budgetCombo.getValue();
+        if (budget == null) {
+            Notification.show("Select a Budget first.");
+            return;
+        }
+
+        List<Organisation> organisations = sampleOrganisationService.getOrganisationsByBudget(budget);
+        if (organisations.isEmpty()) {
+            Notification.show("No organisations found.");
+            return;
+        }
+
+        for (Organisation org : organisations) {
+            VerticalLayout content = new VerticalLayout();
+            content.setPadding(false);
+            content.setSpacing(false);
+            content.setWidthFull();
+
+            Grid<QtrReleaseRow> grid = buildDeptSectionGrid(org, budget);
+            content.add(grid);
+
+            AccordionPanel panel = accordion.add(org.getName() + " (" + org.getCode() + ")", content);
+            panel.addOpenedChangeListener(event -> {
+                if (event.isOpened()) {
+                    // refresh grid data when opened (latest DB values)
+
+                    List<QtrReleaseRow> rows = loadRows(org, budget);
+
+                    BigDecimal q1Sum = rows.stream().map(QtrReleaseRow::getQtr1Release).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal q2Sum = rows.stream().map(QtrReleaseRow::getQtr2Release).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal q3Sum = rows.stream().map(QtrReleaseRow::getQtr3Release).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal q4Sum = rows.stream().map(QtrReleaseRow::getQtr4Release).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal totalAll = q1Sum.add(q2Sum).add(q3Sum).add(q4Sum);
+
+// --- Create a “footer” row ---
+                    UrcDeptSectionAnlDimbgt tot = new UrcDeptSectionAnlDimbgt();
+                    tot.setNAME("TOTAL");
+                    QtrReleaseRow footerRow = new QtrReleaseRow(tot);
+                    //footerRow.setDeptSectionName("Total");   // or blank
+                    footerRow.setQtr1Release(q1Sum);
+                    footerRow.setQtr2Release(q2Sum);
+                    footerRow.setQtr3Release(q3Sum);
+                    footerRow.setQtr4Release(q4Sum);
+                    footerRow.setTotalRow(true);
+                    //footerRow.setTotalReleased(totalAll);
+
+                    rows.add(footerRow);
+                    grid.setItems(rows);
+                }
+            });
+
+            // panel.close();
+        }
+    }
+
+    private List<QtrReleaseRow> exportRows(List<QtrReleaseRow> rows) {
+        return rows.stream()
+                .filter(r -> !r.isTotalRow()) // exclude totals row
+                .toList();
+    }
+
+    private Grid<QtrReleaseRow> buildDeptSectionGrid(Organisation org, Budget budget) {
+        Grid<QtrReleaseRow> grid = new Grid<>(QtrReleaseRow.class, false);
+        grid.setWidthFull();
+        grid.setHeight("520px"); // good height for ~20 rows
+        grid.setAllRowsVisible(false);
+
+        // Load data initially
+        List<QtrReleaseRow> rows = loadRows(org, budget);
+
+        BigDecimal q1Sum = rows.stream().map(QtrReleaseRow::getQtr1Release).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal q2Sum = rows.stream().map(QtrReleaseRow::getQtr2Release).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal q3Sum = rows.stream().map(QtrReleaseRow::getQtr3Release).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal q4Sum = rows.stream().map(QtrReleaseRow::getQtr4Release).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+// --- Create a “footer” row ---
+        UrcDeptSectionAnlDimbgt tot = new UrcDeptSectionAnlDimbgt();
+        tot.setNAME("TOTAL");
+        QtrReleaseRow footerRow = new QtrReleaseRow(tot);
+        //footerRow.setDeptSectionName("Total");   // or blank
+        footerRow.setQtr1Release(q1Sum);
+        footerRow.setQtr2Release(q2Sum);
+        footerRow.setQtr3Release(q3Sum);
+        footerRow.setQtr4Release(q4Sum);
+        footerRow.setTotalRow(true);
+        rows.add(footerRow);
+        grid.setItems(rows);
+        // Binder + Editor (inline edit)
+        Binder<QtrReleaseRow> binder = new Binder<>(QtrReleaseRow.class);
+        Editor<QtrReleaseRow> editor = grid.getEditor();
+        editor.setBinder(binder);
+        editor.setBuffered(true);
+
+        // Columns
+        grid.addColumn(row -> row.getDeptSectionName())
+                .setHeader("Dept/Section")
+                .setAutoWidth(true)
+                .setFlexGrow(1);
+
+        // Editable numeric fields
+        BigDecimalField q1Field = moneyEditorField();
+        BigDecimalField q2Field = moneyEditorField();
+        BigDecimalField q3Field = moneyEditorField();
+        BigDecimalField q4Field = moneyEditorField();
+
+        Grid.Column<QtrReleaseRow> q1Col = grid.addColumn(row -> formatBigDecimal(row.getQtr1Release()))
+                .setHeader("Q1 Release")
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.END)
+                .setEditorComponent(q1Field);
+
+        Grid.Column<QtrReleaseRow> q2Col = grid.addColumn(row -> formatBigDecimal(row.getQtr2Release()))
+                .setHeader("Q2 Release")
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.END)
+                .setEditorComponent(q2Field);
+
+        Grid.Column<QtrReleaseRow> q3Col = grid.addColumn(row -> formatBigDecimal(row.getQtr3Release()))
+                .setHeader("Q3 Release")
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.END)
+                .setEditorComponent(q3Field);
+
+        grid.addColumn(QtrReleaseRow::getQtr4Release)
+                .setHeader("Q4 Release")
+                .setAutoWidth(true)
+                .setEditorComponent(q4Field);
+
+        // Editable reasons
+        TextArea r1Field = reasonEditorField();
+        TextArea r2Field = reasonEditorField();
+        TextArea r3Field = reasonEditorField();
+        TextArea r4Field = reasonEditorField();
+
+        grid.addColumn(QtrReleaseRow::getReasonsForUnderOver1)
+                .setHeader("Reason Q1")
+                .setAutoWidth(true)
+                .setFlexGrow(2)
+                .setEditorComponent(r1Field);
+
+        grid.addColumn(QtrReleaseRow::getReasonsForUnderOver2)
+                .setHeader("Reason Q2")
+                .setAutoWidth(true)
+                .setFlexGrow(2)
+                .setEditorComponent(r2Field);
+
+        grid.addColumn(QtrReleaseRow::getReasonsForUnderOver3)
+                .setHeader("Reason Q3")
+                .setAutoWidth(true)
+                .setFlexGrow(2)
+                .setEditorComponent(r3Field);
+
+        grid.addColumn(QtrReleaseRow::getReasonsForUnderOver4)
+                .setHeader("Reason Q4")
+                .setAutoWidth(true)
+                .setFlexGrow(2)
+                .setEditorComponent(r4Field);
+
+        // Convenience total column per row
+        Grid.Column<QtrReleaseRow> totalCol = grid.addColumn(new ComponentRenderer<>(row -> {
+            Span s = new Span(formatBigDecimal(
+                    nvl(row.getQtr1Release())
+                            .add(nvl(row.getQtr2Release()))
+                            .add(nvl(row.getQtr3Release()))
+                            .add(nvl(row.getQtr4Release()))
+            ));
+            s.getStyle().set("font-weight", "600"); // bold
+            return s;
+        }))
+                .setHeader("Total Released")
+                .setAutoWidth(true);
+
+        // Bind editor fields
+        binder.forField(q1Field).bind(QtrReleaseRow::getQtr1Release, QtrReleaseRow::setQtr1Release);
+        binder.forField(q2Field).bind(QtrReleaseRow::getQtr2Release, QtrReleaseRow::setQtr2Release);
+        binder.forField(q3Field).bind(QtrReleaseRow::getQtr3Release, QtrReleaseRow::setQtr3Release);
+        binder.forField(q4Field).bind(QtrReleaseRow::getQtr4Release, QtrReleaseRow::setQtr4Release);
+
+        binder.forField(r1Field).bind(QtrReleaseRow::getReasonsForUnderOver1, QtrReleaseRow::setReasonsForUnderOver1);
+        binder.forField(r2Field).bind(QtrReleaseRow::getReasonsForUnderOver2, QtrReleaseRow::setReasonsForUnderOver2);
+        binder.forField(r3Field).bind(QtrReleaseRow::getReasonsForUnderOver3, QtrReleaseRow::setReasonsForUnderOver3);
+        binder.forField(r4Field).bind(QtrReleaseRow::getReasonsForUnderOver4, QtrReleaseRow::setReasonsForUnderOver4);
+
+        // Set items
+        // grid.setItems(displayRows);
+// --- Optional: style footer differently ---
+        grid.setClassNameGenerator(row -> {
+            if ("Total".equals(row.getDeptSectionName())) {
+                return "totals-row"; // define CSS class
+            }
+            return null;
+        });
+
+        // Action buttons column
+        grid.addColumn(new ComponentRenderer<>(row -> {
+            Button edit = new Button("Edit");
+            Button save = new Button("Save");
+            Button cancel = new Button("Cancel");
+
+            boolean isFooter = row.isTotalRow();
+
+            edit.setEnabled(!isFooter);
+            save.setEnabled(!isFooter);
+            cancel.setEnabled(!isFooter);
+
+            edit.addClickListener(e -> {
+                if (editor.isOpen()) {
+                    editor.cancel();
+                }
+                editor.editItem(row);
+            });
+
+            save.addClickListener(e -> {
+                try {
+                    editor.save();
+
+                    // Persist the row -> QtrReleases
+                    QtrReleases entity = row.toEntity(org, budget);
+                    qtrReleasesService.save(entity);
+                    refreshAccordion();
+
+                    Notification n = Notification.show(
+                            "Saved: " + row.getDeptSectionName(),
+                            2500,
+                            Notification.Position.TOP_END
+                    );
+                    n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+                } catch (Exception ex) {
+                    Notification n = Notification.show(
+                            "Save failed: " + ex.getMessage(),
+                            4000,
+                            Notification.Position.TOP_END
+                    );
+                    n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                }
+            });
+
+            cancel.addClickListener(e -> editor.cancel());
+
+            HorizontalLayout actions = new HorizontalLayout(edit, save, cancel);
+            actions.setPadding(false);
+            actions.setSpacing(true);
+            return actions;
+        }))
+                .setHeader("Actions")
+                .setAutoWidth(true)
+                .setFlexGrow(0);
+
+        return grid;
+    }
+
+    private List<QtrReleaseRow> loadRows(Organisation organisation, Budget budget) {
+        List<UrcDeptSectionAnlDimbgt> sections = sampleUrcDeptSectionAnlDimbgtService.getAllUrcSectionsAnlDims();
+
+        // Load existing QtrReleases for this organisation+budget (for all deptSections)
+        List<QtrReleases> existing = qtrReleasesService.findByOrganisationAndBudget(organisation, budget);
+
+        Map<String, QtrReleases> bySectionId = existing.stream()
+                .filter(x -> x.getDeptSection() != null && x.getDeptSection().getANL_CODE() != null)
+                .collect(Collectors.toMap(
+                        x -> x.getDeptSection().getANL_CODE(),
+                        x -> x,
+                        (a, b) -> a // keep first if duplicates exist
+                ));
+
+        List<QtrReleaseRow> rows = new ArrayList<>();
+
+        for (UrcDeptSectionAnlDimbgt section : sections) {
+            QtrReleases qtr = bySectionId.get(section.getANL_CODE());
+
+            QtrReleaseRow row = new QtrReleaseRow(section);
+
+            if (qtr != null) {
+                row.setId(qtr.getId());
+                row.setQtr1Release(nvl(qtr.getQtr1Release()));
+                row.setQtr2Release(nvl(qtr.getQtr2Release()));
+                row.setQtr3Release(nvl(qtr.getQtr3Release()));
+                row.setQtr4Release(nvl(qtr.getQtr4Release()));
+
+                row.setReasonsForUnderOver1(nullToEmpty(qtr.getReasonsForUnderOver1()));
+                row.setReasonsForUnderOver2(nullToEmpty(qtr.getReasonsForUnderOver2()));
+                row.setReasonsForUnderOver3(nullToEmpty(qtr.getReasonsForUnderOver3()));
+                row.setReasonsForUnderOver4(nullToEmpty(qtr.getReasonsForUnderOver4()));
+            }
+
+            rows.add(row);
+        }
+
+        return rows;
+    }
+
+    private BigDecimalField moneyEditorField() {
+        BigDecimalField f = new BigDecimalField();
+        f.setWidthFull();
+        f.setClearButtonVisible(true);
+
+// Set minimum value using a validator
+        f.setValue(BigDecimal.ZERO);
+        f.addValueChangeListener(event -> {
+            BigDecimal value = event.getValue();
+            if (value != null && value.compareTo(BigDecimal.ZERO) < 0) {
+                f.setValue(BigDecimal.ZERO); // enforce min
+            }
+        });
+        return f;
+    }
+
+    private TextArea reasonEditorField() {
+        TextArea t = new TextArea();
+        t.setWidthFull();
+        t.setMaxLength(500);
+        t.getStyle().set("min-width", "220px");
+        return t;
+    }
+
+    private BigDecimal nvl(BigDecimal v) {
+        return v == null ? BigDecimal.ZERO : v;
+    }
+
+    private String nullToEmpty(String s) {
+        return s == null ? "" : s;
+    }
+
+    // ---------------------------
+    // Row DTO used by the Grid
+    // ---------------------------
+    @Getter
+    public static class QtrReleaseRow {
+
+        private Long id;
+
+        private boolean totalRow;
+
+        public boolean isTotalRow() {
+            return totalRow;
+        }
+
+        public void setTotalRow(boolean totalRow) {
+            this.totalRow = totalRow;
+        }
+
+        private final UrcDeptSectionAnlDimbgt deptSection;
+
+        private BigDecimal qtr1Release = BigDecimal.ZERO;
+        private BigDecimal qtr2Release = BigDecimal.ZERO;
+        private BigDecimal qtr3Release = BigDecimal.ZERO;
+        private BigDecimal qtr4Release = BigDecimal.ZERO;
+
+        private String reasonsForUnderOver1 = "";
+        private String reasonsForUnderOver2 = "";
+        private String reasonsForUnderOver3 = "";
+        private String reasonsForUnderOver4 = "";
+
+        public QtrReleaseRow(UrcDeptSectionAnlDimbgt deptSection) {
+            this.deptSection = deptSection;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public String getDeptSectionName() {
+            // adjust based on your entity fields
+            if (deptSection == null) {
+                return "";
+            }
+            if (deptSection.getNAME() != null) {
+                return deptSection.getNAME();
+            }
+            return "Section #" + deptSection.getANL_CODE();
+        }
+
+        public BigDecimal getQtr1Release() {
+            return qtr1Release;
+        }
+
+        public BigDecimal getQtr2Release() {
+            return qtr2Release;
+        }
+
+        public BigDecimal getQtr3Release() {
+            return qtr3Release;
+        }
+
+        public BigDecimal getQtr4Release() {
+            return qtr4Release;
+        }
+
+        public void setQtr1Release(BigDecimal v) {
+            this.qtr1Release = nvl(v);
+        }
+
+        public void setQtr2Release(BigDecimal v) {
+            this.qtr2Release = nvl(v);
+        }
+
+        public void setQtr3Release(BigDecimal v) {
+            this.qtr3Release = nvl(v);
+        }
+
+        public void setQtr4Release(BigDecimal v) {
+            this.qtr4Release = nvl(v);
+        }
+
+        public String getReasonsForUnderOver1() {
+            return reasonsForUnderOver1;
+        }
+
+        public String getReasonsForUnderOver2() {
+            return reasonsForUnderOver2;
+        }
+
+        public String getReasonsForUnderOver3() {
+            return reasonsForUnderOver3;
+        }
+
+        public String getReasonsForUnderOver4() {
+            return reasonsForUnderOver4;
+        }
+
+        public void setReasonsForUnderOver1(String s) {
+            this.reasonsForUnderOver1 = emptyToEmpty(s);
+        }
+
+        public void setReasonsForUnderOver2(String s) {
+            this.reasonsForUnderOver2 = emptyToEmpty(s);
+        }
+
+        public void setReasonsForUnderOver3(String s) {
+            this.reasonsForUnderOver3 = emptyToEmpty(s);
+        }
+
+        public void setReasonsForUnderOver4(String s) {
+            this.reasonsForUnderOver4 = emptyToEmpty(s);
+        }
+
+        public QtrReleases toEntity(Organisation organisation, Budget budget) {
+            return QtrReleases.builder()
+                    .id(this.id) // important for update
+                    .organisation(organisation)
+                    .budget(budget)
+                    .deptSection(this.deptSection)
+                    .qtr1Release(nvl(qtr1Release))
+                    .qtr2Release(nvl(qtr2Release))
+                    .qtr3Release(nvl(qtr3Release))
+                    .qtr4Release(nvl(qtr4Release))
+                    .reasonsForUnderOver1(emptyToNull(reasonsForUnderOver1))
+                    .reasonsForUnderOver2(emptyToNull(reasonsForUnderOver2))
+                    .reasonsForUnderOver3(emptyToNull(reasonsForUnderOver3))
+                    .reasonsForUnderOver4(emptyToNull(reasonsForUnderOver4))
+                    .build();
+        }
+
+        private static BigDecimal nvl(BigDecimal v) {
+            return v == null ? BigDecimal.ZERO : v;
+        }
+
+        private static String emptyToEmpty(String s) {
+            return s == null ? "" : s;
+        }
+
+        private static String emptyToNull(String s) {
+            if (s == null) {
+                return null;
+            }
+            String t = s.trim();
+            return t.isEmpty() ? null : t;
+        }
     }
 
 }

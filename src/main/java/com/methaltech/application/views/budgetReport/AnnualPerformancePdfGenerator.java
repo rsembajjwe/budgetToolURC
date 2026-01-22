@@ -1,6 +1,5 @@
 package com.methaltech.application.views.budgetReport;
 
-
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.font.PdfFont;
@@ -364,7 +363,7 @@ public class AnnualPerformancePdfGenerator {
             PdfFont boldFont = PdfFontFactory.createFont(StandardFonts.TIMES_BOLD);
             PdfFont itallicFont = PdfFontFactory.createFont(StandardFonts.TIMES_ITALIC);
             PdfFont normalFont = PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN);
-            Cell cell = new Cell().add(new Paragraph(text).setFont(boldFont)).setBackgroundColor(ColorConstants.LIGHT_GRAY);
+            Cell cell = new Cell().add(new Paragraph(safe(text)).setFont(boldFont)).setBackgroundColor(ColorConstants.LIGHT_GRAY);
             table.addHeaderCell(cell);
         } catch (IOException ex) {
             Logger.getLogger(AnnualPerformancePdfGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -372,7 +371,7 @@ public class AnnualPerformancePdfGenerator {
     }
 
     private void addCell(Table table, String text) {
-        table.addCell(new Cell().add(new Paragraph(text).setFontSize(10)));
+        table.addCell(new Cell().add(new Paragraph(safe(text)).setFontSize(10)));
     }
 
     private String safe(String value) {

@@ -1540,4 +1540,10 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
     """)
     int deleteByIdIn(@Param("ids") List<Long> ids);
 
+    @Query("SELECT SUM(b.jul + b.aug + b.sep + b.oct + b.nov + b.dec + b.jan + b.feb + b.mar + b.apr + b.may + b.jun) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budget = :budget AND b.coacode = :coa")
+    BigDecimal getTotalByBudgetAndCoa(@Param("budget") Budget budget,
+            @Param("coa") COA coa);
+
 }

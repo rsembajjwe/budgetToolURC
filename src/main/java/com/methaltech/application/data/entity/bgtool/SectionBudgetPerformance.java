@@ -79,7 +79,7 @@ public class SectionBudgetPerformance implements Serializable {
     private String percentageSpent3;
     @Column(name = "percentage_spent4", length = 500)
     private String percentageSpent4;
-
+ 
     @Column(name = "reasons_for_under_over1", length = 500)
     private String reasonsForUnderOver1;
     @Column(name = "reasons_for_under_over2", length = 500)

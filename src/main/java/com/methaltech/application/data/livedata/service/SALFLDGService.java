@@ -5,6 +5,7 @@ import com.methaltech.application.data.bgtool.repository.BudgetRepository;
 import com.methaltech.application.data.bgtool.repository.CoaRepository;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.COA;
+import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.livedata.SALFLDG;
 import com.methaltech.application.data.livedata.repository.SALFLDGProjection;
 import com.methaltech.application.data.livedata.repository.SALFLDGRepository;
@@ -19,6 +20,7 @@ import java.util.LinkedHashSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -306,6 +308,23 @@ public class SALFLDGService {
         return amount; // always non-null
     }
 
+    public BigDecimal findTotalAmountByPeriodsAndAccntCode(Budget budget, String accCode) {
+        Set<Integer> periods = getFinancialYearPeriods(budget);
+        BigDecimal amount = salfldgRepository.findTotalAmountByPeriodsAndAccntCode(periods, accCode);
+        return amount; // always non-null
+    }
+
+    public BigDecimal findTotalAmountByPeriodsAndPassengerActuals(Budget budget) {
+        Set<Integer> periods = getFinancialYearPeriods(budget);
+        String accCode = "111601         ";
+
+        BigDecimal total = salfldgRepository.findTotalAmountByPeriodsAndAccntCode(periods, accCode);
+        if (total == null || total.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+        return total.divide(BigDecimal.valueOf(2000), 2, BigDecimal.ROUND_HALF_UP);
+    }
+
     public Set<Integer> getFinancialYearPeriods(Budget budget) {
         Set<Integer> periods = new LinkedHashSet<>();
 
@@ -328,6 +347,82 @@ public class SALFLDGService {
         return periods;
     }
 
+    public Set<Integer> getFinancialYearPeriods(Budget budget, int quarter) {
+        Set<Integer> periods = new LinkedHashSet<>();
+
+        if (budget.getStartDate() == null || budget.getCloseDate() == null) {
+            return periods; // return empty if dates are not set
+        }
+
+        // Get the financial year end (YYYY part)
+        int yearSuffix = budget.getCloseDate().getYear(); // e.g., 2025 for FY 2024/07/01 to 2025/06/30
+
+        // Start from July of the start year
+        LocalDate current = LocalDate.of(budget.getStartDate().getYear(), Month.JULY, 1);
+        int start = 0;
+        switch (quarter) {
+            case 1:
+                start = 1;
+                break;
+            case 2:
+                start = 4;
+                break;
+            case 3:
+                start = 7;
+                break;
+            case 4:
+                start = 10;
+                break;
+            default:
+                break;
+        }
+        for (int i = start; i <= 12; i++) {
+            //String periodCode = String.format("%d%03d", yearSuffix, i); // e.g., 2025001
+            int periodCode = yearSuffix * 1000 + i;
+            periods.add(periodCode);
+            current = current.plusMonths(1);
+        }
+
+        return periods;
+    }
+    public Set<Integer> getFinancialYearPeriodsCummulative(Budget budget, int quarter) {
+        Set<Integer> periods = new LinkedHashSet<>();
+
+        if (budget.getStartDate() == null || budget.getCloseDate() == null) {
+            return periods; // return empty if dates are not set
+        }
+
+        // Get the financial year end (YYYY part)
+        int yearSuffix = budget.getCloseDate().getYear(); // e.g., 2025 for FY 2024/07/01 to 2025/06/30
+
+        // Start from July of the start year
+        LocalDate current = LocalDate.of(budget.getStartDate().getYear(), Month.JULY, 1);
+        int stop = 0;
+        switch (quarter) {
+            case 1:
+                stop = 3;
+                break;
+            case 2:
+                stop = 6;
+                break;
+            case 3:
+                stop = 9;
+                break;
+            case 4:
+                stop = 12;
+                break;
+            default:
+                break;
+        }
+        for (int i = 1; i <= stop; i++) {
+            //String periodCode = String.format("%d%03d", yearSuffix, i); // e.g., 2025001
+            int periodCode = yearSuffix * 1000 + i;
+            periods.add(periodCode);
+            current = current.plusMonths(1);
+        }
+
+        return periods;
+    }
     public Optional<SALFLDG> findByActualByID(
             String accountCode,
             Integer period,
@@ -339,5 +434,18 @@ public class SALFLDGService {
                 .findByAccntCodeAndPeriodAndTransDatetimeAndJrnalNoAndJrnalLine(
                         accountCode, period, transactionDateTime, journalNo, journalLine
                 );
+    }
+
+    public Set<String> extractTrimmedAnlCodes(Set<UrcDeptSectionAnlDimbgt> records) {
+        if (records == null) {
+            return Set.of();
+        }
+
+        return records.stream()
+                .map(UrcDeptSectionAnlDimbgt::getANL_CODE)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(code -> !code.isEmpty())
+                .collect(Collectors.toSet());
     }
 }

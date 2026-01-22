@@ -12,18 +12,18 @@ public class PerformanceRow {
     private final UUID id = UUID.randomUUID(); // technical identity
 
     private String label;
-    private BigDecimal previousBudgetApproved;
-    private BigDecimal previousBudgeActual;
-    private BigDecimal chosenBudget;
+    private String previousBudgetApproved;
+    private String previousBudgeActual;
+    private String chosenBudget;
 
     public PerformanceRow(String label) {
         this.label = label;
     }
 
     public PerformanceRow(String label,
-                          BigDecimal approved,
-                          BigDecimal actual,
-                          BigDecimal budget) {
+                          String approved,
+                          String actual,
+                          String budget) {
         this.label = label;
         this.previousBudgetApproved = approved;
         this.previousBudgeActual = actual;
