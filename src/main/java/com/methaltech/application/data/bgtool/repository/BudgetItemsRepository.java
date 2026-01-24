@@ -11,6 +11,7 @@ import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.D_Unit;
 import com.methaltech.application.data.entity.bgtool.Fundsource;
 import com.methaltech.application.data.entity.bgtool.Organisation;
+import com.methaltech.application.data.entity.bgtool.QuarterBudgetSum;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import com.methaltech.application.views.procurementplan.CoaProcPlanDTO;
@@ -280,6 +281,25 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             @Param("budget") Budget budget,
             @Param("deptUnit") UrcDeptSectionAnlDimbgt deptUnit
     );
+
+    @Query("""
+select new com.methaltech.application.data.entity.bgtool.QuarterBudgetSum(
+       bi.deptUnit.id,
+       coalesce(sum(coalesce(bi.jul,0) + coalesce(bi.aug,0) + coalesce(bi.sep,0)),0),
+       coalesce(sum(coalesce(bi.oct,0) + coalesce(bi.nov,0) + coalesce(bi.dec,0)),0),
+       coalesce(sum(coalesce(bi.jan,0) + coalesce(bi.feb,0) + coalesce(bi.mar,0)),0),
+       coalesce(sum(coalesce(bi.apr,0) + coalesce(bi.may,0) + coalesce(bi.jun,0)),0)
+)
+from BudgetItems bi
+where bi.budget = :budget
+  and (bi.coalevel1.code = 2 OR bi.coalevel1.code = 3)
+  and bi.budgetType = :org
+  and bi.deptUnit = :deptUnit
+group by bi.deptUnit.id
+""")
+    List<QuarterBudgetSum> sumQuarterBudgetsByDept(@Param("budget") Budget budget,
+            @Param("org") Organisation org,
+            @Param("deptUnit") UrcDeptSectionAnlDimbgt deptUnit);
 
     @Modifying
     @Query("DELETE FROM BudgetItems b WHERE b = :budgetItem")

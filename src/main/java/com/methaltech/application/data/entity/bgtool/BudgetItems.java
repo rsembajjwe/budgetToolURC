@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "budgetItem")
 @NoArgsConstructor
 public @Data
-class BudgetItems  implements Serializable {
+class BudgetItems implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -237,5 +237,29 @@ class BudgetItems  implements Serializable {
         }
 
         return tot.doubleValue();
+    }
+
+    private BigDecimal nvl(BigDecimal v) {
+        return v == null ? BigDecimal.ZERO : v;
+    }
+
+    public BigDecimal getQ1Total() { // Jul-Sep
+        return nvl(jul).add(nvl(aug)).add(nvl(sep));
+    }
+
+    public BigDecimal getQ2Total() { // Oct-Dec
+        return nvl(oct).add(nvl(nov)).add(nvl(dec));
+    }
+
+    public BigDecimal getQ3Total() { // Jan-Mar
+        return nvl(jan).add(nvl(feb)).add(nvl(mar));
+    }
+
+    public BigDecimal getQ4Total() { // Apr-Jun
+        return nvl(apr).add(nvl(may)).add(nvl(jun));
+    }
+
+    public BigDecimal getYearTotalFromQuarters() {
+        return getQ1Total().add(getQ2Total()).add(getQ3Total()).add(getQ4Total());
     }
 }

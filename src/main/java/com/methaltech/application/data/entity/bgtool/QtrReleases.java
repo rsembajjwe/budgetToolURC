@@ -82,6 +82,7 @@ public class QtrReleases implements Serializable {
     private String reasonsForUnderOver3;
     @Column(name = "reasons_for_under_over4", length = 500)
     private String reasonsForUnderOver4;
+  
 
     // === Audit Fields (optional but useful) ===
     @Column(name = "created_at", updatable = false)
@@ -108,6 +109,7 @@ public class QtrReleases implements Serializable {
         qtr2Release = nvl(qtr2Release);
         qtr3Release = nvl(qtr3Release);
         qtr4Release = nvl(qtr4Release);
+       
     }
 
     // === Convenience totals ===
@@ -118,6 +120,7 @@ public class QtrReleases implements Serializable {
                 .add(nvl(qtr3Release))
                 .add(nvl(qtr4Release));
     }
+   
 
     private BigDecimal nvl(BigDecimal v) {
         return v == null ? BigDecimal.ZERO : v;

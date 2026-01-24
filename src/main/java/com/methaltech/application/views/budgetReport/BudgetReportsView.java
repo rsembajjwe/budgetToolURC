@@ -116,12 +116,14 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.layout.Style;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.*;
+import com.methaltech.application.data.Role;
 import com.methaltech.application.data.bgtool.service.QtrReleasesReportService;
 import com.methaltech.application.data.bgtool.service.QtrReleasesService;
 import com.methaltech.application.data.bgtool.service.SectionBudgetPerformanceService;
 import com.methaltech.application.data.entity.bgtool.PerformanceRow;
 import com.methaltech.application.data.entity.bgtool.PriorityArea;
 import com.methaltech.application.data.entity.bgtool.QtrReleases;
+import com.methaltech.application.data.entity.bgtool.QuarterBudgetSum;
 import com.methaltech.application.data.entity.bgtool.SectionBudgetPerformance;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.editor.Editor;
@@ -131,6 +133,7 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -201,12 +204,17 @@ public class BudgetReportsView extends Div {
     BigDecimal actualRealise = BigDecimal.ZERO;
     List<PriorityArea> priorityAreas = new ArrayList<>();
 
-    private final ComboBox<Budget> budgetCombo = new ComboBox<>("Budget");
+    //private final ComboBox<Budget> budgetCombo = new ComboBox<>("Budget");
     private final Accordion accordion = new Accordion();
-    Button pdfBtn = new Button("All Download PDF");
+    Button pdfBtn = new Button("Download PDF");
     Button excelBtn = new Button("Download Excel");
-    private final Anchor pdfDownloadAnchor = new Anchor();
 
+    Button withBgtpdfBtn = new Button("Download PDF");
+    Button withBgtexcelBtn = new Button("Download Excel");
+    private final Anchor pdfDownloadAnchor = new Anchor();
+    RadioButtonGroup<String> radioGroup = new RadioButtonGroup<>();
+    HorizontalLayout topsub = new HorizontalLayout();
+    Button refresh = new Button("Reload");
 
     public BudgetReportsView(UserService userService, BudgetService budgetService,
             SamplePersonService samplePersonService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, OrganisationService sampleOrganisationService,
@@ -496,6 +504,7 @@ public class BudgetReportsView extends Div {
         VerticalLayout realiseAccodion = new VerticalLayout();
         realiseAccodion.add(new H3("Quarter Releases per Fund Source (by Section)"));
         configureBudgetSelector();
+        configureFundSourceView();
         realiseAccodion.add(buildTopBar());
 
         accordion.setWidthFull();
@@ -12927,29 +12936,45 @@ public class BudgetReportsView extends Div {
         return style;
     }
 
+    private void configureFundSourceView() {
+        radioGroup.setLabel("Status");
+        radioGroup.setItems("View With Budget", "View Without Budget");
+        radioGroup.setValue("View Without Budget");
+
+        radioGroup.addValueChangeListener(e -> {
+            topsub.removeAll();
+            if (e.getValue().equals("View With Budget")) {
+                topsub.add(withBgtpdfBtn,withBgtexcelBtn);
+                refreshAccordionWithBudget();
+            } else {
+                topsub.add(refresh, pdfBtn, excelBtn);
+                refreshAccordion();
+            }
+        });
+    }
+
     private void configureBudgetSelector() {
-        List<Budget> budgets = budgetService.getBudgets();
-        budgetCombo.setItems(budgets);
-        budgetCombo.setItemLabelGenerator(b -> b.getFinancialYear() != null ? b.getFinancialYear() : "Budget #" + b.getId());
-        budgetCombo.setWidth("350px");
-        budgetCombo.setRequired(true);
 
         pdfBtn.setEnabled(false);
         excelBtn.setEnabled(false);
-        budgetCombo.addValueChangeListener(e -> {
+        comboBox2.addValueChangeListener(e -> {
             refreshAccordion();
             if (e.getValue() == null) {
                 pdfBtn.setEnabled(false);
                 excelBtn.setEnabled(false);
+                                withBgtpdfBtn.setEnabled(false);
+                withBgtexcelBtn.setEnabled(false);
             } else {
                 pdfBtn.setEnabled(true);
                 excelBtn.setEnabled(true);
+                withBgtpdfBtn.setEnabled(true);
+                withBgtexcelBtn.setEnabled(true);                
             }
         });
     }
 
     private HorizontalLayout buildTopBar() {
-        Button refresh = new Button("Reload", e -> refreshAccordion());
+        refresh.addClickListener(e -> refreshAccordion());
 
         pdfDownloadAnchor.setText(""); // no visible text
         pdfDownloadAnchor.getStyle().set("display", "none"); // hide it
@@ -12957,8 +12982,8 @@ public class BudgetReportsView extends Div {
         pdfBtn.addClickListener(e -> {
             StreamResource pdf = new StreamResource("Qtr-Releases.pdf", () -> {
                 byte[] bytes = qtrReleasesReport.buildPdfItext7ByFundSourceByBudget(
-                        budgetCombo.getValue(),
-                        budgetType2.getSelectedItems()
+                        comboBox2.getValue(),
+                        budgetType2.getSelectedItems(), user
                 );
                 return new ByteArrayInputStream(bytes);
             });
@@ -12969,8 +12994,56 @@ public class BudgetReportsView extends Div {
             // trigger click
             pdfDownloadAnchor.getElement().callJsFunction("click");
         });
+        
+        withBgtpdfBtn.addClickListener(e -> {
+            StreamResource pdf = new StreamResource("Qtr-Releases.pdf", () -> {
+                byte[] bytes = qtrReleasesReport.buildPdfItext7ByFundSourceByBudgetwithBgt(
+                        comboBox2.getValue(),
+                        budgetType2.getSelectedItems(), user
+                );
+                return new ByteArrayInputStream(bytes);
+            });
 
-        HorizontalLayout top = new HorizontalLayout(budgetCombo, refresh, pdfBtn, excelBtn, pdfDownloadAnchor);
+            pdfDownloadAnchor.setHref(pdf);
+            pdfDownloadAnchor.getElement().setAttribute("download", true);
+
+            // trigger click
+            pdfDownloadAnchor.getElement().callJsFunction("click");
+        });
+        
+        excelBtn.addClickListener(e -> {
+            StreamResource pdf = new StreamResource("Qtrly-Releases.xlsx", () -> {
+                byte[] bytes = qtrReleasesReport.buildExcelByFundSourceByBudget(
+                        comboBox2.getValue(),
+                        budgetType2.getSelectedItems(), user
+                );
+                return new ByteArrayInputStream(bytes);
+            });
+
+            pdfDownloadAnchor.setHref(pdf);
+            pdfDownloadAnchor.getElement().setAttribute("download", true);
+
+            // trigger click
+            pdfDownloadAnchor.getElement().callJsFunction("click");
+        });
+        
+        withBgtexcelBtn.addClickListener(e -> {
+            StreamResource pdf = new StreamResource("Qtrly-Releases.xlsx", () -> {
+                byte[] bytes = qtrReleasesReport.buildExcelByFundSourceByBudgetwithBgt(
+                        comboBox2.getValue(),
+                        budgetType2.getSelectedItems(), user
+                );
+                return new ByteArrayInputStream(bytes);
+            });
+
+            pdfDownloadAnchor.setHref(pdf);
+            pdfDownloadAnchor.getElement().setAttribute("download", true);
+
+            // trigger click
+            pdfDownloadAnchor.getElement().callJsFunction("click");
+        });        
+        topsub.add(refresh, pdfBtn, excelBtn);
+        HorizontalLayout top = new HorizontalLayout(radioGroup, pdfDownloadAnchor, topsub);
         top.setWidthFull();
         top.setAlignItems(FlexComponent.Alignment.END);
         return top;
@@ -12979,7 +13052,7 @@ public class BudgetReportsView extends Div {
     private void refreshAccordion() {
         accordion.getChildren().forEach(component -> component.removeFromParent());
 
-        Budget budget = budgetCombo.getValue();
+        Budget budget = comboBox2.getValue();
         if (budget == null) {
             Notification.show("Select a Budget first.");
             return;
@@ -13034,16 +13107,80 @@ public class BudgetReportsView extends Div {
         }
     }
 
-    private List<QtrReleaseRow> exportRows(List<QtrReleaseRow> rows) {
-        return rows.stream()
-                .filter(r -> !r.isTotalRow()) // exclude totals row
-                .toList();
+    private void refreshAccordionWithBudget() {
+        accordion.getChildren().forEach(component -> component.removeFromParent());
+
+        Budget budget = comboBox2.getValue();
+        if (budget == null) {
+            Notification.show("Select a Budget first.");
+            return;
+        }
+
+        List<Organisation> organisations = sampleOrganisationService.getOrganisationsByBudget(budget);
+        if (organisations.isEmpty()) {
+            Notification.show("No organisations found.");
+            return;
+        }
+
+        for (Organisation org : organisations) {
+            VerticalLayout content = new VerticalLayout();
+            content.setPadding(false);
+            content.setSpacing(false);
+            content.setWidthFull();
+
+            Grid<QtrReleaseRow> grid = buildBgtDeptSectionGrid(org, budget);
+            content.add(grid);
+
+            AccordionPanel panel = accordion.add(org.getName() + " (" + org.getCode() + ")", content);
+            panel.addOpenedChangeListener(event -> {
+                if (event.isOpened()) {
+                    // refresh grid data when opened (latest DB values)
+
+                    List<QtrReleaseRow> rows = loadRows(org, budget);
+                    for (QtrReleaseRow row : rows) {
+                        fillQuarterBudgets(row, org, budget); // sets q1Budget..q4Budget on each row
+                    }
+                    BigDecimal q1Sum = rows.stream().map(QtrReleaseRow::getQtr1Release).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal q2Sum = rows.stream().map(QtrReleaseRow::getQtr2Release).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal q3Sum = rows.stream().map(QtrReleaseRow::getQtr3Release).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal q4Sum = rows.stream().map(QtrReleaseRow::getQtr4Release).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal totalAll = q1Sum.add(q2Sum).add(q3Sum).add(q4Sum);
+
+                    BigDecimal q1BgtSum = rows.stream().map(QtrReleaseRow::getQ1Budget).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal q2BgtSum = rows.stream().map(QtrReleaseRow::getQ2Budget).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal q3BgtSum = rows.stream().map(QtrReleaseRow::getQ3Budget).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal q4BgtSum = rows.stream().map(QtrReleaseRow::getQ4Budget).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+// --- Create a “footer” row ---
+                    UrcDeptSectionAnlDimbgt tot = new UrcDeptSectionAnlDimbgt();
+                    tot.setNAME("TOTAL");
+                    QtrReleaseRow footerRow = new QtrReleaseRow(tot);
+                    //footerRow.setDeptSectionName("Total");   // or blank
+                    footerRow.setQtr1Release(q1Sum);
+                    footerRow.setQtr2Release(q2Sum);
+                    footerRow.setQtr3Release(q3Sum);
+                    footerRow.setQtr4Release(q4Sum);
+                    footerRow.setTotalRow(true);
+
+                    footerRow.setQ1Budget(q1BgtSum);
+                    footerRow.setQ2Budget(q2BgtSum);
+                    footerRow.setQ3Budget(q3BgtSum);
+                    footerRow.setQ4Budget(q4BgtSum);
+                    //footerRow.setTotalReleased(totalAll);
+
+                    rows.add(footerRow);
+                    grid.setItems(rows);
+                }
+            });
+
+            // panel.close();
+        }
     }
 
     private Grid<QtrReleaseRow> buildDeptSectionGrid(Organisation org, Budget budget) {
         Grid<QtrReleaseRow> grid = new Grid<>(QtrReleaseRow.class, false);
         grid.setWidthFull();
-        grid.setHeight("520px"); // good height for ~20 rows
+        grid.setHeight("450px");
         grid.setAllRowsVisible(false);
 
         // Load data initially
@@ -13113,30 +13250,29 @@ public class BudgetReportsView extends Div {
         TextArea r3Field = reasonEditorField();
         TextArea r4Field = reasonEditorField();
 
-        grid.addColumn(QtrReleaseRow::getReasonsForUnderOver1)
-                .setHeader("Reason Q1")
-                .setAutoWidth(true)
-                .setFlexGrow(2)
-                .setEditorComponent(r1Field);
-
+        /*        grid.addColumn(QtrReleaseRow::getReasonsForUnderOver1)
+        .setHeader("Reason Q1")
+        .setAutoWidth(true)
+        .setFlexGrow(2)
+        .setEditorComponent(r1Field);
+        
         grid.addColumn(QtrReleaseRow::getReasonsForUnderOver2)
-                .setHeader("Reason Q2")
-                .setAutoWidth(true)
-                .setFlexGrow(2)
-                .setEditorComponent(r2Field);
-
+        .setHeader("Reason Q2")
+        .setAutoWidth(true)
+        .setFlexGrow(2)
+        .setEditorComponent(r2Field);
+        
         grid.addColumn(QtrReleaseRow::getReasonsForUnderOver3)
-                .setHeader("Reason Q3")
-                .setAutoWidth(true)
-                .setFlexGrow(2)
-                .setEditorComponent(r3Field);
-
+        .setHeader("Reason Q3")
+        .setAutoWidth(true)
+        .setFlexGrow(2)
+        .setEditorComponent(r3Field);
+        
         grid.addColumn(QtrReleaseRow::getReasonsForUnderOver4)
-                .setHeader("Reason Q4")
-                .setAutoWidth(true)
-                .setFlexGrow(2)
-                .setEditorComponent(r4Field);
-
+        .setHeader("Reason Q4")
+        .setAutoWidth(true)
+        .setFlexGrow(2)
+        .setEditorComponent(r4Field);*/
         // Convenience total column per row
         Grid.Column<QtrReleaseRow> totalCol = grid.addColumn(new ComponentRenderer<>(row -> {
             Span s = new Span(formatBigDecimal(
@@ -13231,8 +13367,223 @@ public class BudgetReportsView extends Div {
         return grid;
     }
 
+    private Grid<QtrReleaseRow> buildBgtDeptSectionGrid(Organisation org, Budget budget) {
+
+        Grid<QtrReleaseRow> grid = new Grid<>(QtrReleaseRow.class, false);
+        grid.setWidthFull();
+        grid.setHeight("520px");
+        grid.setAllRowsVisible(false);
+
+        // -----------------------------
+        // Load rows + fill quarter budgets
+        // -----------------------------
+        List<QtrReleaseRow> rows = loadRows(org, budget);
+        for (QtrReleaseRow row : rows) {
+            fillQuarterBudgets(row, org, budget); // sets q1Budget..q4Budget on each row
+        }
+
+        // -----------------------------
+        // Compute totals (Releases + Budgets)
+        // -----------------------------
+        BigDecimal q1RelSum = BigDecimal.ZERO;
+        BigDecimal q2RelSum = BigDecimal.ZERO;
+        BigDecimal q3RelSum = BigDecimal.ZERO;
+        BigDecimal q4RelSum = BigDecimal.ZERO;
+
+        BigDecimal q1BudSum = BigDecimal.ZERO;
+        BigDecimal q2BudSum = BigDecimal.ZERO;
+        BigDecimal q3BudSum = BigDecimal.ZERO;
+        BigDecimal q4BudSum = BigDecimal.ZERO;
+
+        for (QtrReleaseRow r : rows) {
+            q1RelSum = q1RelSum.add(nvl(r.getQtr1Release()));
+            q2RelSum = q2RelSum.add(nvl(r.getQtr2Release()));
+            q3RelSum = q3RelSum.add(nvl(r.getQtr3Release()));
+            q4RelSum = q4RelSum.add(nvl(r.getQtr4Release()));
+
+            q1BudSum = q1BudSum.add(nvl(r.getQ1Budget()));
+            q2BudSum = q2BudSum.add(nvl(r.getQ2Budget()));
+            q3BudSum = q3BudSum.add(nvl(r.getQ3Budget()));
+            q4BudSum = q4BudSum.add(nvl(r.getQ4Budget()));
+        }
+
+        // -----------------------------
+        // Footer (TOTAL) row
+        // -----------------------------
+        UrcDeptSectionAnlDimbgt tot = new UrcDeptSectionAnlDimbgt();
+        tot.setNAME("TOTAL");
+
+        QtrReleaseRow footerRow = new QtrReleaseRow(tot);
+        footerRow.setTotalRow(true);
+
+        // totals for releases
+        footerRow.setQtr1Release(q1RelSum);
+        footerRow.setQtr2Release(q2RelSum);
+        footerRow.setQtr3Release(q3RelSum);
+        footerRow.setQtr4Release(q4RelSum);
+
+        // totals for budgets
+        footerRow.setQ1Budget(q1BudSum);
+        footerRow.setQ2Budget(q2BudSum);
+        footerRow.setQ3Budget(q3BudSum);
+        footerRow.setQ4Budget(q4BudSum);
+
+        rows.add(footerRow);
+        grid.setItems(rows);
+
+        // -----------------------------
+        // Binder + Editor (inline edit)
+        // -----------------------------
+        Binder<QtrReleaseRow> binder = new Binder<>(QtrReleaseRow.class);
+        Editor<QtrReleaseRow> editor = grid.getEditor();
+        editor.setBinder(binder);
+        editor.setBuffered(true);
+
+        // prevent editing TOTAL row
+        editor.addOpenListener(e -> {
+            if (e.getItem() != null && e.getItem().isTotalRow()) {
+                editor.cancel();
+            }
+        });
+
+        // -----------------------------
+        // Columns
+        // -----------------------------
+        grid.addColumn(QtrReleaseRow::getDeptSectionName)
+                .setHeader("Dept/Section")
+                .setAutoWidth(true)
+                .setFlexGrow(1);
+
+        // Quarter budgets (read-only)
+        grid.addColumn(row -> formatBigDecimal(row.getQ1Budget()))
+                .setHeader("Q1 Budget")
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.END);
+
+        grid.addColumn(row -> formatBigDecimal(row.getQ2Budget()))
+                .setHeader("Q2 Budget")
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.END);
+
+        grid.addColumn(row -> formatBigDecimal(row.getQ3Budget()))
+                .setHeader("Q3 Budget")
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.END);
+
+        grid.addColumn(row -> formatBigDecimal(row.getQ4Budget()))
+                .setHeader("Q4 Budget")
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.END);
+
+        // Editable release fields
+        BigDecimalField q1Field = moneyEditorField();
+        BigDecimalField q2Field = moneyEditorField();
+        BigDecimalField q3Field = moneyEditorField();
+        BigDecimalField q4Field = moneyEditorField();
+
+        Grid.Column<QtrReleaseRow> q1RelCol = grid.addColumn(row -> formatBigDecimal(row.getQtr1Release()))
+                .setHeader("Q1 Release")
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.END)
+                .setEditorComponent(q1Field);
+
+        Grid.Column<QtrReleaseRow> q2RelCol = grid.addColumn(row -> formatBigDecimal(row.getQtr2Release()))
+                .setHeader("Q2 Release")
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.END)
+                .setEditorComponent(q2Field);
+
+        Grid.Column<QtrReleaseRow> q3RelCol = grid.addColumn(row -> formatBigDecimal(row.getQtr3Release()))
+                .setHeader("Q3 Release")
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.END)
+                .setEditorComponent(q3Field);
+
+        Grid.Column<QtrReleaseRow> q4RelCol = grid.addColumn(row -> formatBigDecimal(row.getQtr4Release()))
+                .setHeader("Q4 Release")
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.END)
+                .setEditorComponent(q4Field);
+
+        // Total Released per row
+        grid.addColumn(new ComponentRenderer<>(row -> {
+            BigDecimal totalReleased
+                    = nvl(row.getQtr1Release())
+                            .add(nvl(row.getQtr2Release()))
+                            .add(nvl(row.getQtr3Release()))
+                            .add(nvl(row.getQtr4Release()));
+
+            Span s = new Span(formatBigDecimal(totalReleased));
+            s.getStyle().set("font-weight", "600");
+            return s;
+        }))
+                .setHeader("Total Released")
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.END);
+
+        // Optional: Total Budget per row
+        grid.addColumn(new ComponentRenderer<>(row -> {
+            BigDecimal totalBudget
+                    = nvl(row.getQ1Budget())
+                            .add(nvl(row.getQ2Budget()))
+                            .add(nvl(row.getQ3Budget()))
+                            .add(nvl(row.getQ4Budget()));
+
+            Span s = new Span(formatBigDecimal(totalBudget));
+            s.getStyle().set("font-weight", "600");
+            return s;
+        }))
+                .setHeader("Total Budget")
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.END);
+
+        // Optional: Variance (Released - Budget)
+        grid.addColumn(new ComponentRenderer<>(row -> {
+            BigDecimal released
+                    = nvl(row.getQtr1Release())
+                            .add(nvl(row.getQtr2Release()))
+                            .add(nvl(row.getQtr3Release()))
+                            .add(nvl(row.getQtr4Release()));
+
+            BigDecimal budgeted
+                    = nvl(row.getQ1Budget())
+                            .add(nvl(row.getQ2Budget()))
+                            .add(nvl(row.getQ3Budget()))
+                            .add(nvl(row.getQ4Budget()));
+
+            BigDecimal variance = released.subtract(budgeted);
+
+            Span s = new Span(formatBigDecimal(variance));
+            s.getStyle().set("font-weight", "600");
+            return s;
+        }))
+                .setHeader("Variance")
+                .setAutoWidth(true)
+                .setTextAlign(ColumnTextAlign.END);
+
+        // -----------------------------
+        // Bind editor fields (releases only)
+        // -----------------------------
+        binder.forField(q1Field).bind(QtrReleaseRow::getQtr1Release, QtrReleaseRow::setQtr1Release);
+        binder.forField(q2Field).bind(QtrReleaseRow::getQtr2Release, QtrReleaseRow::setQtr2Release);
+        binder.forField(q3Field).bind(QtrReleaseRow::getQtr3Release, QtrReleaseRow::setQtr3Release);
+        binder.forField(q4Field).bind(QtrReleaseRow::getQtr4Release, QtrReleaseRow::setQtr4Release);
+
+        // -----------------------------
+        // Style TOTAL row
+        // -----------------------------
+        grid.setClassNameGenerator(row -> row.isTotalRow() ? "totals-row" : null);
+        return grid;
+    }
+
     private List<QtrReleaseRow> loadRows(Organisation organisation, Budget budget) {
-        List<UrcDeptSectionAnlDimbgt> sections = sampleUrcDeptSectionAnlDimbgtService.getAllUrcSectionsAnlDims();
+        //List<UrcDeptSectionAnlDimbgt> sections = sampleUrcDeptSectionAnlDimbgtService.getAllUrcSectionsAnlDims();
+        List<UrcDeptSectionAnlDimbgt> sections = new ArrayList();
+        if (user.getRoles().contains(Role.ADMIN)) {
+            sections = sampleUrcDeptSectionAnlDimbgtService.getAllUrcSectionsAnlDims();
+        } else {
+            sections = user.getDeptsection().stream().toList();
+        }
 
         // Load existing QtrReleases for this organisation+budget (for all deptSections)
         List<QtrReleases> existing = qtrReleasesService.findByOrganisationAndBudget(organisation, budget);
@@ -13328,6 +13679,11 @@ public class BudgetReportsView extends Div {
         private BigDecimal qtr3Release = BigDecimal.ZERO;
         private BigDecimal qtr4Release = BigDecimal.ZERO;
 
+        private BigDecimal q1Budget = BigDecimal.ZERO;
+        private BigDecimal q2Budget = BigDecimal.ZERO;
+        private BigDecimal q3Budget = BigDecimal.ZERO;
+        private BigDecimal q4Budget = BigDecimal.ZERO;
+
         private String reasonsForUnderOver1 = "";
         private String reasonsForUnderOver2 = "";
         private String reasonsForUnderOver3 = "";
@@ -13416,6 +13772,38 @@ public class BudgetReportsView extends Div {
             this.reasonsForUnderOver4 = emptyToEmpty(s);
         }
 
+        public BigDecimal getQ1Budget() {
+            return q1Budget;
+        }
+
+        public BigDecimal getQ2Budget() {
+            return q2Budget;
+        }
+
+        public BigDecimal getQ3Budget() {
+            return q3Budget;
+        }
+
+        public BigDecimal getQ4Budget() {
+            return q4Budget;
+        }
+
+        public void setQ1Budget(BigDecimal v) {
+            this.q1Budget = nvl(v);
+        }
+
+        public void setQ2Budget(BigDecimal v) {
+            this.q2Budget = nvl(v);
+        }
+
+        public void setQ3Budget(BigDecimal v) {
+            this.q3Budget = nvl(v);
+        }
+
+        public void setQ4Budget(BigDecimal v) {
+            this.q4Budget = nvl(v);
+        }
+
         public QtrReleases toEntity(Organisation organisation, Budget budget) {
             return QtrReleases.builder()
                     .id(this.id) // important for update
@@ -13448,6 +13836,41 @@ public class BudgetReportsView extends Div {
             String t = s.trim();
             return t.isEmpty() ? null : t;
         }
+    }
+
+    private void fillQuarterBudgets(QtrReleaseRow row, Organisation org, Budget budget) {
+
+        if (row == null || row.getDeptSection() == null) {
+            return;
+        }
+
+        List<QuarterBudgetSum> sum
+                = sampleBudgetItemsService.sumQuarterBudgetsByDept(
+                        budget,
+                        org,
+                        row.getDeptSection()
+                );
+        for (QuarterBudgetSum val : sum) {
+            row.setQ1Budget(val.q1());
+            row.setQ2Budget(val.q2());
+            row.setQ3Budget(val.q3());
+            row.setQ4Budget(val.q4());
+            System.out.println(val.q1() + " .. " + val.q2() + " .. " + val.q3() + " .. " + val.q4() + " .. ");
+        }
+
+    }
+
+    private BigDecimal toBigDecimal(Object o) {
+        if (o == null) {
+            return BigDecimal.ZERO;
+        }
+        if (o instanceof BigDecimal bd) {
+            return bd;
+        }
+        if (o instanceof Number n) {
+            return BigDecimal.valueOf(n.doubleValue());
+        }
+        return new BigDecimal(o.toString());
     }
 
 }

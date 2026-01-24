@@ -17,6 +17,7 @@ import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.Fundsource;
 import com.methaltech.application.data.entity.bgtool.Organisation;
+import com.methaltech.application.data.entity.bgtool.QuarterBudgetSum;
 import com.methaltech.application.data.entity.bgtool.RequisitionData.RequisitionStatus;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
@@ -2102,4 +2103,25 @@ public class BudgetItemsService {
         return total.divide(BigDecimal.valueOf(2000), 2, BigDecimal.ROUND_HALF_UP);
     }
 
+    public List<QuarterBudgetSum> sumQuarterBudgetsByDept(Budget budget,
+            Organisation org,
+            UrcDeptSectionAnlDimbgt deptUnit) {
+
+        List<QuarterBudgetSum> rows = repository.sumQuarterBudgetsByDept(budget, org, deptUnit);
+
+        return rows;
+    }
+
+    private BigDecimal toBigDecimal(Object o) {
+        if (o == null) {
+            return BigDecimal.ZERO;
+        }
+        if (o instanceof BigDecimal bd) {
+            return bd;
+        }
+        if (o instanceof Number n) {
+            return BigDecimal.valueOf(n.doubleValue());
+        }
+        return new BigDecimal(o.toString());
+    }
 }
