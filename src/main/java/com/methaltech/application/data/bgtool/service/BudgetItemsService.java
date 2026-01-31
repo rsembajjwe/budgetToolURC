@@ -976,9 +976,15 @@ public class BudgetItemsService {
     public BigDecimal sumActvitySummation(Set<Organisation> budgetTypes,
             Budget budget,
             Urc_Activities activities,
-            Set<UrcDeptSectionAnlDimbgt> deptUnits,
-            Integer coalevel1Code) {
-        BigDecimal sum = repository.sumActvitySummation(budgetTypes, budget, activities, deptUnits, coalevel1Code);
+            Set<UrcDeptSectionAnlDimbgt> deptUnits) {
+        BigDecimal sum = repository.sumActvitySummation(budgetTypes, budget, activities, deptUnits);
+        return sum;
+    }
+        public BigDecimal sumActvitySummation(Set<Organisation> budgetTypes,
+            Budget budget,
+            Urc_Activities activities,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits,String sCode) {
+        BigDecimal sum = repository.sumActvitySummation(budgetTypes, budget, activities, deptUnits,sCode);
         return sum;
     }
 
@@ -986,20 +992,36 @@ public class BudgetItemsService {
             Set<Organisation> budgetTypes,
             Budget budget,
             List<Urc_Activities> activities,
-            Set<UrcDeptSectionAnlDimbgt> deptUnits,
-            Integer coalevel1Code
+            Set<UrcDeptSectionAnlDimbgt> deptUnits
     ) {
-        return repository.isSumProgrammeGreaterThanZero(budgetTypes, budget, activities, deptUnits, coalevel1Code);
+        return repository.isSumProgrammeGreaterThanZero(budgetTypes, budget, activities, deptUnits);
+    }
+
+    public boolean isSumProgrammeGreaterThanZero(
+            Set<Organisation> budgetTypes,
+            Budget budget,
+            List<Urc_Activities> activities,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits, String sCode
+    ) {
+        return repository.isSumProgrammeGreaterThanZero(budgetTypes, budget, activities, deptUnits, sCode);
     }
 
     public boolean isSumActvityGreaterThanZero(
             Set<Organisation> budgetTypes,
             Budget budget,
             Urc_Activities activities,
-            Set<UrcDeptSectionAnlDimbgt> deptUnits,
-            Integer coalevel1Code
+            Set<UrcDeptSectionAnlDimbgt> deptUnits
     ) {
-        return repository.isSumActvityGreaterThanZero(budgetTypes, budget, activities, deptUnits, coalevel1Code);
+        return repository.isSumActvityGreaterThanZero(budgetTypes, budget, activities, deptUnits);
+    }
+
+    public boolean isSumActvityGreaterThanZero(
+            Set<Organisation> budgetTypes,
+            Budget budget,
+            Urc_Activities activities,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits, String sCode
+    ) {
+        return repository.isSumActvityGreaterThanZero(budgetTypes, budget, activities, deptUnits, sCode);
     }
 
     public BigDecimal findSumOfIndividualMonthsByBudgetCoalevel1Activity(

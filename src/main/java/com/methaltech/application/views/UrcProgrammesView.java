@@ -300,9 +300,9 @@ public class UrcProgrammesView extends Div {
         name.setPlaceholder("URC Priority Area");
         name.setClearButtonVisible(true);
         name.setWidth("300px");
-        name.setMaxLength(50);
-        activity.setMaxLength(50);
-        outcome.setMaxLength(50);
+        name.setMaxLength(200);
+        activity.setMaxLength(200);
+        outcome.setMaxLength(200);
         // objective.setMaxLength(50);
         //  fundsource.setMaxLength(50);
 
@@ -952,11 +952,15 @@ public class UrcProgrammesView extends Div {
     }
 
     public void refreshActGrid(Budget budget, URC_Priority_Areas urcPriorityAreas, List<UrcDeptSectionAnlDimbgt> deptSections) {
-        gridUrc_Activities.setItems(sampleUrc_ActivitiesService.findActivitiesByBudgetAndPriorityAndDeptUnits(budget, urcPriorityAreas, deptSections));
+        List<Urc_Activities> list = sampleUrc_ActivitiesService.findActivitiesByBudgetAndPriorityAndDeptUnits(budget, urcPriorityAreas, deptSections);
+        System.out.println(list.size());
+        gridUrc_Activities.setItems(list);
     }
 
     public void refreshActGrid2(Budget budget, URC_Priority_Areas urcPriorityAreas, List<UrcDeptSectionAnlDimbgt> deptSections, String keyword) {
-        gridUrc_Activities.setItems(sampleUrc_ActivitiesService.customSearchByFields(budget, urcPriorityAreas, deptSections, keyword));
+        List<Urc_Activities> list = sampleUrc_ActivitiesService.customSearchByFields(budget, urcPriorityAreas, deptSections, keyword);
+        System.out.println(list.size() + " ?");
+        gridUrc_Activities.setItems(list);
     }
 
     private void populateForm(Urc_Activities object) {

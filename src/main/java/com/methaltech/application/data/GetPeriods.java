@@ -87,6 +87,7 @@ public class GetPeriods {
         return periods;
     }
 
+    
     public Set<Integer> getFinancialYearPeriods(Budget budget, int quarter) {
         Set<Integer> periods = new LinkedHashSet<>();
 
@@ -132,8 +133,6 @@ public class GetPeriods {
             periods.add(periodCode);
             current = current.plusMonths(1);
         }
-
-        System.out.println(periods);
         return periods;
     }
 

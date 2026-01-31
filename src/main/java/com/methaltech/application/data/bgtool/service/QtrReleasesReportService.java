@@ -665,7 +665,7 @@ public class QtrReleasesReportService {
                 Sheet sheet = wb.createSheet(organ.getName());
                 // Column widths (nice readable layout)
 // 12 columns: 0..11
-                sheet.setColumnWidth(0, 35 * 256); // SECTION / FUND SOURCE (wide)
+                sheet.setColumnWidth(0, 24 * 256); // SECTION / FUND SOURCE (wide)
 
                 sheet.setColumnWidth(1, 14 * 256); // Q1 Budget
                 sheet.setColumnWidth(2, 14 * 256); // Q2 Budget
@@ -803,7 +803,7 @@ public class QtrReleasesReportService {
             int rowIdx = 0;
             // Column widths (nice readable layout)
 // 12 columns: 0..11
-            sheet2.setColumnWidth(0, 35 * 256); // SECTION / FUND SOURCE (wide)
+            sheet2.setColumnWidth(0, 40 * 256); // SECTION / FUND SOURCE (wide)
 
             sheet2.setColumnWidth(1, 14 * 256); // Q1 Budget
             sheet2.setColumnWidth(2, 14 * 256); // Q2 Budget
@@ -884,7 +884,6 @@ public class QtrReleasesReportService {
             throw new RuntimeException("Excel generation failed: " + e.getMessage(), e);
         }
     }
-
     public byte[] buildExcelByFundSourceByBudget(Budget budget, Set<Organisation> orgs, User user) {
         try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 

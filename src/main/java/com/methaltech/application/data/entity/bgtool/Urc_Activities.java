@@ -36,22 +36,22 @@ class Urc_Activities implements Serializable {
     @Column(length = 255)
     private String activityCode;
 
-    @Column(length = Integer.MAX_VALUE)
+    @Column(length = 500)
     private String name;
 
-    @Column(length = 255)
+    @Column(length = 500)
     private String fundsource;
 
-    @Column(length = Integer.MAX_VALUE)
+    @Column(length = 500)
     private String output;
 
-    @Column(length = Integer.MAX_VALUE)
+    @Column(length = 500)
     private String performanceIndicator;
 
-    @Column(length = Integer.MAX_VALUE)
+    @Column(length = 500)
     private String outcome;
 
-    @Column(length = Integer.MAX_VALUE)
+    @Column(length = 500)
     private String objective;
 
     @Column(precision = 19, scale = 2)
@@ -107,20 +107,32 @@ class Urc_Activities implements Serializable {
     private BigDecimal TotalA;
 
     private Long origid;
+    @Column(length = 500)
     private String annualTarget;
+    @Column(length = 500)
     private String cum_achievements_qtr1;
+    @Column(length = 500)
     private String cum_achievements_qtr2;
+    @Column(length = 500)
     private String cum_achievements_qtr3;
+    @Column(length = 500)
     private String cum_achievements_qtr4;
+    @Column(length = 500)
     private String perc_of_TargetAchieved_qtr1;
+    @Column(length = 500)
     private String perc_of_TargetAchieved_qtr2;
+    @Column(length = 500)
     private String perc_of_TargetAchieved_qtr3;
+    @Column(length = 500)
     private String perc_of_TargetAchieved_qtr4;
+    @Column(length = 500)
     private String expl_of_variations_qtr1;
+    @Column(length = 500)
     private String expl_of_variations_qtr2;
+    @Column(length = 500)
     private String expl_of_variations_qtr3;
+    @Column(length = 500)
     private String expl_of_variations_qtr4;
-
 
     // Helper methods
     public String getDisplayName() {

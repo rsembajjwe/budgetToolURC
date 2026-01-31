@@ -116,15 +116,19 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.layout.Style;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.*;
+import com.methaltech.application.data.GetPeriods;
 import com.methaltech.application.data.Role;
 import com.methaltech.application.data.bgtool.service.QtrReleasesReportService;
 import com.methaltech.application.data.bgtool.service.QtrReleasesService;
+import com.methaltech.application.data.bgtool.service.QtrReleasesServiceImpl;
 import com.methaltech.application.data.bgtool.service.SectionBudgetPerformanceService;
 import com.methaltech.application.data.entity.bgtool.PerformanceRow;
 import com.methaltech.application.data.entity.bgtool.PriorityArea;
+import com.methaltech.application.data.entity.bgtool.QtrReleaseCumulativeDto;
 import com.methaltech.application.data.entity.bgtool.QtrReleases;
 import com.methaltech.application.data.entity.bgtool.QuarterBudgetSum;
 import com.methaltech.application.data.entity.bgtool.SectionBudgetPerformance;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.server.StreamResource;
@@ -141,10 +145,13 @@ import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.hierarchy.TreeData;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import jakarta.persistence.Tuple;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.stream.Stream;
 import lombok.Getter;
 
 @PageTitle("Budget Reports Downloads")
@@ -215,6 +222,9 @@ public class BudgetReportsView extends Div {
     RadioButtonGroup<String> radioGroup = new RadioButtonGroup<>();
     HorizontalLayout topsub = new HorizontalLayout();
     Button refresh = new Button("Reload");
+    private final QtrReleasesServiceImpl qtrReleasesServiceImpl;
+    GetPeriods periods = new GetPeriods();
+    Set<Integer> period = new HashSet<>();
 
     public BudgetReportsView(UserService userService, BudgetService budgetService,
             SamplePersonService samplePersonService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, OrganisationService sampleOrganisationService,
@@ -223,7 +233,7 @@ public class BudgetReportsView extends Div {
             CustomDetailedBudgetReportService sampleCustomDetailedBudgetReportService, UrcAcntService urcAcntService,
             FreightVolumesService sampleFreightVolumesService, CoaService sampleCoaService, SALFLDGService samopleSALFLDGService,
             UrcBSalfldgService sampleUrcBSalfldgService, BudgetRepository repository, SectionBudgetPerformanceService sectionBudgetPerformanceService,
-            QtrReleasesService qtrReleasesService, QtrReleasesReportService qtrReleasesReport) {
+            QtrReleasesService qtrReleasesService, QtrReleasesReportService qtrReleasesReport, QtrReleasesServiceImpl qtrReleasesServiceImpl) {
         this.userService = userService;
         this.budgetService = budgetService;
         this.samplePersonService = samplePersonService;
@@ -244,6 +254,7 @@ public class BudgetReportsView extends Div {
         this.sectionBudgetPerformanceService = sectionBudgetPerformanceService;
         this.qtrReleasesService = qtrReleasesService;
         this.qtrReleasesReport = qtrReleasesReport;
+        this.qtrReleasesServiceImpl = qtrReleasesServiceImpl;
 
         VerticalLayout sheet1 = new VerticalLayout();
         VerticalLayout sheet2 = new VerticalLayout();
@@ -371,6 +382,7 @@ public class BudgetReportsView extends Div {
         SplitLayout splitLayout = new SplitLayout(sheet2, tabSheet2);
         tabSheet2.add("Report View", dataLayout);
         tabSheet2.add("Custom Report Settings", splitLayout2);
+
         tabSheet2.add("Funds Release Settings", setReleaseFundsLayout());
 
         splitLayout.setHeightFull();
@@ -548,7 +560,13 @@ public class BudgetReportsView extends Div {
             financialGrid.setAllRowsVisible(true);
             financialGrid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_COLUMN_BORDERS, GridVariant.LUMO_WRAP_CELL_CONTENT);
 
-            financialGrid.addColumn(PriorityArea::getName).setHeader("NDP Programme").setFlexGrow(2);
+            Grid<Urc_Activities> physicalGrid = new Grid<>(Urc_Activities.class, false);
+            physicalGrid.removeAllColumns();
+            physicalGrid.setSizeFull();
+            physicalGrid.setAllRowsVisible(true);
+            physicalGrid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_COLUMN_BORDERS, GridVariant.LUMO_WRAP_CELL_CONTENT);
+
+            financialGrid.addColumn(PriorityArea::getName).setHeader("NDP Programme");
 
             financialGrid.addColumn(new ComponentRenderer<>(area -> {
                 Span span = new Span();
@@ -571,13 +589,19 @@ public class BudgetReportsView extends Div {
             })).setHeader("Approved Budget (UGX)");
 
             financialGrid.addColumn(new ComponentRenderer<>(area -> {
-
-                if (comboBox2.getValue() != null) {
-                    // cumRealise = samopleSALFLDGService.getTotalAmountByPeriods(samopleSALFLDGService.getFinancialYearPeriodsCummulative(comboBox2.getValue(), qtr), samopleSALFLDGService.extractTrimmedAnlCodes(e.getDeptsection()));
-                    cumRealise = BigDecimal.ZERO;
-                } else {
-                    cumRealise = BigDecimal.ZERO;
-                }
+                Tuple totals = qtrReleasesServiceImpl.getCumulativeQuarterReleases(comboBox2.getValue().getId(), e.getDeptsection());
+                cumRealise = switch (qtr) {
+                    case 1 ->
+                        nvl(totals.get("q1Total", BigDecimal.class));
+                    case 2 ->
+                        nvl(totals.get("q2Total", BigDecimal.class));
+                    case 3 ->
+                        nvl(totals.get("q3Total", BigDecimal.class));
+                    case 4 ->
+                        nvl(totals.get("q4Total", BigDecimal.class));
+                    default ->
+                        BigDecimal.ZERO;
+                };
 
                 Span span = new Span(formatBigDecimal(cumRealise));
                 span.getStyle()
@@ -591,16 +615,39 @@ public class BudgetReportsView extends Div {
                 tooltip.setManual(false); // show on hover
 
                 return span;
-            })).setHeader("Cumulative Funds Released (UGX)")
-                    .setFlexGrow(0);
+            })).setHeader("Cumulative Funds Released (UGX)");
 
             financialGrid.addColumn(new ComponentRenderer<>(area -> {
                 if (comboBox2.getValue() != null) {
-                    // cumRealise = samopleSALFLDGService.getTotalAmountByPeriods(samopleSALFLDGService.getFinancialYearPeriods(comboBox2.getValue(), qtr), samopleSALFLDGService.extractTrimmedAnlCodes(e.getDeptsection()));
-                    actualRealise = samopleSALFLDGService.getTotalAmountByPeriods(samopleSALFLDGService.getFinancialYearPeriodsCummulative(comboBox2.getValue(), qtr), samopleSALFLDGService.extractTrimmedAnlCodes(e.getDeptsection()));
-                } else {
-                    actualRealise = BigDecimal.ZERO;
+                    switch (qtr) {
+                        case 1:
+                            actualRealise = samopleSALFLDGService.getTotalAmountByPeriods(periods.getFinancialYearPeriods(comboBox2.getValue(), 1), samopleSALFLDGService.extractTrimmedAnlCodes(e.getDeptsection()));
+                            break;
+                        case 2:
+                            Set<Integer> period1 = periods.getFinancialYearPeriods(comboBox2.getValue(), 1);
+                            Set<Integer> period2 = periods.getFinancialYearPeriods(comboBox2.getValue(), 2);
+                            period1.addAll(period2);
+                            Set<Integer> combinedPeriods = period1;
+                            period = combinedPeriods;
+                            actualRealise = samopleSALFLDGService.getTotalAmountByPeriods(period, samopleSALFLDGService.extractTrimmedAnlCodes(e.getDeptsection()));
+                            break;
+                        case 3:
+                            period = Stream.concat(periods.getFinancialYearPeriods(comboBox2.getValue(), 1).stream(), periods.getFinancialYearPeriods(comboBox2.getValue(), 2).stream()).collect(Collectors.toSet());
+                            period = Stream.concat(period.stream(), periods.getFinancialYearPeriods(comboBox2.getValue(), 3).stream()).collect(Collectors.toSet());
+                            actualRealise = samopleSALFLDGService.getTotalAmountByPeriods(period, samopleSALFLDGService.extractTrimmedAnlCodes(e.getDeptsection()));
+                            break;
+                        case 4:
+                            period = Stream.concat(periods.getFinancialYearPeriods(comboBox2.getValue(), 1).stream(), periods.getFinancialYearPeriods(comboBox2.getValue(), 2).stream()).collect(Collectors.toSet());
+                            period = Stream.concat(period.stream(), periods.getFinancialYearPeriods(comboBox2.getValue(), 3).stream()).collect(Collectors.toSet());
+                            period = Stream.concat(period.stream(), periods.getFinancialYearPeriods(comboBox2.getValue(), 4).stream()).collect(Collectors.toSet());
+                            actualRealise = samopleSALFLDGService.getTotalAmountByPeriods(period, samopleSALFLDGService.extractTrimmedAnlCodes(e.getDeptsection()));
+                            break;
+                        default:
+                            actualRealise=BigDecimal.ZERO;
+                            break;
+                    }
                 }
+
                 Span label = new Span(formatBigDecimal(actualRealise.abs()));
                 if (actualRealise.abs().doubleValue() > cumRealise.abs().doubleValue()) {
                     label.getStyle().set("color", "red");
@@ -637,7 +684,7 @@ public class BudgetReportsView extends Div {
                     .setHeader("Reasons for Under / Over Absorption")
                     .setFlexGrow(0);
 
-            financialGrid.setHeight("300px"); // Adjust as needed   
+            financialGrid.setHeight("150px"); // Adjust as needed   
 
             qtrComboBox.addValueChangeListener(ex -> {
                 String qt = ex.getValue();
@@ -661,18 +708,152 @@ public class BudgetReportsView extends Div {
                 priorityAreas = sampleURC_Priority_AreasService.getDistinctPriorityAreasByBudget(comboBox2.getValue().getStartDate());
                 financialGrid.setItems(priorityAreas);
                 financialGrid.getDataProvider().refreshAll();
-                //refreshFinancialGrid();
-                //configureSubmit();
-                //financialGrid.getDataProvider().refreshAll();
-                // physicalGrid.getDataProvider().refreshAll();
-                // ✅ Always check after update
-                //disableElements();
+                List<Urc_Activities> acts = new ArrayList();
+                acts = sampleUrc_ActivitiesService.findByDeptSectionAndBudget(e.getDeptsection(), comboBox2.getValue());
+                physicalGrid.setItems(acts);
+                physicalGrid.getDataProvider().refreshAll();
             });
             HorizontalLayout menu = new HorizontalLayout(qtrComboBox);
-            dataLayout.add(header1, header2, header3, header4, menu, financialHeader, financialGrid);
+
+            physicalGrid.addColumn(activity -> {
+                URC_Priority_Areas area = activity.getUrcPriorityAreas();
+                return (area != null && area.getName() != null) ? area.getName() : "—";
+            })
+                    .setHeader("URC Programme");
+
+            physicalGrid.addColumn(Urc_Activities::getName)
+                    .setHeader("Workplan- Activity");
+
+            physicalGrid.addColumn(Urc_Activities::getPerformanceIndicator)
+                    .setHeader("Key Performance Indicator");
+
+            physicalGrid.addColumn(Urc_Activities::getAnnualTarget)
+                    .setHeader("Annual Target");
+
+            physicalGrid.addColumn(area -> {
+                String getCum_achievements = "";
+                if (area.getDeptSection() != null && area.getBudget() != null && qtr != 0) {
+                    switch (qtr) {
+                        case 1:
+                            getCum_achievements = area.getCum_achievements_qtr1();
+                            break;
+                        case 2:
+                            getCum_achievements = area.getCum_achievements_qtr2();
+                            break;
+                        case 3:
+                            getCum_achievements = area.getCum_achievements_qtr3();
+                            break;
+                        case 4:
+                            getCum_achievements = area.getCum_achievements_qtr4();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                return getCum_achievements;
+            }).setHeader("Cumulative Achievements");
+
+            physicalGrid.addColumn(area -> {
+                String getCum_achievements = "";
+                if (area.getDeptSection() != null && area.getBudget() != null && qtr != 0) {
+                    switch (qtr) {
+                        case 1:
+                            getCum_achievements = formatCurrency(qtrReleasesServiceImpl.getTotalAmountByPeriodsAndActivity(periods.getFinancialYearPeriods(comboBox2.getValue(), 1), area).abs());
+                            System.out.println(periods.getFinancialYearPeriods(comboBox2.getValue(), 1) + " 1");
+                            break;
+                        case 2:
+                            Set<Integer> period1 = periods.getFinancialYearPeriods(comboBox2.getValue(), 1);
+                            Set<Integer> period2 = periods.getFinancialYearPeriods(comboBox2.getValue(), 2);
+                            period1.addAll(period2);
+                            Set<Integer> combinedPeriods = period1;
+                            period = combinedPeriods;
+                            getCum_achievements = formatCurrency(qtrReleasesServiceImpl.getTotalAmountByPeriodsAndActivity(period, area).abs());
+                            System.out.println(periods.getFinancialYearPeriods(comboBox2.getValue(), 2) + " 2");
+                            break;
+                        case 3:
+                            period = Stream.concat(periods.getFinancialYearPeriods(comboBox2.getValue(), 1).stream(), periods.getFinancialYearPeriods(comboBox2.getValue(), 2).stream()).collect(Collectors.toSet());
+                            period = Stream.concat(period.stream(), periods.getFinancialYearPeriods(comboBox2.getValue(), 3).stream()).collect(Collectors.toSet());
+                            getCum_achievements = formatCurrency(qtrReleasesServiceImpl.getTotalAmountByPeriodsAndActivity(period, area).abs());
+                            break;
+                        case 4:
+                            period = Stream.concat(periods.getFinancialYearPeriods(comboBox2.getValue(), 1).stream(), periods.getFinancialYearPeriods(comboBox2.getValue(), 2).stream()).collect(Collectors.toSet());
+                            period = Stream.concat(period.stream(), periods.getFinancialYearPeriods(comboBox2.getValue(), 3).stream()).collect(Collectors.toSet());
+                            period = Stream.concat(period.stream(), periods.getFinancialYearPeriods(comboBox2.getValue(), 4).stream()).collect(Collectors.toSet());
+                            getCum_achievements = formatCurrency(qtrReleasesServiceImpl.getTotalAmountByPeriodsAndActivity(period, area).abs());
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                return getCum_achievements;
+            }).setHeader("Actual");
+
+            physicalGrid.addColumn(area -> {
+                String getCum_achievements = "";
+                if (area.getDeptSection() != null && area.getBudget() != null && qtr != 0) {
+                    switch (qtr) {
+                        case 1:
+                            getCum_achievements = area.getPerc_of_TargetAchieved_qtr1();
+                            break;
+                        case 2:
+                            getCum_achievements = area.getPerc_of_TargetAchieved_qtr2();
+                            break;
+                        case 3:
+                            getCum_achievements = area.getPerc_of_TargetAchieved_qtr3();
+                            break;
+                        case 4:
+                            getCum_achievements = area.getPerc_of_TargetAchieved_qtr4();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                return getCum_achievements;
+            }).setHeader("% Target Achieved");
+
+            physicalGrid.addColumn(new ComponentRenderer<>(area -> {
+                String getCum_achievements = "-";
+                Span span = new Span();
+                if (area.getDeptSection() != null && area.getBudget() != null && qtr != 0) {
+                    switch (qtr) {
+                        case 1:
+                            getCum_achievements = area.getExpl_of_variations_qtr1();
+                            break;
+                        case 2:
+                            getCum_achievements = area.getExpl_of_variations_qtr2();
+                            break;
+                        case 3:
+                            getCum_achievements = area.getExpl_of_variations_qtr3();
+                            break;
+                        case 4:
+                            getCum_achievements = area.getExpl_of_variations_qtr4();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                if (getCum_achievements == null) {
+                    getCum_achievements = "-";
+                }
+                span.setText(getCum_achievements);
+                return span;
+            })).setHeader("Explanation for variations");
+
+            H3 physicalHeader = new H3("2. PHYSICAL PERFORMANCE");
+            dataLayout.add(header1, header2, header3, header4, menu, financialHeader, financialGrid, physicalHeader, physicalGrid);
 
         }
 
+    }
+
+    public Set<String> extractAnlCodes(Set<UrcDeptSectionAnlDimbgt> entities) {
+        return entities.stream()
+                .map(UrcDeptSectionAnlDimbgt::getANL_CODE)
+                .filter(code -> code != null && !code.isBlank())
+                .collect(Collectors.toSet());
     }
 
     public void setVolumesdataLayout() {
@@ -1078,7 +1259,7 @@ public class BudgetReportsView extends Div {
                 .multiply(BigDecimal.valueOf(100))
                 .divide(total, 4, RoundingMode.HALF_UP);
 
-        return PERCENT_FORMAT.format(percentage);
+        return PERCENT_FORMAT.format(percentage.abs());
     }
 
     private String formatDeptSection(CustomDetailedBudgetReport report) {
@@ -12944,7 +13125,7 @@ public class BudgetReportsView extends Div {
         radioGroup.addValueChangeListener(e -> {
             topsub.removeAll();
             if (e.getValue().equals("View With Budget")) {
-                topsub.add(withBgtpdfBtn,withBgtexcelBtn);
+                topsub.add(withBgtpdfBtn, withBgtexcelBtn);
                 refreshAccordionWithBudget();
             } else {
                 topsub.add(refresh, pdfBtn, excelBtn);
@@ -12962,13 +13143,13 @@ public class BudgetReportsView extends Div {
             if (e.getValue() == null) {
                 pdfBtn.setEnabled(false);
                 excelBtn.setEnabled(false);
-                                withBgtpdfBtn.setEnabled(false);
+                withBgtpdfBtn.setEnabled(false);
                 withBgtexcelBtn.setEnabled(false);
             } else {
                 pdfBtn.setEnabled(true);
                 excelBtn.setEnabled(true);
                 withBgtpdfBtn.setEnabled(true);
-                withBgtexcelBtn.setEnabled(true);                
+                withBgtexcelBtn.setEnabled(true);
             }
         });
     }
@@ -12994,7 +13175,7 @@ public class BudgetReportsView extends Div {
             // trigger click
             pdfDownloadAnchor.getElement().callJsFunction("click");
         });
-        
+
         withBgtpdfBtn.addClickListener(e -> {
             StreamResource pdf = new StreamResource("Qtr-Releases.pdf", () -> {
                 byte[] bytes = qtrReleasesReport.buildPdfItext7ByFundSourceByBudgetwithBgt(
@@ -13010,7 +13191,7 @@ public class BudgetReportsView extends Div {
             // trigger click
             pdfDownloadAnchor.getElement().callJsFunction("click");
         });
-        
+
         excelBtn.addClickListener(e -> {
             StreamResource pdf = new StreamResource("Qtrly-Releases.xlsx", () -> {
                 byte[] bytes = qtrReleasesReport.buildExcelByFundSourceByBudget(
@@ -13026,7 +13207,7 @@ public class BudgetReportsView extends Div {
             // trigger click
             pdfDownloadAnchor.getElement().callJsFunction("click");
         });
-        
+
         withBgtexcelBtn.addClickListener(e -> {
             StreamResource pdf = new StreamResource("Qtrly-Releases.xlsx", () -> {
                 byte[] bytes = qtrReleasesReport.buildExcelByFundSourceByBudgetwithBgt(
@@ -13041,7 +13222,7 @@ public class BudgetReportsView extends Div {
 
             // trigger click
             pdfDownloadAnchor.getElement().callJsFunction("click");
-        });        
+        });
         topsub.add(refresh, pdfBtn, excelBtn);
         HorizontalLayout top = new HorizontalLayout(radioGroup, pdfDownloadAnchor, topsub);
         top.setWidthFull();
@@ -13250,29 +13431,6 @@ public class BudgetReportsView extends Div {
         TextArea r3Field = reasonEditorField();
         TextArea r4Field = reasonEditorField();
 
-        /*        grid.addColumn(QtrReleaseRow::getReasonsForUnderOver1)
-        .setHeader("Reason Q1")
-        .setAutoWidth(true)
-        .setFlexGrow(2)
-        .setEditorComponent(r1Field);
-        
-        grid.addColumn(QtrReleaseRow::getReasonsForUnderOver2)
-        .setHeader("Reason Q2")
-        .setAutoWidth(true)
-        .setFlexGrow(2)
-        .setEditorComponent(r2Field);
-        
-        grid.addColumn(QtrReleaseRow::getReasonsForUnderOver3)
-        .setHeader("Reason Q3")
-        .setAutoWidth(true)
-        .setFlexGrow(2)
-        .setEditorComponent(r3Field);
-        
-        grid.addColumn(QtrReleaseRow::getReasonsForUnderOver4)
-        .setHeader("Reason Q4")
-        .setAutoWidth(true)
-        .setFlexGrow(2)
-        .setEditorComponent(r4Field);*/
         // Convenience total column per row
         Grid.Column<QtrReleaseRow> totalCol = grid.addColumn(new ComponentRenderer<>(row -> {
             Span s = new Span(formatBigDecimal(
@@ -13315,10 +13473,15 @@ public class BudgetReportsView extends Div {
             Button cancel = new Button("Cancel");
 
             boolean isFooter = row.isTotalRow();
+            boolean isAdmin = user.getRoles().contains(Role.ADMIN);
+            boolean isoff = true;
+            if (isFooter == true || isAdmin == false) {
+                isoff = false;
+            }
 
-            edit.setEnabled(!isFooter);
-            save.setEnabled(!isFooter);
-            cancel.setEnabled(!isFooter);
+            edit.setEnabled(isoff);
+            save.setEnabled(isoff);
+            cancel.setEnabled(isoff);
 
             edit.addClickListener(e -> {
                 if (editor.isOpen()) {
@@ -13438,14 +13601,15 @@ public class BudgetReportsView extends Div {
         Editor<QtrReleaseRow> editor = grid.getEditor();
         editor.setBinder(binder);
         editor.setBuffered(true);
+        boolean isAdmin = user.getRoles().contains(Role.ADMIN);
 
         // prevent editing TOTAL row
-        editor.addOpenListener(e -> {
-            if (e.getItem() != null && e.getItem().isTotalRow()) {
-                editor.cancel();
-            }
-        });
-
+        /*        editor.addOpenListener(e -> {
+        e.getItem().setRowUser(isAdmin);
+        if ((e.getItem() != null && e.getItem().isTotalRow()) || isAdmin == true) {
+        editor.cancel();
+        }
+        });*/
         // -----------------------------
         // Columns
         // -----------------------------
@@ -13561,6 +13725,12 @@ public class BudgetReportsView extends Div {
                 .setAutoWidth(true)
                 .setTextAlign(ColumnTextAlign.END);
 
+        /*        grid.addItemDoubleClickListener(e -> {
+        QtrReleaseRow row = e.getItem();
+        if (!isAdmin && !row.isTotalRow()) {
+        editor.editItem(row);
+        }
+        });*/
         // -----------------------------
         // Bind editor fields (releases only)
         // -----------------------------
@@ -13661,6 +13831,7 @@ public class BudgetReportsView extends Div {
     public static class QtrReleaseRow {
 
         private Long id;
+        private boolean rowUser;
 
         private boolean totalRow;
 
@@ -13670,6 +13841,10 @@ public class BudgetReportsView extends Div {
 
         public void setTotalRow(boolean totalRow) {
             this.totalRow = totalRow;
+        }
+
+        public void setRowUser(boolean rowUser) {
+            this.rowUser = rowUser;
         }
 
         private final UrcDeptSectionAnlDimbgt deptSection;
@@ -13683,6 +13858,11 @@ public class BudgetReportsView extends Div {
         private BigDecimal q2Budget = BigDecimal.ZERO;
         private BigDecimal q3Budget = BigDecimal.ZERO;
         private BigDecimal q4Budget = BigDecimal.ZERO;
+
+        private BigDecimal q1Act = BigDecimal.ZERO;
+        private BigDecimal q2Act = BigDecimal.ZERO;
+        private BigDecimal q3Act = BigDecimal.ZERO;
+        private BigDecimal q4Act = BigDecimal.ZERO;
 
         private String reasonsForUnderOver1 = "";
         private String reasonsForUnderOver2 = "";
@@ -13802,6 +13982,22 @@ public class BudgetReportsView extends Div {
 
         public void setQ4Budget(BigDecimal v) {
             this.q4Budget = nvl(v);
+        }
+
+        public void setQ1Act(BigDecimal q1Act) {
+            this.q1Act = q1Act;
+        }
+
+        public void setQ2Act(BigDecimal q2Act) {
+            this.q2Act = q2Act;
+        }
+
+        public void setQ3Act(BigDecimal q3Act) {
+            this.q3Act = q3Act;
+        }
+
+        public void setQ4Act(BigDecimal q4Act) {
+            this.q4Act = q4Act;
         }
 
         public QtrReleases toEntity(Organisation organisation, Budget budget) {

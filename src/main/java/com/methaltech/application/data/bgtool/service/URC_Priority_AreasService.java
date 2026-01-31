@@ -85,8 +85,7 @@ public class URC_Priority_AreasService {
 
     public List<URC_Priority_Areas> getAreasByDate(LocalDate inputDate) {
         List<URC_Priority_Areas> results = repository.findAllByInputDateBetweenNdpPlanDates(inputDate);
-        System.out.println("Fetched count: " + results.size());
-        results.stream().map(URC_Priority_Areas::getName).forEach(System.out::println);
+       //       results.stream().map(URC_Priority_Areas::getName).forEach(System.out::println);
         return repository.findAllByInputDateBetweenNdpPlanDates(inputDate);
     }
 

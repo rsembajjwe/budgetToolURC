@@ -236,6 +236,7 @@ public class budgetWorkplanView extends Div {
             if (!comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxBudget.isEmpty()) {
                 downloadWorkplan.setEnabled(true);
                 downloadWorkplan2.setEnabled(true);
+                
                 workplanview(accordion);
             } else {
                 downloadWorkplan.setEnabled(false);
@@ -377,21 +378,20 @@ public class budgetWorkplanView extends Div {
     private Accordion workplanview(Accordion accordion) {
 
         accordion.getChildren().forEach(component -> accordion.remove((AccordionPanel) component));
-
         List<UrcDeptSectionAnlDimbgt> selectedSections = comboBoxD_Section.getSelectedItems().stream().toList();
         if (isSumBudgetDeptUnitsGreaterThanZero(comboBoxBudget.getValue(), selectedSections) == true) {
             programmes = sampleURC_Priority_Areas.getAreasByDate(comboBoxBudget.getValue().getCloseDate());
             for (URC_Priority_Areas prog : programmes) {
                 List<Urc_Activities> listUrc_Activities = new ArrayList<>();
                 programmesActivities = sampleUrc_ActivitiesService.getLoadedActivities(comboBoxBudget.getValue(), prog, selectedSections);
-
                 if (programmesActivities != null) {
 
-                    if (budgetItemsService.isSumProgrammeGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), programmesActivities, comboBoxD_Section.getSelectedItems(), 2) == true) {
+                    if (budgetItemsService.isSumProgrammeGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), programmesActivities, comboBoxD_Section.getSelectedItems()) == true) {
 
                         for (Urc_Activities d : programmesActivities) {
+                            System.out.println(d.getActivityCode());
 
-                            if (budgetItemsService.isSumActvityGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 2) == true) {
+                            if (budgetItemsService.isSumActvityGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems()) == true) {
                                 listUrc_Activities.add(d);
 
                             }
@@ -1696,16 +1696,16 @@ public class budgetWorkplanView extends Div {
             cellx.setCellValue("REVENUE EXPENDITURE");
             rowBoldcount.add((int) rownum);
 
-            programmes = sampleURC_Priority_Areas.findByBudget(comboBoxBudget.getValue());
+            programmes = sampleURC_Priority_Areas.getAreasByDate(comboBoxBudget.getValue().getCloseDate());
             List<RowsWorkplan> rowcount = new ArrayList();
 
             for (URC_Priority_Areas prog : programmes) {
 
                 programmesActivities = sampleUrc_ActivitiesService.findActivitiesByBudgetAndPriorityAndDeptUnits(comboBoxBudget.getValue(), prog, selectedSections);
                 if (programmesActivities != null) {
-                    if (budgetItemsService.isSumProgrammeGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), programmesActivities, comboBoxD_Section.getSelectedItems(), 2) == true) {
+                    if (budgetItemsService.isSumProgrammeGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), programmesActivities, comboBoxD_Section.getSelectedItems(), "2") == true) {
                         for (Urc_Activities d : programmesActivities) {
-                            if (budgetItemsService.isSumActvityGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 2) == true) {
+                            if (budgetItemsService.isSumActvityGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), "2") == true) {
 
                                 rowend++;
                                 short tc = 0;
@@ -1720,7 +1720,7 @@ public class budgetWorkplanView extends Div {
 
                                 rowx1.getCell(tc).setCellStyle(stylec);
                                 tc++;
-                                BigDecimal adds = budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 2);
+                                BigDecimal adds = budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(),"2");
                                 totalexpense = totalexpense.add(adds);
                                 rowx1.createCell((short) tc).setCellValue(adds.doubleValue());
                                 rowx1.getCell(tc).setCellStyle(stylec);
@@ -1942,16 +1942,16 @@ public class budgetWorkplanView extends Div {
             cellx.setCellValue("CAPITAL EXPENDITURE");
             rowBoldcount.add((int) rownum);
 
-            programmes = sampleURC_Priority_Areas.findByBudget(comboBoxBudget.getValue());
+            programmes = sampleURC_Priority_Areas.getAreasByDate(comboBoxBudget.getValue().getCloseDate());
             List<RowsWorkplan> rowcount = new ArrayList();
 
             for (URC_Priority_Areas prog : programmes) {
 
                 programmesActivities = sampleUrc_ActivitiesService.findActivitiesByBudgetAndPriorityAndDeptUnits(comboBoxBudget.getValue(), prog, selectedSections);
                 if (programmesActivities != null) {
-                    if (budgetItemsService.isSumProgrammeGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), programmesActivities, comboBoxD_Section.getSelectedItems(), 3) == true) {
+                    if (budgetItemsService.isSumProgrammeGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), programmesActivities, comboBoxD_Section.getSelectedItems(), "3") == true) {
                         for (Urc_Activities d : programmesActivities) {
-                            if (budgetItemsService.isSumActvityGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 3) == true) {
+                            if (budgetItemsService.isSumActvityGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), "3") == true) {
 
                                 rowend++;
                                 short tc = 0;
@@ -1966,7 +1966,7 @@ public class budgetWorkplanView extends Div {
 
                                 rowx12.getCell(tc).setCellStyle(stylec);
                                 tc++;
-                                BigDecimal adds = budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 3);
+                                BigDecimal adds = budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), "3");
                                 totalexpense = totalexpense.add(adds);
                                 rowx12.createCell((short) tc).setCellValue(adds.doubleValue());
                                 rowx12.getCell(tc).setCellStyle(stylec);
@@ -2454,17 +2454,16 @@ public class budgetWorkplanView extends Div {
             rowx.getCell(0).setCellStyle(stylegreen);
             cellx.setCellValue("REVENUE EXPENDITURE");
             rowBoldcount.add((int) rownum);
-
-            programmes = sampleURC_Priority_Areas.findByBudget(comboBoxBudget.getValue());
+            programmes = sampleURC_Priority_Areas.getAreasByDate(comboBoxBudget.getValue().getCloseDate());
             List<RowsWorkplan> rowcount = new ArrayList();
 
             for (URC_Priority_Areas prog : programmes) {
 
                 programmesActivities = sampleUrc_ActivitiesService.findActivitiesByBudgetAndPriorityAndDeptUnits(comboBoxBudget.getValue(), prog, selectedSections);
                 if (programmesActivities != null) {
-                    if (budgetItemsService.isSumProgrammeGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), programmesActivities, comboBoxD_Section.getSelectedItems(), 2) == true) {
+                    if (budgetItemsService.isSumProgrammeGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), programmesActivities, comboBoxD_Section.getSelectedItems(), "2") == true) {
                         for (Urc_Activities d : programmesActivities) {
-                            if (budgetItemsService.isSumActvityGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 2) == true) {
+                            if (budgetItemsService.isSumActvityGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), "2") == true) {
 
                                 rowend++;
                                 short tc = 0;
@@ -2479,7 +2478,7 @@ public class budgetWorkplanView extends Div {
 
                                 rowx1.getCell(tc).setCellStyle(stylec);
                                 tc++;
-                                BigDecimal tBigDecimal = budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 2);
+                                BigDecimal tBigDecimal = budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), "2");
                                 totalexpense = totalexpense.add(tBigDecimal);
                                 rowx1.createCell((short) tc).setCellValue(tBigDecimal.doubleValue());
                                 rowx1.getCell(tc).setCellStyle(stylec);
@@ -2623,16 +2622,16 @@ public class budgetWorkplanView extends Div {
             cellx.setCellValue("CAPITAL EXPENDITURE");
             rowBoldcount.add((int) rownum);
 
-            programmes = sampleURC_Priority_Areas.findByBudget(comboBoxBudget.getValue());
+            programmes = sampleURC_Priority_Areas.getAreasByDate(comboBoxBudget.getValue().getCloseDate());
             List<RowsWorkplan> rowcount = new ArrayList();
 
             for (URC_Priority_Areas prog : programmes) {
 
                 programmesActivities = sampleUrc_ActivitiesService.findActivitiesByBudgetAndPriorityAndDeptUnits(comboBoxBudget.getValue(), prog, selectedSections);
                 if (programmesActivities != null) {
-                    if (budgetItemsService.isSumProgrammeGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), programmesActivities, comboBoxD_Section.getSelectedItems(), 3) == true) {
+                    if (budgetItemsService.isSumProgrammeGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), programmesActivities, comboBoxD_Section.getSelectedItems(), "3") == true) {
                         for (Urc_Activities d : programmesActivities) {
-                            if (budgetItemsService.isSumActvityGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 3) == true) {
+                            if (budgetItemsService.isSumActvityGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), "3") == true) {
 
                                 rowend++;
                                 short tc = 0;
@@ -2647,7 +2646,7 @@ public class budgetWorkplanView extends Div {
 
                                 rowx1.getCell(tc).setCellStyle(stylec);
                                 tc++;
-                                BigDecimal tBigDecimal = budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), 3);
+                                BigDecimal tBigDecimal = budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), "3");
                                 totalexpense = totalexpense.add(tBigDecimal);
                                 rowx1.createCell((short) tc).setCellValue(tBigDecimal.doubleValue());
                                 rowx1.getCell(tc).setCellStyle(stylec);

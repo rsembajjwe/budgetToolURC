@@ -3,8 +3,11 @@ package com.methaltech.application.data.bgtool.service;
 import com.methaltech.application.data.bgtool.repository.QtrReleasesRepository;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.Organisation;
+import com.methaltech.application.data.entity.bgtool.QtrReleaseCumulativeDto;
 import com.methaltech.application.data.entity.bgtool.QtrReleases;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
+import com.methaltech.application.data.entity.bgtool.Urc_Activities;
+import jakarta.persistence.Tuple;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -122,4 +126,32 @@ public class QtrReleasesServiceImpl implements QtrReleasesService {
             qtr.setQtr4Release(BigDecimal.ZERO);
         }
     }
+
+    public Tuple getCumulativeQuarterReleases(
+            Long budgetId,
+            UrcDeptSectionAnlDimbgt deptSections
+    ) {
+        return qtrReleasesRepository
+                .findCumulativeQuarterTotalsByBudget(budgetId, deptSections);
+    }
+
+    public Tuple getCumulativeQuarterReleases(
+            Long budgetId,
+            Set<UrcDeptSectionAnlDimbgt> deptSections
+    ) {
+        return qtrReleasesRepository
+                .findCumulativeQuarterTotalsByBudget(budgetId, deptSections);
+    }
+    
+        public BigDecimal getTotalAmountByPeriodsAndActivity(
+            Set<Integer> periods,
+            Urc_Activities activity) {
+
+        if (periods == null || periods.isEmpty() || activity == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return qtrReleasesRepository.sumAmountByPeriodsAndActivity(periods, activity);
+    }
+
 }

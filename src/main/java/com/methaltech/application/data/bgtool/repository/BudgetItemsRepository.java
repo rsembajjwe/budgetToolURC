@@ -162,23 +162,47 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             + "AND b.budget = :budget "
             + "AND b.activity IN (:activities) "
             + "AND b.deptUnit IN (:deptUnits) "
-            + "AND b.coalevel1.code = :coalevel1Code")
+            + "AND (b.coacode.code LIKE '2%' OR b.coacode.code LIKE '3%')")
     BigDecimal sumProgrammeSummation(
             @Param("budgetTypes") Set<Organisation> budgetTypes,
             @Param("budget") Budget budget,
             @Param("activities") List<Urc_Activities> activities,
-            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
-            @Param("coalevel1Code") Integer coalevel1Code
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits
     );
 
     default boolean isSumProgrammeGreaterThanZero(
             Set<Organisation> budgetTypes,
             Budget budget,
             List<Urc_Activities> activities,
-            Set<UrcDeptSectionAnlDimbgt> deptUnits,
-            Integer coalevel1Code
+            Set<UrcDeptSectionAnlDimbgt> deptUnits
     ) {
-        BigDecimal sum = sumProgrammeSummation(budgetTypes, budget, activities, deptUnits, coalevel1Code);
+        BigDecimal sum = sumProgrammeSummation(budgetTypes, budget, activities, deptUnits);
+        return sum.compareTo(BigDecimal.ZERO) > 0;
+    }
+
+    @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + "
+            + "b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budgetType IN (:budgetTypes) "
+            + "AND b.budget = :budget "
+            + "AND b.activity IN (:activities) "
+            + "AND b.deptUnit IN (:deptUnits) "
+            + "AND b.coacode.code LIKE CONCAT(:sCode, '%')")
+    BigDecimal sumProgrammeSummation(
+            @Param("budgetTypes") Set<Organisation> budgetTypes,
+            @Param("budget") Budget budget,
+            @Param("activities") List<Urc_Activities> activities,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            @Param("sCode") String sCode
+    );
+
+    default boolean isSumProgrammeGreaterThanZero(
+            Set<Organisation> budgetTypes,
+            Budget budget,
+            List<Urc_Activities> activities,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits, String sCode
+    ) {
+        BigDecimal sum = sumProgrammeSummation(budgetTypes, budget, activities, deptUnits, sCode);
         return sum.compareTo(BigDecimal.ZERO) > 0;
     }
 
@@ -189,23 +213,47 @@ public interface BudgetItemsRepository extends JpaRepository<BudgetItems, Long> 
             + "AND b.budget = :budget "
             + "AND b.activity = :activities "
             + "AND b.deptUnit IN (:deptUnits) "
-            + "AND b.coalevel1.code = :coalevel1Code")
+            + "AND (b.coacode.code LIKE '2%' OR b.coacode.code LIKE '3%')")
     BigDecimal sumActvitySummation(
             @Param("budgetTypes") Set<Organisation> budgetTypes,
             @Param("budget") Budget budget,
             @Param("activities") Urc_Activities activities,
-            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
-            @Param("coalevel1Code") Integer coalevel1Code
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits
     );
 
     default boolean isSumActvityGreaterThanZero(
             Set<Organisation> budgetTypes,
             Budget budget,
             Urc_Activities activities,
-            Set<UrcDeptSectionAnlDimbgt> deptUnits,
-            Integer coalevel1Code
+            Set<UrcDeptSectionAnlDimbgt> deptUnits
     ) {
-        BigDecimal sum = sumActvitySummation(budgetTypes, budget, activities, deptUnits, coalevel1Code);
+        BigDecimal sum = sumActvitySummation(budgetTypes, budget, activities, deptUnits);
+        return sum.compareTo(BigDecimal.ZERO) > 0;
+    }
+
+    @Query("SELECT COALESCE(SUM(b.jan + b.feb + b.mar + b.apr + b.may + b.jun + "
+            + "b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0) "
+            + "FROM BudgetItems b "
+            + "WHERE b.budgetType IN (:budgetTypes) "
+            + "AND b.budget = :budget "
+            + "AND b.activity = :activities "
+            + "AND b.deptUnit IN (:deptUnits) "
+            + "AND b.coacode.code LIKE CONCAT(:sCode, '%')")
+    BigDecimal sumActvitySummation(
+            @Param("budgetTypes") Set<Organisation> budgetTypes,
+            @Param("budget") Budget budget,
+            @Param("activities") Urc_Activities activities,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            @Param("sCode") String sCode
+    );
+
+    default boolean isSumActvityGreaterThanZero(
+            Set<Organisation> budgetTypes,
+            Budget budget,
+            Urc_Activities activities,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits, String sCode
+    ) {
+        BigDecimal sum = sumActvitySummation(budgetTypes, budget, activities, deptUnits, sCode);
         return sum.compareTo(BigDecimal.ZERO) > 0;
     }
 
@@ -1438,47 +1486,59 @@ group by bi.deptUnit.id
     int updateProcureClassFromCoa();
 
     @Query(value = """
-        SELECT STRING_AGG(fundsource, ', ')
-        FROM (
-            SELECT DISTINCT f.fundsource
-            FROM budgetItem bi
-            JOIN fundsource f ON bi.fundsource_id = f.id
-            WHERE bi.budget_id = :budgetId
-              AND bi.activity_id2 = :activityId
-        ) AS distinct_sources
+        SELECT
+            STUFF((
+                SELECT DISTINCT
+                       ', ' + f.fundsource
+                FROM budgetItem bi
+                JOIN fundsource f ON bi.fundsource_id = f.id
+                WHERE bi.budget_id = :budgetId
+                  AND bi.activity_id2 = :activityId
+                FOR XML PATH(''), TYPE
+            ).value('.', 'NVARCHAR(MAX)'), 1, 2, '')
         """, nativeQuery = true)
-    String findDistinctFundSourcesByBudgetAndActivity(@Param("budgetId") Long budgetId,
-            @Param("activityId") Long activityId);
+    String findDistinctFundSourcesByBudgetAndActivity(
+            @Param("budgetId") Long budgetId,
+            @Param("activityId") Long activityId
+    );
 
     @Query(value = """
-        SELECT STRING_AGG(fundsource, ', ')
-        FROM (
-            SELECT DISTINCT f.fundsource
-            FROM budgetItem bi
-            JOIN fundsource f ON bi.fundsource_id = f.id
-            WHERE bi.budget_id = :budgetId
-              AND bi.activity_id2 = :activityId
-              AND bi.Organisation_id = :budgetTypeId
-        ) AS distinct_sources
+        SELECT
+            STUFF((
+                SELECT DISTINCT
+                       ', ' + f.fundsource
+                FROM budgetItem bi
+                JOIN fundsource f ON bi.fundsource_id = f.id
+                WHERE bi.budget_id = :budgetId
+                  AND bi.activity_id2 = :activityId
+                  AND bi.Organisation_id = :budgetTypeId
+                FOR XML PATH(''), TYPE
+            ).value('.', 'NVARCHAR(MAX)'), 1, 2, '')
         """, nativeQuery = true)
-    String findDistinctFundSourcesByBudgetActivityAndType(@Param("budgetId") Long budgetId,
+    String findDistinctFundSourcesByBudgetActivityAndType(
+            @Param("budgetId") Long budgetId,
             @Param("activityId") Long activityId,
-            @Param("budgetTypeId") Long budgetTypeId);
+            @Param("budgetTypeId") Long budgetTypeId
+    );
 
     @Query(value = """
-        SELECT STRING_AGG(fundsource, ', ')
-        FROM (
-            SELECT DISTINCT f.fundsource
-            FROM budgetItem bi
-            JOIN fundsource f ON bi.fundsource_id = f.id
-            WHERE bi.budget_id = :budgetId
-              AND bi.activity_id2 = :activityId
-              AND bi.Organisation_id IN (:budgetTypeIds)
-        ) AS distinct_sources
+        SELECT
+            STUFF((
+                SELECT DISTINCT
+                       ', ' + f.fundsource
+                FROM budgetItem bi
+                JOIN fundsource f ON bi.fundsource_id = f.id
+                WHERE bi.budget_id = :budgetId
+                  AND bi.activity_id2 = :activityId
+                  AND bi.Organisation_id IN (:budgetTypeIds)
+                FOR XML PATH(''), TYPE
+            ).value('.', 'NVARCHAR(MAX)'), 1, 2, '')
         """, nativeQuery = true)
-    String findDistinctFundSourcesByBudgetActivityAndTypes(@Param("budgetId") Long budgetId,
+    String findDistinctFundSourcesByBudgetActivityAndTypes(
+            @Param("budgetId") Long budgetId,
             @Param("activityId") Long activityId,
-            @Param("budgetTypeIds") Set<Long> budgetTypeIds);
+            @Param("budgetTypeIds") Set<Long> budgetTypeIds
+    );
 
     List<BudgetItems> findByActivity(Urc_Activities activity);
 

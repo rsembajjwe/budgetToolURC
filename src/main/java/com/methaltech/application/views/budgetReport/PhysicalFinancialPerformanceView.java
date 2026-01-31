@@ -5,6 +5,7 @@ import com.methaltech.application.data.Role;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
 import com.methaltech.application.data.bgtool.service.BudgetService;
 import com.methaltech.application.data.bgtool.service.PriorityAreaService;
+import com.methaltech.application.data.bgtool.service.QtrReleasesServiceImpl;
 import com.methaltech.application.data.bgtool.service.QuarterlyActualsService;
 import com.methaltech.application.data.bgtool.service.SectionBudgetPerformanceService;
 import com.methaltech.application.data.bgtool.service.URC_Priority_AreasService;
@@ -13,6 +14,7 @@ import com.methaltech.application.data.bgtool.service.Urc_ActivitiesService;
 import com.methaltech.application.data.bgtool.service.UserService;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.PriorityArea;
+import com.methaltech.application.data.entity.bgtool.QtrReleaseCumulativeDto;
 import com.methaltech.application.data.entity.bgtool.QuarterlyActuals;
 import com.methaltech.application.data.entity.bgtool.SectionBudgetPerformance;
 import com.methaltech.application.data.entity.bgtool.URC_Priority_Areas;
@@ -61,6 +63,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.persistence.Tuple;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -105,6 +108,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
     private final URC_Priority_AreasService URC_Priority_AreasService;
     private final QuarterlyActualsService QuarterlyActualsService;
     private final SectionBudgetPerformanceService sectionBudgetPerformanceService;
+    private final QtrReleasesServiceImpl qtrReleasesServiceImpl;
     private AuthenticatedUser authenticatedUser;
 
     private final ComboBox<Budget> budgetComboBox = new ComboBox<>("Select Budget");
@@ -138,7 +142,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
     public PhysicalFinancialPerformanceView(List<Urc_Activities> activities, BudgetService chosenBudgetService, BudgetItemsService budgetItemsService, Urc_ActivitiesService sampleUrc_ActivitiesService,
             UserService userService, AuthenticatedUser authenticatedUser, UrcDeptSectionAnlDimbgtService urcDeptSectionAnlDimbgtService, URC_Priority_AreasService sampleURC_Priority_AreasService,
             SALFLDGService SALFLDGService, PriorityAreaService PriorityAreaService, URC_Priority_AreasService URC_Priority_AreasService, QuarterlyActualsService QuarterlyActualsService,
-            SectionBudgetPerformanceService sectionBudgetPerformanceService) {
+            SectionBudgetPerformanceService sectionBudgetPerformanceService, QtrReleasesServiceImpl qtrReleasesServiceImpl) {
         this.chosenBudgetService = chosenBudgetService;
         this.budgetItemsService = budgetItemsService;
         this.sampleUrc_ActivitiesService = sampleUrc_ActivitiesService;
@@ -151,6 +155,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         this.URC_Priority_AreasService = URC_Priority_AreasService;
         this.QuarterlyActualsService = QuarterlyActualsService;
         this.sectionBudgetPerformanceService = sectionBudgetPerformanceService;
+        this.qtrReleasesServiceImpl = qtrReleasesServiceImpl;
         setSizeFull();
         setPadding(true);
         setSpacing(true);
@@ -287,7 +292,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                     downloadButton.setEnabled(true);
                     submitButton.setText("Submitted");
                     submitButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
-                    System.out.println("Download yes");
+                    //System.out.println("Download yes");
                 } else {
                     submitButton.setText("Submit");
                     downloadButton.setEnabled(false);
@@ -554,17 +559,22 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         }
         switch (qtr) {
             case 1:
-                period = periods.getFinancialYearPeriods(chosenBudget, qtr);
+                period = periods.getFinancialYearPeriods(chosenBudget, 1);
                 break;
             case 2:
-                period = Stream.concat(periods.getFinancialYearPeriods(chosenBudget, qtr).stream(), periods.getFinancialYearPeriods(chosenBudget, 2).stream()).collect(Collectors.toSet());
+                Set<Integer> period1 = periods.getFinancialYearPeriods(chosenBudget, 1);
+                Set<Integer> period2 = periods.getFinancialYearPeriods(chosenBudget, 2);
+                period1.addAll(period2);
+                Set<Integer> combinedPeriods = period1;
+                period = combinedPeriods;
+                // System.out.println(period1+" Period 1 "+period2+" Period 2  "+period+" -Combined "+qtr);
                 break;
             case 3:
-                period = Stream.concat(periods.getFinancialYearPeriods(chosenBudget, qtr).stream(), periods.getFinancialYearPeriods(chosenBudget, 2).stream()).collect(Collectors.toSet());
+                period = Stream.concat(periods.getFinancialYearPeriods(chosenBudget, 1).stream(), periods.getFinancialYearPeriods(chosenBudget, 2).stream()).collect(Collectors.toSet());
                 period = Stream.concat(period.stream(), periods.getFinancialYearPeriods(chosenBudget, 3).stream()).collect(Collectors.toSet());
                 break;
             case 4:
-                period = Stream.concat(periods.getFinancialYearPeriods(chosenBudget, qtr).stream(), periods.getFinancialYearPeriods(chosenBudget, 2).stream()).collect(Collectors.toSet());
+                period = Stream.concat(periods.getFinancialYearPeriods(chosenBudget, 1).stream(), periods.getFinancialYearPeriods(chosenBudget, 2).stream()).collect(Collectors.toSet());
                 period = Stream.concat(period.stream(), periods.getFinancialYearPeriods(chosenBudget, 3).stream()).collect(Collectors.toSet());
                 period = Stream.concat(period.stream(), periods.getFinancialYearPeriods(chosenBudget, 4).stream()).collect(Collectors.toSet());
                 break;
@@ -572,7 +582,10 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                 break;
         }
         acts = sampleUrc_ActivitiesService.findByDeptSectionAndBudget(chosenDsection, chosenBudget);
-        totalActualExpenditure = getTotalActualsForActivities(acts, period);
+        //totalActualExpenditure = getTotalActualsForActivities(acts, period);
+
+        totalActualExpenditure = SALFLDGService.findSumOfAmountByAnalT1AndPeriodIn(chosenDsection.getANL_CODE(), period.stream().toList());
+        totalActualExpenditure = SALFLDGService.getTotalAmountByPeriods2(period, chosenDsection.getANL_CODE());
         // Recalculate key values
         cumRealiseSpent = SALFLDGService.getTotalAmountByPeriods2(period, chosenDsection.getANL_CODE());
         totalBudget = budgetItemsService.calculateTotalDeptExpenditure2(chosenBudget, chosenDsection);
@@ -694,10 +707,11 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
     private void configureFinancialGridByPriorityArea() {
         financialGrid.removeAllColumns();
-        financialGrid.setSizeFull();financialGrid.setAllRowsVisible(true);
+        financialGrid.setSizeFull();
+        financialGrid.setAllRowsVisible(true);
         financialGrid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_COLUMN_BORDERS, GridVariant.LUMO_WRAP_CELL_CONTENT);
 
-        financialGrid.addColumn(PriorityArea::getName).setHeader("NDP Programme").setFlexGrow(2);
+        financialGrid.addColumn(PriorityArea::getName).setHeader("NDP Programme");
 
         financialGrid.addColumn(new ComponentRenderer<>(area -> {
             Span span = new Span();
@@ -721,52 +735,48 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
         financialGrid.addColumn(new ComponentRenderer<>(area -> {
             BigDecimal cumRealise = BigDecimal.ZERO;
-            SectionBudgetPerformance perf = null;
-            Optional<SectionBudgetPerformance> budgetchosen = sectionBudgetPerformanceService.findByBudgetAndDeptSection(chosenBudget, chosenDsection);
-            if (budgetchosen.isPresent()) {
-                perf = budgetchosen.get();
-                if (perf != null) {
-                    switch (qtr) {
-                        case 1 ->
-                            cumRealise = Optional.ofNullable(perf.getCumulativeFundsReleased1()).orElse(BigDecimal.ZERO);
-                        case 2 ->
-                            cumRealise = Optional.ofNullable(perf.getCumulativeFundsReleased2()).orElse(BigDecimal.ZERO);
-                        case 3 ->
-                            cumRealise = Optional.ofNullable(perf.getCumulativeFundsReleased3()).orElse(BigDecimal.ZERO);
-                        case 4 ->
-                            cumRealise = Optional.ofNullable(perf.getCumulativeFundsReleased4()).orElse(BigDecimal.ZERO);
-                        default ->
-                            cumRealise = BigDecimal.ZERO;
-                    }
-                } else {
-                    cumRealise = BigDecimal.ZERO;
-                }
-
-            }
-            Span span = new Span(formatBigDecimal(cumRealise));
+            Tuple result = qtrReleasesServiceImpl.getCumulativeQuarterReleases(chosenBudget.getId(), chosenDsection);
+            cumReleasedFund = switch (qtr) {
+                case 1 ->
+                    //result.get("q1Total", BigDecimal.class);
+                    nvl(result.get("q1Total", BigDecimal.class));
+                case 2 ->
+                    nvl(result.get("q2Total", BigDecimal.class));
+                case 3 ->
+                    nvl(result.get("q3Total", BigDecimal.class));
+                case 4 ->
+                    nvl(result.get("q4Total", BigDecimal.class));
+                default ->
+                    BigDecimal.ZERO;
+            };
+            Span span = new Span(formatBigDecimal(cumReleasedFund));
             span.getStyle()
                     .set("font-weight", "500")
                     .set("color", "#2E3A59")
                     .set("font-size", "var(--lumo-font-size-s)");
 
             Tooltip tooltip = Tooltip.forComponent(span);
-            tooltip.setText("Cumulative Funds Released: " + formatBigDecimal(cumRealise));
+            tooltip.setText("Cumulative Funds Released: " + formatBigDecimal(cumReleasedFund));
             tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
             tooltip.setManual(false); // show on hover
 
             return span;
         }))
-                .setHeader("Cumulative Funds Released (UGX)")
-                .setFlexGrow(0);
+                .setHeader("Cumulative Funds Released (UGX)");
 
         financialGrid.addColumn(new ComponentRenderer<>(area -> {
             Span label = new Span(formatBigDecimal(totalActualExpenditure.abs()));
-            if (totalActualExpenditure.abs().doubleValue() < cumRealiseSpent.abs().doubleValue()) {
-                label.getStyle().set("color", "red");
+            // System.out.println(totalActualExpenditure.abs()+" .........");
+            if (totalActualExpenditure.abs().doubleValue() <= cumReleasedFund.abs().doubleValue()) {
+                label.getStyle().set("color", "green");
                 label.getStyle().set("font-weight", "bold");
-                label.getElement().setProperty("title", "⚠ Warning: Below You Actual Expenditure");
 
-            }
+            } else if (totalActualExpenditure.abs().doubleValue() > cumReleasedFund.abs().doubleValue()) {
+                    label.getStyle().set("color", "green");
+                    label.getStyle().set("font-weight", "bold");
+                    label.getElement().setProperty("title", "⚠ Warning: Below You Actual Expenditure");
+
+                }
 
             label.setText(formatBigDecimal(totalActualExpenditure.abs()));
             Tooltip tooltip = Tooltip.forComponent(label);
@@ -778,27 +788,8 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         })).setHeader("Release Spent (UGX) BNs");
 
         financialGrid.addColumn(area -> {
-            String reason = "";
-            SectionBudgetPerformance perf = null;
-            Optional<SectionBudgetPerformance> budgetchosen = sectionBudgetPerformanceService.findByBudgetAndDeptSection(chosenBudget, chosenDsection);
-            if (budgetchosen.isPresent()) {
-                perf = budgetchosen.get();
-                if (perf != null) {
-                    switch (qtr) {
-                        case 1 ->
-                            reason = Optional.ofNullable(perf.getPercentageSpent1()).orElse("");
-                        case 2 ->
-                            reason = Optional.ofNullable(perf.getPercentageSpent2()).orElse("");
-                        case 3 ->
-                            reason = Optional.ofNullable(perf.getPercentageSpent3()).orElse("");
-                        case 4 ->
-                            reason = Optional.ofNullable(perf.getPercentageSpent4()).orElse("");
-                        default ->
-                            reason = "";
-                    }
-                }
+            String reason = formatPercentage(totalActualExpenditure, cumReleasedFund);
 
-            }
             return reason.isBlank() ? "—" : reason;
         }).setHeader("% of Release Spent");
 
@@ -828,8 +819,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
             return reason.isBlank() ? "—" : reason;
         })
-                .setHeader("Reasons for Under / Over Absorption")
-                .setFlexGrow(0);
+                .setHeader("Reasons for Under / Over Absorption");
 
         financialGrid.setHeight("300px"); // Adjust as needed
     }
@@ -841,6 +831,22 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         BigDecimal inBillions = amount.divide(BigDecimal.valueOf(1_000_000_000));
         DecimalFormat df = new DecimalFormat("#,##0.##"); // 2 decimal places
         return df.format(inBillions);
+    }
+
+    private static BigDecimal nvl(BigDecimal v) {
+        return v == null ? BigDecimal.ZERO : v;
+    }
+
+    public String formatPercentage(BigDecimal value, BigDecimal total) {
+        if (total == null || total.compareTo(BigDecimal.ZERO) == 0) {
+            return "0.00%";
+        }
+
+        BigDecimal percentage = value.abs()
+                .multiply(BigDecimal.valueOf(100))
+                .divide(total.abs(), 2, RoundingMode.HALF_UP);
+
+        return percentage.abs().toPlainString() + "%";
     }
 
     private void configurePhysicalGrid(List<Urc_Activities> activities) {
@@ -1467,8 +1473,8 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         annualTargetSpan.setValue(annualTargetValue);
         annualTargetSpan.setPlaceholder("100%");
 
-        TextField cumAchievementsSpan = new TextField("Cumulative Achievements");
-        cumAchievementsSpan.setPlaceholder("90%");
+        TextArea cumAchievementsSpan = new TextArea("Cumulative Achievements");
+        cumAchievementsSpan.setPlaceholder("Enhanced modern technology use through acquiring new ICT equipments");
         TextField perc_of_release_SpentSpan = new TextField("% Target Achieved");
         perc_of_release_SpentSpan.setPlaceholder("90%");
 
@@ -1510,7 +1516,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
         lay.add(kpiField, outputField, outcomeField);
         // Set all text areas to the same nice style
-        Stream.of(kpiField, outputField, outcomeField, expl_of_variationField)
+        Stream.of(kpiField, outputField, outcomeField, expl_of_variationField,cumAchievementsSpan)
                 .forEach(area -> {
                     area.setWidthFull();
                     area.setRequiredIndicatorVisible(true);
@@ -1523,13 +1529,13 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                 });
 
 // Same for text fields
-        Stream.of(annualTargetSpan, cumAchievementsSpan, perc_of_release_SpentSpan)
+        Stream.of(annualTargetSpan, perc_of_release_SpentSpan)
                 .forEach(field -> {
                     field.setWidthFull();
                     field.setRequiredIndicatorVisible(true);
 
                 });
-        deliverableLayout.add(lay, annualTargetSpan, cumAchievementsSpan, perc_of_release_SpentSpan, expl_of_variationField);
+        deliverableLayout.add(lay, annualTargetSpan,  perc_of_release_SpentSpan, cumAchievementsSpan,expl_of_variationField);
         deliverableLayout.setResponsiveSteps(
                 new FormLayout.ResponsiveStep("0", 1, FormLayout.ResponsiveStep.LabelsPosition.ASIDE),
                 new FormLayout.ResponsiveStep("100px", 3, FormLayout.ResponsiveStep.LabelsPosition.ASIDE)
@@ -1546,6 +1552,8 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         deliverableLayout.setColspan(perc_of_release_SpentSpan, 1);*/
 // Explanation field should take full width across the 3 columns
         deliverableLayout.setColspan(lay, 3);
+        deliverableLayout.setColspan(annualTargetSpan, 2);
+        deliverableLayout.setColspan(cumAchievementsSpan, 3);
         deliverableLayout.setColspan(expl_of_variationField, 3);
         // === Buttons (Footer) ===
         Button saveBtn = new Button("Save", e -> {

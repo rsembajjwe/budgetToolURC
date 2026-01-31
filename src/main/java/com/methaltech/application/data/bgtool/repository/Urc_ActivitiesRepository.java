@@ -112,6 +112,17 @@ public interface Urc_ActivitiesRepository extends JpaRepository<Urc_Activities, 
     List<Urc_Activities> findByDeptSectionAndBudget(
             @Param("deptSection") UrcDeptSectionAnlDimbgt deptSection,
             @Param("budget") Budget budget);
+    
+    @Query("""
+       SELECT a 
+       FROM Urc_Activities a 
+       LEFT JOIN FETCH a.quarterlyActuals 
+       WHERE a.deptSection IN :deptSection 
+         AND a.budget = :budget
+       """)
+    List<Urc_Activities> findByDeptSectionAndBudget(
+            @Param("deptSection") Set<UrcDeptSectionAnlDimbgt> deptSection,
+            @Param("budget") Budget budget);    
 
     @Query("SELECT ua FROM Urc_Activities ua WHERE ua.deptSection = :deptSection "
             + "AND ua.budget = :budget "
