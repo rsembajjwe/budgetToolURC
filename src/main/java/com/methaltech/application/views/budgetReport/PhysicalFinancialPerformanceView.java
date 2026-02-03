@@ -14,7 +14,6 @@ import com.methaltech.application.data.bgtool.service.Urc_ActivitiesService;
 import com.methaltech.application.data.bgtool.service.UserService;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.PriorityArea;
-import com.methaltech.application.data.entity.bgtool.QtrReleaseCumulativeDto;
 import com.methaltech.application.data.entity.bgtool.QuarterlyActuals;
 import com.methaltech.application.data.entity.bgtool.SectionBudgetPerformance;
 import com.methaltech.application.data.entity.bgtool.URC_Priority_Areas;
@@ -25,7 +24,6 @@ import com.methaltech.application.data.livedata.service.SALFLDGService;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.MainLayout;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -772,7 +770,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                 label.getStyle().set("font-weight", "bold");
 
             } else if (totalActualExpenditure.abs().doubleValue() > cumReleasedFund.abs().doubleValue()) {
-                    label.getStyle().set("color", "green");
+                    label.getStyle().set("color", "red");
                     label.getStyle().set("font-weight", "bold");
                     label.getElement().setProperty("title", "⚠ Warning: Below You Actual Expenditure");
 
@@ -821,7 +819,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         })
                 .setHeader("Reasons for Under / Over Absorption");
 
-        financialGrid.setHeight("300px"); // Adjust as needed
+        financialGrid.setHeight("180px"); // Adjust as needed
     }
 
     public String formatInBillions(BigDecimal amount) {
@@ -860,45 +858,17 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             URC_Priority_Areas area = activity.getUrcPriorityAreas();
             return (area != null && area.getName() != null) ? area.getName() : "—";
         })
-                .setHeader("URC Programme")
-                .setAutoWidth(true)
-                .setFlexGrow(1);
+                .setHeader("URC Programme");
 
         physicalGrid.addColumn(Urc_Activities::getName)
-                .setHeader("Workplan- Activity")
-                .setFlexGrow(2);
+                .setHeader("Workplan- Activity");
 
         physicalGrid.addColumn(Urc_Activities::getPerformanceIndicator)
-                .setHeader("Key Performance Indicator")
-                .setFlexGrow(2);
+                .setHeader("Key Performance Indicator");
 
         physicalGrid.addColumn(Urc_Activities::getAnnualTarget)
-                .setHeader("Annual Target")
-                .setFlexGrow(1);
+                .setHeader("Annual Target");
 
-        physicalGrid.addColumn(area -> {
-            String getCum_achievements = "";
-            if (chosenDsection != null && chosenBudget != null && qtr != 0) {
-                switch (qtr) {
-                    case 1:
-                        getCum_achievements = area.getCum_achievements_qtr1();
-                        break;
-                    case 2:
-                        getCum_achievements = area.getCum_achievements_qtr2();
-                        break;
-                    case 3:
-                        getCum_achievements = area.getCum_achievements_qtr3();
-                        break;
-                    case 4:
-                        getCum_achievements = area.getCum_achievements_qtr4();
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            return getCum_achievements;
-        }).setHeader("Cumulative Achievements").setFlexGrow(0);
 
         physicalGrid.addColumn(area -> {
             String getCum_achievements = "";
@@ -922,7 +892,31 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             }
 
             return getCum_achievements;
-        }).setHeader("% Target Achieved").setAutoWidth(true);
+        }).setHeader("% Target Achieved");
+
+        physicalGrid.addColumn(area -> {
+            String getCum_achievements = "";
+            if (chosenDsection != null && chosenBudget != null && qtr != 0) {
+                switch (qtr) {
+                    case 1:
+                        getCum_achievements = area.getCum_achievements_qtr1();
+                        break;
+                    case 2:
+                        getCum_achievements = area.getCum_achievements_qtr2();
+                        break;
+                    case 3:
+                        getCum_achievements = area.getCum_achievements_qtr3();
+                        break;
+                    case 4:
+                        getCum_achievements = area.getCum_achievements_qtr4();
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            return getCum_achievements;
+        }).setHeader("Cumulative Achievements");        
 
         physicalGrid.addColumn(new ComponentRenderer<>(area -> {
             String getCum_achievements = "-";
@@ -957,7 +951,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             );
 
             return span;
-        })).setHeader("Explanation for variations").setFlexGrow(2);
+        })).setHeader("Explanation for variations");
 
     }
 
