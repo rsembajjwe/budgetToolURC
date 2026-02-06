@@ -131,47 +131,27 @@
             <version>5.2.5</version>
         </dependency>
         
-        <!-- https://mvnrepository.com/artifact/com.itextpdf/itext7-core -->
-        <!-- PDF core libraries -->
+        <!-- iText 7 Kernel (core PDF engine) -->
         <dependency>
             <groupId>com.itextpdf</groupId>
             <artifactId>kernel</artifactId>
-            <version>9.2.0</version>
-            <type>jar</type>
+            <version>7.2.5</version>
         </dependency>
 
+        <!-- iText 7 Layout (high-level API for paragraphs, tables, etc.) -->
         <dependency>
             <groupId>com.itextpdf</groupId>
             <artifactId>layout</artifactId>
-            <version>9.2.0</version>
-            <type>jar</type>
+            <version>7.2.5</version>
         </dependency>
 
-        <!-- Optional: PDF/UA, accessibility, digital signatures -->
+        <!-- Optional: iText IO for images, fonts, streams -->
         <dependency>
             <groupId>com.itextpdf</groupId>
-            <artifactId>forms</artifactId>
-            <version>9.2.0</version>
+            <artifactId>io</artifactId>
+            <version>7.2.5</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.itextpdf</groupId>
-            <artifactId>pdfa</artifactId>
-            <version>9.2.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.itextpdf</groupId>
-            <artifactId>sign</artifactId>
-            <version>9.2.0</version>
-        </dependency>
-
-        <!-- Optional: If you need SVG rendering -->
-        <dependency>
-            <groupId>com.itextpdf</groupId>
-            <artifactId>svg</artifactId>
-            <version>9.2.0</version>
-        </dependency>
 
         <dependency>
             <groupId>org.vaadin.addons.flowingcode</groupId>

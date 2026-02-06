@@ -118,14 +118,19 @@ import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.*;
 import com.methaltech.application.data.GetPeriods;
 import com.methaltech.application.data.Role;
+import com.methaltech.application.data.bgtool.service.PerformanceContextBuilder;
+import com.methaltech.application.data.bgtool.service.PerformanceExcelExportService;
+import com.methaltech.application.data.bgtool.service.PerformancePdfExportService;
 import com.methaltech.application.data.bgtool.service.QtrReleasesReportService;
 import com.methaltech.application.data.bgtool.service.QtrReleasesService;
 import com.methaltech.application.data.bgtool.service.QtrReleasesServiceImpl;
 import com.methaltech.application.data.bgtool.service.SectionBudgetPerformanceService;
+import com.methaltech.application.data.entity.bgtool.PerformanceReportContext;
 import com.methaltech.application.data.entity.bgtool.PerformanceRow;
 import com.methaltech.application.data.entity.bgtool.PriorityArea;
 import com.methaltech.application.data.entity.bgtool.QtrReleases;
 import com.methaltech.application.data.entity.bgtool.QuarterBudgetSum;
+import com.methaltech.application.data.entity.bgtool.SectionBudgetPerformance;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.server.StreamResource;
@@ -141,12 +146,16 @@ import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.hierarchy.TreeData;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import java.util.Objects;
+
 import jakarta.persistence.Tuple;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import lombok.Getter;
 
@@ -222,6 +231,16 @@ public class BudgetReportsView extends Div {
     GetPeriods periods = new GetPeriods();
     Set<Integer> period = new HashSet<>();
 
+    H2 header1 = new H2("UGANDA RAILWAYS CORPORATION");
+    H3 header2 = new H3("FINANCIAL & PHYSICAL PERFORMANCE REPORT");
+    H3 header3 = new H3("");
+    H3 financialHeader = new H3("1. FINANCIAL PERFORMANCE");
+    ComboBox<String> qtrComboBox = new ComboBox<>("Select Quarter");
+    Map<String, SectionBudgetPerformance> performanceMap = new HashMap<>();
+    private final PerformancePdfExportService performancePdfExportService;
+    private final PerformanceExcelExportService performanceExcelExportService;
+    private final PerformanceContextBuilder performanceContextBuilder;
+
     public BudgetReportsView(UserService userService, BudgetService budgetService,
             SamplePersonService samplePersonService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, OrganisationService sampleOrganisationService,
             BudgetItemsService sampleBudgetItemsService, Coalevel1Service sampleCoalevel1Service, URC_Priority_AreasService sampleURC_Priority_AreasService,
@@ -229,7 +248,9 @@ public class BudgetReportsView extends Div {
             CustomDetailedBudgetReportService sampleCustomDetailedBudgetReportService, UrcAcntService urcAcntService,
             FreightVolumesService sampleFreightVolumesService, CoaService sampleCoaService, SALFLDGService samopleSALFLDGService,
             UrcBSalfldgService sampleUrcBSalfldgService, BudgetRepository repository, SectionBudgetPerformanceService sectionBudgetPerformanceService,
-            QtrReleasesService qtrReleasesService, QtrReleasesReportService qtrReleasesReport, QtrReleasesServiceImpl qtrReleasesServiceImpl) {
+            QtrReleasesService qtrReleasesService, QtrReleasesReportService qtrReleasesReport, QtrReleasesServiceImpl qtrReleasesServiceImpl,
+            PerformancePdfExportService performancePdfExportService, PerformanceContextBuilder performanceContextBuilder,
+            PerformanceExcelExportService performanceExcelExportService) {
         this.userService = userService;
         this.budgetService = budgetService;
         this.samplePersonService = samplePersonService;
@@ -251,6 +272,9 @@ public class BudgetReportsView extends Div {
         this.qtrReleasesService = qtrReleasesService;
         this.qtrReleasesReport = qtrReleasesReport;
         this.qtrReleasesServiceImpl = qtrReleasesServiceImpl;
+        this.performancePdfExportService = performancePdfExportService;
+        this.performanceContextBuilder = performanceContextBuilder;
+        this.performanceExcelExportService = performanceExcelExportService;
 
         VerticalLayout sheet1 = new VerticalLayout();
         VerticalLayout sheet2 = new VerticalLayout();
@@ -529,7 +553,6 @@ public class BudgetReportsView extends Div {
     public void setPerformanceLayout() {
         datasubLayout.removeAll();
         dataLayout.removeAll();
-        ComboBox<String> qtrComboBox = new ComboBox<>("Select Quarter");
 
         qtrComboBox.setItems("Qtr 1", "Qtr 2", "Qtr 3", "Qtr 4");
         qtrComboBox.setClearButtonVisible(true);
@@ -542,10 +565,10 @@ public class BudgetReportsView extends Div {
         List<CustomDetailedBudgetReport> findByBudgetreport = sampleCustomDetailedBudgetReportService.findByBudgetreport(CustomDetailedBudgetReportImpcomboBox.getValue());
 
         for (CustomDetailedBudgetReport e : findByBudgetreport) {
-            H2 header1 = new H2("UGANDA RAILWAYS CORPORATION");
-            H3 header2 = new H3("FINANCIAL & PHYSICAL PERFORMANCE REPORT");
-            H3 header3 = new H3(comboBox2.getValue().getFinancialYear().toUpperCase());
-            H3 financialHeader = new H3("1. FINANCIAL PERFORMANCE");
+            header1 = new H2("UGANDA RAILWAYS CORPORATION");
+            header2 = new H3("FINANCIAL & PHYSICAL PERFORMANCE REPORT");
+            header3 = new H3(comboBox2.getValue().getFinancialYear().toUpperCase());
+            financialHeader = new H3("1. FINANCIAL PERFORMANCE");
 
             H3 header4 = new H3(e.getSheetname().toUpperCase());
 
@@ -639,7 +662,7 @@ public class BudgetReportsView extends Div {
                             actualRealise = samopleSALFLDGService.getTotalAmountByPeriods(period, samopleSALFLDGService.extractTrimmedAnlCodes(e.getDeptsection()));
                             break;
                         default:
-                            actualRealise=BigDecimal.ZERO;
+                            actualRealise = BigDecimal.ZERO;
                             break;
                     }
                 }
@@ -674,11 +697,17 @@ public class BudgetReportsView extends Div {
             }).setHeader("% of Release Spent");
 
             financialGrid.addColumn(area -> {
-                String reason = "";
-                return reason.isBlank() ? "—" : reason;
-            })
-                    .setHeader("Reasons for Under / Over Absorption")
-                    .setFlexGrow(0);
+                if (performanceMap.isEmpty()) {
+                    return "—";
+                }
+
+                return e.getDeptsection().stream()
+                        .map(sect -> performanceMap.get(sect.getANL_CODE()))
+                        .filter(Objects::nonNull)
+                        .map(p -> getReasonByQuarter(p, qtr))
+                        .filter(s -> s != null && !s.isBlank())
+                        .collect(Collectors.joining(", "));
+            }).setHeader("Reasons for Under / Over Absorption");
 
             financialGrid.setHeight("150px"); // Adjust as needed   
 
@@ -689,17 +718,37 @@ public class BudgetReportsView extends Div {
                     qtr = 0;
                 } else {
                     switch (qt) {
-                        case "Qtr 1" ->
+                        case "Qtr 1" -> {
                             qtr = 1;
-                        case "Qtr 2" ->
+                            header3.setText(comboBox2.getValue().getFinancialYear() + ", Quarter 1".toUpperCase());
+                        }
+                        case "Qtr 2" -> {
                             qtr = 2;
-                        case "Qtr 3" ->
+                            header3.setText(comboBox2.getValue().getFinancialYear() + ", Quarter 2".toUpperCase());
+                        }
+                        case "Qtr 3" -> {
                             qtr = 3;
-                        case "Qtr 4" ->
+                            header3.setText(comboBox2.getValue().getFinancialYear() + ", Quarter 3".toUpperCase());
+                        }
+                        case "Qtr 4" -> {
                             qtr = 4;
+                            header3.setText(comboBox2.getValue().getFinancialYear() + ", Quarter 4".toUpperCase());
+                        }
                         default ->
                             qtr = 0;
                     }
+                }
+
+                if (comboBox2.getValue() != null) {
+                    List<SectionBudgetPerformance> performances = sectionBudgetPerformanceService.findByBudget(comboBox2.getValue());
+
+                    performanceMap = performances.stream()
+                            .collect(Collectors.toMap(
+                                    p -> p.getDeptSection().getANL_CODE(),
+                                    Function.identity(),
+                                    (existing, replacement) -> existing // keep first
+                            ));
+
                 }
                 priorityAreas = sampleURC_Priority_AreasService.getDistinctPriorityAreasByBudget(comboBox2.getValue().getStartDate());
                 financialGrid.setItems(priorityAreas);
@@ -709,8 +758,76 @@ public class BudgetReportsView extends Div {
                 physicalGrid.setItems(acts);
                 physicalGrid.getDataProvider().refreshAll();
             });
-            HorizontalLayout menu = new HorizontalLayout(qtrComboBox);
 
+            Button excelButton = new Button(new Icon(VaadinIcon.TABLE));
+            excelButton.addThemeVariants(ButtonVariant.LUMO_ICON);
+            //excelButton.setAriaLabel("Add item");
+
+            Button pdfButton = new Button(new Icon(VaadinIcon.FILE));
+            pdfButton.addThemeVariants(ButtonVariant.LUMO_ICON);
+            pdfButton.setAriaLabel("Close");
+            pdfButton.setTooltipText("Close the dialog");
+            HorizontalLayout menuRight = new HorizontalLayout(excelButton, pdfButton);
+            HorizontalLayout menu = new HorizontalLayout(qtrComboBox, menuRight);
+            menu.setWidthFull();                 // 👈 take full width
+            menu.expand(qtrComboBox);            // 👈 push menuRight to the right
+            menu.setAlignItems(FlexComponent.Alignment.CENTER);
+            excelButton.setTooltipText("Export to Excel");
+            pdfButton.setTooltipText("Export to PDF");
+            menu.setPadding(false);
+            menu.setSpacing(true);
+            menu.setAlignItems(FlexComponent.Alignment.BASELINE);
+
+            pdfButton.addClickListener(et -> {
+                try {
+                    PerformanceReportContext ctx
+                            = performanceContextBuilder.build(
+                                    comboBox2.getValue(),
+                                    qtr,
+                                    performanceMap,
+                                    priorityAreas
+                            );
+
+                    byte[] file = performancePdfExportService.export(ctx, findByBudgetreport);
+                    StreamResource resource = new StreamResource(
+                            "performance.pdf",
+                            () -> new ByteArrayInputStream(file)
+                    );
+
+                    Anchor download = new Anchor(resource, "");
+                    download.getElement().setAttribute("download", true);
+                    download.add(new Button("Click to download"));
+                    download.getElement().callJsFunction("click");
+                    datasubLayout.add(download);
+                } catch (IOException ex) {
+                    Logger.getLogger(BudgetReportsView.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            });
+            excelButton.addClickListener(et -> {
+                try {
+                    PerformanceReportContext ctx
+                            = performanceContextBuilder.build(
+                                    comboBox2.getValue(),
+                                    qtr,
+                                    performanceMap,
+                                    priorityAreas
+                            );
+
+                    byte[] file = performanceExcelExportService.export(ctx, findByBudgetreport);
+                    StreamResource resource = new StreamResource(
+                            "performance.xlsx",
+                            () -> new ByteArrayInputStream(file)
+                    );
+
+                    Anchor download = new Anchor(resource, "");
+                    download.getElement().setAttribute("download", true);
+                    download.add(new Button("Click to download"));
+                    download.getElement().callJsFunction("click");
+                    datasubLayout.add(download);
+                } catch (IOException ex) {
+                    Logger.getLogger(BudgetReportsView.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            });
             physicalGrid.addColumn(activity -> {
                 URC_Priority_Areas area = activity.getUrcPriorityAreas();
                 return (area != null && area.getName() != null) ? area.getName() : "—";
@@ -840,9 +957,25 @@ public class BudgetReportsView extends Div {
 
             H3 physicalHeader = new H3("2. PHYSICAL PERFORMANCE");
             dataLayout.add(header1, header2, header3, header4, menu, financialHeader, financialGrid, physicalHeader, physicalGrid);
+            dataLayout.add(datasubLayout);
 
         }
 
+    }
+
+    private String getReasonByQuarter(SectionBudgetPerformance p, int quarter) {
+        return switch (quarter) {
+            case 1 ->
+                p.getReasonsForUnderOver1();
+            case 2 ->
+                p.getReasonsForUnderOver2();
+            case 3 ->
+                p.getReasonsForUnderOver3();
+            case 4 ->
+                p.getReasonsForUnderOver4();
+            default ->
+                null;
+        };
     }
 
     public Set<String> extractAnlCodes(Set<UrcDeptSectionAnlDimbgt> entities) {
@@ -1037,6 +1170,7 @@ public class BudgetReportsView extends Div {
                 download.getElement().setAttribute("download", true);
                 download.add(new Button("Click to download"));
                 download.getElement().callJsFunction("click");
+                datasubLayout.add(download);
 
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -1058,6 +1192,7 @@ public class BudgetReportsView extends Div {
                 a.getElement().setAttribute("download", true);
                 a.add(new Button("Download"));
                 a.getElement().callJsFunction("click");
+                datasubLayout.add(a);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }

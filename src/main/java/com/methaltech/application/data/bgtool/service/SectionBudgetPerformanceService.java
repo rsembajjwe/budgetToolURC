@@ -26,10 +26,6 @@ public class SectionBudgetPerformanceService {
         return repository.save(performance);
     }
 
-    /*
-    public Optional<SectionBudgetPerformance> findByBudgetAndDeptSection(Budget budget, UrcDeptSectionAnlDimbgt deptSection) {
-    return repository.findByBudgetAndDeptSection(budget, deptSection);
-    }*/
     public Optional<SectionBudgetPerformance> findByBudgetAndDeptSection(Budget budget, UrcDeptSectionAnlDimbgt deptSection) {
         List<SectionBudgetPerformance> performances = repository.findByBudgetAndDeptSection(budget, deptSection);
 
@@ -41,6 +37,7 @@ public class SectionBudgetPerformanceService {
     }
 
     public List<SectionBudgetPerformance> findByBudget(Budget budget) {
+        System.out.println(budget);
         return repository.findByBudget(budget);
     }
 
