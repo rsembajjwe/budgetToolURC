@@ -1,6 +1,8 @@
 package com.methaltech.application.data.bgtool.service;
 
 import com.itextpdf.io.font.constants.StandardFonts;
+import com.itextpdf.kernel.colors.Color;
+import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
@@ -28,6 +30,7 @@ import com.methaltech.application.data.CurrencyFormatter;
 import com.methaltech.application.data.GetPeriods;
 import com.methaltech.application.data.entity.bgtool.PriorityArea;
 import com.methaltech.application.data.entity.bgtool.SectionBudgetPerformance;
+import com.methaltech.application.data.entity.bgtool.URC_Priority_Areas;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import com.methaltech.application.data.livedata.service.SALFLDGService;
 import jakarta.persistence.Tuple;
@@ -37,6 +40,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -50,10 +54,7 @@ public class PerformancePdfExportService {
 
     private final Urc_ActivitiesService sampleUrc_ActivitiesService;
     private final BudgetItemsService sampleBudgetItemsService;
-    private static final DeviceRgb PRIMARY = new DeviceRgb(0, 51, 102);    // Navy
-    private static final DeviceRgb HEADER_BG = new DeviceRgb(235, 240, 245);
-    private static final DeviceRgb BORDER = new DeviceRgb(200, 200, 200);
-    private static final DeviceRgb TEXT = new DeviceRgb(33, 37, 41);
+
     CurrencyFormatter f = new CurrencyFormatter();
     private final QtrReleasesServiceImpl qtrReleasesServiceImpl;
     private final SALFLDGService samopleSALFLDGService;
@@ -63,6 +64,12 @@ public class PerformancePdfExportService {
     private final SectionBudgetPerformanceService sectionBudgetPerformanceService;
     private final URC_Priority_AreasService sampleURC_Priority_AreasService;
     List<PriorityArea> priorityAreas = new ArrayList<>();
+    // ===== Corporate color palette =====
+    private static final DeviceRgb PRIMARY = new DeviceRgb(0, 51, 102);   // Navy
+    private static final DeviceRgb HEADER_BG = new DeviceRgb(235, 240, 245);
+    private static final DeviceRgb SECTION_BG = new DeviceRgb(220, 226, 233); // slightly darker than header
+    private static final DeviceRgb BORDER = new DeviceRgb(200, 200, 200);
+    private static final DeviceRgb TEXT = new DeviceRgb(33, 37, 41);
 
     public PerformancePdfExportService(Urc_ActivitiesService sampleUrc_ActivitiesService, BudgetItemsService sampleBudgetItemsService,
             QtrReleasesServiceImpl qtrReleasesServiceImpl, SALFLDGService samopleSALFLDGService, SectionBudgetPerformanceService sectionBudgetPerformanceService,
@@ -112,7 +119,7 @@ public class PerformancePdfExportService {
             document.add(buildPhysicalTable(ctx, acts));
 
 // --- Next page for next CustomDetailedBudgetReport if needed ---
-            document.add(new AreaBreak(AreaBreakType.NEXT_PAGE));
+          //  document.add(new AreaBreak(AreaBreakType.NEXT_PAGE));
         }
 
         document.close();
@@ -335,14 +342,19 @@ public class PerformancePdfExportService {
                 .setPadding(4);
     }
 
-    private Table buildPhysicalTable(PerformanceReportContext ctx, List<Urc_Activities> activities) throws IOException {
-        float[] columnWidths = {
-            3, 4, 4, 2, 3, 2, 4
-        };
+    private Table buildPhysicalTable(
+            PerformanceReportContext ctx,
+            List<Urc_Activities> activities
+    ) throws IOException {
+
+        float[] columnWidths = {3, 4, 4, 2, 3, 2, 4};
 
         Table table = new Table(UnitValue.createPercentArray(columnWidths))
-                .useAllAvailableWidth();
+                .useAllAvailableWidth()
+                .setMarginBottom(15)
+                .setBorder(new SolidBorder(BORDER, 0.8f));
 
+        // ================= HEADERS =================
         addHeader(table, "URC Programme");
         addHeader(table, "Activity");
         addHeader(table, "Performance Indicator");
@@ -351,96 +363,104 @@ public class PerformancePdfExportService {
         addHeader(table, "% Target");
         addHeader(table, "Explanation");
 
-        for (Urc_Activities act : activities) {
+        // ================= GROUP ACTIVITIES =================
+        Map<URC_Priority_Areas, List<Urc_Activities>> grouped
+                = activities.stream()
+                        .collect(Collectors.groupingBy(
+                                Urc_Activities::getUrcPriorityAreas,
+                                LinkedHashMap::new,
+                                Collectors.toList()
+                        ));
 
-            table.addCell(body(
-                    act.getUrcPriorityAreas() != null
-                    ? act.getUrcPriorityAreas().getName()
-                    : "—"
-            ));
+        // ================= ROWS =================
+        for (Map.Entry<URC_Priority_Areas, List<Urc_Activities>> entry : grouped.entrySet()) {
 
-            table.addCell(body(act.getName()));
-            table.addCell(body(act.getPerformanceIndicator()));
-            table.addCell(body(act.getAnnualTarget()));
-            String getCum_achievements = "";
-            if (act.getDeptSection() != null && act.getBudget() != null && ctx.getQuarter() != 0) {
-                switch (ctx.getQuarter()) {
-                    case 1:
-                        getCum_achievements = act.getCum_achievements_qtr1();
-                        break;
-                    case 2:
-                        getCum_achievements = act.getCum_achievements_qtr2();
-                        break;
-                    case 3:
-                        getCum_achievements = act.getCum_achievements_qtr3();
-                        break;
-                    case 4:
-                        getCum_achievements = act.getCum_achievements_qtr4();
-                        break;
-                    default:
-                        break;
+            URC_Priority_Areas priorityArea = entry.getKey();
+            List<Urc_Activities> acts = entry.getValue();
+
+            int rowSpan = acts.size();
+            boolean firstRow = true;
+
+            for (Urc_Activities act : acts) {
+
+                // -------- MERGED PRIORITY AREA CELL --------
+                if (firstRow) {
+                    table.addCell(new Cell(rowSpan, 1)
+                            .add(new Paragraph(
+                                    priorityArea != null
+                                            ? priorityArea.getName()
+                                            : "—"
+                            ))
+                            .setFontSize(9)
+                            .setFontColor(TEXT)
+                            .setBackgroundColor(HEADER_BG)
+                            .setTextAlignment(TextAlignment.LEFT)
+                            .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                            .setPadding(6)
+                            .setBorder(new SolidBorder(BORDER, 0.5f))
+                    );
+                    firstRow = false;
                 }
-            }
-            table.addCell(body(getCum_achievements));
 
-            String getActual_achievements = "";
-            if (act.getDeptSection() != null && act.getBudget() != null && ctx.getQuarter() != 0) {
-                switch (ctx.getQuarter()) {
-                    case 1:
-                        getActual_achievements = formatCurrency(qtrReleasesServiceImpl.getTotalAmountByPeriodsAndActivity(periods.getFinancialYearPeriods(act.getBudget(), 1), act).abs());
+                // -------- ACTIVITY DETAILS --------
+                table.addCell(body(act.getName()));
+                table.addCell(body(act.getPerformanceIndicator()));
+                table.addCell(body(act.getAnnualTarget()));
 
-                        break;
-                    case 2:
-                        Set<Integer> period1 = periods.getFinancialYearPeriods(act.getBudget(), 1);
-                        Set<Integer> period2 = periods.getFinancialYearPeriods(act.getBudget(), 2);
-                        period1.addAll(period2);
-                        Set<Integer> combinedPeriods = period1;
-                        period = combinedPeriods;
-                        getActual_achievements = formatCurrency(qtrReleasesServiceImpl.getTotalAmountByPeriodsAndActivity(period, act).abs());
-                        break;
-                    case 3:
-                        period = Stream.concat(periods.getFinancialYearPeriods(act.getBudget(), 1).stream(), periods.getFinancialYearPeriods(act.getBudget(), 2).stream()).collect(Collectors.toSet());
-                        period = Stream.concat(period.stream(), periods.getFinancialYearPeriods(act.getBudget(), 3).stream()).collect(Collectors.toSet());
-                        getActual_achievements = formatCurrency(qtrReleasesServiceImpl.getTotalAmountByPeriodsAndActivity(period, act).abs());
-                        break;
-                    case 4:
-                        period = Stream.concat(periods.getFinancialYearPeriods(act.getBudget(), 1).stream(), periods.getFinancialYearPeriods(act.getBudget(), 2).stream()).collect(Collectors.toSet());
-                        period = Stream.concat(period.stream(), periods.getFinancialYearPeriods(act.getBudget(), 3).stream()).collect(Collectors.toSet());
-                        period = Stream.concat(period.stream(), periods.getFinancialYearPeriods(act.getBudget(), 4).stream()).collect(Collectors.toSet());
-                        getActual_achievements = formatCurrency(qtrReleasesServiceImpl.getTotalAmountByPeriodsAndActivity(period, act).abs());
-                        break;
-                    default:
-                        break;
-                }
-            }
-            table.addCell(body(getActual_achievements));
+                // -------- CUMULATIVE ACHIEVEMENT --------
+                table.addCell(body(getCumulativeAchievement(act, ctx.getQuarter())));
 
-            String exp_Variation = "-";
-            if (act.getDeptSection() != null && act.getBudget() != null && ctx.getQuarter() != 0) {
-                switch (ctx.getQuarter()) {
-                    case 1:
-                        exp_Variation = act.getExpl_of_variations_qtr1();
-                        break;
-                    case 2:
-                        exp_Variation = act.getExpl_of_variations_qtr2();
-                        break;
-                    case 3:
-                        exp_Variation = act.getExpl_of_variations_qtr3();
-                        break;
-                    case 4:
-                        exp_Variation = act.getExpl_of_variations_qtr4();
-                        break;
-                    default:
-                        break;
-                }
+                // -------- % TARGET / ACTUAL ACHIEVEMENT --------
+                table.addCell(body(getActualAchievement(act, ctx)));
+
+                // -------- EXPLANATION --------
+                table.addCell(body(getVariation(act, ctx.getQuarter())));
             }
-            if (exp_Variation == null) {
-                exp_Variation = "-";
-            }
-            table.addCell(body(exp_Variation));
         }
 
         return table;
+    }
+
+    private String getCumulativeAchievement(Urc_Activities act, int qtr) {
+        return switch (qtr) {
+            case 1 ->
+                act.getCum_achievements_qtr1();
+            case 2 ->
+                act.getCum_achievements_qtr2();
+            case 3 ->
+                act.getCum_achievements_qtr3();
+            case 4 ->
+                act.getCum_achievements_qtr4();
+            default ->
+                "-";
+        };
+    }
+
+    private String getActualAchievement(Urc_Activities act, PerformanceReportContext ctx) {
+
+        Set<Integer> periodsSet
+                = periods.getFinancialYearPeriods(act.getBudget(), ctx.getQuarter());
+
+        return formatCurrency(
+                qtrReleasesServiceImpl
+                        .getTotalAmountByPeriodsAndActivity(periodsSet, act)
+                        .abs()
+        );
+    }
+
+    private String getVariation(Urc_Activities act, int qtr) {
+        return switch (qtr) {
+            case 1 ->
+                act.getExpl_of_variations_qtr1();
+            case 2 ->
+                act.getExpl_of_variations_qtr2();
+            case 3 ->
+                act.getExpl_of_variations_qtr3();
+            case 4 ->
+                act.getExpl_of_variations_qtr4();
+            default ->
+                "-";
+        };
     }
 
 }

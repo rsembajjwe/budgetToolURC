@@ -2,7 +2,6 @@ package com.methaltech.application.views.freight;
 
 import com.methaltech.application.data.Display;
 import com.methaltech.application.data.MonthlySumResponseFreight;
-import com.methaltech.application.data.Report;
 import com.methaltech.application.data.UploadExamplesI18N;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
 import com.methaltech.application.data.bgtool.service.BudgetService;
@@ -11,8 +10,10 @@ import com.methaltech.application.data.bgtool.service.CoaService;
 import com.methaltech.application.data.bgtool.service.Coalevel11Service;
 import com.methaltech.application.data.bgtool.service.Coalevel1Service;
 import com.methaltech.application.data.bgtool.service.CurrencyService;
+import com.methaltech.application.data.bgtool.service.FreightActualVolumesService;
 import com.methaltech.application.data.bgtool.service.FreightVolumesService;
 import com.methaltech.application.data.bgtool.service.OrganisationService;
+import com.methaltech.application.data.bgtool.service.PassengerVolumesService;
 import com.methaltech.application.data.bgtool.service.StockUnitMeasureService;
 import com.methaltech.application.data.bgtool.service.UserService;
 import com.methaltech.application.data.entity.bgtool.Budget;
@@ -22,14 +23,21 @@ import com.methaltech.application.data.entity.bgtool.COAReconcile;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.Coalevel11;
 import com.methaltech.application.data.entity.bgtool.Currency;
+import com.methaltech.application.data.entity.bgtool.FreightActualBudgetDTO;
+import com.methaltech.application.data.entity.bgtool.FreightActualVolumes;
 import com.methaltech.application.data.entity.bgtool.FreightVolumes;
 import com.methaltech.application.data.entity.bgtool.Organisation;
+import com.methaltech.application.data.entity.bgtool.PassengerActualVolumes;
+import com.methaltech.application.data.entity.bgtool.PassengerBudgetActualDTO;
+import com.methaltech.application.data.entity.bgtool.PassengerRowDTO;
+import com.methaltech.application.data.entity.bgtool.PassengerServiceVolumes;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.User;
 import com.methaltech.application.data.errorMessages;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.MainLayout;
 import com.methaltech.application.views.budgetReport.BudgetReportsView;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HtmlComponent;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -48,16 +56,17 @@ import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
+import com.vaadin.flow.component.grid.FooterRow;
 import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Footer;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -71,6 +80,8 @@ import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MultiFileMemoryBuffer;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.converter.StringToBigDecimalConverter;
+import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.NumberRenderer;
 import com.vaadin.flow.server.StreamResource;
@@ -85,11 +96,15 @@ import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import org.apache.poi.ss.usermodel.BorderStyle;
-import org.apache.poi.ss.usermodel.BuiltinFormats;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -102,14 +117,12 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
-import org.apache.poi.ss.util.AreaReference;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.RegionUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.ss.util.AreaReference;
 
 @PageTitle("Freight Volumes")
 @Route(value = "freight", layout = MainLayout.class)
@@ -128,6 +141,7 @@ public class freightVolumeView extends Div {
     private final StockUnitMeasureService sampleStockUnitMeasureService;
     private final OrganisationService sampleOrganisationService;
     private final BudgetItemsService sampleBudgetItemsService;
+    private final PassengerVolumesService passengerVolumesService;
 
     private final Binder<FreightVolumes> binder = new BeanValidationBinder<>(FreightVolumes.class);
     private ComboBox<UrcDeptSectionAnlDimbgt> comboBoxD_Section;
@@ -170,12 +184,24 @@ public class freightVolumeView extends Div {
     private final CoaService coaService;
     private final Coalevel1Service sampleCoalevel1Service;
     private final Coalevel11Service sampleCoalevel11Service;
+    private final FreightActualVolumesService freightActualVolumesService;
+    VerticalLayout layOut = new VerticalLayout();
+    VerticalLayout layOutP = new VerticalLayout();
+    Button toggleBudgetMonths = new Button("Toggle Budget Months");
+    Button toggleBudgetMonthsP = new Button("Toggle Budget Months");
+    private static final java.text.DecimalFormat VOLUME_FMT;
+
+    static {
+        VOLUME_FMT = new java.text.DecimalFormat("#,##0.##"); // commas + up to 4 decimals
+        VOLUME_FMT.setGroupingUsed(true);
+    }
 
     public freightVolumeView(AuthenticatedUser authenticatedUser, FreightVolumesService sampleFreightVolumesService, BudgetService sampleBudgetService, CoaService sampleCoaService,
             CurrencyService sampleCurrencyService, BudgetItemsService budgetItemsService, StockUnitMeasureService sampleStockUnitMeasureService,
             OrganisationService sampleOrganisationService, UserService userService, BudgetItemsService sampleBudgetItemsService,
             COAReconcileService coaReconcileService, CoaService coaService, Coalevel1Service sampleCoalevel1Service,
-            Coalevel11Service sampleCoalevel11Service) {
+            Coalevel11Service sampleCoalevel11Service, FreightActualVolumesService freightActualVolumesService,
+            PassengerVolumesService passengerVolumesService) {
         this.sampleFreightVolumesService = sampleFreightVolumesService;
         this.sampleBudgetService = sampleBudgetService;
         this.sampleCoaService = sampleCoaService;
@@ -189,6 +215,8 @@ public class freightVolumeView extends Div {
         this.coaService = coaService;
         this.sampleCoalevel1Service = sampleCoalevel1Service;
         this.sampleCoalevel11Service = sampleCoalevel11Service;
+        this.freightActualVolumesService = freightActualVolumesService;
+        this.passengerVolumesService = passengerVolumesService;
         setHeight("100%");
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
         image2.setWidthFull();
@@ -206,8 +234,9 @@ public class freightVolumeView extends Div {
 
         comboBoxOrganisation.setItemLabelGenerator(Organisation::getName);
         TabSheet tabSheet = new TabSheet();
-        tabSheet.add("View Freight Volume", detailsPanel());
-        tabSheet.add("Freight Volume Reports", secondPanel());
+        tabSheet.add("View Freight Volume By Clients/Tons", detailsPanel());
+        tabSheet.add("Summary Freight Volume Report/Tons", layOut);
+        tabSheet.add("Summary Passenger Volume Report/Tons", layOutP);
         tabSheet.setHeight("100%");
 
         MultiFileMemoryBuffer buffer = new MultiFileMemoryBuffer();
@@ -229,6 +258,14 @@ public class freightVolumeView extends Div {
         } else {
             upload.setVisible(false);
         }
+        comboBoxBudget.addValueChangeListener(e -> {
+            layOut.removeAll();
+            layOutP.removeAll();
+            List<FreightActualBudgetDTO> rows = freightActualVolumesService.getActualVsBudget(e.getValue().getId(), Display.FREIGHT);
+            layOut.add(buildActualVsBudgetGrid(rows), toggleBudgetMonths);
+            List<PassengerBudgetActualDTO> rowsP = passengerVolumesService.getPassengerBudgetActualRows(e.getValue().getId(), Display.PASSENGER);
+            layOutP.add(buildPassengerBudgetActualGrid(rowsP), toggleBudgetMonthsP);
+        });
         upload.addSucceededListener(event -> {
             if (!comboBoxBudget.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxCOA.isEmpty()) {
                 String fileName = event.getFileName();
@@ -439,7 +476,7 @@ public class freightVolumeView extends Div {
                 List<COA> coas = sampleFreightVolumesService.getDistinctCoacodesByBudget(comboBoxBudget.getValue());
                 int del = sampleBudgetItemsService.deleteByBudgetAndCoas(comboBoxBudget.getValue(), coas);
                 if (del > 0) {
-                   sampleFreightVolumesService.deleteByBudget(comboBoxBudget.getValue());
+                    sampleFreightVolumesService.deleteByBudget(comboBoxBudget.getValue());
                     Notification.show(
                             "Records deleted successfully",
                             3000,
@@ -525,53 +562,9 @@ public class freightVolumeView extends Div {
             }
         });
         shareSubMenu.addItem("Import Freight Volumes").addClickListener(e -> {
-            /*            if (!comboBoxBudget.isEmpty()) {
-            if (sampleFreightVolumesService.countByBudget(comboBoxBudget.getValue()) == 0) {
-            List<OldFreightRate> getFreightRatesByFiscalYea = oldFreightRateService.getFreightRatesByFiscalYear(comboBoxBudget.getValue().getFinancialYear());
-            for (OldFreightRate f : getFreightRatesByFiscalYea) {
-            FreightVolumes fr = new FreightVolumes();
-            fr.setBudget(comboBoxBudget.getValue());
-            fr.setName(f.getName());
-            fr.setCargo_desc(f.getCargoDescription());
-            fr.setCargotype(f.getCargoType());
-            fr.setCoacode(setCOA(f.getCode(), comboBoxBudget.getValue()));
-            Currency cur = sampleCurrencyService.findByDataCurrencyAndBudget(f.getCurrency(), comboBoxBudget.getValue());
-            if (cur != null) {
-            fr.setCurrency(cur);
-            }
-            
-            fr.setRate(f.getRate());
-            fr.setJan(f.getJan());
-            fr.setFeb(f.getFeb());
-            fr.setMar(f.getMar());
-            fr.setApr(f.getApr());
-            fr.setMay(f.getMay());
-            fr.setJun(f.getJun());
-            fr.setJul(f.getJul());
-            fr.setSep(f.getSep());
-            fr.setAug(f.getAug());
-            fr.setOct(f.getOct());
-            fr.setNov(f.getNov());
-            fr.setDec(f.getDec());
-            sampleFreightVolumesService.createOrUpdateFreightVolume(fr);
-            
-            }
-            } else {
-            warningNotification("Items found");
-            }
-            
-            } else {
-            warningNotification("Select Budget");
-            }*/
+
         });
 
-        /*        formLayout.setResponsiveSteps(
-        // Use one column by default
-        new ResponsiveStep("0", 2),
-        // Use two columns, if the layout's width exceeds 320px
-        new ResponsiveStep("320px", 3),
-        // Use three columns, if the layout's width exceeds 500px
-        new ResponsiveStep("500px", 4));*/
         splitLayout.setSplitterPosition(50);
         lay.setHeight("100%");
         splitLayout.setHeight("100%");
@@ -591,16 +584,654 @@ public class freightVolumeView extends Div {
         return lay;
     }
 
-    private VerticalLayout secondPanel() {
-        VerticalLayout lay = new VerticalLayout();
-        lay.add(new H1(""));
-        return lay;
+    private Grid<FreightActualBudgetDTO> buildActualVsBudgetGrid(List<FreightActualBudgetDTO> rows) {
+
+        final BigDecimal ZERO = BigDecimal.ZERO;
+
+        java.util.function.Function<BigDecimal, BigDecimal> nz = v -> v == null ? ZERO : v;
+
+        java.util.function.Function<FreightActualVolumes, BigDecimal> actualTotal = fa -> {
+            if (fa == null) {
+                return ZERO;
+            }
+            return nz.apply(fa.getJul()).add(nz.apply(fa.getAug())).add(nz.apply(fa.getSep()))
+                    .add(nz.apply(fa.getOct())).add(nz.apply(fa.getNov())).add(nz.apply(fa.getDec()))
+                    .add(nz.apply(fa.getJan())).add(nz.apply(fa.getFeb())).add(nz.apply(fa.getMar()))
+                    .add(nz.apply(fa.getApr())).add(nz.apply(fa.getMay())).add(nz.apply(fa.getJun()));
+        };
+
+        java.util.function.Function<String, Span> boldLabel = text -> {
+            Span s = new Span(text);
+            s.getStyle().set("font-weight", "bold");
+            return s;
+        };
+
+        java.util.function.Function<String, Span> boldNumber = text -> {
+            Span s = new Span(text);
+            s.getStyle()
+                    .set("font-weight", "bold")
+                    .set("text-align", "right")
+                    .set("display", "block");
+            return s;
+        };
+
+        final java.text.DecimalFormat VOLUME_FMT = new java.text.DecimalFormat("#,##0.##");
+        VOLUME_FMT.setGroupingUsed(true);
+        java.util.function.Function<BigDecimal, String> fmt = v -> v == null ? "" : VOLUME_FMT.format(v);
+
+        // Ensure actual exists
+        for (FreightActualBudgetDTO dto : rows) {
+            if (dto.getActual() == null) {
+                FreightActualVolumes fa = new FreightActualVolumes();
+                fa.setBudget(dto.getBudget());
+                fa.setCoacode(dto.getCoacode());
+                dto.setActual(fa);
+            } else {
+                if (dto.getActual().getBudget() == null) {
+                    dto.getActual().setBudget(dto.getBudget());
+                }
+                if (dto.getActual().getCoacode() == null) {
+                    dto.getActual().setCoacode(dto.getCoacode());
+                }
+            }
+        }
+
+        // ---------------- grid + stable provider ----------------
+        Grid<FreightActualBudgetDTO> grid = new Grid<>();
+        grid.setWidthFull();
+        grid.setHeight("650px");
+
+        ListDataProvider<FreightActualBudgetDTO> dp = new ListDataProvider<>(rows);
+        grid.setDataProvider(dp);
+
+        // ---------------- editor ----------------
+        Editor<FreightActualBudgetDTO> editor = grid.getEditor();
+        Binder<FreightActualBudgetDTO> binder = new Binder<>(FreightActualBudgetDTO.class);
+        editor.setBinder(binder);
+        editor.setBuffered(true);
+
+        // ---------------- fixed columns ----------------
+        Grid.Column<FreightActualBudgetDTO> coaCol
+                = grid.addColumn(dto -> dto.getCoacode() != null ? dto.getCoacode().getCode() : "")
+                        .setHeader("COA")
+                        .setFrozen(true)
+                        .setAutoWidth(true)
+                        .setFlexGrow(0);
+
+        Grid.Column<FreightActualBudgetDTO> nameCol
+                = grid.addColumn(dto -> dto.getCoacode() != null ? dto.getCoacode().getName() : "")
+                        .setHeader("Account")
+                        .setAutoWidth(true)
+                        .setFlexGrow(1);
+
+        // ---------------- month config ----------------
+        record MonthCfg(
+                String label,
+                java.util.function.Function<FreightActualBudgetDTO, BigDecimal> budgetGetter,
+                java.util.function.Function<FreightActualVolumes, BigDecimal> actualGetter,
+                java.util.function.BiConsumer<FreightActualVolumes, BigDecimal> actualSetter) {
+
+        }
+
+        List<MonthCfg> months = List.of(
+                new MonthCfg("Jul", FreightActualBudgetDTO::getBudgetJul, FreightActualVolumes::getJul, FreightActualVolumes::setJul),
+                new MonthCfg("Aug", FreightActualBudgetDTO::getBudgetAug, FreightActualVolumes::getAug, FreightActualVolumes::setAug),
+                new MonthCfg("Sep", FreightActualBudgetDTO::getBudgetSep, FreightActualVolumes::getSep, FreightActualVolumes::setSep),
+                new MonthCfg("Oct", FreightActualBudgetDTO::getBudgetOct, FreightActualVolumes::getOct, FreightActualVolumes::setOct),
+                new MonthCfg("Nov", FreightActualBudgetDTO::getBudgetNov, FreightActualVolumes::getNov, FreightActualVolumes::setNov),
+                new MonthCfg("Dec", FreightActualBudgetDTO::getBudgetDec, FreightActualVolumes::getDec, FreightActualVolumes::setDec),
+                new MonthCfg("Jan", FreightActualBudgetDTO::getBudgetJan, FreightActualVolumes::getJan, FreightActualVolumes::setJan),
+                new MonthCfg("Feb", FreightActualBudgetDTO::getBudgetFeb, FreightActualVolumes::getFeb, FreightActualVolumes::setFeb),
+                new MonthCfg("Mar", FreightActualBudgetDTO::getBudgetMar, FreightActualVolumes::getMar, FreightActualVolumes::setMar),
+                new MonthCfg("Apr", FreightActualBudgetDTO::getBudgetApr, FreightActualVolumes::getApr, FreightActualVolumes::setApr),
+                new MonthCfg("May", FreightActualBudgetDTO::getBudgetMay, FreightActualVolumes::getMay, FreightActualVolumes::setMay),
+                new MonthCfg("Jun", FreightActualBudgetDTO::getBudgetJun, FreightActualVolumes::getJun, FreightActualVolumes::setJun)
+        );
+
+        List<Grid.Column<FreightActualBudgetDTO>> budgetMonthCols = new ArrayList<>();
+        List<Grid.Column<FreightActualBudgetDTO>> actualMonthCols = new ArrayList<>();
+
+        // ---------------- month columns ----------------
+        for (MonthCfg m : months) {
+
+            Grid.Column<FreightActualBudgetDTO> bCol
+                    = grid.addColumn(dto -> fmt.apply(nz.apply(m.budgetGetter().apply(dto))))
+                            .setHeader("Budget " + m.label())
+                            .setTextAlign(ColumnTextAlign.END)
+                            .setAutoWidth(true)
+                            .setFlexGrow(0);
+
+            budgetMonthCols.add(bCol);
+
+            TextField actualField = new TextField();
+            actualField.setWidthFull();
+            actualField.getStyle().set("text-align", "right");
+
+            binder.forField(actualField)
+                    .withNullRepresentation("")
+                    .withConverter(new com.vaadin.flow.data.converter.StringToBigDecimalConverter("Invalid number"))
+                    .bind(
+                            dto -> nz.apply(m.actualGetter().apply(dto.getActual())),
+                            (dto, value) -> m.actualSetter().accept(dto.getActual(), value)
+                    );
+
+            Grid.Column<FreightActualBudgetDTO> aCol
+                    = grid.addColumn(dto -> fmt.apply(nz.apply(m.actualGetter().apply(dto.getActual()))))
+                            .setHeader("Actual " + m.label())
+                            .setEditorComponent(actualField)
+                            .setTextAlign(ColumnTextAlign.END)
+                            .setAutoWidth(true)
+                            .setFlexGrow(0);
+
+            actualMonthCols.add(aCol);
+        }
+
+        // ---------------- totals + variance ----------------
+        Grid.Column<FreightActualBudgetDTO> budgetTotalCol
+                = grid.addColumn(dto -> fmt.apply(nz.apply(dto.getBudgetTotal())))
+                        .setHeader("Budget Total")
+                        .setTextAlign(ColumnTextAlign.END)
+                        .setFrozenToEnd(true)
+                        .setAutoWidth(true)
+                        .setFlexGrow(0);
+
+        Grid.Column<FreightActualBudgetDTO> actualTotalCol
+                = grid.addColumn(dto -> fmt.apply(actualTotal.apply(dto.getActual())))
+                        .setHeader("Actual Total")
+                        .setTextAlign(ColumnTextAlign.END)
+                        .setFrozenToEnd(true)
+                        .setAutoWidth(true)
+                        .setFlexGrow(0);
+
+        Grid.Column<FreightActualBudgetDTO> varianceCol
+                = grid.addColumn(dto -> fmt.apply(actualTotal.apply(dto.getActual()).subtract(nz.apply(dto.getBudgetTotal()))))
+                        .setHeader("Variance")
+                        .setTextAlign(ColumnTextAlign.END)
+                        .setFrozenToEnd(true)
+                        .setAutoWidth(true)
+                        .setFlexGrow(0);
+
+        // ---------------- edit column ----------------
+        Grid.Column<FreightActualBudgetDTO> editCol
+                = grid.addComponentColumn(dto -> {
+                    Button edit = new Button("Edit");
+                    edit.addClickListener(ev -> editor.editItem(dto));
+                    return edit;
+                })
+                        .setHeader("Edit")
+                        .setWidth("130px")
+                        .setFlexGrow(0)
+                        .setFrozenToEnd(true);
+
+        Button save = new Button("Save", e -> editor.save());
+        Button cancel = new Button("Cancel", e -> editor.cancel());
+        editCol.setEditorComponent(new HorizontalLayout(save, cancel));
+
+        // ---------------- footer ----------------
+        FooterRow footer = grid.appendFooterRow();
+
+        Runnable recalcFooter = () -> {
+            footer.getCell(nameCol).setComponent(boldLabel.apply("TOTAL"));
+
+            for (int i = 0; i < months.size(); i++) {
+                MonthCfg m = months.get(i);
+
+                BigDecimal bSum = rows.stream()
+                        .map(m.budgetGetter())
+                        .filter(Objects::nonNull)
+                        .reduce(ZERO, BigDecimal::add);
+
+                BigDecimal aSum = rows.stream()
+                        .map(FreightActualBudgetDTO::getActual)
+                        .filter(Objects::nonNull)
+                        .map(m.actualGetter())
+                        .filter(Objects::nonNull)
+                        .reduce(ZERO, BigDecimal::add);
+
+                footer.getCell(budgetMonthCols.get(i)).setComponent(boldNumber.apply(fmt.apply(bSum)));
+                footer.getCell(actualMonthCols.get(i)).setComponent(boldNumber.apply(fmt.apply(aSum)));
+            }
+
+            BigDecimal budgetGrand = rows.stream()
+                    .map(FreightActualBudgetDTO::getBudgetTotal)
+                    .filter(Objects::nonNull)
+                    .reduce(ZERO, BigDecimal::add);
+
+            BigDecimal actualGrand = rows.stream()
+                    .map(FreightActualBudgetDTO::getActual)
+                    .filter(Objects::nonNull)
+                    .map(actualTotal)
+                    .reduce(ZERO, BigDecimal::add);
+
+            footer.getCell(budgetTotalCol).setComponent(boldNumber.apply(fmt.apply(budgetGrand)));
+            footer.getCell(actualTotalCol).setComponent(boldNumber.apply(fmt.apply(actualGrand)));
+            footer.getCell(varianceCol).setComponent(boldNumber.apply(fmt.apply(actualGrand.subtract(budgetGrand))));
+        };
+
+        // initial footer
+        recalcFooter.run();
+
+        // ---------------- save handler (actuals only) ----------------
+        editor.addSaveListener(e -> {
+            try {
+                FreightActualVolumes fa = e.getItem().getActual();
+                fa.setTotal(actualTotal.apply(fa));
+                freightActualVolumesService.save(fa);
+
+                // close editor first
+                editor.cancel();
+
+                // refresh rows + footer
+                dp.refreshAll();
+                recalcFooter.run();
+
+            } catch (Exception ex) {
+                Notification.show("Save failed: " + ex.getMessage(), 5000, Notification.Position.MIDDLE);
+                ex.printStackTrace();
+            }
+        });
+
+        return grid;
+    }
+
+    private Grid<PassengerBudgetActualDTO> buildPassengerBudgetActualGrid(List<PassengerBudgetActualDTO> rows) {
+
+        final BigDecimal ZERO = BigDecimal.ZERO;
+
+        // ---------- helpers ----------
+        java.util.function.Function<BigDecimal, BigDecimal> nz = v -> v == null ? ZERO : v;
+
+        java.text.DecimalFormat FMT = new java.text.DecimalFormat("#,##0.####");
+        FMT.setGroupingUsed(true);
+        java.util.function.Function<BigDecimal, String> fmt = v -> v == null ? "" : FMT.format(v);
+
+        java.util.function.Function<PassengerServiceVolumes, BigDecimal> budgetTotal = b -> {
+            if (b == null) {
+                return ZERO;
+            }
+            return nz.apply(b.getJul()).add(nz.apply(b.getAug())).add(nz.apply(b.getSep()))
+                    .add(nz.apply(b.getOct())).add(nz.apply(b.getNov())).add(nz.apply(b.getDec()))
+                    .add(nz.apply(b.getJan())).add(nz.apply(b.getFeb())).add(nz.apply(b.getMar()))
+                    .add(nz.apply(b.getApr())).add(nz.apply(b.getMay())).add(nz.apply(b.getJun()));
+        };
+
+        java.util.function.Function<PassengerActualVolumes, BigDecimal> actualTotal = a -> {
+            if (a == null) {
+                return ZERO;
+            }
+            return nz.apply(a.getJul()).add(nz.apply(a.getAug())).add(nz.apply(a.getSep()))
+                    .add(nz.apply(a.getOct())).add(nz.apply(a.getNov())).add(nz.apply(a.getDec()))
+                    .add(nz.apply(a.getJan())).add(nz.apply(a.getFeb())).add(nz.apply(a.getMar()))
+                    .add(nz.apply(a.getApr())).add(nz.apply(a.getMay())).add(nz.apply(a.getJun()));
+        };
+
+        // Ensure both entities exist for editor safety
+        for (PassengerBudgetActualDTO dto : rows) {
+            if (dto.getBudgetRow() == null) {
+                PassengerServiceVolumes b = new PassengerServiceVolumes();
+                b.setBudget(dto.getBudget());
+                b.setCoacode(dto.getCoacode());
+                dto.setBudgetRow(b);
+            } else {
+                if (dto.getBudgetRow().getBudget() == null) {
+                    dto.getBudgetRow().setBudget(dto.getBudget());
+                }
+                if (dto.getBudgetRow().getCoacode() == null) {
+                    dto.getBudgetRow().setCoacode(dto.getCoacode());
+                }
+            }
+
+            if (dto.getActualRow() == null) {
+                PassengerActualVolumes a = new PassengerActualVolumes();
+                a.setBudget(dto.getBudget());
+                a.setCoacode(dto.getCoacode());
+                dto.setActualRow(a);
+            } else {
+                if (dto.getActualRow().getBudget() == null) {
+                    dto.getActualRow().setBudget(dto.getBudget());
+                }
+                if (dto.getActualRow().getCoacode() == null) {
+                    dto.getActualRow().setCoacode(dto.getCoacode());
+                }
+            }
+        }
+
+        // ---------- grid + stable dataprovider ----------
+        Grid<PassengerBudgetActualDTO> grid = new Grid<>();
+        grid.setWidthFull();
+        grid.setHeight("650px");
+
+        ListDataProvider<PassengerBudgetActualDTO> dp = new ListDataProvider<>(rows);
+        grid.setDataProvider(dp);
+
+        // VERY IMPORTANT: stable identity so refreshItem works after edits
+        dp.refreshAll();
+
+        Editor<PassengerBudgetActualDTO> editor = grid.getEditor();
+        Binder<PassengerBudgetActualDTO> binder = new Binder<>(PassengerBudgetActualDTO.class);
+        editor.setBinder(binder);
+        editor.setBuffered(true);
+
+        Grid.Column<PassengerBudgetActualDTO> coaCol
+                = grid.addColumn(dto -> dto.getCoacode() != null ? dto.getCoacode().getCode() : "")
+                        .setHeader("COA")
+                        .setFrozen(true)
+                        .setAutoWidth(true)
+                        .setFlexGrow(0);
+
+        Grid.Column<PassengerBudgetActualDTO> nameCol
+                = grid.addColumn(dto -> dto.getCoacode() != null ? dto.getCoacode().getName() : "")
+                        .setHeader("Account")
+                        .setAutoWidth(true)
+                        .setFlexGrow(1);
+
+        record MonthCfg(
+                String label,
+                java.util.function.Function<PassengerServiceVolumes, BigDecimal> bGet,
+                java.util.function.BiConsumer<PassengerServiceVolumes, BigDecimal> bSet,
+                java.util.function.Function<PassengerActualVolumes, BigDecimal> aGet,
+                java.util.function.BiConsumer<PassengerActualVolumes, BigDecimal> aSet) {
+
+        }
+
+        List<MonthCfg> months = List.of(
+                new MonthCfg("Jul", PassengerServiceVolumes::getJul, PassengerServiceVolumes::setJul, PassengerActualVolumes::getJul, PassengerActualVolumes::setJul),
+                new MonthCfg("Aug", PassengerServiceVolumes::getAug, PassengerServiceVolumes::setAug, PassengerActualVolumes::getAug, PassengerActualVolumes::setAug),
+                new MonthCfg("Sep", PassengerServiceVolumes::getSep, PassengerServiceVolumes::setSep, PassengerActualVolumes::getSep, PassengerActualVolumes::setSep),
+                new MonthCfg("Oct", PassengerServiceVolumes::getOct, PassengerServiceVolumes::setOct, PassengerActualVolumes::getOct, PassengerActualVolumes::setOct),
+                new MonthCfg("Nov", PassengerServiceVolumes::getNov, PassengerServiceVolumes::setNov, PassengerActualVolumes::getNov, PassengerActualVolumes::setNov),
+                new MonthCfg("Dec", PassengerServiceVolumes::getDec, PassengerServiceVolumes::setDec, PassengerActualVolumes::getDec, PassengerActualVolumes::setDec),
+                new MonthCfg("Jan", PassengerServiceVolumes::getJan, PassengerServiceVolumes::setJan, PassengerActualVolumes::getJan, PassengerActualVolumes::setJan),
+                new MonthCfg("Feb", PassengerServiceVolumes::getFeb, PassengerServiceVolumes::setFeb, PassengerActualVolumes::getFeb, PassengerActualVolumes::setFeb),
+                new MonthCfg("Mar", PassengerServiceVolumes::getMar, PassengerServiceVolumes::setMar, PassengerActualVolumes::getMar, PassengerActualVolumes::setMar),
+                new MonthCfg("Apr", PassengerServiceVolumes::getApr, PassengerServiceVolumes::setApr, PassengerActualVolumes::getApr, PassengerActualVolumes::setApr),
+                new MonthCfg("May", PassengerServiceVolumes::getMay, PassengerServiceVolumes::setMay, PassengerActualVolumes::getMay, PassengerActualVolumes::setMay),
+                new MonthCfg("Jun", PassengerServiceVolumes::getJun, PassengerServiceVolumes::setJun, PassengerActualVolumes::getJun, PassengerActualVolumes::setJun)
+        );
+
+        // For footer update method
+        List<PassengerMonthAccessor> monthAccessors = List.of(
+                new PassengerMonthAccessor(PassengerServiceVolumes::getJul, PassengerActualVolumes::getJul),
+                new PassengerMonthAccessor(PassengerServiceVolumes::getAug, PassengerActualVolumes::getAug),
+                new PassengerMonthAccessor(PassengerServiceVolumes::getSep, PassengerActualVolumes::getSep),
+                new PassengerMonthAccessor(PassengerServiceVolumes::getOct, PassengerActualVolumes::getOct),
+                new PassengerMonthAccessor(PassengerServiceVolumes::getNov, PassengerActualVolumes::getNov),
+                new PassengerMonthAccessor(PassengerServiceVolumes::getDec, PassengerActualVolumes::getDec),
+                new PassengerMonthAccessor(PassengerServiceVolumes::getJan, PassengerActualVolumes::getJan),
+                new PassengerMonthAccessor(PassengerServiceVolumes::getFeb, PassengerActualVolumes::getFeb),
+                new PassengerMonthAccessor(PassengerServiceVolumes::getMar, PassengerActualVolumes::getMar),
+                new PassengerMonthAccessor(PassengerServiceVolumes::getApr, PassengerActualVolumes::getApr),
+                new PassengerMonthAccessor(PassengerServiceVolumes::getMay, PassengerActualVolumes::getMay),
+                new PassengerMonthAccessor(PassengerServiceVolumes::getJun, PassengerActualVolumes::getJun)
+        );
+
+        List<Grid.Column<PassengerBudgetActualDTO>> budgetCols = new ArrayList<>();
+        List<Grid.Column<PassengerBudgetActualDTO>> actualCols = new ArrayList<>();
+
+        // ---------- month columns (Budget + Actual both editable) ----------
+        for (MonthCfg m : months) {
+
+            TextField bField = new TextField();
+            bField.setWidthFull();
+            bField.getStyle().set("text-align", "right");
+
+            binder.forField(bField)
+                    .withNullRepresentation("")
+                    .withConverter(new com.vaadin.flow.data.converter.StringToBigDecimalConverter("Invalid number"))
+                    .bind(
+                            dto -> nz.apply(m.bGet().apply(dto.getBudgetRow())),
+                            (dto, val) -> m.bSet().accept(dto.getBudgetRow(), val)
+                    );
+
+            Grid.Column<PassengerBudgetActualDTO> bCol
+                    = grid.addColumn(dto -> fmt.apply(nz.apply(m.bGet().apply(dto.getBudgetRow()))))
+                            .setHeader("Budget " + m.label())
+                            .setEditorComponent(bField)
+                            .setTextAlign(ColumnTextAlign.END)
+                            .setAutoWidth(true)
+                            .setFlexGrow(0);
+
+            budgetCols.add(bCol);
+
+            TextField aField = new TextField();
+            aField.setWidthFull();
+            aField.getStyle().set("text-align", "right");
+
+            binder.forField(aField)
+                    .withNullRepresentation("")
+                    .withConverter(new com.vaadin.flow.data.converter.StringToBigDecimalConverter("Invalid number"))
+                    .bind(
+                            dto -> nz.apply(m.aGet().apply(dto.getActualRow())),
+                            (dto, val) -> m.aSet().accept(dto.getActualRow(), val)
+                    );
+
+            Grid.Column<PassengerBudgetActualDTO> aCol
+                    = grid.addColumn(dto -> fmt.apply(nz.apply(m.aGet().apply(dto.getActualRow()))))
+                            .setHeader("Actual " + m.label())
+                            .setEditorComponent(aField)
+                            .setTextAlign(ColumnTextAlign.END)
+                            .setAutoWidth(true)
+                            .setFlexGrow(0);
+
+            actualCols.add(aCol);
+        }
+
+        // ---------- totals & variance ----------
+        Grid.Column<PassengerBudgetActualDTO> budgetTotalCol
+                = grid.addColumn(dto -> fmt.apply(budgetTotal.apply(dto.getBudgetRow())))
+                        .setHeader("Budget Total")
+                        .setTextAlign(ColumnTextAlign.END)
+                        .setFrozenToEnd(true)
+                        .setAutoWidth(true)
+                        .setFlexGrow(0);
+
+        Grid.Column<PassengerBudgetActualDTO> actualTotalCol
+                = grid.addColumn(dto -> fmt.apply(actualTotal.apply(dto.getActualRow())))
+                        .setHeader("Actual Total")
+                        .setTextAlign(ColumnTextAlign.END)
+                        .setFrozenToEnd(true)
+                        .setAutoWidth(true)
+                        .setFlexGrow(0);
+
+        Grid.Column<PassengerBudgetActualDTO> varianceCol
+                = grid.addColumn(dto -> fmt.apply(actualTotal.apply(dto.getActualRow()).subtract(budgetTotal.apply(dto.getBudgetRow()))))
+                        .setHeader("Variance")
+                        .setTextAlign(ColumnTextAlign.END)
+                        .setFrozenToEnd(true)
+                        .setAutoWidth(true)
+                        .setFlexGrow(0);
+
+        // ---------- edit column (frozen) ----------
+        Grid.Column<PassengerBudgetActualDTO> editCol
+                = grid.addComponentColumn(dto -> {
+                    Button edit = new Button("Edit");
+                    edit.addClickListener(ev -> editor.editItem(dto));
+                    return edit;
+                })
+                        .setHeader("Edit")
+                        .setWidth("140px")
+                        .setFlexGrow(0)
+                        .setFrozenToEnd(true);
+
+        Button save = new Button("Save", e -> editor.save());
+        Button cancel = new Button("Cancel", e -> editor.cancel());
+        editCol.setEditorComponent(new HorizontalLayout(save, cancel));
+
+        // ---------- footer ----------
+        FooterRow footer = grid.appendFooterRow();
+        updatePassengerFooter(
+                footer, rows, nameCol,
+                budgetCols, actualCols, monthAccessors,
+                budgetTotalCol, actualTotalCol, varianceCol
+        );
+
+        // ---------- save BOTH entities (stable refresh + always closes editor) ----------
+        editor.addSaveListener(e -> {
+            PassengerBudgetActualDTO dto = e.getItem();
+
+            // ✅ close editor first (prevents UI lock)
+            editor.cancel();
+
+            try {
+                PassengerServiceVolumes b = dto.getBudgetRow();
+                PassengerActualVolumes a = dto.getActualRow();
+
+                b.setTotal(budgetTotal.apply(b));
+                a.setTotal(actualTotal.apply(a));
+
+                passengerVolumesService.saveBoth(b, a);
+
+                // ✅ safe refresh for Vaadin 24
+                dp.refreshAll();
+
+                updatePassengerFooter(
+                        footer, rows, nameCol,
+                        budgetCols, actualCols, monthAccessors,
+                        budgetTotalCol, actualTotalCol, varianceCol
+                );
+
+            } catch (Exception ex) {
+                Notification.show(
+                        "Save failed: " + ex.getMessage(),
+                        5000,
+                        Notification.Position.MIDDLE
+                );
+                ex.printStackTrace();
+            }
+        });
+
+        // Optional: Esc cancels editor
+        grid.getElement().addEventListener("keydown", e -> editor.cancel())
+                .setFilter("event.key === 'Escape'");
+
+        return grid;
+    }
+
+    private record PassengerMonthAccessor(
+            java.util.function.Function<PassengerServiceVolumes, BigDecimal> budgetGetter,
+            java.util.function.Function<PassengerActualVolumes, BigDecimal> actualGetter) {
+
+    }
+
+    private void updatePassengerFooter(
+            FooterRow footer,
+            List<PassengerBudgetActualDTO> rows,
+            Grid.Column<PassengerBudgetActualDTO> nameCol,
+            List<Grid.Column<PassengerBudgetActualDTO>> budgetCols,
+            List<Grid.Column<PassengerBudgetActualDTO>> actualCols,
+            List<PassengerMonthAccessor> months,
+            Grid.Column<PassengerBudgetActualDTO> budgetTotalCol,
+            Grid.Column<PassengerBudgetActualDTO> actualTotalCol,
+            Grid.Column<PassengerBudgetActualDTO> varianceCol
+    ) {
+        final BigDecimal ZERO = BigDecimal.ZERO;
+
+        java.text.DecimalFormat fmt = new java.text.DecimalFormat("#,##0.####");
+        fmt.setGroupingUsed(true);
+
+        java.util.function.Function<BigDecimal, String> f
+                = v -> v == null ? "" : fmt.format(v);
+
+        java.util.function.Function<String, Span> boldLabel = text -> {
+            Span s = new Span(text);
+            s.getStyle().set("font-weight", "bold");
+            return s;
+        };
+
+        java.util.function.Function<String, Span> boldNumber = text -> {
+            Span s = new Span(text);
+            s.getStyle()
+                    .set("font-weight", "bold")
+                    .set("text-align", "right")
+                    .set("display", "block");
+            return s;
+        };
+
+        // Label cell
+        footer.getCell(nameCol).setComponent(boldLabel.apply("TOTAL"));
+
+        // Month totals
+        for (int i = 0; i < months.size(); i++) {
+            PassengerMonthAccessor m = months.get(i);
+
+            BigDecimal budgetSum = rows.stream()
+                    .map(PassengerBudgetActualDTO::getBudgetRow)
+                    .filter(Objects::nonNull)
+                    .map(m.budgetGetter())
+                    .filter(Objects::nonNull)
+                    .reduce(ZERO, BigDecimal::add);
+
+            BigDecimal actualSum = rows.stream()
+                    .map(PassengerBudgetActualDTO::getActualRow)
+                    .filter(Objects::nonNull)
+                    .map(m.actualGetter())
+                    .filter(Objects::nonNull)
+                    .reduce(ZERO, BigDecimal::add);
+
+            footer.getCell(budgetCols.get(i)).setComponent(boldNumber.apply(f.apply(budgetSum)));
+            footer.getCell(actualCols.get(i)).setComponent(boldNumber.apply(f.apply(actualSum)));
+        }
+
+        // Grand totals (compute from months to avoid relying on stored total fields)
+        BigDecimal budgetGrand = ZERO;
+        BigDecimal actualGrand = ZERO;
+
+        for (PassengerBudgetActualDTO dto : rows) {
+            PassengerServiceVolumes b = dto.getBudgetRow();
+            PassengerActualVolumes a = dto.getActualRow();
+
+            if (b != null) {
+                for (PassengerMonthAccessor m : months) {
+                    BigDecimal v = m.budgetGetter().apply(b);
+                    if (v != null) {
+                        budgetGrand = budgetGrand.add(v);
+                    }
+                }
+            }
+
+            if (a != null) {
+                for (PassengerMonthAccessor m : months) {
+                    BigDecimal v = m.actualGetter().apply(a);
+                    if (v != null) {
+                        actualGrand = actualGrand.add(v);
+                    }
+                }
+            }
+        }
+
+        footer.getCell(budgetTotalCol).setComponent(boldNumber.apply(f.apply(budgetGrand)));
+        footer.getCell(actualTotalCol).setComponent(boldNumber.apply(f.apply(actualGrand)));
+        footer.getCell(varianceCol).setComponent(boldNumber.apply(f.apply(actualGrand.subtract(budgetGrand))));
+    }
+
+    private BigDecimal calcTotal(BigDecimal... vals) {
+        BigDecimal t = BigDecimal.ZERO;
+        for (BigDecimal v : vals) {
+            if (v != null) {
+                t = t.add(v);
+            }
+        }
+        return t;
     }
 
     private void populateForm(FreightVolumes value) {
         this.freightVolumes = value;
         binder.readBean(this.freightVolumes);
 
+    }
+
+    private BigDecimal calculateActualTotal(FreightActualVolumes fa) {
+        if (fa == null) {
+            return BigDecimal.ZERO;
+        }
+        return Stream.of(
+                fa.getJul(), fa.getAug(), fa.getSep(),
+                fa.getOct(), fa.getNov(), fa.getDec(),
+                fa.getJan(), fa.getFeb(), fa.getMar(),
+                fa.getApr(), fa.getMay(), fa.getJun()
+        )
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public BigDecimal calculateTotalVolume() {
@@ -1819,6 +2450,28 @@ public class freightVolumeView extends Div {
     private void setBottomTopBorderForRegion(Sheet sheet, CellRangeAddress region) {
         RegionUtil.setBorderBottom(BorderStyle.DOUBLE, region, sheet);
         RegionUtil.setBorderTop(BorderStyle.THICK, region, sheet);
+    }
+
+    private String fmt(BigDecimal v) {
+        return v == null ? "" : VOLUME_FMT.format(v);
+    }
+
+    private BigDecimal sum(List<FreightActualBudgetDTO> rows,
+            java.util.function.Function<FreightActualBudgetDTO, BigDecimal> getter) {
+        return rows.stream()
+                .map(getter)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal sumActualMonth(List<FreightActualBudgetDTO> rows,
+            java.util.function.Function<FreightActualVolumes, BigDecimal> getter) {
+        return rows.stream()
+                .map(FreightActualBudgetDTO::getActual)
+                .filter(Objects::nonNull)
+                .map(getter)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
 }

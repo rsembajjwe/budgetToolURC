@@ -1,9 +1,11 @@
 package com.methaltech.application.data.bgtool.repository;
 
+import com.methaltech.application.data.Display;
 import com.methaltech.application.data.MonthlySumResponseFreight;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.FreightVolumes;
+import jakarta.persistence.Tuple;
 import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -64,4 +66,34 @@ public interface FreightVolumesRepository extends JpaRepository<FreightVolumes, 
         WHERE f.budget = :budget
     """)
     List<COA> findDistinctCoacodeByBudget(@Param("budget") Budget budget);
+    
+     @Query("""
+        SELECT
+            fb.coacode as coacode,
+            fb.budget  as budget,
+
+            SUM(fb.jul) as budgetJul,
+            SUM(fb.aug) as budgetAug,
+            SUM(fb.sep) as budgetSep,
+            SUM(fb.oct) as budgetOct,
+            SUM(fb.nov) as budgetNov,
+            SUM(fb.dec) as budgetDec,
+
+            SUM(fb.jan) as budgetJan,
+            SUM(fb.feb) as budgetFeb,
+            SUM(fb.mar) as budgetMar,
+            SUM(fb.apr) as budgetApr,
+            SUM(fb.may) as budgetMay,
+            SUM(fb.jun) as budgetJun,
+
+            SUM(fb.total) as budgetTotal
+        FROM FreightVolumes fb
+        WHERE fb.budget.id = :budgetId
+          AND fb.coacode.display = :display
+        GROUP BY fb.coacode, fb.budget
+    """)
+    List<Tuple> sumBudgetByCoa(
+            @Param("budgetId") Long budgetId,
+            @Param("display") Display display
+    );
 }

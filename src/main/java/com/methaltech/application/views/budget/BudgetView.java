@@ -429,7 +429,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         add(splitLayout);
         procclass.setItems(ProcClass.Works, ProcClass.Supplies, ProcClass.Consultancy, ProcClass.Non_Consultancy, ProcClass.Disposal, ProcClass.Other);
         Coalevel1Box1 = new ComboBox<>("Class 1");
-        displayBox.setItems(Display.GENERAL, Display.FREIGHT, Display.SALARIES);
+        displayBox.setItems(Display.GENERAL, Display.FREIGHT, Display.SALARIES,Display.PASSENGER);
         COASearchField1.setClearButtonVisible(true);
         COASearchField1.setPlaceholder("Filter by name or code");
         COASearchField1.setPrefixComponent(VaadinIcon.SEARCH.create());

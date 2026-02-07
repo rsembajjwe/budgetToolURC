@@ -91,18 +91,19 @@ public class PerformanceExcelExportService {
 
                 // ===== REPORT HEADER =====
                 row = addReportHeader(sheet, ctx, row);
-
+                row = addSectionTitle(sheet, "1. FINANCIAL PERFORMANCE", row);
                 // ===== FINANCIAL SECTION =====
                 row = addSectionTitle(sheet, "1. FINANCIAL PERFORMANCE", row);
                 row = buildFinancialTable(
                         sheet, ctx, report,
                         row, headerStyle, bodyStyle, moneyStyle
                 );
+                row = addSectionTitle(sheet, report.getSheetname(), row);
 
                 row += 2;
 
                 // ===== PHYSICAL SECTION =====
-                row = addSectionTitle(sheet, "2. PHYSICAL PERFORMANCE", row);
+                
 
                 List<Urc_Activities> activities
                         = activitiesService.findByDeptSectionAndBudget(
@@ -137,6 +138,7 @@ public class PerformanceExcelExportService {
         row = mergedTitle(sheet, row,
                 ctx.getFinancialYear() + " – Quarter " + ctx.getQuarter(),
                 false, 10);
+        
 
         return row + 1;
     }
@@ -256,39 +258,48 @@ public class PerformanceExcelExportService {
     // =================================================
     // PHYSICAL TABLE
     // =================================================
-    private void buildPhysicalTable(
-            Sheet sheet,
-            List<Urc_Activities> activities,
-            PerformanceReportContext ctx,
-            int row,
-            CellStyle header,
-            CellStyle body
-    ) {
+private int buildPhysicalTable(
+        Sheet sheet,
+        List<Urc_Activities> activities,
+        PerformanceReportContext ctx,
+        int row,
+        CellStyle header,
+        CellStyle body
+) {
+    // ================= HEADER =================
+    String[] headers = {
+        "URC Programme",
+        "Activity",
+        "Indicator",
+        "Annual Target",
+        "Cumulative Achievement",
+        "Actual",
+        "Explanation"
+    };
 
-        String[] headers = {
-            "URC Programme",
-            "Activity",
-            "Indicator",
-            "Annual Target",
-            "Cumulative Achievement",
-            "Actual",
-            "Explanation"
-        };
+    Row headerRow = sheet.createRow(row++);
+    for (int i = 0; i < headers.length; i++) {
+        Cell c = headerRow.createCell(i);
+        c.setCellValue(headers[i]);
+        c.setCellStyle(header);
+    }
 
-        Row headerRow = sheet.createRow(row++);
-        for (int i = 0; i < headers.length; i++) {
-            Cell c = headerRow.createCell(i);
-            c.setCellValue(headers[i]);
-            c.setCellStyle(header);
-        }
+    // ================= GROUP BY URC_Priority_Areas =================
+    Map<String, List<Urc_Activities>> grouped = activities.stream()
+            .collect(Collectors.groupingBy(act -> 
+                    act.getUrcPriorityAreas() != null 
+                    ? act.getUrcPriorityAreas().getName() : "—"
+            ));
 
-        for (Urc_Activities act : activities) {
+    for (Map.Entry<String, List<Urc_Activities>> entry : grouped.entrySet()) {
+        String areaName = entry.getKey();
+        List<Urc_Activities> acts = entry.getValue();
 
+        int startRow = row;
+
+        for (Urc_Activities act : acts) {
             Row r = sheet.createRow(row++);
 
-            writeCell(r, 0,
-                    act.getUrcPriorityAreas() != null
-                    ? act.getUrcPriorityAreas().getName() : "—", body);
             writeCell(r, 1, act.getName(), body);
             writeCell(r, 2, act.getPerformanceIndicator(), body);
             writeCell(r, 3, act.getAnnualTarget(), body);
@@ -296,7 +307,34 @@ public class PerformanceExcelExportService {
             writeCell(r, 5, getActualAchievement(act, ctx), body);
             writeCell(r, 6, getVariation(act, ctx.getQuarter()), body);
         }
+
+        // Merge URC Programme cells vertically
+        if (acts.size() > 1) {
+            sheet.addMergedRegion(new CellRangeAddress(
+                    startRow,           // first row
+                    row - 1,            // last row
+                    0,                  // first column
+                    0                   // last column
+            ));
+
+            // Reapply vertical borders to merged cells
+            for (int rIdx = startRow; rIdx < row; rIdx++) {
+                Row mergeRow = sheet.getRow(rIdx);
+                if (mergeRow == null) mergeRow = sheet.createRow(rIdx);
+                Cell c = mergeRow.getCell(0);
+                if (c == null) c = mergeRow.createCell(0);
+                c.setCellStyle(body);
+            }
+        }
+
+        // Write area name in the first row of the group
+        Row firstRow = sheet.getRow(startRow);
+        writeCell(firstRow, 0, areaName, body);
     }
+
+    return row;
+}
+
 
     // =================================================
     // BUSINESS HELPERS
@@ -372,7 +410,7 @@ public class PerformanceExcelExportService {
                 a.getBudget(), ctx.getQuarter()
         );
         return formatter.format(
-                qtrReleasesService.getTotalAmountByPeriodsAndActivity(p, a)
+                qtrReleasesService.getTotalAmountByPeriodsAndActivity(p, a).abs()
         );
     }
 
@@ -437,6 +475,7 @@ public class PerformanceExcelExportService {
         CellStyle s = wb.createCellStyle();
         s.setFont(f);
         s.setBorderBottom(BorderStyle.THIN);
+        
         s.setWrapText(true);
         return s;
     }

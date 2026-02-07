@@ -40,6 +40,8 @@ public interface CoaRepository extends JpaRepository<COA, Long> {
 
     List<COA> findByBudget(Budget oldbudget);
     // List<COA> findByCode(String code);
+    
+    List<COA> findByBudgetIdAndDisplayOrderByCodeAsc(Long budgetId, Display display);
 
     //COA findByCodeAndBudget(String code, Budget budget);
     @Query("SELECT c FROM COA c LEFT JOIN FETCH c.dsections WHERE c.code = :code AND c.stateOpen = true AND c.budget = :budget")

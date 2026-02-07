@@ -1,5 +1,5 @@
 package com.methaltech.application.data;
 
 public enum Display {
-    GENERAL,FREIGHT, SALARIES;
+    GENERAL,FREIGHT, SALARIES,PASSENGER;
 }
