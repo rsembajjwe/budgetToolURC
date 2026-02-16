@@ -1,5 +1,7 @@
 package com.methaltech.application.data.bgtool.repository;
 
+import com.methaltech.application.data.Classification2;
+import com.methaltech.application.data.Classification3;
 import com.methaltech.application.data.Display;
 import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.entity.bgtool.Budget;
@@ -10,6 +12,7 @@ import com.methaltech.application.data.entity.bgtool.D_Unit;
 import com.methaltech.application.data.entity.bgtool.Organisation;
 import com.methaltech.application.data.entity.bgtool.Section;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -40,7 +43,7 @@ public interface CoaRepository extends JpaRepository<COA, Long> {
 
     List<COA> findByBudget(Budget oldbudget);
     // List<COA> findByCode(String code);
-    
+
     List<COA> findByBudgetIdAndDisplayOrderByCodeAsc(Long budgetId, Display display);
 
     //COA findByCodeAndBudget(String code, Budget budget);
@@ -539,5 +542,10 @@ public interface CoaRepository extends JpaRepository<COA, Long> {
             + "WHERE c.budget = :budget AND c.organisation IS NULL AND c.stateOpen = true "
             + "ORDER BY c.code ASC")
     List<COA> findUnassignedForExport(@Param("budget") Budget budget);
+
+    List<COA> findByCodeIn(Collection<String> codes);
+
+    List<COA> findByBudgetAndClass3(Budget budget, Classification3 class3);
+    List<COA> findByBudgetAndClass2(Budget budget, Classification2 class2);
 
 }

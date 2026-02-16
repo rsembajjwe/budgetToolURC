@@ -1,5 +1,8 @@
 package com.methaltech.application.data.entity.bgtool;
 
+import com.methaltech.application.data.Classification1;
+import com.methaltech.application.data.Classification2;
+import com.methaltech.application.data.Classification3;
 import com.methaltech.application.data.Display;
 import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.Role;
@@ -31,7 +34,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString(exclude = {"id", "code", "budget", "coalevel1", "coalevel11", "coalevel12", "coalevel13", "dsections"})
 public @Data
-class COA  implements Serializable{
+class COA implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -73,17 +76,25 @@ class COA  implements Serializable{
     @Column(name = "PROC_CLASS") // You can customize the column name if needed
     private ProcClass procclass;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "CLASS1")
+    private Classification1 class1;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "CLASS2")
+    private Classification2 class2;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "CLASS3")
+    private Classification3 class3;
+
     @ManyToMany(cascade = CascadeType.MERGE, fetch = FetchType.EAGER)
     @JoinTable(name = "coa_deptsection")
     private Set<UrcDeptSectionAnlDimbgt> deptsection;
-    
+
     String statCode;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organisation_id")
     private Organisation organisation;
-
-
 
     // Helper methods for organisation relationship
     public void setOrganisation(Organisation organisation) {
@@ -109,41 +120,49 @@ class COA  implements Serializable{
     // Helper methods for hierarchy
     public String getFullHierarchy() {
         StringBuilder hierarchy = new StringBuilder();
-        
+
         if (coalevel1 != null) {
             hierarchy.append(coalevel1.getName());
         }
-        
+
         if (coalevel11 != null) {
-            if (hierarchy.length() > 0) hierarchy.append(" > ");
+            if (hierarchy.length() > 0) {
+                hierarchy.append(" > ");
+            }
             hierarchy.append(coalevel11.getName());
         }
-        
+
         if (coalevel12 != null) {
-            if (hierarchy.length() > 0) hierarchy.append(" > ");
+            if (hierarchy.length() > 0) {
+                hierarchy.append(" > ");
+            }
             hierarchy.append(coalevel12.getName());
         }
-        
+
         if (coalevel13 != null) {
-            if (hierarchy.length() > 0) hierarchy.append(" > ");
+            if (hierarchy.length() > 0) {
+                hierarchy.append(" > ");
+            }
             hierarchy.append(coalevel13.getName());
         }
-        
+
         return hierarchy.toString();
     }
 
     public String getShortHierarchy() {
         StringBuilder hierarchy = new StringBuilder();
-        
+
         if (coalevel1 != null) {
             hierarchy.append(coalevel1.getCode() != null ? coalevel1.getCode() : coalevel1.getName());
         }
-        
+
         if (coalevel11 != null) {
-            if (hierarchy.length() > 0) hierarchy.append("-");
-           // hierarchy.append(coalevel11.getCode() != null ? coalevel11.getCode() : coalevel11.getName());
+            if (hierarchy.length() > 0) {
+                hierarchy.append("-");
+            }
+            // hierarchy.append(coalevel11.getCode() != null ? coalevel11.getCode() : coalevel11.getName());
         }
-        
+
         return hierarchy.toString();
     }
 
@@ -192,39 +211,42 @@ class COA  implements Serializable{
     }
 
     public int getHierarchyLevel() {
-        if (coalevel13 != null) return 4;
-        if (coalevel12 != null) return 3;
-        if (coalevel11 != null) return 2;
-        if (coalevel1 != null) return 1;
+        if (coalevel13 != null) {
+            return 4;
+        }
+        if (coalevel12 != null) {
+            return 3;
+        }
+        if (coalevel11 != null) {
+            return 2;
+        }
+        if (coalevel1 != null) {
+            return 1;
+        }
         return 0;
     }
 
     public boolean hasSections() {
-        return (dsections != null && !dsections.isEmpty()) || 
-               (deptsection != null && !deptsection.isEmpty());
+        return (dsections != null && !dsections.isEmpty())
+                || (deptsection != null && !deptsection.isEmpty());
     }
 
     public int getTotalSectionsCount() {
         int count = 0;
-        if (dsections != null) count += dsections.size();
-        if (deptsection != null) count += deptsection.size();
+        if (dsections != null) {
+            count += dsections.size();
+        }
+        if (deptsection != null) {
+            count += deptsection.size();
+        }
         return count;
     }
 
-    // Display methods
-    /*   public String getDisplayText() {
-    return display != null ? display.getDisplayName() : "Not Set";
-    }
-    
-    public String getProcClassText() {
-    return procclass != null ? procclass.getDisplayName() : "Not Set";
-    }*/
-
     // Validation methods
     public boolean isValidForAssignment() {
-        return code != null && !code.trim().isEmpty() && 
-               name != null && !name.trim().isEmpty() && 
-               budget != null && stateOpen;
+        return code != null && !code.trim().isEmpty()
+                && name != null && !name.trim().isEmpty()
+                && budget != null && stateOpen;
     }
 
     public String getValidationMessage() {
@@ -246,8 +268,12 @@ class COA  implements Serializable{
     // Equals and hashCode based on code only to avoid lazy loading issues
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof COA)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof COA)) {
+            return false;
+        }
         COA coa = (COA) o;
         return code != null && code.equals(coa.code);
     }

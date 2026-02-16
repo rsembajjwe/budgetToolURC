@@ -1,0 +1,33 @@
+
+
+/* Make "Details" look like it spans 2 rows:
+   remove the border between the two header rows in the Details column */
+vaadin-grid.perf-grid::part(header-cell)[part~="details-col-top"] {
+  border-bottom: 0;
+}
+vaadin-grid.perf-grid::part(header-cell)[part~="details-col-mid"] {
+  border-top: 0;
+}
+
+/* Center the FY band headers */
+vaadin-grid.perf-grid::part(header-cell-content),
+vaadin-grid-tree-grid.perf-grid::part(header-cell-content) {
+  justify-content: center;
+  white-space: nowrap;
+}
+
+
+vaadin-grid.perf-grid::part(header-cell),
+vaadin-grid-tree-grid.perf-grid::part(header-cell) {
+  background: #ffeb3b;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(0,0,0,0.15);
+}
+
+vaadin-grid.perf-grid::part(header-cell-content),
+vaadin-grid-tree-grid.perf-grid::part(header-cell-content) {
+  justify-content: center;
+  white-space: nowrap;
+}
+
+

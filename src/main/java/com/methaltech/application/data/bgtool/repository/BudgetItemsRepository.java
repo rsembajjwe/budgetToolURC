@@ -1132,14 +1132,39 @@ group by bi.deptUnit.id
             @Param("budget") Budget budget,
             @Param("coacode") List<COA> coacode);
 
-    @Query("SELECT SUM(b.jul) + SUM(b.aug) + SUM(b.sep) + SUM(b.oct) + SUM(b.nov) + SUM(b.dec) + "
-            + "SUM(b.jan) + SUM(b.feb) + SUM(b.mar) + SUM(b.apr) + SUM(b.may) + SUM(b.jun) as totalSum "
-            + "FROM BudgetItems b "
-            + "WHERE b.budget = :budget "
-            + "AND b.coacode IN :coacode")
+    @Query("""
+    SELECT COALESCE(
+        SUM(
+            COALESCE(b.jul,0) + COALESCE(b.aug,0) + COALESCE(b.sep,0) +
+            COALESCE(b.oct,0) + COALESCE(b.nov,0) + COALESCE(b.dec,0) +
+            COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0) +
+            COALESCE(b.apr,0) + COALESCE(b.may,0) + COALESCE(b.jun,0)
+        ), 0
+    )
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+    AND b.coacode IN :coacode
+""")
     BigDecimal findSumOfTotalMonthsByBudgetCoa(
             @Param("budget") Budget budget,
             @Param("coacode") List<COA> coacode);
+
+    @Query("""
+    SELECT COALESCE(
+        SUM(
+            COALESCE(b.jul,0) + COALESCE(b.aug,0) + COALESCE(b.sep,0) +
+            COALESCE(b.oct,0) + COALESCE(b.nov,0) + COALESCE(b.dec,0) +
+            COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0) +
+            COALESCE(b.apr,0) + COALESCE(b.may,0) + COALESCE(b.jun,0)
+        ), 0
+    )
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+    AND b.coacode = :coacode
+""")
+    BigDecimal findSumOfTotalMonthsByBudgetCoa(
+            @Param("budget") Budget budget,
+            @Param("coacode") COA coacode);
 
     @Query("SELECT b FROM BudgetItems b "
             + "WHERE b.budgetType IN (:budgetTypes) "

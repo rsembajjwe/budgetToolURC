@@ -1,5 +1,7 @@
 package com.methaltech.application.data.bgtool.service;
 
+import com.methaltech.application.data.Classification2;
+import com.methaltech.application.data.Classification3;
 import com.methaltech.application.data.Display;
 import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.bgtool.repository.CoaRepository;
@@ -266,10 +268,10 @@ public class CoaService {
     public List<COA> findByDeptSectionAndCodeStartingWith(UrcDeptSectionAnlDimbgt section, String code, Budget budget) {
         return coaRepository.findByDeptSectionAndCodeStartingWithAndStateOpen(section, code, budget);
     }
-    
+
     public List<COA> findByDeptSectionAndCodeStartingWith2Or3AndStateOpen(UrcDeptSectionAnlDimbgt section, Budget budget) {
-        return coaRepository.findByDeptSectionAndCodeStartingWith2Or3AndStateOpen(section,  budget);
-    }    
+        return coaRepository.findByDeptSectionAndCodeStartingWith2Or3AndStateOpen(section, budget);
+    }
 
     public List<COA> findByBudgetAndDisplay(Budget budget, Display display) {
         return coaRepository.findByBudgetAndDisplay(budget, display);
@@ -889,4 +891,24 @@ public class CoaService {
                 .collect(Collectors.toSet());
     }
 
+    @Transactional(readOnly = true)
+    public List<COA> findByBudgetAndClass3(Budget budget, Classification3 class3) {
+        if (budget == null) {
+            throw new IllegalArgumentException("budgetId must not be null");
+        }
+        if (class3 == null) {
+            throw new IllegalArgumentException("class3 must not be null");
+        }
+        return coaRepository.findByBudgetAndClass3(budget, class3);
+    }
+    @Transactional(readOnly = true)
+    public List<COA> findByBudgetAndClass2(Budget budget, Classification2 class2) {
+        if (budget == null) {
+            throw new IllegalArgumentException("budgetId must not be null");
+        }
+        if (class2 == null) {
+            throw new IllegalArgumentException("class3 must not be null");
+        }
+        return coaRepository.findByBudgetAndClass2(budget, class2);
+    }
 }

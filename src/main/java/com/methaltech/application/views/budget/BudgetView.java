@@ -1,5 +1,8 @@
 package com.methaltech.application.views.budget;
 
+import com.methaltech.application.data.Classification1;
+import com.methaltech.application.data.Classification2;
+import com.methaltech.application.data.Classification3;
 import com.methaltech.application.data.Display;
 import com.methaltech.application.data.PeriodExtractor;
 import com.methaltech.application.data.ProcClass;
@@ -40,6 +43,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.Pre;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -58,6 +62,8 @@ import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.treegrid.TreeGrid;
+import com.vaadin.flow.component.upload.Upload;
+import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LitRenderer;
@@ -74,6 +80,7 @@ import jakarta.annotation.security.RolesAllowed;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
@@ -320,6 +327,9 @@ public class BudgetView extends Div implements BeforeEnterObserver {
 
     private ComboBox<Coalevel1> Coalevel1Box = new ComboBox<>("Class 1");
     private ComboBox<Display> displayBox = new ComboBox<>("Display");
+    private ComboBox<Classification1> class1 = new ComboBox<>("Classification 1");
+    private ComboBox<Classification2> class2 = new ComboBox<>("Classification 2");
+    private ComboBox<Classification3> class3 = new ComboBox<>("Classification 3");
     private ComboBox<Coalevel1> Coalevel1Box1 = new ComboBox<>("Class 1");
     private TextField COANameField = new TextField("Name");
     private TextField CodeField = new TextField("Code");
@@ -365,6 +375,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     private final UrcDepartmentAnlDimService sampleUrcAnlCodeService;
 
     List<StreamResource> downloadQueue = new ArrayList<>();
+    private final CoaClassificationImportService service;
 
     @Autowired
     public BudgetView(BudgetService sampleBudgetService, CurrencyDataService sampleCurrencyDataService,
@@ -378,10 +389,10 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             National_Budget_Focus_AreasService sampleNational_Budget_Focus_AreasService,
             Urc_ActivitiesService sampleUrc_ActivitiesService, URC_Strategic_PlanService sampleURC_Strategic_PlanService,
             URC_Priority_AreasService sampleURC_Priority_AreasService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService,
-             BudgetItemsService budgetItemsService,
+            BudgetItemsService budgetItemsService,
             ProcurementTypeService sampleProcurementTypeService, FundsourceService fundsourceService,
             UrcDepartmentAnlDimService sampleUrcAnlCodeService, DeptSectionMergerService sampleDeptSectionMergerService,
-            FreightVolumesService sampleFreightVolumesService) {
+            FreightVolumesService sampleFreightVolumesService,CoaClassificationImportService service) {
         this.sampleBudgetService = sampleBudgetService;
         this.sampleCurrencyDataService = sampleCurrencyDataService;
         this.sampleCurrencyService = sampleCurrencyService;
@@ -412,6 +423,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         this.fundsourceService = fundsourceService;
         this.sampleUrcAnlCodeService = sampleUrcAnlCodeService;
         this.sampleDeptSectionMergerService = sampleDeptSectionMergerService;
+        this.service=service;
         addClassNames("budget-view");
 
         // Create UI
@@ -429,7 +441,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         add(splitLayout);
         procclass.setItems(ProcClass.Works, ProcClass.Supplies, ProcClass.Consultancy, ProcClass.Non_Consultancy, ProcClass.Disposal, ProcClass.Other);
         Coalevel1Box1 = new ComboBox<>("Class 1");
-        displayBox.setItems(Display.GENERAL, Display.FREIGHT, Display.SALARIES,Display.PASSENGER);
+        displayBox.setItems(Display.GENERAL, Display.FREIGHT, Display.SALARIES, Display.PASSENGER);
         COASearchField1.setClearButtonVisible(true);
         COASearchField1.setPlaceholder("Filter by name or code");
         COASearchField1.setPrefixComponent(VaadinIcon.SEARCH.create());
@@ -621,7 +633,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             dialog.add(createOrganisationGridDialogLayout());
             dialog.open();
         });
-        
+
         /*        createIconItem(budgetStructure, VaadinIcon.BUILDING, "COA-Budget Category", null, true).addClickListener(e -> {
         
         Dialog dialog = new Dialog();
@@ -639,8 +651,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         dialog.add(createOrganisationGridDialogLayout());
         
         dialog.open();
-        });   */     
-
+        });   */
         createIconItem(workplanView, VaadinIcon.BRIEFCASE, "Budget NPDIIII Alignment", null, true).addClickListener(e -> {
             Dialog workplanDialog = new Dialog();
             workplanDialog.getElement().setAttribute("aria-label", "Add note");
@@ -1162,7 +1173,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
         //Optional<UUID> samplePersonId = event.getRouteParameters().get(BUDGET_ID).map(UUID::fromString);
-        Optional<Long> samplePersonId = event.getRouteParameters() .get(BUDGET_ID).map(Long::parseLong);
+        Optional<Long> samplePersonId = event.getRouteParameters().get(BUDGET_ID).map(Long::parseLong);
 
         if (samplePersonId.isPresent()) {
             Optional<Budget> samplePersonFromBackend = sampleBudgetService.get(samplePersonId.get());
@@ -2663,7 +2674,14 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         COANameField = new TextField("Name");
         COANameField.setPlaceholder("Account Name");
         Button refreshCurrencyTable = new Button("Refresh");
-
+        class1.setItems(Classification1.Administration_Expenses, Classification1.Consumption_of_Fixed_Assets, Classification1.Direct_Expenses, Classification1.Fixed_Assets, Classification1.Non_Recurrent_Income, Classification1.Other_Administration_Expenses, Classification1.Recurrent_Income);
+        class2.setItems(Classification2.Board_Legal_Expenses, Classification2.Communication_Expenses, Classification2.Finance_Costs,
+                Classification2.Freight_Services, Classification2.Fuels_Lubricant_Oil, Classification2.General_Expenses, Classification2.Insurance_Licenses,
+                Classification2.Maintenance, Classification2.Miscellaneous_Income, Classification2.Miscellaneous_Other_Expenses, Classification2.Other_Fees_Charges,
+                Classification2.Other_Fees_Charges, Classification2.Other_Fees_Charges, Classification2.Passenger_Service_Expenses, Classification2.Passenger_Ticket_Sales,
+                Classification2.Passenger_Ticket_Sales, Classification2.Personel_Costs, Classification2.Rent_Income, Classification2.Rent_Income,
+                Classification2.Supplies_Services, Classification2.Travel_Transport, Classification2.Utilities, Classification2.Utility_Property_Expenses);
+        class3.setItems(Classification3.Northern_Route, Classification3.Southern_Route);
         Button selectallUnits = new Button("Select all");
 
         HorizontalLayout layContainer = new HorizontalLayout();
@@ -2686,10 +2704,6 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         // Coalevel1Box = new ComboBox("Class 1");
         Coalevel1Box.setPlaceholder("Select COA Category");
 
-        //Coalevel12Box = new ComboBox("Screen View Category");
-        //Coalevel12Box.setPlaceholder("Select Screen View Category");
-        //Coalevel13Box = new ComboBox("COA Sub Category 2");
-        //Coalevel13Box.setPlaceholder("Select COA Sub Category 2");
         sections.setItemLabelGenerator(UrcDeptSectionAnlDimbgt::getNAME);
         sections.setItems(query -> sampleUrcDeptSectionAnlDimbgtService.findByANL_CODEStartingWithD2(PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query))).stream());
         HorizontalLayout buttonLayoutrefresh = new HorizontalLayout();
@@ -2707,7 +2721,41 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         sections.setWidthFull();
         buttonLayoutrefresh.setWidth("100%");
         buttonLayoutrefresh.setAlignItems(Alignment.BASELINE);
-        FormLayout dialogLayout = new FormLayout(label, new Hr(), CodeField, COANameField, procclass, displayBox, checkbox, buttonLayoutrefresh);
+
+        Pre log = new Pre();
+        MemoryBuffer buffer = new MemoryBuffer();
+        Upload upload = new Upload(buffer);
+        upload.setAcceptedFileTypes(".xlsx");
+        upload.setMaxFiles(1);
+        upload.setDropAllowed(true);
+
+        upload.addSucceededListener(e -> {
+            try (InputStream in = buffer.getInputStream()) {
+                CoaClassificationImportService.ImportResult result = service.importAndUpdate(in);
+                log.setText(String.join("\n", result.messages()));
+                Notification.show("Updated: " + result.updated()
+                        + " | Missing: " + result.missingCodes()
+                        + " | Failed: " + result.failedRows(),
+                        4000, Notification.Position.TOP_END);
+            } catch (Exception ex) {
+                log.setText("ERROR: " + ex.getMessage());
+                Notification.show("Import failed: " + ex.getMessage(),
+                        6000, Notification.Position.MIDDLE);
+            }
+        });
+
+        Button clear = new Button("Clear Log", ev -> log.setText(""));
+
+        log.setWidthFull();
+        log.getStyle()
+                .set("white-space", "pre-wrap")
+                .set("overflow", "auto")
+                .set("background", "#111")
+                .set("color", "#0f0")
+                .set("padding", "10px");
+        log.setText("Waiting for upload...");
+        FormLayout dialogLayout = new FormLayout(label, new Hr(), CodeField, COANameField, procclass, displayBox, checkbox, class1, class2, class3, buttonLayoutrefresh,upload, clear, new Text("Import Log:"), log);
+        
         /*        dialogLayout.setPadding(true);
         dialogLayout.setSpacing(false);
         dialogLayout.setAlignItems(FlexComponent.Alignment.STRETCH);*/
@@ -2725,7 +2773,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             // Coalevel11Box.clear();
             // Coalevel12Box.clear();
             CodeField.clear();
-            COANameField.clear();
+            COANameField.clear();class1.clear(); class2.clear(); class3.clear();
 
             coaSAVE = new COA();
             gridCOA.deselectAll();
@@ -2767,11 +2815,9 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             clearFormCOA();
             if (event.getValue() != null) {
                 sampleCOA = sampleCoaService.findByCodeAndBudgetWithDSections(event.getValue().getAcntCode(), sampleBudget);
-                
-               // sampleCOA = sampleCoaService.findByCodeAndBudget(event.getValue().getAcntCode(), sampleBudget);
 
+                // sampleCOA = sampleCoaService.findByCodeAndBudget(event.getValue().getAcntCode(), sampleBudget);
                 if (sampleCOA != null) {
-                 
 
                     COANameField.setValue(event.getValue().getDescr());
                     CodeField.setValue(event.getValue().getAcntCode());
@@ -2782,7 +2828,15 @@ public class BudgetView extends Div implements BeforeEnterObserver {
                     if (sampleCOA.getProcclass() != null) {
                         procclass.setValue(sampleCOA.getProcclass());
                     }
-
+                    if (sampleCOA.getClass1() != null) {
+                        class1.setValue(sampleCOA.getClass1());
+                    }
+                    if (sampleCOA.getClass2() != null) {
+                        class2.setValue(sampleCOA.getClass2());
+                    }
+                    if (sampleCOA.getClass3() != null) {
+                        class3.setValue(sampleCOA.getClass3());
+                    }
                     coaunits.clear();
                     if (!sampleCOA.getDsections().isEmpty()) {
                         coaunits.select(new HashSet<>(sampleCOA.getDsections()));
@@ -2798,8 +2852,17 @@ public class BudgetView extends Div implements BeforeEnterObserver {
                     if (sampleCOA.getProcclass() != null) {
                         procclass.setValue(sampleCOA.getProcclass());
                     }
+                    if (sampleCOA.getClass1() != null) {
+                        class1.setValue(sampleCOA.getClass1());
+                    }
+                    if (sampleCOA.getClass2() != null) {
+                        class2.setValue(sampleCOA.getClass2());
+                    }
+                    if (sampleCOA.getClass3() != null) {
+                        class3.setValue(sampleCOA.getClass3());
+                    }
 
-                    coaunits.clear();
+                    coaunits.clear();class1.clear(); class2.clear(); class3.clear();
                     if (!sampleCOA.getDsections().isEmpty()) {
                         coaunits.select(new HashSet<>(sampleCOA.getDsections()));
                     }
@@ -2814,38 +2877,6 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         VerticalLayout dialogLayout = new VerticalLayout(lay, gridCOASetting);
 
         return dialogLayout;
-    }
-
-    private Dialog COADialog(Dialog g) {
-        VerticalLayout dialogLayout = new VerticalLayout();
-        //dialogLayout.add(new Hr());
-        //dialogLayout.setPadding(false);
-        SplitLayout splitLayout = new SplitLayout();
-        splitLayout.setSplitterPosition(65);
-        splitLayout.setSizeFull();
-        splitLayout.addToPrimary(new Text(""));
-        splitLayout.addToSecondary(createCOADialogLayout(g));
-
-        Dialog dialog = new Dialog();
-        dialog.setClassName("dialogCurrencyData");
-        dialog.setSizeFull();
-        dialog.setModal(true);
-        dialog.setDraggable(true);
-        dialog.setResizable(true);
-        //dialog.setHeight("400px");
-        //dialog.setWidth("600px");
-        dialog.setHeaderTitle("Chart Of Accounts");
-        Button closeButton = new Button(new Icon("lumo", "cross"),
-                (e) -> dialog.close());
-        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        dialog.getHeader().add(closeButton);
-        dialog.setCloseOnOutsideClick(false);
-        dialogLayout.add(COAMenuBar(), new Hr(), splitLayout);
-        dialog.add(dialogLayout);
-        dialog.setHeight(100, Unit.PERCENTAGE);
-        dialog.setWidth(80, Unit.PERCENTAGE);
-
-        return dialog;
     }
 
     private Dialog COADialogSetting(Dialog g) {
@@ -3527,7 +3558,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
                     selected = new URC_Priority_Areas();
 
                 }
-              //  selected.setUrcStrategicPlan(URC_Strategic_PlanGrid.asSingleSelect().getValue());
+                //  selected.setUrcStrategicPlan(URC_Strategic_PlanGrid.asSingleSelect().getValue());
                 selected.setName(nameNdp5.getValue());
                 sampleURC_Priority_AreasService.update(selected);
                 refreshURCPAGrid(URC_Priority_AreasGrid);
@@ -3680,7 +3711,6 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             /*            grid.setItems(query -> sampleURC_Priority_AreasService.findByUrcStrategicPlan(sampleURC_Strategic_Plan,
             PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
             .stream());*/
-
         }
     }
 
@@ -7773,7 +7803,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             return fixedWidthTextBuilder.toString().trim() + " ";
         }
 
-    }    
+    }
 
     public String getFirstCharacters(String text) {
         int maxLength = 50;

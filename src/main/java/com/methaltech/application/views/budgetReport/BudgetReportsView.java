@@ -116,8 +116,12 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.layout.Style;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.*;
+import com.methaltech.application.data.Classification2;
+import com.methaltech.application.data.Classification3;
 import com.methaltech.application.data.GetPeriods;
 import com.methaltech.application.data.Role;
+import com.methaltech.application.data.bgtool.service.FreightActualVolumesService;
+import com.methaltech.application.data.bgtool.service.PassengerActualVolumesService;
 import com.methaltech.application.data.bgtool.service.PerformanceContextBuilder;
 import com.methaltech.application.data.bgtool.service.PerformanceExcelExportService;
 import com.methaltech.application.data.bgtool.service.PerformancePdfExportService;
@@ -125,13 +129,17 @@ import com.methaltech.application.data.bgtool.service.QtrReleasesReportService;
 import com.methaltech.application.data.bgtool.service.QtrReleasesService;
 import com.methaltech.application.data.bgtool.service.QtrReleasesServiceImpl;
 import com.methaltech.application.data.bgtool.service.SectionBudgetPerformanceService;
+import com.methaltech.application.data.entity.bgtool.FreightQuarterTotalsDTO;
 import com.methaltech.application.data.entity.bgtool.PerformanceReportContext;
 import com.methaltech.application.data.entity.bgtool.PerformanceRow;
 import com.methaltech.application.data.entity.bgtool.PriorityArea;
 import com.methaltech.application.data.entity.bgtool.QtrReleases;
 import com.methaltech.application.data.entity.bgtool.QuarterBudgetSum;
 import com.methaltech.application.data.entity.bgtool.SectionBudgetPerformance;
+import com.methaltech.application.data.entity.bgtool.dto.PassengerQuarterTotalsDTO;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
+import com.vaadin.flow.component.grid.HeaderRow;
+import com.vaadin.flow.component.grid.HeaderRow.HeaderCell;
 import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.component.html.Anchor;
@@ -147,13 +155,25 @@ import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.hierarchy.TreeData;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.util.Objects;
+// iText image classes
+import com.itextpdf.io.image.ImageData;
+import com.itextpdf.io.image.ImageDataFactory;
+import com.itextpdf.layout.Document;
+
+// Java IO
+import java.io.InputStream;
+import java.io.IOException;
 
 import jakarta.persistence.Tuple;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.time.LocalDate;
+import java.time.Month;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -240,6 +260,9 @@ public class BudgetReportsView extends Div {
     private final PerformancePdfExportService performancePdfExportService;
     private final PerformanceExcelExportService performanceExcelExportService;
     private final PerformanceContextBuilder performanceContextBuilder;
+    private final FreightActualVolumesService freightActualVolumesService;
+    private final PassengerActualVolumesService passengerActualVolumesService;
+    Budget prevBudget = null;
 
     public BudgetReportsView(UserService userService, BudgetService budgetService,
             SamplePersonService samplePersonService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, OrganisationService sampleOrganisationService,
@@ -250,7 +273,8 @@ public class BudgetReportsView extends Div {
             UrcBSalfldgService sampleUrcBSalfldgService, BudgetRepository repository, SectionBudgetPerformanceService sectionBudgetPerformanceService,
             QtrReleasesService qtrReleasesService, QtrReleasesReportService qtrReleasesReport, QtrReleasesServiceImpl qtrReleasesServiceImpl,
             PerformancePdfExportService performancePdfExportService, PerformanceContextBuilder performanceContextBuilder,
-            PerformanceExcelExportService performanceExcelExportService) {
+            PerformanceExcelExportService performanceExcelExportService, FreightActualVolumesService freightActualVolumesService,
+            PassengerActualVolumesService passengerActualVolumesService) {
         this.userService = userService;
         this.budgetService = budgetService;
         this.samplePersonService = samplePersonService;
@@ -275,6 +299,10 @@ public class BudgetReportsView extends Div {
         this.performancePdfExportService = performancePdfExportService;
         this.performanceContextBuilder = performanceContextBuilder;
         this.performanceExcelExportService = performanceExcelExportService;
+        this.freightActualVolumesService = freightActualVolumesService;
+        this.passengerActualVolumesService = passengerActualVolumesService;
+
+        addClassNames("budget-reports-view");
 
         VerticalLayout sheet1 = new VerticalLayout();
         VerticalLayout sheet2 = new VerticalLayout();
@@ -361,6 +389,7 @@ public class BudgetReportsView extends Div {
         panel33.addContent(new Button("Fund Source Vs Expenditure", VaadinIcon.FILE_PRESENTATION.create(), e -> setFundSourceExpdataLayout()));
         panel44.addContent(new Button("Tonnage & Passenger Performance", VaadinIcon.FILE_PRESENTATION.create(), e -> setVolumesdataLayout()));
         panel55.addContent(new Button("Budget Performance", VaadinIcon.FILE_PRESENTATION.create(), e -> setPerformanceLayout()));
+        panel55.addContent(new Button("Revenue Performance", VaadinIcon.FILE_PRESENTATION.create(), e -> setRevenuePerformancedataLayout()));
 
         // Add the panels to the Accordion
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
@@ -371,7 +400,10 @@ public class BudgetReportsView extends Div {
         accordion2.add(panel12);
         accordion2.add(panel22);
         accordion2.add(panel33);
-        accordion2.add(panel44);
+        if (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.FREIGHT)) {
+            accordion2.add(panel44);
+        }
+
         accordion2.add(panel55);
 
         HorizontalLayout hlay = new HorizontalLayout();
@@ -1035,9 +1067,9 @@ public class BudgetReportsView extends Div {
 
         TreeData<PerformanceRow> data = new TreeData<>();
 
-        PerformanceRow volumes = new PerformanceRow("VOLUMES");
-        PerformanceRow northern = new PerformanceRow("Northern Route");
-        PerformanceRow southern = new PerformanceRow("Southern Route");
+        PerformanceRow volumes = new PerformanceRow("VOLUMES", true);
+        PerformanceRow northern = new PerformanceRow("Northern Route", true);
+        PerformanceRow southern = new PerformanceRow("Southern Route", true);
 
         COA northernimportsChosen = sampleCoaService.findByCodeAndBudget("111101", comboBox2.getValue());
         COA northernexportsChosen = sampleCoaService.findByCodeAndBudget("111102", comboBox2.getValue());
@@ -1077,7 +1109,7 @@ public class BudgetReportsView extends Div {
             northernexportsPrevious = sampleCoaService.findByCodeAndBudget("111102", previousBudget);
             northernlocalPrevious = sampleCoaService.findByCodeAndBudget("111103", previousBudget);
 
-            northernroutesPrevious.add(northernlocalPrevious);
+            northernroutesPrevious.add(northernimportsPrevious);
             northernroutesPrevious.add(northernexportsPrevious);
             northernroutesPrevious.add(northernlocalPrevious);
 
@@ -1101,27 +1133,41 @@ public class BudgetReportsView extends Div {
         }
 
         data.addRootItems(volumes);
+        Set<COA> coaIds;
+        FreightQuarterTotalsDTO getTotalsNorthernImports = freightActualVolumesService.getTotals(previousBudget, northernimportsPrevious);
+        FreightQuarterTotalsDTO getTotalsNorthernExports = freightActualVolumesService.getTotals(previousBudget, northernexportsPrevious);
+        FreightQuarterTotalsDTO getTotalsNorthernLocal = freightActualVolumesService.getTotals(previousBudget, northernlocalPrevious);
+        coaIds = new HashSet<>(northernroutesPrevious);
+        FreightQuarterTotalsDTO getTotalsNorthern = freightActualVolumesService.getTotals(previousBudget, coaIds);
+        FreightQuarterTotalsDTO getTotalsSouthernImports = freightActualVolumesService.getTotals(previousBudget, southernimportsPrevious);
+        FreightQuarterTotalsDTO getTotalsSouthernExports = freightActualVolumesService.getTotals(previousBudget, southernexportsPrevious);
+        FreightQuarterTotalsDTO getTotalsSouthernLocal = freightActualVolumesService.getTotals(previousBudget, southernlocalPrevious);
+        coaIds = new HashSet<>(southernroutesPrevious);
+        FreightQuarterTotalsDTO getTotalsSouthern = freightActualVolumesService.getTotals(previousBudget, coaIds);
+
+        PassengerQuarterTotalsDTO getPassengerActualTotals = passengerActualVolumesService.getTotals(previousBudget, passengerPrevious);
 
         data.addItem(volumes, northern);
-        data.addItem(northern, new PerformanceRow("Net Tons – Exports", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, northernexportsPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), northernexportsChosen))));
-        data.addItem(northern, new PerformanceRow("Net Tons – Imports", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, northernimportsPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), northernimportsChosen))));
-        data.addItem(northern, new PerformanceRow("Local Net Tons", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, northernlocalPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), northernlocalChosen))));
-        data.addItem(northern, new PerformanceRow("TOTAL TONS NORTHERN", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(previousBudget, northernroutesPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(comboBox2.getValue(), northernroutes))));
+        data.addItem(northern, new PerformanceRow("Net Tons – Exports", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, northernexportsPrevious)), formatCurrency(getTotalsNorthernExports.getYear()), formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), northernexportsChosen))));
+        data.addItem(northern, new PerformanceRow("Net Tons – Imports", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, northernimportsPrevious)), formatCurrency(getTotalsNorthernImports.getYear()), formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), northernimportsChosen))));
+        data.addItem(northern, new PerformanceRow("Local Net Tons", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, northernlocalPrevious)), formatCurrency(getTotalsNorthernLocal.getYear()), formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), northernlocalChosen))));
+        data.addItem(northern, new PerformanceRow("TOTAL TONS NORTHERN", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(previousBudget, northernroutesPrevious)), formatCurrency(getTotalsNorthern.getYear()), formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(comboBox2.getValue(), northernroutes))));
 
         data.addItem(volumes, southern);
-        data.addItem(southern, new PerformanceRow("Net Tons – Exports", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, southernexportsPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), southernexportsChosen))));
-        data.addItem(southern, new PerformanceRow("Net Tons – Imports", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, southernimportsPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), southernimportsChosen))));
-        data.addItem(southern, new PerformanceRow("Local Net Tons", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, southernlocalPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), southernlocalChosen))));
-        data.addItem(southern, new PerformanceRow("TOTAL TONS SOUTHERN", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(previousBudget, southernroutesPrevious)), formatCurrency(BigDecimal.ZERO), formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(comboBox2.getValue(), southernroutes))));
+        data.addItem(southern, new PerformanceRow("Net Tons – Exports", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, southernexportsPrevious)), formatCurrency(getTotalsSouthernExports.getYear()), formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), southernexportsChosen))));
+        data.addItem(southern, new PerformanceRow("Net Tons – Imports", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, southernimportsPrevious)), formatCurrency(getTotalsSouthernImports.getYear()), formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), southernimportsChosen))));
+        data.addItem(southern, new PerformanceRow("Local Net Tons", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(previousBudget, southernlocalPrevious)), formatCurrency(getTotalsSouthernLocal.getYear()), formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacode(comboBox2.getValue(), southernlocalChosen))));
+        data.addItem(southern, new PerformanceRow("TOTAL TONS SOUTHERN", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(previousBudget, southernroutesPrevious)), formatCurrency(getTotalsSouthern.getYear()), formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(comboBox2.getValue(), southernroutes))));
 
-        data.addItem(volumes, new PerformanceRow("TOTAL TONS", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(previousBudget, allroutesPrevious)), "_", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(comboBox2.getValue(), allroutesChosen))));
+        BigDecimal totalActuals = getTotalsNorthern.getYear().add(getTotalsSouthern.getYear());
+        data.addItem(volumes, new PerformanceRow("TOTAL TONS", formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(previousBudget, allroutesPrevious)), formatCurrency(totalActuals), formatCurrency(sampleFreightVolumesService.calculateSumOfAllMonthsByBudgetAndCoacodes(comboBox2.getValue(), allroutesChosen))));
 
 // Passengers
-        PerformanceRow passengers = new PerformanceRow("PASSENGERS");
+        PerformanceRow passengers = new PerformanceRow("PASSENGERS", true);
         data.addRootItems(passengers);
-        data.addItem(passengers, new PerformanceRow("Passengers Kampala–Namanve Route", totalPassengerPrevious, formatCurrency(samopleSALFLDGService.findTotalAmountByPeriodsAndPassengerActuals(previousBudget)), totalPassengerChosen));
+        data.addItem(passengers, new PerformanceRow("Passengers Kampala–Namanve Route", totalPassengerPrevious, formatCurrency(getPassengerActualTotals.getYear()), totalPassengerChosen));
         data.addItem(passengers, new PerformanceRow("Passengers Kampala – Other Routes", "-", "-", "-"));
-        data.addItem(passengers, new PerformanceRow("TOTAL PASSENGERS", totalPassengerPrevious, formatCurrency(samopleSALFLDGService.findTotalAmountByPeriodsAndPassengerActuals(previousBudget)), totalPassengerChosen));
+        data.addItem(passengers, new PerformanceRow("TOTAL PASSENGERS", totalPassengerPrevious, formatCurrency(getPassengerActualTotals.getYear()), totalPassengerChosen));
 
         grid.setTreeData(data);
         grid.expand(volumes, northern, southern, passengers);
@@ -1198,6 +1244,338 @@ public class BudgetReportsView extends Div {
             }
         });
 
+    }
+
+    public void setRevenuePerformancedataLayout() {
+        datasubLayout.removeAll();
+        dataLayout.removeAll();
+        if (comboBox2.isEmpty() || budgetType2.isEmpty() || CustomDetailedBudgetReportImpcomboBox.isEmpty()) {
+            warningNotification("Make sure that Neither Section nor Budget nor Budget Type is empty");
+            return;
+        }
+        Notification.show("Show revenue performance");
+        int chosenYear = comboBox2.getValue().getStartDate().getYear();
+        Optional<Budget> previousBudgt = repository.findByStartDateYear(chosenYear - 1);
+
+        Budget previousBudget = null;
+        if (previousBudgt.isPresent()) {
+            previousBudget = previousBudgt.get();
+        }
+
+        String prevFy = fyLabel(previousBudget, "_");
+        String currFy = fyLabel(comboBox2.getValue(), "Selected FY");
+        TreeGrid<PerformanceRow> grid = new TreeGrid<>();
+        grid.addThemeVariants(GridVariant.LUMO_COLUMN_BORDERS);
+
+        grid.setWidthFull();
+        grid.addClassName("perf-grid");
+
+// --- Details (Hierarchy) column ---
+        TreeGrid.Column<PerformanceRow> detailsCol
+                = grid.addComponentHierarchyColumn(row -> {
+                    String label = row.getLabel() == null ? "" : row.getLabel().trim();
+                    Span span = new Span(label);
+
+                    if (isSectionRow(row)) {
+                        span.getStyle()
+                                .set("font-weight", "600")
+                                .set("display", "block")
+                                .set("width", "100%")
+                                .set("padding", "6px 0");
+                    }
+                    return span;
+                })
+                        .setHeader("Details")
+                        .setAutoWidth(true)
+                        .setFlexGrow(2);
+
+// --- Budget columns ---
+        Grid.Column<PerformanceRow> approvedCol = grid.addColumn(PerformanceRow::getPreviousBudgetApproved).setAutoWidth(true);
+        Grid.Column<PerformanceRow> revisedCol = grid.addColumn(PerformanceRow::getPreviousRevised).setAutoWidth(true);
+        Grid.Column<PerformanceRow> actualQ2Col = grid.addColumn(PerformanceRow::getPreviousBudgeActual).setAutoWidth(true);
+        Grid.Column<PerformanceRow> projectedCol = grid.addColumn(PerformanceRow::getPreviousProjected).setAutoWidth(true);
+        Grid.Column<PerformanceRow> plannedCol = grid.addColumn(PerformanceRow::getChosenBudget).setAutoWidth(true);
+
+// optional alignment
+        approvedCol.setTextAlign(ColumnTextAlign.END);
+        revisedCol.setTextAlign(ColumnTextAlign.END);
+        actualQ2Col.setTextAlign(ColumnTextAlign.END);
+        projectedCol.setTextAlign(ColumnTextAlign.END);
+        plannedCol.setTextAlign(ColumnTextAlign.END);
+
+// =====================================================
+// HEADER ROWS (SAFE ORDER)
+// =====================================================
+// 1) Create the DEFAULT (first-created) header row explicitly
+        HeaderRow defaultRow = grid.appendHeaderRow();
+
+// Put normal column headers here (no join on this row)
+        defaultRow.getCell(detailsCol).setText("Details");
+        defaultRow.getCell(approvedCol).setText("Approved Budget");
+        defaultRow.getCell(revisedCol).setText("Revised Budget");
+        defaultRow.getCell(actualQ2Col).setText("Actual Q2");
+        defaultRow.getCell(projectedCol).setText("Projected Actuals");
+        defaultRow.getCell(plannedCol).setText("Planned budget");
+
+// 2) Create GROUP row above default row (join is allowed here)
+// 2) Group row above (join allowed here)
+        HeaderRow groupRow = grid.prependHeaderRow();
+        groupRow.getCell(detailsCol).setText(""); // IMPORTANT: keep blank
+
+// Join FY across the 4 previous-year columns
+        HeaderCell fy2425 = groupRow.join(
+                groupRow.getCell(approvedCol),
+                groupRow.getCell(revisedCol),
+                groupRow.getCell(actualQ2Col),
+                groupRow.getCell(projectedCol)
+        );
+        fy2425.setText(previousBudget.getFinancialYear());
+
+// Current FY over planned column
+        groupRow.getCell(plannedCol).setText(comboBox2.getValue().getFinancialYear());
+
+// 3) Optional units row below
+        HeaderRow unitsRow = grid.appendHeaderRow();
+        unitsRow.getCell(detailsCol).setText("");
+        unitsRow.getCell(approvedCol).setText("UGX 000");
+        unitsRow.getCell(revisedCol).setText("UGX 000");
+        unitsRow.getCell(actualQ2Col).setText("UGX 000");
+        unitsRow.getCell(projectedCol).setText("UGX 000");
+        unitsRow.getCell(plannedCol).setText("UGX 000");
+
+        TreeData<PerformanceRow> data = new TreeData<>();
+
+        PerformanceRow recurrentIncome = new PerformanceRow("RECURRENT INCOME", true);
+        PerformanceRow freight_services = new PerformanceRow("FREIGHT SERVICES", true);
+        PerformanceRow northern = new PerformanceRow("Northern Route", true);
+        PerformanceRow southern = new PerformanceRow("Southern Route", true);
+
+        data.addRootItems(recurrentIncome);
+        data.addItem(recurrentIncome, freight_services);
+        data.addItem(freight_services, northern);
+        List<COA> northencodesCurBdgt = sampleCoaService.findByBudgetAndClass3(comboBox2.getValue(), Classification3.Northern_Route);
+        List<COA> northencodesPrevBdgt = sampleCoaService.findByBudgetAndClass3(previousBudget, Classification3.Northern_Route);
+        List<COA> listcodesCurBdgt = new ArrayList();
+        List<COA> listcodesPrevBdgt = new ArrayList();
+        List<COA> freightCodesCurBdgt = new ArrayList();
+        List<COA> freightCodesPrevBdgt = new ArrayList();
+        freightCodesCurBdgt.addAll(northencodesCurBdgt);
+        freightCodesPrevBdgt.addAll(northencodesPrevBdgt);
+        Set<String> class1codes = new HashSet<>();
+        Set<String> CodesPrevBdgt = new HashSet<>();
+
+        List<COA> listclass1codesCurBdgt = new ArrayList();
+        List<COA> listclass1codesPrevBdgt = new ArrayList();
+
+        Set<String> freightCodes = new HashSet<>();
+        for (COA coa : northencodesCurBdgt) {
+            COA coaPrev = findByCodeFromList(northencodesPrevBdgt, coa.getCode());
+            listcodesCurBdgt.add(coa);
+            freightCodes.add(coa.getCode());
+            listcodesPrevBdgt.add(coaPrev);
+            class1codes.add(coa.getCode());
+            CodesPrevBdgt.add(coaPrev.getCode());
+            listclass1codesCurBdgt.add(coa);
+            listclass1codesPrevBdgt.add(coaPrev);
+            data.addItem(northern, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode())), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+        }
+        data.addItem(northern, new PerformanceRow("TOTAL NORTHERN ROUTE", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        northencodesCurBdgt = sampleCoaService.findByBudgetAndClass3(comboBox2.getValue(), Classification3.Southern_Route);
+        northencodesPrevBdgt = sampleCoaService.findByBudgetAndClass3(previousBudget, Classification3.Southern_Route);
+        listcodesCurBdgt.clear();
+        listcodesPrevBdgt.clear();
+        //class1codes.clear();
+        CodesPrevBdgt.clear();
+        freightCodesCurBdgt.addAll(northencodesCurBdgt);
+        freightCodesPrevBdgt.addAll(northencodesPrevBdgt);
+        data.addItem(freight_services, southern);
+        for (COA coa : northencodesCurBdgt) {
+            COA coaPrev = findByCodeFromList(northencodesPrevBdgt, coa.getCode());
+            listcodesCurBdgt.add(coa);
+            listcodesPrevBdgt.add(coaPrev);
+            class1codes.add(coa.getCode());
+            CodesPrevBdgt.add(coaPrev.getCode());
+            freightCodes.add(coa.getCode());
+            listclass1codesCurBdgt.add(coa);
+            listclass1codesPrevBdgt.add(coaPrev);
+            data.addItem(southern, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode())), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+        }
+        data.addItem(southern, new PerformanceRow("TOTAL SOUTHERN ROUTE", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+
+        data.addItem(freight_services, new PerformanceRow("TOTAL FREIGHT", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, freightCodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), freightCodes)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), freightCodesCurBdgt))));
+
+        PerformanceRow other_fees_charges = new PerformanceRow("OTHER FEES & CHARGES", true);
+        data.addItem(recurrentIncome, other_fees_charges);
+        List<COA> otherfeesCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Other_Fees_Charges);
+        List<COA> otherfeesCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Other_Fees_Charges);
+        //class1codes.clear();
+        listcodesPrevBdgt.clear();
+        listcodesCurBdgt.clear();
+        CodesPrevBdgt.clear();
+        for (COA coa : otherfeesCodeCurBdgt) {
+            COA coaPrev = findByCodeFromList(otherfeesCodePrevBdgt, coa.getCode());
+            listcodesCurBdgt.add(coa);
+            listcodesPrevBdgt.add(coaPrev);
+            class1codes.add(coa.getCode());
+            CodesPrevBdgt.add(coaPrev.getCode());
+            freightCodes.add(coa.getCode());
+            listclass1codesCurBdgt.add(coa);
+            listclass1codesPrevBdgt.add(coaPrev);
+            data.addItem(other_fees_charges, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode())), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+        }
+
+        data.addItem(other_fees_charges, new PerformanceRow("TOTAL OTHER FEES & CHARGES", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+
+        PerformanceRow rentalIncome = new PerformanceRow("RENT INCOME", true);
+        data.addItem(recurrentIncome, rentalIncome);
+        List<COA> rentCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Rent_Income);
+        List<COA> rentCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Rent_Income);
+        //class1codes.clear();
+        listcodesPrevBdgt.clear();
+        listcodesCurBdgt.clear();
+        CodesPrevBdgt.clear();
+        for (COA coa : rentCodeCurBdgt) {
+            COA coaPrev = findByCodeFromList(rentCodePrevBdgt, coa.getCode());
+            listcodesCurBdgt.add(coa);
+            listcodesPrevBdgt.add(coaPrev);
+            class1codes.add(coa.getCode());
+            CodesPrevBdgt.add(coaPrev.getCode());
+            freightCodes.add(coa.getCode());
+            listclass1codesCurBdgt.add(coa);
+            listclass1codesPrevBdgt.add(coaPrev);
+            data.addItem(rentalIncome, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode())), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+        }
+
+        data.addItem(rentalIncome, new PerformanceRow("TOTAL RENT INCOME", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+
+        // Passengers
+        PerformanceRow passengers = new PerformanceRow("PASSENGERS TICKET SALES", true);
+        data.addItem(recurrentIncome, passengers);
+        List<COA> passengersCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Passenger_Ticket_Sales);
+        List<COA> passengersCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Passenger_Ticket_Sales);
+        //class1codes.clear();
+        listcodesPrevBdgt.clear();
+        listcodesCurBdgt.clear();
+        CodesPrevBdgt.clear();
+        for (COA coa : passengersCodeCurBdgt) {
+            COA coaPrev = findByCodeFromList(passengersCodePrevBdgt, coa.getCode());
+            listcodesCurBdgt.add(coa);
+            listcodesPrevBdgt.add(coaPrev);
+            class1codes.add(coa.getCode());
+            CodesPrevBdgt.add(coaPrev.getCode());
+            freightCodes.add(coa.getCode());
+            listclass1codesCurBdgt.add(coa);
+            listclass1codesPrevBdgt.add(coaPrev);
+            data.addItem(passengers, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode())), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+        }
+
+        data.addItem(passengers, new PerformanceRow("TOTAL PASSENGER SERVICE INCOME", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+
+        PerformanceRow miscellaneous = new PerformanceRow("MISCELLANEOUS INCOME", true);
+        data.addItem(recurrentIncome, miscellaneous);
+        List<COA> miscellaneousCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Miscellaneous_Income);
+        List<COA> miscellaneousCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Miscellaneous_Income);
+        // class1codes.clear();
+        listcodesPrevBdgt.clear();
+        listcodesCurBdgt.clear();
+        CodesPrevBdgt.clear();
+        for (COA coa : miscellaneousCodeCurBdgt) {
+            COA coaPrev = findByCodeFromList(miscellaneousCodePrevBdgt, coa.getCode());
+            listcodesCurBdgt.add(coa);
+            listcodesPrevBdgt.add(coaPrev);
+            class1codes.add(coa.getCode());
+            CodesPrevBdgt.add(coaPrev.getCode());
+            freightCodes.add(coa.getCode());
+            listclass1codesCurBdgt.add(coa);
+            listclass1codesPrevBdgt.add(coaPrev);
+            data.addItem(miscellaneous, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode())), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+        }
+
+        data.addItem(miscellaneous, new PerformanceRow("TOTAL MISCELLANEOUS INCOME", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+
+        data.addItem(recurrentIncome, new PerformanceRow("TOTAL RECURRENT INCOME", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listclass1codesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), class1codes)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listclass1codesCurBdgt))));
+        grid.setTreeData(data);
+        grid.expand(freight_services, other_fees_charges, rentalIncome, passengers, miscellaneous, northern, southern, passengers);
+        dataLayout.add(grid);
+        Button pdfBtn = new Button("Download PDF");
+        Button excelBtn = new Button("Download Excel");
+        datasubLayout.add(pdfBtn, excelBtn);
+        dataLayout.add(datasubLayout);
+        prevBudget = previousBudget;
+        pdfBtn.addClickListener(e -> {
+            try {
+                List<PerformanceRow> rows = flattenTreeData(data);
+
+                /*                byte[] pdf = generateRevenuePerformancePdf(
+                rows,
+                prevFy,
+                currFy
+                );*/
+                byte[] pdf = generateRevenuePerformancePdf(
+                        rows,
+                        prevFy,
+                        currFy,
+                        prevBudget.getFinancialYear(),
+                        comboBox2.getValue().getFinancialYear()
+                );
+
+                StreamResource resource = new StreamResource(
+                        "Volumes_Report.pdf",
+                        () -> new ByteArrayInputStream(pdf)
+                );
+
+                Anchor download = new Anchor(resource, "");
+                download.getElement().setAttribute("download", true);
+                download.add(new Button("Click to download"));
+                download.getElement().callJsFunction("click");
+                datasubLayout.add(download);
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                warningNotification("Failed to generate PDF");
+            }
+        });
+
+        excelBtn.addClickListener(e -> {
+            try {
+                List<PerformanceRow> rows = flattenTreeData(data);
+                byte[] excel = generateVolumesExcel(rows, prevFy, currFy);
+
+                StreamResource resource = new StreamResource(
+                        "Volumes_Report.xlsx",
+                        () -> new ByteArrayInputStream(excel)
+                );
+
+                Anchor a = new Anchor(resource, "");
+                a.getElement().setAttribute("download", true);
+                a.add(new Button("Download"));
+                a.getElement().callJsFunction("click");
+                datasubLayout.add(a);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+    }
+
+    public COA findByCodeFromList(List<COA> list, String code) {
+        return list.stream()
+                .filter(coa -> code.equals(coa.getCode()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static boolean isSectionRow(PerformanceRow row) {
+        String label = row.getLabel();
+        if (label == null) {
+            return false;
+        }
+        label = label.trim();
+        return "FREIGHT SERVICES".equals(label)
+                || "RECURRENT INCOME".equals(label)
+                || "Northern Route".equals(label)
+                || "Southern Route".equals(label)
+                || label.startsWith("Total")
+                || label.startsWith("TOTAL");
     }
 
     private String fyLabel(Budget budget, String fallback) {
@@ -1375,6 +1753,22 @@ public class BudgetReportsView extends Div {
         NumberFormat formatter = NumberFormat.getInstance(Locale.US);
         formatter.setMaximumFractionDigits(1);
         return formatter.format(amount);
+    }
+
+    private String formatCurrencyB(BigDecimal amount) {
+
+        if (amount == null) {
+            return "0";
+        }
+
+        BigDecimal thousands = amount
+                .divide(BigDecimal.valueOf(1000), 1, RoundingMode.HALF_UP);
+
+        NumberFormat formatter = NumberFormat.getInstance(Locale.US);
+        formatter.setMaximumFractionDigits(1);
+        formatter.setMinimumFractionDigits(1);
+
+        return formatter.format(thousands);
     }
 
     public String calculatePercentage(
@@ -12955,6 +13349,333 @@ public class BudgetReportsView extends Div {
         );
     }
 
+    public byte[] generateVolumesPdf2(List<PerformanceRow> rows, String prevFy, String currFy) throws IOException {
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        PdfWriter writer = new PdfWriter(baos);
+        PdfDocument pdfDoc = new PdfDocument(writer);
+        pdfDoc.setDefaultPageSize(PageSize.A4.rotate());
+
+        Document document = new Document(pdfDoc);
+        document.setMargins(20, 20, 20, 20);
+        addCenteredLogo(document);
+        PdfFont bold = PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD);
+        PdfFont normal = PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA);
+
+        // ===== Report Header =====
+        document.add(buildTitleBlock(bold, normal, prevFy, currFy));
+
+        // ===== Table =====
+        // widths: Details wider; numbers equal width
+        float[] widths = new float[]{52, 16, 16, 16};
+        Table table = new Table(UnitValue.createPercentArray(widths)).useAllAvailableWidth();
+
+        // Header cells (repeat on each page)
+        addHeaderCell(table, "Details", bold);
+        addHeaderCell(table, prevFy + " Approved (UGX '000)", bold);
+        addHeaderCell(table, prevFy + " Actual (UGX '000)", bold);
+        addHeaderCell(table, currFy + " Budget (UGX '000)", bold);
+
+        boolean zebra = false;
+
+        for (PerformanceRow row : rows) {
+            String label = safe(row.getLabel());
+
+            boolean isTotal = label.toUpperCase().startsWith("TOTAL");
+            boolean isSection = isSectionLabel(label);  // section headers like RECURRENT INCOME, FREIGHT SERVICES, etc.
+
+            // choose font
+            PdfFont rowFont = (isTotal || isSection) ? bold : normal;
+
+            // row background style
+            com.itextpdf.kernel.colors.Color bg = null;
+            if (isSection) {
+                bg = com.itextpdf.kernel.colors.ColorConstants.LIGHT_GRAY;
+            } else if (isTotal) {
+                bg = com.itextpdf.kernel.colors.ColorConstants.WHITE;
+            } else if (zebra) {
+                bg = com.itextpdf.kernel.colors.ColorConstants.WHITE;
+            }
+
+            // Details cell: indent children if you have level info; otherwise simple rule by label
+            String detailsText = formatDetailsLabel(label, row);
+
+            addBodyCell(table, detailsText, rowFont, TextAlignment.LEFT, bg, isTotal, isSection);
+            addBodyCell(table, safe(row.getPreviousBudgetApproved()), rowFont, TextAlignment.RIGHT, bg, isTotal, isSection);
+            addBodyCell(table, safe(row.getPreviousBudgeActual()), rowFont, TextAlignment.RIGHT, bg, isTotal, isSection);
+            addBodyCell(table, safe(row.getChosenBudget()), rowFont, TextAlignment.RIGHT, bg, isTotal, isSection);
+
+            // zebra toggles for normal rows only
+            if (!isSection) {
+                zebra = !zebra;
+            }
+        }
+
+        document.add(table);
+
+        // Footer (optional)
+        document.add(new Paragraph("\n")
+                .setFont(normal)
+                .setFontSize(8));
+
+        document.close();
+        return baos.toByteArray();
+    }
+
+    public byte[] generateRevenuePerformancePdf(List<PerformanceRow> rows,
+            String prevFy,
+            String currFy,
+            String prevFinancialYearLabel,
+            String currFinancialYearLabel) throws IOException {
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        PdfWriter writer = new PdfWriter(baos);
+        PdfDocument pdfDoc = new PdfDocument(writer);
+        pdfDoc.setDefaultPageSize(PageSize.A4.rotate());
+
+        Document document = new Document(pdfDoc);
+        document.setMargins(20, 20, 20, 20);
+        addCenteredLogo(document);
+
+        PdfFont bold = PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD);
+        PdfFont normal = PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA);
+
+        // ===== Title block =====
+        document.add(buildTitleBlock(bold, normal, prevFy, currFy));
+
+        // ===== 6-column table =====
+        float[] widths = new float[]{34, 13.2f, 13.2f, 13.2f, 13.2f, 13.2f};
+        Table table = new Table(UnitValue.createPercentArray(widths)).useAllAvailableWidth();
+
+        // ---- Group header row (Prev FY spans 4 cols) ----
+        table.addHeaderCell(groupHeaderCell("", bold, 1)); // Details col placeholder
+
+        table.addHeaderCell(groupHeaderCell(prevFinancialYearLabel, bold, 4)); // Approved..Projected
+        table.addHeaderCell(groupHeaderCell(currFinancialYearLabel, bold, 1)); // Planned
+
+        // ---- Column header row ----
+        addHeaderCell(table, "Details", bold);
+        addHeaderCell(table, "Approved Budget", bold);
+        addHeaderCell(table, "Revised Budget", bold);
+        addHeaderCell(table, "Actual Q2", bold);
+        addHeaderCell(table, "Projected Actuals", bold);
+        addHeaderCell(table, "Planned Budget", bold);
+
+        // ---- Units row ----
+        addUnitsCell(table, "", normal);
+        addUnitsCell(table, "UGX '000", normal);
+        addUnitsCell(table, "UGX '000", normal);
+        addUnitsCell(table, "UGX '000", normal);
+        addUnitsCell(table, "UGX '000", normal);
+        addUnitsCell(table, "UGX '000", normal);
+
+        boolean zebra = false;
+
+        for (PerformanceRow row : rows) {
+            String label = safe(row.getLabel());
+
+            boolean isTotal = label.toUpperCase().startsWith("TOTAL");
+            boolean isSection = isSectionLabel(label);
+
+            PdfFont rowFont = (isTotal || isSection) ? bold : normal;
+
+            com.itextpdf.kernel.colors.Color bg = null;
+            if (isSection) {
+                bg = com.itextpdf.kernel.colors.ColorConstants.LIGHT_GRAY;
+            } else if (zebra) {
+                bg = com.itextpdf.kernel.colors.ColorConstants.WHITE;
+            }
+
+            String detailsText = formatDetailsLabel(label);
+
+            addBodyCell(table, detailsText, rowFont, TextAlignment.LEFT, bg, isTotal, isSection);
+            addBodyCell(table, safe(row.getPreviousBudgetApproved()), rowFont, TextAlignment.RIGHT, bg, isTotal, isSection);
+            addBodyCell(table, safe(row.getPreviousRevised()), rowFont, TextAlignment.RIGHT, bg, isTotal, isSection);
+            addBodyCell(table, safe(row.getPreviousBudgeActual()), rowFont, TextAlignment.RIGHT, bg, isTotal, isSection);
+            addBodyCell(table, safe(row.getPreviousProjected()), rowFont, TextAlignment.RIGHT, bg, isTotal, isSection);
+            addBodyCell(table, safe(row.getChosenBudget()), rowFont, TextAlignment.RIGHT, bg, isTotal, isSection);
+
+            if (!isSection) {
+                zebra = !zebra;
+            }
+        }
+
+        document.add(table);
+        document.close();
+        return baos.toByteArray();
+    }
+
+    private com.itextpdf.layout.element.Div buildTitleBlock(PdfFont bold, PdfFont normal,
+            String prevFy, String currFy) {
+        com.itextpdf.layout.element.Div container = new com.itextpdf.layout.element.Div();
+
+        container.add(new Paragraph("REVENUE PERFORMANCE REPORT")
+                .setFont(bold)
+                .setFontSize(14)
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginBottom(2));
+
+        container.add(new Paragraph("FY Comparison: " + prevFy + " vs " + currFy)
+                .setFont(normal)
+                .setFontSize(10)
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginBottom(2));
+
+        container.add(new Paragraph("Generated on: " + java.time.LocalDate.now())
+                .setFont(normal)
+                .setFontSize(9)
+                .setFontColor(com.itextpdf.kernel.colors.ColorConstants.DARK_GRAY)
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginBottom(12));
+
+        return container;
+    }
+
+    private com.itextpdf.layout.element.Cell groupHeaderCell(String text, PdfFont font, int colSpan) {
+        return new com.itextpdf.layout.element.Cell(1, colSpan)
+                .add(new Paragraph(text == null ? "" : text).setFont(font).setFontSize(10))
+                .setTextAlignment(TextAlignment.CENTER)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setPadding(6)
+                .setBackgroundColor(com.itextpdf.kernel.colors.ColorConstants.YELLOW)
+                .setFontColor(com.itextpdf.kernel.colors.ColorConstants.BLACK)
+                .setBorder(new com.itextpdf.layout.borders.SolidBorder(0.6f));
+    }
+
+    private void addHeaderCell(Table table, String text, PdfFont font) {
+        table.addHeaderCell(new com.itextpdf.layout.element.Cell()
+                .add(new Paragraph(text).setFont(font).setFontSize(9))
+                .setTextAlignment(TextAlignment.CENTER)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setPadding(6)
+                .setBackgroundColor(com.itextpdf.kernel.colors.ColorConstants.BLACK)
+                .setFontColor(com.itextpdf.kernel.colors.ColorConstants.WHITE)
+                .setBorder(new com.itextpdf.layout.borders.SolidBorder(0.5f)));
+    }
+
+    private void addUnitsCell(Table table, String text, PdfFont font) {
+        table.addHeaderCell(new com.itextpdf.layout.element.Cell()
+                .add(new Paragraph(text == null ? "" : text).setFont(font).setFontSize(8))
+                .setTextAlignment(TextAlignment.CENTER)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setPadding(4)
+                .setBackgroundColor(com.itextpdf.kernel.colors.ColorConstants.LIGHT_GRAY)
+                .setBorder(new com.itextpdf.layout.borders.SolidBorder(0.5f)));
+    }
+
+    private void addBodyCell(Table table,
+            String text,
+            PdfFont font,
+            TextAlignment align,
+            com.itextpdf.kernel.colors.Color bg,
+            boolean isTotal,
+            boolean isSection) {
+
+        Paragraph p = new Paragraph(text == null ? "" : text)
+                .setFont(font)
+                .setFontSize(8) // smaller font
+                .setMargin(0) // remove paragraph margins
+                .setMultipliedLeading(1); // minimal line spacing
+
+        com.itextpdf.layout.element.Cell cell = new com.itextpdf.layout.element.Cell()
+                .add(p)
+                .setTextAlignment(align)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setPaddingTop(2) // 🔥 minimal padding
+                .setPaddingBottom(2)
+                .setPaddingLeft(4)
+                .setPaddingRight(4)
+                .setBorder(new com.itextpdf.layout.borders.SolidBorder(0.3f));
+
+        if (bg != null) {
+            cell.setBackgroundColor(bg);
+        }
+
+        if (isTotal) {
+            cell.setBorder(new com.itextpdf.layout.borders.SolidBorder(0.8f));
+        }
+        if (isSection) {
+            cell.setBorder(new com.itextpdf.layout.borders.SolidBorder(0.5f));
+        }
+
+        table.addCell(cell);
+    }
+
+    private void addCenteredLogo(Document document) throws IOException {
+
+        InputStream is = getClass().getResourceAsStream("/images/urclogo2.png");
+        if (is == null) {
+            System.out.println("Its null");
+            return;
+        }
+
+        byte[] imageBytes = is.readAllBytes();
+
+        ImageData imageData = ImageDataFactory.create(imageBytes);
+        com.itextpdf.layout.element.Image logo
+                = new com.itextpdf.layout.element.Image(imageData);
+
+        logo.scaleToFit(120, 60);
+        logo.setHorizontalAlignment(com.itextpdf.layout.properties.HorizontalAlignment.CENTER);
+        logo.setMarginBottom(8);
+        System.out.println("Its not null");
+        document.add(logo);
+    }
+
+    private String safe(String s) {
+        return s == null ? "" : s.trim();
+    }
+
+    private boolean isSectionLabel(String label) {
+        String u = label.toUpperCase();
+        return u.equals("RECURRENT INCOME")
+                || u.equals("FREIGHT SERVICES")
+                || u.equals("NORTHERN ROUTE")
+                || u.equals("SOUTHERN ROUTE")
+                || u.equals("OTHER FEES & CHARGES")
+                || u.equals("RENT INCOME")
+                || u.equals("PASSENGERS TICKET SALES")
+                || u.equals("MISCELLANEOUS INCOME");
+    }
+
+    private String formatDetailsLabel(String label) {
+        // Simple indentation by known hierarchy (tweak if you have a true level field)
+        String u = label.toUpperCase();
+        if (u.equals("FREIGHT SERVICES")
+                || u.equals("OTHER FEES & CHARGES")
+                || u.equals("RENT INCOME")
+                || u.equals("PASSENGERS TICKET SALES")
+                || u.equals("MISCELLANEOUS INCOME")) {
+            return "  " + label;
+        }
+        if (u.equals("NORTHERN ROUTE") || u.equals("SOUTHERN ROUTE")) {
+            return "    " + label;
+        }
+        if (u.startsWith("TOTAL")) {
+            return label;
+        }
+        // leaf rows
+        return "      " + label;
+    }
+
+    /**
+     * Optional: indent based on known label hierarchy, since PerformanceRow
+     * doesn't show level here. If you have a "level" field, use that instead.
+     */
+    private String formatDetailsLabel(String label, PerformanceRow row) {
+        String u = label.toUpperCase();
+        if (u.equals("NORTHERN ROUTE") || u.equals("SOUTHERN ROUTE")) {
+            return "   " + label;
+        }
+        if (u.startsWith("TOTAL")) {
+            return label;
+        }
+        // default
+        return label;
+    }
+
     private void generateFundSourceExpPdf(
             List<Organisation> organisations,
             Set<UrcDeptSectionAnlDimbgt> sections,
@@ -14198,6 +14919,106 @@ public class BudgetReportsView extends Div {
             return BigDecimal.valueOf(n.doubleValue());
         }
         return new BigDecimal(o.toString());
+    }
+
+    public Set<Integer> getFinancialYearPeriods(Budget budget) {
+        Set<Integer> periods = new LinkedHashSet<>();
+
+        if (budget.getStartDate() == null || budget.getCloseDate() == null) {
+            return periods; // return empty if dates are not set
+        }
+
+        // Get the financial year end (YYYY part)
+        int yearSuffix = budget.getCloseDate().getYear(); // e.g., 2025 for FY 2024/07/01 to 2025/06/30
+
+        // Start from July of the start year
+        LocalDate current = LocalDate.of(budget.getStartDate().getYear(), Month.JULY, 1);
+        for (int i = 1; i <= 12; i++) {
+            //String periodCode = String.format("%d%03d", yearSuffix, i); // e.g., 2025001
+            int periodCode = yearSuffix * 1000 + i;
+            periods.add(periodCode);
+            current = current.plusMonths(1);
+        }
+
+        return periods;
+    }
+
+    public Set<Integer> getFinancialYearPeriods(Budget budget, int quarter) {
+        Set<Integer> periods = new LinkedHashSet<>();
+
+        if (budget.getStartDate() == null || budget.getCloseDate() == null) {
+            return periods; // return empty if dates are not set
+        }
+
+        // Get the financial year end (YYYY part)
+        int yearSuffix = budget.getCloseDate().getYear(); // e.g., 2025 for FY 2024/07/01 to 2025/06/30
+
+        // Start from July of the start year
+        LocalDate current = LocalDate.of(budget.getStartDate().getYear(), Month.JULY, 1);
+        int start = 0;
+        switch (quarter) {
+            case 1:
+                start = 1;
+                break;
+            case 2:
+                start = 4;
+                break;
+            case 3:
+                start = 7;
+                break;
+            case 4:
+                start = 10;
+                break;
+            default:
+                break;
+        }
+        for (int i = start; i <= 12; i++) {
+            //String periodCode = String.format("%d%03d", yearSuffix, i); // e.g., 2025001
+            int periodCode = yearSuffix * 1000 + i;
+            periods.add(periodCode);
+            current = current.plusMonths(1);
+        }
+
+        return periods;
+    }
+
+    public Set<Integer> getFinancialYearPeriodsCummulative(Budget budget, int quarter) {
+        Set<Integer> periods = new LinkedHashSet<>();
+
+        if (budget.getStartDate() == null || budget.getCloseDate() == null) {
+            return periods; // return empty if dates are not set
+        }
+
+        // Get the financial year end (YYYY part)
+        int yearSuffix = budget.getCloseDate().getYear(); // e.g., 2025 for FY 2024/07/01 to 2025/06/30
+
+        // Start from July of the start year
+        LocalDate current = LocalDate.of(budget.getStartDate().getYear(), Month.JULY, 1);
+        int stop = 0;
+        switch (quarter) {
+            case 1:
+                stop = 3;
+                break;
+            case 2:
+                stop = 6;
+                break;
+            case 3:
+                stop = 9;
+                break;
+            case 4:
+                stop = 12;
+                break;
+            default:
+                break;
+        }
+        for (int i = 1; i <= stop; i++) {
+            //String periodCode = String.format("%d%03d", yearSuffix, i); // e.g., 2025001
+            int periodCode = yearSuffix * 1000 + i;
+            periods.add(periodCode);
+            current = current.plusMonths(1);
+        }
+
+        return periods;
     }
 
 }

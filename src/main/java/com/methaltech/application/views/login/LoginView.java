@@ -121,6 +121,8 @@ public class LoginView extends LoginOverlay implements BeforeEnterObserver {
         });
 
         setOpened(true);
+        //<theme-editor-local-classname>
+        addClassName("login-view-login-overlay-1");
     }
 
     @Override

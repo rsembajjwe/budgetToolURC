@@ -1150,7 +1150,15 @@ public class BudgetItemsService {
         BigDecimal sumOfTotalMonths = repository.findSumOfTotalMonthsByBudgetCoa(budget, coacode);
         return sumOfTotalMonths != null ? sumOfTotalMonths : BigDecimal.ZERO;
     }
-
+    
+    public BigDecimal totalBudgetByCode(Budget budget, COA coacode) {
+        BigDecimal sumOfTotalMonths = repository.findSumOfTotalMonthsByBudgetCoa(budget, coacode);
+        return sumOfTotalMonths != null ? sumOfTotalMonths : BigDecimal.ZERO;
+    }    
+    public BigDecimal totalBudgetByCode(Budget budget, List<COA> coacode) {
+        BigDecimal sumOfTotalMonths = repository.findSumOfTotalMonthsByBudgetCoa(budget, coacode);
+        return sumOfTotalMonths != null ? sumOfTotalMonths : BigDecimal.ZERO;
+    }
     public List<BudgetItems> findBudgetItemsByUrc_Activities(Set<Organisation> budgetType, Budget budget, Urc_Activities activities, Set<UrcDeptSectionAnlDimbgt> deptUnits, Integer coalevel1Code) {
         List<BudgetItems> result = repository.findBudgetItemsByUrc_Activities(budgetType, budget, activities, deptUnits, coalevel1Code);
         return result != null ? result : Collections.emptyList();
