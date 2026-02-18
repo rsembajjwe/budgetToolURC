@@ -28,6 +28,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -116,6 +117,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
     private final MultiSelectComboBox<UrcDeptSectionAnlDimbgt> sectionMultiComboBox = new MultiSelectComboBox<>("Combine Section Reports");
     private final Button submitButton = new Button("Submit");
     private final Button downloadButton = new Button("Download");
+    Button importPhyPerf = new Button("Import");
 
     private final Grid<PriorityArea> financialGrid = new Grid<>(PriorityArea.class, false);
     GridContextMenu<PriorityArea> contextMenuPriorityArea = new GridContextMenu<>(financialGrid);
@@ -167,7 +169,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         contextMenuPriorityArea.setOpenOnClick(true);
         contextMenuPhysicalGrid.setOpenOnClick(true);
 
-        headMenu.add(budgetComboBox, sectionComboBox, qtrComboBox, submitButton, downloadButton, sectionMultiComboBox);
+        headMenu.add(budgetComboBox, sectionComboBox, qtrComboBox, importPhyPerf, submitButton, downloadButton, sectionMultiComboBox);
         headMenu.setAlignItems(Alignment.BASELINE);
 
         add(headMenu);
@@ -523,21 +525,31 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
         qtrComboBox.addValueChangeListener(e -> {
             String qt = e.getValue();
-
+            importPhyPerf.setEnabled(false);
             if (qt == null) {
                 qtr = 0;
             } else {
                 switch (qt) {
-                    case "Qtr 1" ->
+                    case "Qtr 1" -> {
                         qtr = 1;
-                    case "Qtr 2" ->
+                        importPhyPerf.setEnabled(false);
+                    }
+                    case "Qtr 2" -> {
                         qtr = 2;
-                    case "Qtr 3" ->
+                        importPhyPerf.setEnabled(true);
+                    }
+                    case "Qtr 3" -> {
                         qtr = 3;
-                    case "Qtr 4" ->
+                        importPhyPerf.setEnabled(true);
+                    }
+                    case "Qtr 4" -> {
                         qtr = 4;
-                    default ->
+                        importPhyPerf.setEnabled(true);
+                    }
+                    default -> {
                         qtr = 0;
+                        importPhyPerf.setEnabled(false);
+                    }
                 }
             }
             refreshFinancialGrid();
@@ -546,6 +558,42 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             physicalGrid.getDataProvider().refreshAll();
             // ✅ Always check after update
             disableElements();
+        });
+        importPhyPerf.addSingleClickListener(e -> {
+
+            ConfirmDialog dialog = new ConfirmDialog();
+            dialog.setHeader("Confirm import");
+            dialog.setText("This will copy the previous quarter's physical performance into Quarter " + qtr + " for " + acts.size() + " activities. Continue?");
+
+            dialog.setCancelable(true);
+            dialog.setCancelText("No");
+
+            dialog.setConfirmText("Yes, import");
+            dialog.addConfirmListener(ev -> {
+
+                List<Urc_Activities> tempActs = new ArrayList<>();
+                for (Urc_Activities activ : acts) {
+                    if (qtr == 2) {
+                        activ.setPerc_of_TargetAchieved_qtr2(activ.getPerc_of_TargetAchieved_qtr1());
+                        activ.setCum_achievements_qtr2(activ.getCum_achievements_qtr1());
+                        activ.setExpl_of_variations_qtr2(activ.getExpl_of_variations_qtr1());
+                    } else if (qtr == 3) {
+                        activ.setPerc_of_TargetAchieved_qtr3(activ.getPerc_of_TargetAchieved_qtr2());
+                        activ.setCum_achievements_qtr3(activ.getCum_achievements_qtr2());
+                        activ.setExpl_of_variations_qtr3(activ.getExpl_of_variations_qtr2());
+                    } else if (qtr == 4) {
+                        activ.setPerc_of_TargetAchieved_qtr4(activ.getPerc_of_TargetAchieved_qtr3());
+                        activ.setCum_achievements_qtr4(activ.getCum_achievements_qtr3());
+                        activ.setExpl_of_variations_qtr4(activ.getExpl_of_variations_qtr3());
+                    }
+                    tempActs.add(activ);
+                }
+
+                sampleUrc_ActivitiesService.saveAllActivities(tempActs);
+                refreshFinancialGrid();
+            });
+
+            dialog.open();
         });
     }
 
@@ -770,11 +818,11 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                 label.getStyle().set("font-weight", "bold");
 
             } else if (totalActualExpenditure.abs().doubleValue() > cumReleasedFund.abs().doubleValue()) {
-                    label.getStyle().set("color", "red");
-                    label.getStyle().set("font-weight", "bold");
-                    label.getElement().setProperty("title", "⚠ Warning: Below You Actual Expenditure");
+                label.getStyle().set("color", "red");
+                label.getStyle().set("font-weight", "bold");
+                label.getElement().setProperty("title", "⚠ Warning: Below You Actual Expenditure");
 
-                }
+            }
 
             label.setText(formatBigDecimal(totalActualExpenditure.abs()));
             Tooltip tooltip = Tooltip.forComponent(label);
@@ -869,7 +917,6 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         physicalGrid.addColumn(Urc_Activities::getAnnualTarget)
                 .setHeader("Annual Target");
 
-
         physicalGrid.addColumn(area -> {
             String getCum_achievements = "";
             if (chosenDsection != null && chosenBudget != null && qtr != 0) {
@@ -916,7 +963,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             }
 
             return getCum_achievements;
-        }).setHeader("Cumulative Achievements");        
+        }).setHeader("Cumulative Achievements");
 
         physicalGrid.addColumn(new ComponentRenderer<>(area -> {
             String getCum_achievements = "-";
@@ -1510,7 +1557,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
         lay.add(kpiField, outputField, outcomeField);
         // Set all text areas to the same nice style
-        Stream.of(kpiField, outputField, outcomeField, expl_of_variationField,cumAchievementsSpan)
+        Stream.of(kpiField, outputField, outcomeField, expl_of_variationField, cumAchievementsSpan)
                 .forEach(area -> {
                     area.setWidthFull();
                     area.setRequiredIndicatorVisible(true);
@@ -1529,7 +1576,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                     field.setRequiredIndicatorVisible(true);
 
                 });
-        deliverableLayout.add(lay, annualTargetSpan,  perc_of_release_SpentSpan, cumAchievementsSpan,expl_of_variationField);
+        deliverableLayout.add(lay, annualTargetSpan, perc_of_release_SpentSpan, cumAchievementsSpan, expl_of_variationField);
         deliverableLayout.setResponsiveSteps(
                 new FormLayout.ResponsiveStep("0", 1, FormLayout.ResponsiveStep.LabelsPosition.ASIDE),
                 new FormLayout.ResponsiveStep("100px", 3, FormLayout.ResponsiveStep.LabelsPosition.ASIDE)

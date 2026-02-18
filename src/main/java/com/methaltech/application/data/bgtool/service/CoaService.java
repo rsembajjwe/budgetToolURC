@@ -1,5 +1,6 @@
 package com.methaltech.application.data.bgtool.service;
 
+import com.methaltech.application.data.Classification1;
 import com.methaltech.application.data.Classification2;
 import com.methaltech.application.data.Classification3;
 import com.methaltech.application.data.Display;
@@ -901,6 +902,7 @@ public class CoaService {
         }
         return coaRepository.findByBudgetAndClass3(budget, class3);
     }
+
     @Transactional(readOnly = true)
     public List<COA> findByBudgetAndClass2(Budget budget, Classification2 class2) {
         if (budget == null) {
@@ -910,5 +912,16 @@ public class CoaService {
             throw new IllegalArgumentException("class3 must not be null");
         }
         return coaRepository.findByBudgetAndClass2(budget, class2);
+    }
+
+    @Transactional(readOnly = true)
+    public List<COA> findByBudgetAndClass1(Budget budget, Classification1 class1) {
+        if (budget == null) {
+            throw new IllegalArgumentException("budgetId must not be null");
+        }
+        if (class1 == null) {
+            throw new IllegalArgumentException("class3 must not be null");
+        }
+        return coaRepository.findByBudgetAndClass1(budget, class1);
     }
 }

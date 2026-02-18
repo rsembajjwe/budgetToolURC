@@ -1,5 +1,6 @@
 package com.methaltech.application.data.bgtool.repository;
 
+import com.methaltech.application.data.Classification1;
 import com.methaltech.application.data.Classification2;
 import com.methaltech.application.data.Classification3;
 import com.methaltech.application.data.Display;
@@ -547,5 +548,6 @@ public interface CoaRepository extends JpaRepository<COA, Long> {
 
     List<COA> findByBudgetAndClass3(Budget budget, Classification3 class3);
     List<COA> findByBudgetAndClass2(Budget budget, Classification2 class2);
+    List<COA> findByBudgetAndClass1(Budget budget, Classification1 class1);
 
 }

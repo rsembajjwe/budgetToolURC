@@ -108,6 +108,7 @@ public class ActualView extends Div {
     private final UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService;
     private User user;
     private ComboBox<Budget> budget = new ComboBox("Budget");
+    Budget chosenBudget = null;
     private MultiSelectComboBox<UrcDeptSectionAnlDimbgt> comboBoxD_Section = new MultiSelectComboBox<>("Cost Centres");
     private DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
     PeriodExtractor extra = new PeriodExtractor();
@@ -293,15 +294,11 @@ public class ActualView extends Div {
             }
 
         });
-        view.addSingleClickListener(v -> {
-            if (!comboBoxD_Section.isEmpty() || !budget.isEmpty()) {
-                gridBudgetItems.setItems(budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems()));
-                gridBudgetItemsQuarterlyGrid.setItems(budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems()));
-            }
-        });
         budget.addValueChangeListener(e -> {
+            chosenBudget = e.getValue();
             setSpanValues();
             setSpanQtrValues();
+            System.out.println("Budget changed " + chosenBudget);
 
             if (!comboBoxD_Section.isEmpty() && !budget.isEmpty()) {
                 downloadWorkplan.setEnabled(true);
@@ -310,6 +307,13 @@ public class ActualView extends Div {
             } else {
                 downloadWorkplan.setEnabled(false);
                 downloadWorkplan2.setEnabled(false);
+                chosenBudget = null;
+            }
+        });
+        view.addSingleClickListener(v -> {
+            if (!comboBoxD_Section.isEmpty() || !budget.isEmpty()) {
+                gridBudgetItems.setItems(budgetItemsService.findDistinctBudgetItemses(chosenBudget, comboBoxD_Section.getSelectedItems()));
+                gridBudgetItemsQuarterlyGrid.setItems(budgetItemsService.findDistinctBudgetItemses(chosenBudget, comboBoxD_Section.getSelectedItems()));
             }
         });
 
@@ -1680,7 +1684,7 @@ public class ActualView extends Div {
 
     public Dialog createTransactionsDialog(BudgetItemsActuals target, String month, String month2) {
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle(target.getCoacode().getCode() + " " + month + " Transactions " +budget.getValue().getFinancialYear());
+        dialog.setHeaderTitle(target.getCoacode().getCode() + " " + month + " Transactions " + budget.getValue().getFinancialYear());
 
         Grid<SALFLDGProjection> gridTransactions = new Grid<>(SALFLDGProjection.class, false);
         gridTransactions.setSelectionMode(Grid.SelectionMode.SINGLE);
@@ -1751,7 +1755,7 @@ public class ActualView extends Div {
 
     public Dialog createTransactionsDialog2(BudgetItemsActuals target, String month) {
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle(target.getCoacode().getCode() + " Total Transactions " +budget.getValue().getFinancialYear());
+        dialog.setHeaderTitle(target.getCoacode().getCode() + " Total Transactions " + budget.getValue().getFinancialYear());
 
         Grid<SALFLDGProjection> gridTransactions = new Grid<>(SALFLDGProjection.class, false);
         gridTransactions.setSelectionMode(Grid.SelectionMode.SINGLE);

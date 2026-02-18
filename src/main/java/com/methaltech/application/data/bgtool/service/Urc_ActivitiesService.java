@@ -7,6 +7,9 @@ import com.methaltech.application.data.bgtool.repository.Urc_ActivitiesRepositor
 import com.methaltech.application.data.entity.bgtool.D_Unit;
 import com.methaltech.application.data.entity.bgtool.StaffSalary;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
+import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -201,6 +204,37 @@ public class Urc_ActivitiesService {
     @Transactional
     public Urc_Activities saveActivity(Urc_Activities activity) {
         return repository.save(activity);
+    }
+
+    @Transactional
+    public List<Urc_Activities> saveAllActivities(List<Urc_Activities> activities) {
+
+        if (activities == null || activities.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Optional: Pre-validation / normalization
+        activities.forEach(this::prepareForSave);
+
+        return repository.saveAll(activities);
+    }
+
+    private void prepareForSave(Urc_Activities activity) {
+
+        // Example safety checks
+        if (activity.getActivity_budget() == null) {
+            activity.setActivity_budget(BigDecimal.ZERO);
+        }
+
+        if (activity.getDeliverable_outputs() == null) {
+            activity.setDeliverable_outputs(new HashSet<>());
+        }
+
+        // Maintain bidirectional relationship integrity
+        if (activity.getQuarterlyActuals() != null) {
+            activity.getQuarterlyActuals()
+                    .forEach(q -> q.setActivity(activity));
+        }
     }
 
     @Transactional

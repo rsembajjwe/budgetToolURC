@@ -4,7 +4,6 @@ vaadin-login-form-wrapper::part(form-title){
 }
 
 vaadin-login-overlay-wrapper::part(brand) {
-    background-image: url("../icons/icon.png") !important;
     background-repeat: no-repeat;
     background-position: center;
     color: lightgreen;
@@ -15,7 +14,6 @@ vaadin-login-overlay-wrapper::part(brand) {
 }
 @media (max-width: 283 px) {
     vaadin-login-overlay-wrapper::part(brand) {
-        background-image: url("../icons/icon22.png") !important;
 
     }
 }

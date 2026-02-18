@@ -4,14 +4,18 @@ import com.methaltech.application.data.BCrypt;
 import com.methaltech.application.data.EmailSender;
 import com.methaltech.application.data.EmailValidator;
 import com.methaltech.application.data.GlobalConstants;
+import com.methaltech.application.data.bgtool.service.SystemIconService;
 import com.methaltech.application.data.entity.bgtool.User;
 import com.methaltech.application.data.bgtool.service.UserService;
+import com.methaltech.application.data.entity.bgtool.SystemIcon;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Html;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.login.LoginOverlay;
@@ -25,14 +29,15 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.internal.RouteUtil;
+import com.vaadin.flow.server.StreamRegistration;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinServlet;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import jakarta.servlet.ServletContext;
-import static java.lang.Math.random;
+import java.io.ByteArrayInputStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Random;
-import static org.apache.commons.lang3.RandomStringUtils.random;
 
 @AnonymousAllowed
 @PageTitle("Login")
@@ -48,33 +53,26 @@ public class LoginView extends LoginOverlay implements BeforeEnterObserver {
     private final UserService samplePersonService;
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final Random RANDOM = new Random();
+    private final SystemIconService systemIconService;
 
-    public LoginView(AuthenticatedUser authenticatedUser, EmailValidator emailValidator, UserService samplePersonService) {
+    public LoginView(AuthenticatedUser authenticatedUser, EmailValidator emailValidator, UserService samplePersonService, SystemIconService systemIconService) {
         this.authenticatedUser = authenticatedUser;
         this.emailValidator = emailValidator;
         this.samplePersonService = samplePersonService;
+        this.systemIconService = systemIconService;
+
         setAction(RouteUtil.getRoutePath(VaadinService.getCurrent().getContext(), getClass()));
-        //addClassNames("login-view");
+        addClassNames("login-view");
+
         LoginI18n i18n = LoginI18n.createDefault();
-        i18n.setHeader(new LoginI18n.Header());
-        //i18n.getHeader().setTitle("Budget Tool");
-        ServletContext servletContext = VaadinServlet.getCurrent().getServletContext();
-        //String imagePath = servletContext.getRealPath("/icons/icon.png");
-        String imagePath = servletContext.getRealPath("/bgt/icons/icon.png");
-
-        // Update the background image URL in your CSS
-        /*        String brandStyle = "background-image: url('" + imagePath + "') !important;";
-        getElement().executeJs("this.style.setProperty('--lumo-login-overlay-wrapper-background-image', $0)", brandStyle);*/
-
-        // Set the favicon link in the head
-        /*        Html head = new Html(
-        "<link rel=\"icon\" type=\"image/x-icon\" href=\"" + imagePath + "\">"
-        );*/
-       // this.getElement().appendChild(head.getElement());
-
+        i18n.setHeader(new LoginI18n.Header()); // important to avoid NPE
         i18n.getHeader().setDescription("Uganda Railways Corporation");
         i18n.setAdditionalInformation(null);
         setI18n(i18n);
+
+// Put logo ABOVE title (centered)
+        setTitle(buildLoginTitle());
+
         setForgotPasswordButtonVisible(true);
         addForgotPasswordListener(er -> {
             Dialog dialog = new Dialog();
@@ -191,6 +189,80 @@ public class LoginView extends LoginOverlay implements BeforeEnterObserver {
             sb.append(randomChar);
         }
         return sb.toString();
+    }
+
+    private void applySystemLogoToBrand() {
+        try {
+            SystemIcon icon = systemIconService.getRequired("URC_LOGO");
+
+            StreamResource res = new StreamResource(
+                    icon.getFileName(),
+                    () -> new ByteArrayInputStream(icon.getData())
+            );
+            res.setContentType(icon.getContentType());
+
+            StreamRegistration reg = UI.getCurrent()
+                    .getSession()
+                    .getResourceRegistry()
+                    .registerResource(res);
+
+            String url = reg.getResourceUri().toString();
+
+            String css = """
+            vaadin-login-overlay.login-view-login-overlay-1::part(brand) {
+              background-image: url('%s');
+              background-repeat: no-repeat;
+              background-position: center;
+              background-size: contain;
+            }
+            """.formatted(url.replace("'", "\\'"));
+
+            UI.getCurrent().getPage().executeJs("""
+            const id = 'urc-login-brand-style';
+            let s = document.getElementById(id);
+            if (!s) { s = document.createElement('style'); s.id = id; document.head.appendChild(s); }
+            s.textContent = $0;
+        """, css);
+
+            System.out.println("URC_LOGO applied to brand.");
+
+        } catch (Exception ex) {
+            System.out.println("URC_LOGO failed: " + ex.getMessage());
+        }
+    }
+
+    private Component buildLoginTitle() {
+        VerticalLayout box = new VerticalLayout();
+        box.setPadding(false);
+        box.setSpacing(false);
+        box.setAlignItems(FlexComponent.Alignment.CENTER);
+
+        // Default title text
+        H2 title = new H2("Budget Tool");
+        title.getStyle().set("margin", "6px 0 0 0").set("text-align", "center").set("color", "lightgreen");
+
+        // Try DB logo
+        try {
+            SystemIcon icon = systemIconService.getRequired("URC_LOGO");
+
+            StreamResource res = new StreamResource(
+                    icon.getFileName(),
+                    () -> new ByteArrayInputStream(icon.getData())
+            );
+            res.setContentType(icon.getContentType());
+
+            Image logo = new Image(res, "URC Logo");
+            logo.setWidth("120px");     // adjust
+            logo.getStyle().set("margin", "0").set("padding", "0");
+
+            box.add(logo, title);
+
+        } catch (Exception ex) {
+            // If no logo in DB, show just title
+            box.add(title);
+        }
+
+        return box;
     }
 
 }

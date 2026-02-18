@@ -28,6 +28,7 @@ import com.methaltech.application.views.procurementplan.ProcurementPlanView;
 import com.methaltech.application.views.requisition.BLORequisitionView;
 import com.methaltech.application.views.salary.staffSalaryView;
 import com.methaltech.application.views.structure.structureView;
+import com.methaltech.application.views.users.SystemSettingsView;
 import com.methaltech.application.views.users.UserView;
 import com.methaltech.application.views.workplan.budgetWorkplanView;
 import com.vaadin.flow.component.Component;
@@ -101,11 +102,11 @@ public class MainLayout extends AppLayout {
     private final Button cancel = new Button("Cancel");
     private final Button save = new Button("Save");
     private final User user_current = new User();
-    
+
     private final EmailValidator emailValidator;
-    
+
     private EmailSender emailSender;
-    
+
     private final UserService samplePersonService;
     Avatar avatar;
 
@@ -114,7 +115,7 @@ public class MainLayout extends AppLayout {
         this.accessChecker = accessChecker;
         this.emailValidator = emailValidator;
         this.samplePersonService = samplePersonService;
-        
+
         setPrimarySection(Section.DRAWER);
         addDrawerContent();
         addHeaderContent();
@@ -155,35 +156,35 @@ public class MainLayout extends AppLayout {
     private SideNav createNavigation() {
         SideNav nav = new SideNav();
         nav.addClassName("professional-side-nav");
-        
+
         if (accessChecker.hasAccess(DashboardView.class)) {
             SideNavItem item = new SideNavItem("Admin Dashboard", DashboardView.class, VaadinIcon.DASHBOARD.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
-        
+
         if (accessChecker.hasAccess(BLODashboardView.class)) {
-            SideNavItem item = new SideNavItem("Dashboard", BLODashboardView.class, VaadinIcon.CHART.create());
+            SideNavItem item = new SideNavItem("Dashboard", BLODashboardView.class, VaadinIcon.DASHBOARD.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
-        
+
         SideNavItem userManagementHeader = new SideNavItem("Budget Planning");
         userManagementHeader.setClassName("menu-header");
         nav.addItem(userManagementHeader);
         if (accessChecker.hasAccess(NdpPlanManagementView.class)) {
-            SideNavItem item = new SideNavItem("NDP Alignment", NdpPlanManagementView.class, VaadinIcon.TASKS.create());
+            SideNavItem item = new SideNavItem("NDP Alignment", NdpPlanManagementView.class, VaadinIcon.CLIPBOARD_CHECK.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
         if (accessChecker.hasAccess(UrcProgrammesView.class)) {
-            SideNavItem item = new SideNavItem("URC Programmes", UrcProgrammesView.class, VaadinIcon.TASKS.create());
+            SideNavItem item = new SideNavItem("URC Programmes", UrcProgrammesView.class, VaadinIcon.CUBE.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
-        
+
         if (accessChecker.hasAccess(BudgetCeilingView.class)) {
-            SideNavItem item = new SideNavItem("Budget Ceiling", BudgetCeilingView.class, VaadinIcon.SHIELD.create());
+            SideNavItem item = new SideNavItem("Budget Ceiling", BudgetCeilingView.class, VaadinIcon.TRENDING_UP.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
@@ -193,30 +194,30 @@ public class MainLayout extends AppLayout {
         nav.addItem(budgetingHeader);
 
         if (accessChecker.hasAccess(BudgetFormView.class)) {
-            SideNavItem item = new SideNavItem("Budget Form", BudgetFormView.class, VaadinIcon.FORM.create());
+            SideNavItem item = new SideNavItem("Budget Form", BudgetFormView.class, VaadinIcon.EDIT.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
         if (accessChecker.hasAccess(BudgetControlView.class)) {
-            SideNavItem item = new SideNavItem("Budget Controls", BudgetControlView.class, VaadinIcon.LOCK.create());
+            SideNavItem item = new SideNavItem("Budget Controls", BudgetControlView.class, VaadinIcon.SHIELD.create());
             item.addClassName("menu-item");
             nav.addItem(item);
-        }        
-        
+        }
+
         if (accessChecker.hasAccess(freightVolumeView.class)) {
             SideNavItem item = new SideNavItem("Freight Volume Reports", freightVolumeView.class, VaadinIcon.TRUCK.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
-        
+
         if (accessChecker.hasAccess(staffSalaryView.class)) {
-            SideNavItem item = new SideNavItem("Human Resource", staffSalaryView.class, VaadinIcon.USERS.create());
+            SideNavItem item = new SideNavItem("Human Resource", staffSalaryView.class, VaadinIcon.USER_HEART.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
-        
+
         if (accessChecker.hasAccess(BLORequisitionView.class)) {
-            SideNavItem item = new SideNavItem("Requisitions", BLORequisitionView.class, VaadinIcon.FILE_TEXT.create());
+            SideNavItem item = new SideNavItem("Requisitions", BLORequisitionView.class, VaadinIcon.CART.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
@@ -238,7 +239,7 @@ public class MainLayout extends AppLayout {
         }
 
         if (accessChecker.hasAccess(BudgetReportsView.class)) {
-            SideNavItem item = new SideNavItem("Budget Reports", BudgetReportsView.class, VaadinIcon.CHART_LINE.create());
+            SideNavItem item = new SideNavItem("Budget Reports", BudgetReportsView.class, VaadinIcon.BAR_CHART.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
@@ -257,7 +258,7 @@ public class MainLayout extends AppLayout {
         performanceReportHeader.setClassName("menu-header");
         nav.addItem(performanceReportHeader);
         if (accessChecker.hasAccess(PhysicalFinancialPerformanceView.class)) {
-            SideNavItem item = new SideNavItem("Performance Report N", PhysicalFinancialPerformanceView.class, VaadinIcon.RASTER.create());
+            SideNavItem item = new SideNavItem("Performance Report N", PhysicalFinancialPerformanceView.class, VaadinIcon.AREA_SELECT.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
@@ -266,7 +267,7 @@ public class MainLayout extends AppLayout {
             item.addClassName("menu-item");
             nav.addItem(item);
         }
-        
+
         if (accessChecker.hasAccess(PerformanceView.class)) {
             SideNavItem item = new SideNavItem("Analysis Report", PerformanceView.class, VaadinIcon.CHART.create());
             item.addClassName("menu-item");
@@ -288,13 +289,13 @@ public class MainLayout extends AppLayout {
             item.addClassName("menu-item");
             nav.addItem(item);
         }
-        
+
         if (accessChecker.hasAccess(currencyView.class)) {
             SideNavItem item = new SideNavItem("Currency Exchange Rates", currencyView.class, VaadinIcon.MONEY_DEPOSIT.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
-        
+
         if (accessChecker.hasAccess(UnitsMeasureView.class)) {
             SideNavItem item = new SideNavItem("Units of Measure", UnitsMeasureView.class, VaadinIcon.SCALE.create());
             item.addClassName("menu-item");
@@ -312,7 +313,7 @@ public class MainLayout extends AppLayout {
             item.addClassName("menu-item");
             nav.addItem(item);
         }
-        
+
         if (accessChecker.hasAccess(OrganisationCOAManagementView.class)) {
             SideNavItem item = new SideNavItem("Accounts-Revenue", OrganisationCOAManagementView.class, VaadinIcon.CONNECT.create());
             item.addClassName("menu-item");
@@ -321,6 +322,11 @@ public class MainLayout extends AppLayout {
 
         if (accessChecker.hasAccess(BudgetView.class)) {
             SideNavItem item = new SideNavItem("Set Budget", BudgetView.class, VaadinIcon.WALLET.create());
+            item.addClassName("menu-item");
+            nav.addItem(item);
+        }
+        if (accessChecker.hasAccess(SystemSettingsView.class)) {
+            SideNavItem item = new SideNavItem("System Settings", SystemSettingsView.class, VaadinIcon.COG.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
