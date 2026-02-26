@@ -21,6 +21,15 @@ public class DepartmentBudget {
     private boolean postingProhibited;
     private String status;
     private int sectionCount;
+    private double cumQtr1Budget;
+    private double cumQtr2Budget;
+    private double cumQtr3Budget;
+    private double cumQtr4Budget;
+
+    private double cumQtr1Actual;
+    private double cumQtr2Actual;
+    private double cumQtr3Actual;
+    private double cumQtr4Actual;
 
     public double getSpentPercentage() {
         return totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;

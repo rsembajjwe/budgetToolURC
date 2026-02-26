@@ -7,8 +7,8 @@ public interface SALFLDGProjection {
 
     String getAccntCode();
 
-    int getJrnalNo();
-    int getJrnalLine();
+    Integer  getJrnalNo();
+    Integer  getJrnalLine();
 
     BigDecimal getAmount();
 

@@ -4,10 +4,15 @@ import static com.methaltech.application.data.Quarters.Qtr1;
 import static com.methaltech.application.data.Quarters.Qtr2;
 import static com.methaltech.application.data.Quarters.Qtr3;
 import static com.methaltech.application.data.Quarters.Qtr4;
+import com.methaltech.application.data.entity.bgtool.Budget;
+import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,54 +79,54 @@ public class PeriodExtractor {
         }
         return listPeriods;
     }
+
     public List<Integer> getListOfCurrentPeriodByFY(String fy) {
         List<Integer> listPeriods = new ArrayList<>();
         strings(fy);
         int year = getYears().get(1);
 
-                listPeriods.add(year * 1000 + 1);
-                listPeriods.add(year * 1000 + 2);
-                listPeriods.add(year * 1000 + 3);
+        listPeriods.add(year * 1000 + 1);
+        listPeriods.add(year * 1000 + 2);
+        listPeriods.add(year * 1000 + 3);
 
-                listPeriods.add(year * 1000 + 4);
-                listPeriods.add(year * 1000 + 5);
-                listPeriods.add(year * 1000 + 6);
+        listPeriods.add(year * 1000 + 4);
+        listPeriods.add(year * 1000 + 5);
+        listPeriods.add(year * 1000 + 6);
 
-                listPeriods.add(year * 1000 + 7);
-                listPeriods.add(year * 1000 + 8);
-                listPeriods.add(year * 1000 + 9);
+        listPeriods.add(year * 1000 + 7);
+        listPeriods.add(year * 1000 + 8);
+        listPeriods.add(year * 1000 + 9);
 
-                listPeriods.add(year * 1000 + 10);
-                listPeriods.add(year * 1000 + 11);
-                listPeriods.add(year * 1000 + 12);
+        listPeriods.add(year * 1000 + 10);
+        listPeriods.add(year * 1000 + 11);
+        listPeriods.add(year * 1000 + 12);
 
-        
         return listPeriods;
-    } 
+    }
+
     public List<Integer> getListOfPreviousPeriodByFY(String fy) {
         List<Integer> listPeriods = new ArrayList<>();
         strings(fy);
         int year = getYears().get(0);
 
-                listPeriods.add(year * 1000 + 1);
-                listPeriods.add(year * 1000 + 2);
-                listPeriods.add(year * 1000 + 3);
+        listPeriods.add(year * 1000 + 1);
+        listPeriods.add(year * 1000 + 2);
+        listPeriods.add(year * 1000 + 3);
 
-                listPeriods.add(year * 1000 + 4);
-                listPeriods.add(year * 1000 + 5);
-                listPeriods.add(year * 1000 + 6);
+        listPeriods.add(year * 1000 + 4);
+        listPeriods.add(year * 1000 + 5);
+        listPeriods.add(year * 1000 + 6);
 
-                listPeriods.add(year * 1000 + 7);
-                listPeriods.add(year * 1000 + 8);
-                listPeriods.add(year * 1000 + 9);
+        listPeriods.add(year * 1000 + 7);
+        listPeriods.add(year * 1000 + 8);
+        listPeriods.add(year * 1000 + 9);
 
-                listPeriods.add(year * 1000 + 10);
-                listPeriods.add(year * 1000 + 11);
-                listPeriods.add(year * 1000 + 12);
+        listPeriods.add(year * 1000 + 10);
+        listPeriods.add(year * 1000 + 11);
+        listPeriods.add(year * 1000 + 12);
 
-        
         return listPeriods;
-    }    
+    }
 
     public int generatePreviousPeriod(String yearS, String month) {
         strings(yearS);
@@ -441,11 +446,143 @@ public class PeriodExtractor {
         int newfy1 = fy1 - 1;
         return String.format("FY%d-%d", newfy1, fy1);
     }
-    
-        public String getCurrentFy(String fy) {
+
+    public String getCurrentFy(String fy) {
         int[] years = extractYears(fy);
         int fy1 = years[1];
         int newfy1 = fy1 - 1;
         return String.format("FY%d-%d", newfy1, fy1);
+    }
+
+    public Set<Integer> getFinancialYearPeriods(Budget budget) {
+        Set<Integer> periods = new LinkedHashSet<>();
+
+        if (budget.getStartDate() == null || budget.getCloseDate() == null) {
+            return periods; // return empty if dates are not set
+        }
+
+        // Get the financial year end (YYYY part)
+        int yearSuffix = budget.getCloseDate().getYear(); // e.g., 2025 for FY 2024/07/01 to 2025/06/30
+
+        // Start from July of the start year
+        LocalDate current = LocalDate.of(budget.getStartDate().getYear(), Month.JULY, 1);
+        for (int i = 1; i <= 12; i++) {
+            //String periodCode = String.format("%d%03d", yearSuffix, i); // e.g., 2025001
+            int periodCode = yearSuffix * 1000 + i;
+            periods.add(periodCode);
+            current = current.plusMonths(1);
+        }
+
+        return periods;
+    }
+
+    /*    public Set<Integer> getFinancialYearPeriodByMonth(Budget budget, Month month) {
+    Set<Integer> periods = new LinkedHashSet<>();
+    
+    if (budget == null || month == null
+    || budget.getStartDate() == null || budget.getCloseDate() == null) {
+    return periods;
+    }
+    
+    // Normalize to month boundaries
+    LocalDate start = budget.getStartDate().withDayOfMonth(1);
+    LocalDate end = budget.getCloseDate().withDayOfMonth(1);
+    
+    // Find the financial-year "period index" for the given month: July=1 ... June=12
+    int periodIndex = ((month.getValue() - Month.JULY.getValue() + 12) % 12) + 1;
+    
+    // Financial year suffix = close year (e.g., FY 2025/07 -> 2026/06 => 2026)
+    int fyEndYear = budget.getCloseDate().getYear();
+    int periodCode = fyEndYear * 1000 + periodIndex;
+    
+    // Validate that the requested month actually lies within the budget range
+    // We need to determine which calendar year that month falls in within this FY window.
+    // Months Jul-Dec belong to start year, Jan-Jun belong to close year.
+    int monthYear = (month.getValue() >= Month.JULY.getValue())
+    ? budget.getStartDate().getYear()
+    : budget.getCloseDate().getYear();
+    
+    LocalDate requestedMonth = LocalDate.of(monthYear, month, 1);
+    
+    if (!requestedMonth.isBefore(start) && !requestedMonth.isAfter(end)) {
+    periods.add(periodCode);
+    }
+    
+    return periods;
+    }*/
+
+    public int getFinancialYearPeriodByMonth(Budget budget, Month month) {
+
+        if (budget == null || month == null
+                || budget.getStartDate() == null || budget.getCloseDate() == null) {
+            throw new IllegalArgumentException("Budget dates and month must not be null");
+        }
+
+        LocalDate start = budget.getStartDate().withDayOfMonth(1);
+        LocalDate end = budget.getCloseDate().withDayOfMonth(1);
+
+        int fyEndYear = budget.getCloseDate().getYear();
+
+        // July = 1 ... June = 12
+        int periodIndex = ((month.getValue() - Month.JULY.getValue() + 12) % 12) + 1;
+
+        // Determine which calendar year this month belongs to
+        int monthYear = (month.getValue() >= Month.JULY.getValue())
+                ? budget.getStartDate().getYear()
+                : budget.getCloseDate().getYear();
+
+        LocalDate requestedMonth = LocalDate.of(monthYear, month, 1);
+
+        if (requestedMonth.isBefore(start) || requestedMonth.isAfter(end)) {
+            throw new IllegalArgumentException("Month is outside the budget financial year");
+        }
+
+        return fyEndYear * 1000 + periodIndex;
+    }
+
+    public Set<Integer> getFinancialYearPeriodsByQuarter(Budget budget, int quarter) {
+        Set<Integer> periods = new LinkedHashSet<>();
+        if (budget == null || budget.getStartDate() == null || budget.getCloseDate() == null) {
+            return periods;
+        }
+        if (quarter < 1 || quarter > 4) {
+            throw new IllegalArgumentException("Quarter must be 1..4");
+        }
+
+        LocalDate start = budget.getStartDate().withDayOfMonth(1);
+        LocalDate end = budget.getCloseDate().withDayOfMonth(1);
+
+        int fyEndYear = budget.getCloseDate().getYear();
+
+        Month[] quarterMonths = switch (quarter) {
+            case 1 ->
+                new Month[]{Month.JULY, Month.AUGUST, Month.SEPTEMBER};
+            case 2 ->
+                new Month[]{Month.OCTOBER, Month.NOVEMBER, Month.DECEMBER};
+            case 3 ->
+                new Month[]{Month.JANUARY, Month.FEBRUARY, Month.MARCH};
+            case 4 ->
+                new Month[]{Month.APRIL, Month.MAY, Month.JUNE};
+            default ->
+                throw new IllegalArgumentException("Quarter must be 1..4");
+        };
+
+        for (Month m : quarterMonths) {
+            // July=1 ... June=12
+            int periodIndex = ((m.getValue() - Month.JULY.getValue() + 12) % 12) + 1;
+            int periodCode = fyEndYear * 1000 + periodIndex;
+
+            int monthYear = (m.getValue() >= Month.JULY.getValue())
+                    ? budget.getStartDate().getYear()
+                    : budget.getCloseDate().getYear();
+
+            LocalDate requestedMonth = LocalDate.of(monthYear, m, 1);
+
+            if (!requestedMonth.isBefore(start) && !requestedMonth.isAfter(end)) {
+                periods.add(periodCode);
+            }
+        }
+
+        return periods;
     }
 }

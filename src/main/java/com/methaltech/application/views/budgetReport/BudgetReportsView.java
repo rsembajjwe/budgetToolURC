@@ -162,6 +162,7 @@ import com.itextpdf.layout.Document;
 import com.methaltech.application.data.Classification1;
 import com.methaltech.application.data.bgtool.service.SystemIconService;
 import com.methaltech.application.data.entity.bgtool.SystemIcon;
+import com.methaltech.application.data.entity.bgtool.dto.PerformanceData;
 import com.vaadin.flow.component.html.H1;
 
 // Java IO
@@ -270,31 +271,31 @@ public class BudgetReportsView extends Div {
     Budget prevBudget = null;
     private final SystemIconService systemIconService;
     ComboBox<String> qtrComboBox2 = new ComboBox<>("Select Quarter");
-    BigDecimal totalRecurrentIncome=BigDecimal.ZERO;
-    BigDecimal totalNonRecurrentIncome=BigDecimal.ZERO;
-    BigDecimal totalOperationExpense=BigDecimal.ZERO;
-    BigDecimal directExpense=BigDecimal.ZERO;
-    
-    BigDecimal otherAdminExpense=BigDecimal.ZERO;
-    
+    BigDecimal totalRecurrentIncome = BigDecimal.ZERO;
+    BigDecimal totalNonRecurrentIncome = BigDecimal.ZERO;
+    BigDecimal totalOperationExpense = BigDecimal.ZERO;
+    BigDecimal directExpense = BigDecimal.ZERO;
+
+    BigDecimal otherAdminExpense = BigDecimal.ZERO;
+
     //Variable expenses
-    BigDecimal fuelExpense=BigDecimal.ZERO;
-    BigDecimal passengerExpense=BigDecimal.ZERO;
-    BigDecimal maintenanceExpense=BigDecimal.ZERO;
-    BigDecimal utitlity_PropertyExpense=BigDecimal.ZERO;
-    
+    BigDecimal fuelExpense = BigDecimal.ZERO;
+    BigDecimal passengerExpense = BigDecimal.ZERO;
+    BigDecimal maintenanceExpense = BigDecimal.ZERO;
+    BigDecimal utitlity_PropertyExpense = BigDecimal.ZERO;
+
     //Admin Expense
-    BigDecimal generalExpense=BigDecimal.ZERO;
-    
+    BigDecimal generalExpense = BigDecimal.ZERO;
+
     //Other Admin Expense
-    BigDecimal board_legalExpense=BigDecimal.ZERO;  
-    BigDecimal communicationsExpense=BigDecimal.ZERO;
-    BigDecimal utilitiesExpense=BigDecimal.ZERO;
-    BigDecimal supplies_servicesExpense=BigDecimal.ZERO;
-    BigDecimal professional_servicesExpense=BigDecimal.ZERO;
-    BigDecimal insurancce_licenseExpense=BigDecimal.ZERO;
-    BigDecimal travel_transportExpense=BigDecimal.ZERO;
-    BigDecimal miscellanous_otherExpense=BigDecimal.ZERO;
+    BigDecimal board_legalExpense = BigDecimal.ZERO;
+    BigDecimal communicationsExpense = BigDecimal.ZERO;
+    BigDecimal utilitiesExpense = BigDecimal.ZERO;
+    BigDecimal supplies_servicesExpense = BigDecimal.ZERO;
+    BigDecimal professional_servicesExpense = BigDecimal.ZERO;
+    BigDecimal insurancce_licenseExpense = BigDecimal.ZERO;
+    BigDecimal travel_transportExpense = BigDecimal.ZERO;
+    BigDecimal miscellanous_otherExpense = BigDecimal.ZERO;
 
     public BudgetReportsView(UserService userService, BudgetService budgetService,
             SamplePersonService samplePersonService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, OrganisationService sampleOrganisationService,
@@ -1556,7 +1557,10 @@ public class BudgetReportsView extends Div {
 
         data.addItem(non_recurrentIncome, new PerformanceRow("TOTAL NON RECURRENT INCOME", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
 
-        grid.expand(recurrentIncome, freight_services, other_fees_charges, rentalIncome, passengers, miscellaneous, northern, southern, passengers, non_recurrentIncome);
+        PerformanceData datas = sampleBudgetItemsService.getTotalIncomeData(comboBox2.getValue());
+        data.addRootItems(new PerformanceRow("TOTAL INCOME", formatCurrencyB(datas.getPreviousBudgetApproved()), formatCurrencyB(datas.getPreviousBudgeActual()), formatCurrencyB(datas.getChosenBudget())));
+        //data.addItem(non_recurrentIncome, new PerformanceRow("TOTAL INCOME", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        //grid.expand(recurrentIncome, freight_services, other_fees_charges, rentalIncome, passengers, miscellaneous, northern, southern, passengers, non_recurrentIncome);
 
         Button pdfBtn = new Button(VaadinIcon.FILE_TEXT.create());
         pdfBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
@@ -1656,6 +1660,7 @@ public class BudgetReportsView extends Div {
             }
 
         });
+        setExpensePerformancedataLayout();
     }
 
     public void setExpensePerformancedataLayout() {
@@ -1786,15 +1791,15 @@ public class BudgetReportsView extends Div {
             freightCodes.add(coa.getCode());
             listclass1codesCurBdgt.add(coa);
             listclass1codesPrevBdgt.add(coaPrev);
-            data.addItem(fuel, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode())), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+            data.addItem(fuel, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode()).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
         }
 
-        data.addItem(fuel, new PerformanceRow("TOTAL FUEL", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
-
-        PerformanceRow rentalIncome = new PerformanceRow("RENT INCOME", true);
-        data.addItem(directExpense, rentalIncome);
-        List<COA> rentCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Rent_Income);
-        List<COA> rentCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Rent_Income);
+        data.addItem(fuel, new PerformanceRow("TOTAL FUEL", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(fuel, sampleBudgetItemsService.getExpPercOnOperExpense(comboBox2.getValue(), sampleBudgetItemsService.getTotalFuelData(comboBox2.getValue())));
+        PerformanceRow passengerServicesExp = new PerformanceRow("PASSENGER SERVICE EXPENSES", true);
+        data.addItem(directExpense, passengerServicesExp);
+        List<COA> rentCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Passenger_Service_Expenses);
+        List<COA> rentCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Passenger_Service_Expenses);
         //class1codes.clear();
         listcodesPrevBdgt.clear();
         listcodesCurBdgt.clear();
@@ -1808,16 +1813,16 @@ public class BudgetReportsView extends Div {
             freightCodes.add(coa.getCode());
             listclass1codesCurBdgt.add(coa);
             listclass1codesPrevBdgt.add(coaPrev);
-            data.addItem(rentalIncome, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode())), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+            data.addItem(passengerServicesExp, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode()).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
         }
 
-        data.addItem(rentalIncome, new PerformanceRow("TOTAL RENT INCOME", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
-
+        data.addItem(passengerServicesExp, new PerformanceRow("TOTAL PASSENGER SERVICE EXPENSES", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(passengerServicesExp, sampleBudgetItemsService.getExpPercOnOperExpense(comboBox2.getValue(), sampleBudgetItemsService.getTotalPassengerServiceExpData(comboBox2.getValue())));
         // Passengers
-        PerformanceRow passengers = new PerformanceRow("PASSENGERS TICKET SALES", true);
+        PerformanceRow passengers = new PerformanceRow("MAINTENANCE EXPENSES", true);
         data.addItem(directExpense, passengers);
-        List<COA> passengersCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Passenger_Ticket_Sales);
-        List<COA> passengersCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Passenger_Ticket_Sales);
+        List<COA> passengersCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Maintenance);
+        List<COA> passengersCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Maintenance);
         //class1codes.clear();
         listcodesPrevBdgt.clear();
         listcodesCurBdgt.clear();
@@ -1831,15 +1836,15 @@ public class BudgetReportsView extends Div {
             freightCodes.add(coa.getCode());
             listclass1codesCurBdgt.add(coa);
             listclass1codesPrevBdgt.add(coaPrev);
-            data.addItem(passengers, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode())), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+            data.addItem(passengers, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode()).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
         }
 
-        data.addItem(passengers, new PerformanceRow("TOTAL PASSENGER SERVICE INCOME", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
-
-        PerformanceRow miscellaneous = new PerformanceRow("MISCELLANEOUS INCOME", true);
-        data.addItem(directExpense, miscellaneous);
-        List<COA> miscellaneousCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Miscellaneous_Income);
-        List<COA> miscellaneousCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Miscellaneous_Income);
+        data.addItem(passengers, new PerformanceRow("TOTAL MAINTENANCE EXPENSES", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(passengers, sampleBudgetItemsService.getExpPercOnOperExpense(comboBox2.getValue(), sampleBudgetItemsService.getTotalMaintenanceData(comboBox2.getValue())));
+        PerformanceRow utility_propertyExp = new PerformanceRow("UTILITY & PROPERTY EXPENSES", true);
+        data.addItem(directExpense, utility_propertyExp);
+        List<COA> miscellaneousCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Utility_Property_Expenses);
+        List<COA> miscellaneousCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Utility_Property_Expenses);
         // class1codes.clear();
         listcodesPrevBdgt.clear();
         listcodesCurBdgt.clear();
@@ -1853,25 +1858,26 @@ public class BudgetReportsView extends Div {
             freightCodes.add(coa.getCode());
             listclass1codesCurBdgt.add(coa);
             listclass1codesPrevBdgt.add(coaPrev);
-            data.addItem(miscellaneous, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode())), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+            data.addItem(utility_propertyExp, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode()).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
         }
 
-        data.addItem(miscellaneous, new PerformanceRow("TOTAL MISCELLANEOUS INCOME", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(utility_propertyExp, new PerformanceRow("TOTAL UTILITY & PROPERTY EXPENSES", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(utility_propertyExp, sampleBudgetItemsService.getExpPercOnOperExpense(comboBox2.getValue(), sampleBudgetItemsService.getTotalUtility_PropertyExpData(comboBox2.getValue())));
 
-        data.addItem(directExpense, new PerformanceRow("TOTAL RECURRENT INCOME", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listclass1codesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), class1codes)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listclass1codesCurBdgt))));
-        grid.setTreeData(data);
+        PerformanceData datas = sampleBudgetItemsService.getTotalVariableCost(comboBox2.getValue());
+        data.addItem(directExpense, new PerformanceRow("TOTAL VARIABLE COSTS", formatCurrencyB(datas.getPreviousBudgetApproved()), formatCurrencyB(datas.getPreviousBudgeActual().abs()), formatCurrencyB(datas.getChosenBudget())));
+        data.addItem(directExpense, sampleBudgetItemsService.getExpPercOnOperExpense(comboBox2.getValue(), datas));
 
-        PerformanceRow non_recurrentIncome = new PerformanceRow("NON RECURRENT INCOME", true);
-        data.addRootItems(non_recurrentIncome);
-
-        List<COA> non_recurrentIncomeCodeCurBdgt = sampleCoaService.findByBudgetAndClass1(comboBox2.getValue(), Classification1.Non_Recurrent_Income);
-        List<COA> non_recurrentIncomeCodePrevBdgt = sampleCoaService.findByBudgetAndClass1(previousBudget, Classification1.Non_Recurrent_Income);
+        PerformanceRow personnelCost = new PerformanceRow("PERSONNEL COSTS", true);
+        data.addItem(directExpense, personnelCost);
+        List<COA> personnelCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Personel_Costs);
+        List<COA> personnelCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Personel_Costs);
         // class1codes.clear();
         listcodesPrevBdgt.clear();
         listcodesCurBdgt.clear();
         CodesPrevBdgt.clear();
-        for (COA coa : non_recurrentIncomeCodeCurBdgt) {
-            COA coaPrev = findByCodeFromList(non_recurrentIncomeCodePrevBdgt, coa.getCode());
+        for (COA coa : personnelCodeCurBdgt) {
+            COA coaPrev = findByCodeFromList(personnelCodePrevBdgt, coa.getCode());
             listcodesCurBdgt.add(coa);
             listcodesPrevBdgt.add(coaPrev);
             class1codes.add(coa.getCode());
@@ -1879,12 +1885,228 @@ public class BudgetReportsView extends Div {
             freightCodes.add(coa.getCode());
             listclass1codesCurBdgt.add(coa);
             listclass1codesPrevBdgt.add(coaPrev);
-            data.addItem(non_recurrentIncome, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode())), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+            data.addItem(personnelCost, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode()).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
         }
 
-        data.addItem(non_recurrentIncome, new PerformanceRow("TOTAL NON RECURRENT INCOME", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt)), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(personnelCost, new PerformanceRow("TOTAL PERSONNEL COSTS", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(personnelCost, sampleBudgetItemsService.getExpPercOnOperExpense(comboBox2.getValue(), sampleBudgetItemsService.getTotalPersonnelExpData(comboBox2.getValue())));
 
-        grid.expand(directExpense, fuel, rentalIncome, passengers, miscellaneous, passengers, non_recurrentIncome);
+        PerformanceRow adminExpe = new PerformanceRow("ADMINISTRATION EXPENSES", true);
+
+        data.addRootItems(adminExpe);
+        PerformanceRow generalExp = new PerformanceRow("GENERAL EXPENSES", true);
+        data.addItem(adminExpe, generalExp);
+        List<COA> adminCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.General_Expenses);
+        List<COA> adminCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.General_Expenses);
+        // class1codes.clear();
+        listcodesPrevBdgt.clear();
+        listcodesCurBdgt.clear();
+        CodesPrevBdgt.clear();
+        for (COA coa : adminCodeCurBdgt) {
+            COA coaPrev = findByCodeFromList(adminCodePrevBdgt, coa.getCode());
+            listcodesCurBdgt.add(coa);
+            listcodesPrevBdgt.add(coaPrev);
+            class1codes.add(coa.getCode());
+            CodesPrevBdgt.add(coaPrev.getCode());
+            freightCodes.add(coa.getCode());
+            listclass1codesCurBdgt.add(coa);
+            listclass1codesPrevBdgt.add(coaPrev);
+            data.addItem(generalExp, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode()).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+        }
+
+        data.addItem(generalExp, new PerformanceRow("TOTAL ADMINISTRATION EXPENSES", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(generalExp, sampleBudgetItemsService.getExpPercOnOperExpense(comboBox2.getValue(), sampleBudgetItemsService.getTotalAdminExpData(comboBox2.getValue())));
+
+        PerformanceRow otherAdminExpe = new PerformanceRow("OTHER ADMINISTRATION EXPENSES", true);
+        data.addRootItems(otherAdminExpe);
+
+        PerformanceRow board_LegalExp = new PerformanceRow("BOARD & LEGAL EXPENSES", true);
+        data.addItem(otherAdminExpe, board_LegalExp);
+        List<COA> board_legalCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Board_Legal_Expenses);
+        List<COA> board_legaCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Board_Legal_Expenses);
+        // class1codes.clear();
+        listcodesPrevBdgt.clear();
+        listcodesCurBdgt.clear();
+        CodesPrevBdgt.clear();
+        for (COA coa : board_legalCodeCurBdgt) {
+            COA coaPrev = findByCodeFromList(board_legaCodePrevBdgt, coa.getCode());
+            listcodesCurBdgt.add(coa);
+            listcodesPrevBdgt.add(coaPrev);
+            class1codes.add(coa.getCode());
+            CodesPrevBdgt.add(coaPrev.getCode());
+            freightCodes.add(coa.getCode());
+            listclass1codesCurBdgt.add(coa);
+            listclass1codesPrevBdgt.add(coaPrev);
+            data.addItem(board_LegalExp, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode()).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+        }
+
+        data.addItem(board_LegalExp, new PerformanceRow("TOTAL OTHER ADMINISTRATION EXPENSES", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(board_LegalExp, sampleBudgetItemsService.getExpPercOnOperExpense(comboBox2.getValue(), sampleBudgetItemsService.getTotalLegal_BoardExpData(comboBox2.getValue())));
+
+        PerformanceRow communicationExp = new PerformanceRow("COMMUNICATION EXPENSES", true);
+        data.addItem(otherAdminExpe, communicationExp);
+        List<COA> communicationCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Communication_Expenses);
+        List<COA> communicationCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Communication_Expenses);
+        // class1codes.clear();
+        listcodesPrevBdgt.clear();
+        listcodesCurBdgt.clear();
+        CodesPrevBdgt.clear();
+        for (COA coa : communicationCodeCurBdgt) {
+            COA coaPrev = findByCodeFromList(communicationCodePrevBdgt, coa.getCode());
+            listcodesCurBdgt.add(coa);
+            listcodesPrevBdgt.add(coaPrev);
+            class1codes.add(coa.getCode());
+            CodesPrevBdgt.add(coaPrev.getCode());
+            freightCodes.add(coa.getCode());
+            listclass1codesCurBdgt.add(coa);
+            listclass1codesPrevBdgt.add(coaPrev);
+            data.addItem(communicationExp, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode())), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+        }
+
+        data.addItem(communicationExp, new PerformanceRow("TOTAL COMMUNICATION EXPENSES", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(communicationExp, sampleBudgetItemsService.getExpPercOnOperExpense(comboBox2.getValue(), sampleBudgetItemsService.getTotalCommunicationsExpData(comboBox2.getValue())));
+
+        PerformanceRow utilityExp = new PerformanceRow("UTILITY EXPENSES", true);
+        data.addItem(otherAdminExpe, utilityExp);
+        List<COA> utilityCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Utilities);
+        List<COA> utilityCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Utilities);
+        // class1codes.clear();
+        listcodesPrevBdgt.clear();
+        listcodesCurBdgt.clear();
+        CodesPrevBdgt.clear();
+        for (COA coa : utilityCodeCurBdgt) {
+            COA coaPrev = findByCodeFromList(utilityCodePrevBdgt, coa.getCode());
+            listcodesCurBdgt.add(coa);
+            listcodesPrevBdgt.add(coaPrev);
+            class1codes.add(coa.getCode());
+            CodesPrevBdgt.add(coaPrev.getCode());
+            freightCodes.add(coa.getCode());
+            listclass1codesCurBdgt.add(coa);
+            listclass1codesPrevBdgt.add(coaPrev);
+            data.addItem(utilityExp, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode())), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+        }
+
+        data.addItem(utilityExp, new PerformanceRow("TOTAL UTILITY EXPENSES", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(utilityExp, sampleBudgetItemsService.getExpPercOnOperExpense(comboBox2.getValue(), sampleBudgetItemsService.getTotalUtilitiesExpData(comboBox2.getValue())));
+
+        PerformanceRow supplies_ServicesExp = new PerformanceRow("SUPPLIES & SERVICES EXPENSES", true);
+        data.addItem(otherAdminExpe, supplies_ServicesExp);
+        List<COA> supplies_ServicesCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Supplies_Services);
+        List<COA> supplies_ServicesCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Supplies_Services);
+        // class1codes.clear();
+        listcodesPrevBdgt.clear();
+        listcodesCurBdgt.clear();
+        CodesPrevBdgt.clear();
+        for (COA coa : supplies_ServicesCodeCurBdgt) {
+            COA coaPrev = findByCodeFromList(supplies_ServicesCodePrevBdgt, coa.getCode());
+            listcodesCurBdgt.add(coa);
+            listcodesPrevBdgt.add(coaPrev);
+            class1codes.add(coa.getCode());
+            CodesPrevBdgt.add(coaPrev.getCode());
+            freightCodes.add(coa.getCode());
+            listclass1codesCurBdgt.add(coa);
+            listclass1codesPrevBdgt.add(coaPrev);
+            data.addItem(supplies_ServicesExp, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode())), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+        }
+
+        data.addItem(supplies_ServicesExp, new PerformanceRow("TOTAL SUPPLIES & SERVICES EXPENSES", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(supplies_ServicesExp, sampleBudgetItemsService.getExpPercOnOperExpense(comboBox2.getValue(), sampleBudgetItemsService.getTotalSupply_ServicesExpData(comboBox2.getValue())));
+
+        PerformanceRow professional_ServicesExp = new PerformanceRow("PROFESSIONAL SERVICES EXPENSES", true);
+        data.addItem(otherAdminExpe, professional_ServicesExp);
+        List<COA> professional_ServicesCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Professional_Services);
+        List<COA> professional_ServicesCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Professional_Services);
+        // class1codes.clear();
+        listcodesPrevBdgt.clear();
+        listcodesCurBdgt.clear();
+        CodesPrevBdgt.clear();
+        for (COA coa : professional_ServicesCodeCurBdgt) {
+            COA coaPrev = findByCodeFromList(professional_ServicesCodePrevBdgt, coa.getCode());
+            listcodesCurBdgt.add(coa);
+            listcodesPrevBdgt.add(coaPrev);
+            class1codes.add(coa.getCode());
+            CodesPrevBdgt.add(coaPrev.getCode());
+            freightCodes.add(coa.getCode());
+            listclass1codesCurBdgt.add(coa);
+            listclass1codesPrevBdgt.add(coaPrev);
+            data.addItem(professional_ServicesExp, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode()).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+        }
+
+        data.addItem(professional_ServicesExp, new PerformanceRow("TOTAL PROFESSIONAL SERVICES EXPENSES", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(professional_ServicesExp, sampleBudgetItemsService.getExpPercOnOperExpense(comboBox2.getValue(), sampleBudgetItemsService.getTotalProfessional_ServicesExpData(comboBox2.getValue())));
+
+        PerformanceRow insuranceExp = new PerformanceRow("INSURANCE & LICENSES EXPENSES", true);
+        data.addItem(otherAdminExpe, insuranceExp);
+        List<COA> insuranceCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Insurance_Licenses);
+        List<COA> insuranceCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Insurance_Licenses);
+        // class1codes.clear();
+        listcodesPrevBdgt.clear();
+        listcodesCurBdgt.clear();
+        CodesPrevBdgt.clear();
+        for (COA coa : insuranceCodeCurBdgt) {
+            COA coaPrev = findByCodeFromList(insuranceCodePrevBdgt, coa.getCode());
+            listcodesCurBdgt.add(coa);
+            listcodesPrevBdgt.add(coaPrev);
+            class1codes.add(coa.getCode());
+            CodesPrevBdgt.add(coaPrev.getCode());
+            freightCodes.add(coa.getCode());
+            listclass1codesCurBdgt.add(coa);
+            listclass1codesPrevBdgt.add(coaPrev);
+            data.addItem(insuranceExp, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode())), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+        }
+
+        data.addItem(insuranceExp, new PerformanceRow("TOTAL INSURANCE & LICENSES EXPENSES", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(insuranceExp, sampleBudgetItemsService.getExpPercOnOperExpense(comboBox2.getValue(), sampleBudgetItemsService.getTotalInsurance_LicensesExpData(comboBox2.getValue())));
+
+        PerformanceRow transportExp = new PerformanceRow("TRAVEL & TRANSPORT EXPENSES", true);
+        data.addItem(otherAdminExpe, transportExp);
+        List<COA> transportCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Insurance_Licenses);
+        List<COA> transportCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Insurance_Licenses);
+        // class1codes.clear();
+        listcodesPrevBdgt.clear();
+        listcodesCurBdgt.clear();
+        CodesPrevBdgt.clear();
+        for (COA coa : transportCodeCurBdgt) {
+            COA coaPrev = findByCodeFromList(transportCodePrevBdgt, coa.getCode());
+            listcodesCurBdgt.add(coa);
+            listcodesPrevBdgt.add(coaPrev);
+            class1codes.add(coa.getCode());
+            CodesPrevBdgt.add(coaPrev.getCode());
+            freightCodes.add(coa.getCode());
+            listclass1codesCurBdgt.add(coa);
+            listclass1codesPrevBdgt.add(coaPrev);
+            data.addItem(transportExp, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode()).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+        }
+
+        data.addItem(transportExp, new PerformanceRow("TOTAL TRAVEL & TRANSPORT EXPENSES", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(transportExp, sampleBudgetItemsService.getExpPercOnOperExpense(comboBox2.getValue(), sampleBudgetItemsService.getTotalTravel_TransportData(comboBox2.getValue())));
+
+        PerformanceRow miscellanousExp = new PerformanceRow("MISCELLANOUS OTHER EXPENSES", true);
+        data.addItem(otherAdminExpe, miscellanousExp);
+        List<COA> miscellanousCodeCurBdgt = sampleCoaService.findByBudgetAndClass2(comboBox2.getValue(), Classification2.Miscellaneous_Other_Expenses);
+        List<COA> miscellanousCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudget, Classification2.Miscellaneous_Other_Expenses);
+        // class1codes.clear();
+        listcodesPrevBdgt.clear();
+        listcodesCurBdgt.clear();
+        CodesPrevBdgt.clear();
+        for (COA coa : miscellanousCodeCurBdgt) {
+            COA coaPrev = findByCodeFromList(miscellanousCodePrevBdgt, coa.getCode());
+            listcodesCurBdgt.add(coa);
+            listcodesPrevBdgt.add(coaPrev);
+            class1codes.add(coa.getCode());
+            CodesPrevBdgt.add(coaPrev.getCode());
+            freightCodes.add(coa.getCode());
+            listclass1codesCurBdgt.add(coa);
+            listclass1codesPrevBdgt.add(coaPrev);
+            data.addItem(miscellanousExp, new PerformanceRow(coa.getName(), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, coaPrev)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCode(previousBudget, coa.getCode()).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), coa))));
+        }
+
+        data.addItem(miscellanousExp, new PerformanceRow("TOTAL MISCELLANOUS OTHER EXPENSES", formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(previousBudget, listcodesPrevBdgt)), formatCurrencyB(samopleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(previousBudget), CodesPrevBdgt).abs()), formatCurrencyB(sampleBudgetItemsService.totalBudgetByCode(comboBox2.getValue(), listcodesCurBdgt))));
+        data.addItem(miscellanousExp, sampleBudgetItemsService.getExpPercOnOperExpense(comboBox2.getValue(), sampleBudgetItemsService.getTotalMiscellanousOtherExpData(comboBox2.getValue())));
+
+        grid.setTreeData(data);
+
+        //grid.expand(directExpense, fuel, passengerServicesExp, passengers, miscellanousExp, passengers);
 
         H2 head = new H2("EXPENDITURE PERFORMANCE");
 

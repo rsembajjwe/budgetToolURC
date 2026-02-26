@@ -2680,7 +2680,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
                 Classification2.Maintenance, Classification2.Miscellaneous_Income, Classification2.Miscellaneous_Other_Expenses, Classification2.Other_Fees_Charges,
                 Classification2.Other_Fees_Charges, Classification2.Other_Fees_Charges, Classification2.Passenger_Service_Expenses, Classification2.Passenger_Ticket_Sales,
                 Classification2.Passenger_Ticket_Sales, Classification2.Personel_Costs, Classification2.Rent_Income, Classification2.Rent_Income,
-                Classification2.Supplies_Services, Classification2.Travel_Transport, Classification2.Utilities, Classification2.Utility_Property_Expenses);
+                Classification2.Supplies_Services, Classification2.Travel_Transport, Classification2.Utilities, Classification2.Utility_Property_Expenses,Classification2.Professional_Services);
         class3.setItems(Classification3.Northern_Route, Classification3.Southern_Route);
         Button selectallUnits = new Button("Select all");
 

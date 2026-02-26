@@ -200,6 +200,57 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
             @Param("analT1Values") Set<String> analT1Values
     );
 
+@Query(value = """
+    SELECT COALESCE(SUM(AMOUNT), 0)
+    FROM URC_A_SALFLDG_View
+    WHERE 
+        PERIOD IN (:periods)
+        AND (ACCNT_CODE LIKE '2%' OR ACCNT_CODE LIKE '3%')
+        AND ACCNT_CODE NOT LIKE '321%'
+        AND ACCNT_CODE NOT LIKE '314%'
+        AND LEN(ACCNT_CODE) <= 6
+        AND (ANAL_T1 IS NULL OR LTRIM(RTRIM(ANAL_T1)) = '')
+""", nativeQuery = true)
+BigDecimal findTotalAmountByPeriodsAndUnAnalyzed(    @Param("periods") Set<Integer> periods);
+
+@Query(value = """
+    SELECT ACCNT_CODE AS accntCode,
+           JRNAL_NO AS jrnalNo,
+           AMOUNT AS amount,
+           DESCRIPTN AS descriptn,
+           TRANS_DATETIME AS transDatetime,
+           ANAL_T1 AS analT1
+    FROM URC_A_SALFLDG_View
+    WHERE PERIOD IN (:period)
+      AND (ACCNT_CODE LIKE '2%' OR ACCNT_CODE LIKE '3%')
+      AND ACCNT_CODE NOT LIKE '321%'
+      AND ACCNT_CODE NOT LIKE '314%'
+      AND LEN(ACCNT_CODE) <= 6
+      AND (
+            ANAL_T1 IN (:analT1Values)
+         OR ANAL_T1 IS NULL
+         OR LTRIM(RTRIM(ANAL_T1)) = ''
+      )
+""", nativeQuery = true)
+List<SALFLDGProjection> findByPeriodAndDepartmentExpendituresWithNullSections(
+    @Param("period") Set<Integer> period,
+    @Param("analT1Values") Set<String> analT1Values
+);
+
+    @Query(value = """
+    SELECT COALESCE(SUM(AMOUNT), 0)
+    FROM URC_A_SALFLDG_View
+    WHERE 
+        PERIOD IN (:periods)
+        AND (ACCNT_CODE LIKE '2%' OR ACCNT_CODE LIKE '3%')
+        AND ACCNT_CODE NOT LIKE '321%'
+        AND ACCNT_CODE NOT LIKE '314%'
+        AND LEN(ACCNT_CODE) <= 6
+""", nativeQuery = true)
+    BigDecimal findTotalAmountByPeriods(
+            @Param("periods") Set<Integer> periods
+    );
+
     @Query(value = """
     SELECT COALESCE(SUM(AMOUNT), 0)
     FROM URC_A_SALFLDG_View
@@ -284,8 +335,8 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
             @Param("periods") Set<Integer> periods,
             @Param("accntCodes") Set<String> accntCodes
     );
-    
-     @Query(value = """
+
+    @Query(value = """
     SELECT COALESCE(SUM(AMOUNT), 0)
     FROM URC_A_SALFLDG_View
     WHERE 
@@ -295,7 +346,7 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
     BigDecimal findTotalAmountByPeriodsAndAccntCode(
             @Param("periods") Set<Integer> periods,
             @Param("accntCodes") String accntCodes
-    );   
+    );
 
     @Query("SELECT COALESCE(SUM(s.amount), 0) "
             + "FROM SALFLDG s "

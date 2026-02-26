@@ -34,154 +34,12 @@ public class test {
     }
 
     public static void main(String[] args) {
-        try {
-            String input = "FY2024-2025";
-            String month = "Jan"; // Example month from the list
-            
-            // int year = extractYear(input);
-            //int result = generateCode(year, month);
-            int result = generateCode2(input, "Jul");
-            /*        System.out.println("Result: " + result);
-            //strings();
-            
-            System.out.println("Result: " + getYears().get(0));
-            System.out.println("Result: " + getYears().get(1));
-            
-            System.out.println("Result3: " + generateCode4(input, "Jun"));
-            System.out.println("Result31: " + generateCode5(input, "Jun"));*/
-            /*        for (int i = 1; i <= 99; i++) {
-            String result2 = generateString(i);
-            System.out.println(result2);
-            }*/
-            SSLContext context = SSLContext.getDefault();
-            String[] protocols = context.getSupportedSSLParameters().getProtocols();
-            
-            System.out.println("Supported TLS protocols:");
-            for (String protocol : protocols) {
-                System.out.println(protocol);
-            }
-        } catch (NoSuchAlgorithmException ex) {
-            Logger.getLogger(test.class.getName()).log(Level.SEVERE, null, ex);
-        }
+Budget bug =new Budget();
+bug.setStartDate(LocalDate.of(2025, Month.JULY, 1));
+bug.setCloseDate(LocalDate.of(2026, Month.JUNE, 30));
+System.out.println(getFinancialYearPeriodsByQuarter(bug,1));
 
     }
-
-    private static int extractYear(String input) {
-        Pattern pattern = Pattern.compile("\\d{4}");
-        Matcher matcher = pattern.matcher(input);
-        if (matcher.find()) {
-            return Integer.parseInt(matcher.group());
-        }
-        return -1; // Handle error case
-    }
-
-    private static int generateCode(int year, String month) {
-        Map<String, Integer> monthMap = new HashMap<>();
-        monthMap.put("Jul", 1);
-        monthMap.put("Aug", 2);
-        monthMap.put("Sep", 3);
-        monthMap.put("Oct", 4);
-        monthMap.put("Nov", 5);
-        monthMap.put("Dec", 6);
-        monthMap.put("Jan", 7);
-        monthMap.put("Feb", 8);
-        monthMap.put("Mar", 9);
-        monthMap.put("Apr", 10);
-        monthMap.put("May", 11);
-        monthMap.put("Jun", 12);
-
-        int monthValue = monthMap.get(month);
-        if (monthValue == 12) {
-            return year * 1000 + 1; // Special case for "Jun"
-        } else if (monthValue <= 6) {
-            return year * 1000 + monthValue + 1;
-        } else {
-            return (year + 1) * 1000 + monthValue + 1;
-        }
-    }
-
-    private static int generateCode2(String yearS, String month) {
-        strings(yearS);
-        int year = getYears().get(0);
-        Map<String, Integer> monthMap = new HashMap<>();
-        monthMap.put("Jul", 1);
-        monthMap.put("Aug", 2);
-        monthMap.put("Sep", 3);
-        monthMap.put("Oct", 4);
-        monthMap.put("Nov", 5);
-        monthMap.put("Dec", 6);
-        monthMap.put("Jan", 7);
-        monthMap.put("Feb", 8);
-        monthMap.put("Mar", 9);
-        monthMap.put("Apr", 10);
-        monthMap.put("May", 11);
-        monthMap.put("Jun", 12);
-
-        int monthValue = monthMap.get(month);
-        if (monthValue == 1) {
-            return year * 1000 + 1; // Special case for "Jun"
-        } else if (monthValue == 2) {
-            return year * 1000 + 2; // Special case for "Jun"
-        } else if (monthValue == 3) {
-            return year * 1000 + 3; // Special case for "Jun"
-        } else if (monthValue == 4) {
-            return year * 1000 + 4; // Special case for "Jun"
-        } else if (monthValue == 5) {
-            return year * 1000 + 5; // Special case for "Jun"
-        } else if (monthValue == 6) {
-            return year * 1000 + 6; // Special case for "Jun"
-        } else if (monthValue == 7) {
-            year = getYears().get(1);
-            return year * 1000 + 7; // Special case for "Jun"
-        } else if (monthValue == 8) {
-            year = getYears().get(1);
-            return year * 1000 + 8; // Special case for "Jun"
-        } else if (monthValue == 9) {
-            year = getYears().get(1);
-            return year * 1000 + 9; // Special case for "Jun"
-        } else if (monthValue == 10) {
-            year = getYears().get(1);
-            return year * 1000 + 10; // Special case for "Jun"
-        } else if (monthValue == 11) {
-            year = getYears().get(1);
-            return year * 1000 + 11; // Special case for "Jun"
-        } else if (monthValue == 12) {
-            year = getYears().get(1);
-            return year * 1000 + 12; // Special case for "Jun"
-        } else {
-            return 0;
-        }
-    }
-
-    private static int generateCode3(String yearS, String month) {
-        strings(yearS); // Extract years from the input string
-        int year = getYears().get(0); // Get the first year extracted
-
-        Map<String, Integer> monthMap = new HashMap<>();
-        monthMap.put("Jul", 1);
-        monthMap.put("Aug", 2);
-        monthMap.put("Sep", 3);
-        monthMap.put("Oct", 4);
-        monthMap.put("Nov", 5);
-        monthMap.put("Dec", 6);
-        monthMap.put("Jan", 7);
-        monthMap.put("Feb", 8);
-        monthMap.put("Mar", 9);
-        monthMap.put("Apr", 10);
-        monthMap.put("May", 11);
-        monthMap.put("Jun", 12);
-
-        int monthValue = monthMap.get(month);
-        if (monthValue == 1 || monthValue == 2 || monthValue == 3 || monthValue == 4 || monthValue == 5 || monthValue == 6) {
-            return year * 1000 + monthValue; // Special case for "Jun"
-        } else if (monthValue >= 7 && monthValue <= 12) {
-            year = getYears().get(1); // Get the second year extracted
-            return year * 1000 + monthValue;
-        } else {
-            return 0;
-        }
-    }
-
     public static void strings(String input) {
         // String input = "FY2024-2025";
 
@@ -201,64 +59,6 @@ public class test {
     public static List<Integer> getYears() {
 
         return years;
-    }
-
-    private static String generateCode4(String yearS, String month) {
-        strings(yearS); // Extract years from the input string
-        int year = getYears().get(0); // Get the first year extracted
-
-        Map<String, Integer> monthMap = new HashMap<>();
-        monthMap.put("Jul", 1);
-        monthMap.put("Aug", 2);
-        monthMap.put("Sep", 3);
-        monthMap.put("Oct", 4);
-        monthMap.put("Nov", 5);
-        monthMap.put("Dec", 6);
-        monthMap.put("Jan", 7);
-        monthMap.put("Feb", 8);
-        monthMap.put("Mar", 9);
-        monthMap.put("Apr", 10);
-        monthMap.put("May", 11);
-        monthMap.put("Jun", 12);
-
-        int monthValue = monthMap.get(month);
-        if (monthValue >= 1 && monthValue <= 6) {
-            return year + "/" + String.format("%03d", monthValue); // Format for "Jul" to "Jun"
-        } else if (monthValue >= 7 && monthValue <= 12) {
-            year = getYears().get(1); // Get the second year extracted
-            return year + "/" + String.format("%03d", monthValue); // Format for other months
-        } else {
-            return ""; // Return empty string for invalid input
-        }
-    }
-
-    private static String generateCode5(String yearS, String month) {
-        strings(yearS); // Extract years from the input string
-        int year = getYears().get(0); // Get the first year extracted
-
-        Map<String, Integer> monthMap = new HashMap<>();
-        monthMap.put("Jul", 1);
-        monthMap.put("Aug", 2);
-        monthMap.put("Sep", 3);
-        monthMap.put("Oct", 4);
-        monthMap.put("Nov", 5);
-        monthMap.put("Dec", 6);
-        monthMap.put("Jan", 7);
-        monthMap.put("Feb", 8);
-        monthMap.put("Mar", 9);
-        monthMap.put("Apr", 10);
-        monthMap.put("May", 11);
-        monthMap.put("Jun", 12);
-
-        int monthValue = monthMap.get(month);
-        if (monthValue >= 1 && monthValue <= 6) {
-            return month + "-" + Integer.toString(year).substring(2); // Format for "Jul" to "Jun"
-        } else if (monthValue >= 7 && monthValue <= 12) {
-            year = getYears().get(1); // Get the second year extracted
-            return month + "-" + Integer.toString(year).substring(2); // Format for other months
-        } else {
-            return ""; // Return empty string for invalid input
-        }
     }
 
     public void showThat() {
@@ -295,7 +95,7 @@ public class test {
         return generatedString;
     }
 
-    public Set<String> getFinancialYearPeriods(Budget budget) {
+    public static Set<String> getFinancialYearPeriods(Budget budget) {
         Set<String> periods = new LinkedHashSet<>();
 
         if (budget.getStartDate() == null || budget.getCloseDate() == null) {
@@ -311,6 +111,75 @@ public class test {
             String periodCode = String.format("%d%03d", yearSuffix, i); // e.g., 2025001
             periods.add(periodCode);
             current = current.plusMonths(1);
+        }
+
+        return periods;
+    }
+    public static Set<Integer> getFinancialYearPeriodByMonth(Budget budget, Month month) {
+        Set<Integer> periods = new LinkedHashSet<>();
+        if (budget == null || month == null || budget.getStartDate() == null || budget.getCloseDate() == null) {
+            return periods;
+        }
+
+        LocalDate start = budget.getStartDate().withDayOfMonth(1);
+        LocalDate end   = budget.getCloseDate().withDayOfMonth(1);
+
+        int fyEndYear = budget.getCloseDate().getYear();
+
+        // July=1 ... June=12
+        int periodIndex = ((month.getValue() - Month.JULY.getValue() + 12) % 12) + 1;
+        int periodCode = fyEndYear * 1000 + periodIndex;
+
+        // Map month to the correct calendar year in this FY window
+        int monthYear = (month.getValue() >= Month.JULY.getValue())
+                ? budget.getStartDate().getYear()
+                : budget.getCloseDate().getYear();
+
+        LocalDate requestedMonth = LocalDate.of(monthYear, month, 1);
+
+        if (!requestedMonth.isBefore(start) && !requestedMonth.isAfter(end)) {
+            periods.add(periodCode);
+        }
+
+        return periods;
+    }
+
+    public static Set<Integer> getFinancialYearPeriodsByQuarter(Budget budget, int quarter) {
+        Set<Integer> periods = new LinkedHashSet<>();
+        if (budget == null || budget.getStartDate() == null || budget.getCloseDate() == null) {
+            return periods;
+        }
+        if (quarter < 1 || quarter > 4) {
+            throw new IllegalArgumentException("Quarter must be 1..4");
+        }
+
+        LocalDate start = budget.getStartDate().withDayOfMonth(1);
+        LocalDate end   = budget.getCloseDate().withDayOfMonth(1);
+
+        int fyEndYear = budget.getCloseDate().getYear();
+
+        Month[] quarterMonths = switch (quarter) {
+            case 1 -> new Month[]{ Month.JULY, Month.AUGUST, Month.SEPTEMBER };
+            case 2 -> new Month[]{ Month.OCTOBER, Month.NOVEMBER, Month.DECEMBER };
+            case 3 -> new Month[]{ Month.JANUARY, Month.FEBRUARY, Month.MARCH };
+            case 4 -> new Month[]{ Month.APRIL, Month.MAY, Month.JUNE };
+            default -> throw new IllegalArgumentException("Quarter must be 1..4");
+        };
+
+        for (Month m : quarterMonths) {
+            // July=1 ... June=12
+            int periodIndex = ((m.getValue() - Month.JULY.getValue() + 12) % 12) + 1;
+            int periodCode = fyEndYear * 1000 + periodIndex;
+
+            int monthYear = (m.getValue() >= Month.JULY.getValue())
+                    ? budget.getStartDate().getYear()
+                    : budget.getCloseDate().getYear();
+
+            LocalDate requestedMonth = LocalDate.of(monthYear, m, 1);
+
+            if (!requestedMonth.isBefore(start) && !requestedMonth.isAfter(end)) {
+                periods.add(periodCode);
+            }
         }
 
         return periods;

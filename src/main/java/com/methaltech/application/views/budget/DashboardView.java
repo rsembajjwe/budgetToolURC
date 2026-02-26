@@ -331,6 +331,7 @@ public class DashboardView extends VerticalLayout {
 
             updateStatusIndicator();
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             showNotification("Error loading dashboard data: " + e.getMessage(), NotificationVariant.LUMO_ERROR);
         }
     }

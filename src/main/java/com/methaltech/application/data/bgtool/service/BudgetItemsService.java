@@ -1,12 +1,15 @@
 package com.methaltech.application.data.bgtool.service;
 
 import com.methaltech.application.data.BudgetItemsSummaryProjection;
+import com.methaltech.application.data.Classification1;
+import com.methaltech.application.data.Classification2;
 import com.methaltech.application.data.Display;
 import com.methaltech.application.data.MonthlySumResponseFreight;
 import com.methaltech.application.data.PeriodExtractor;
 import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.entity.bgtool.BudgetItems;
 import com.methaltech.application.data.bgtool.repository.BudgetItemsRepository;
+import com.methaltech.application.data.bgtool.repository.BudgetRepository;
 import com.methaltech.application.data.bgtool.repository.CoaRepository;
 import com.methaltech.application.data.bgtool.repository.FundsourceRepository;
 import com.methaltech.application.data.bgtool.repository.RequisitionDataRepository;
@@ -17,14 +20,18 @@ import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.Fundsource;
 import com.methaltech.application.data.entity.bgtool.Organisation;
+import com.methaltech.application.data.entity.bgtool.PerformanceRow;
 import com.methaltech.application.data.entity.bgtool.QuarterBudgetSum;
 import com.methaltech.application.data.entity.bgtool.RequisitionData.RequisitionStatus;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
+import com.methaltech.application.data.entity.bgtool.dto.PerformanceData;
 import com.methaltech.application.data.livedata.repository.SALFLDGRepository;
 import com.methaltech.application.data.livedata.service.SALFLDGService;
 import com.methaltech.application.views.procurementplan.CoaProcPlanDTO;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.ArrayList;
@@ -40,6 +47,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -57,13 +65,16 @@ public class BudgetItemsService {
     private final SALFLDGService sALFLDGService;
     private final DeptSectionMergerService deptSectionMergerService;
     private final RequisitionDataRepository requisitionDataRepository;
+    private final BudgetRepository budgetRepository;
+    private final CoaService sampleCoaService;
 
     @Autowired
     public BudgetItemsService(BudgetItemsRepository repository, CoaRepository caoRepository,
             FundsourceRepository fundsourceRepository, SALFLDGRepository salfldgRepository,
             UrcDeptSectionAnlDimbgtRepository urcDeptSectionAnlDimRepository,
             SALFLDGService sALFLDGService, DeptSectionMergerService deptSectionMergerService,
-            RequisitionDataRepository requisitionDataRepository) {
+            RequisitionDataRepository requisitionDataRepository, BudgetRepository budgetRepository,
+            CoaService sampleCoaService) {
         this.repository = repository;
         this.caoRepository = caoRepository;
         this.fundsourceRepository = fundsourceRepository;
@@ -72,6 +83,8 @@ public class BudgetItemsService {
         this.sALFLDGService = sALFLDGService;
         this.deptSectionMergerService = deptSectionMergerService;
         this.requisitionDataRepository = requisitionDataRepository;
+        this.budgetRepository = budgetRepository;
+        this.sampleCoaService = sampleCoaService;
     }
 
     public Optional<BudgetItems> get(Long id) {
@@ -980,11 +993,12 @@ public class BudgetItemsService {
         BigDecimal sum = repository.sumActvitySummation(budgetTypes, budget, activities, deptUnits);
         return sum;
     }
-        public BigDecimal sumActvitySummation(Set<Organisation> budgetTypes,
+
+    public BigDecimal sumActvitySummation(Set<Organisation> budgetTypes,
             Budget budget,
             Urc_Activities activities,
-            Set<UrcDeptSectionAnlDimbgt> deptUnits,String sCode) {
-        BigDecimal sum = repository.sumActvitySummation(budgetTypes, budget, activities, deptUnits,sCode);
+            Set<UrcDeptSectionAnlDimbgt> deptUnits, String sCode) {
+        BigDecimal sum = repository.sumActvitySummation(budgetTypes, budget, activities, deptUnits, sCode);
         return sum;
     }
 
@@ -1150,15 +1164,17 @@ public class BudgetItemsService {
         BigDecimal sumOfTotalMonths = repository.findSumOfTotalMonthsByBudgetCoa(budget, coacode);
         return sumOfTotalMonths != null ? sumOfTotalMonths : BigDecimal.ZERO;
     }
-    
+
     public BigDecimal totalBudgetByCode(Budget budget, COA coacode) {
         BigDecimal sumOfTotalMonths = repository.findSumOfTotalMonthsByBudgetCoa(budget, coacode);
         return sumOfTotalMonths != null ? sumOfTotalMonths : BigDecimal.ZERO;
-    }    
+    }
+
     public BigDecimal totalBudgetByCode(Budget budget, List<COA> coacode) {
         BigDecimal sumOfTotalMonths = repository.findSumOfTotalMonthsByBudgetCoa(budget, coacode);
         return sumOfTotalMonths != null ? sumOfTotalMonths : BigDecimal.ZERO;
     }
+
     public List<BudgetItems> findBudgetItemsByUrc_Activities(Set<Organisation> budgetType, Budget budget, Urc_Activities activities, Set<UrcDeptSectionAnlDimbgt> deptUnits, Integer coalevel1Code) {
         List<BudgetItems> result = repository.findBudgetItemsByUrc_Activities(budgetType, budget, activities, deptUnits, coalevel1Code);
         return result != null ? result : Collections.emptyList();
@@ -1252,7 +1268,7 @@ public class BudgetItemsService {
     }
 
     public List<BudgetItemsActuals> findDistinctBudgetItemses(Budget budget, Set<UrcDeptSectionAnlDimbgt> deptUnits) {
-        System.out.println(budget);
+        System.out.println(budget + " Printed Budget");
 
         Set<String> sctions = new HashSet<>();
         for (UrcDeptSectionAnlDimbgt sects : deptUnits) {
@@ -1290,89 +1306,50 @@ public class BudgetItemsService {
             b.setCoacode(c);
             b.setDeptUnit(deptUnits);
             if (deptUnits.contains(freightAnlDimbgt) && (c.getDisplay() == Display.FREIGHT || c.getCode().contains("111109") || c.getCode().contains("111110"))) {
-                //Finds By TransactionDate
-                /*                b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 7, budget.getStartDate().getYear()));
-                b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 8, budget.getStartDate().getYear()));
-                b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 9, budget.getStartDate().getYear()));
-                b.setOctA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 10, budget.getStartDate().getYear()));
-                b.setNovA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 11, budget.getStartDate().getYear()));
-                b.setDecA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 12, budget.getStartDate().getYear()));
-                b.setJanA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 1, budget.getCloseDate().getYear()));
-                b.setFebA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 2, budget.getCloseDate().getYear()));
-                b.setMarA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 3, budget.getCloseDate().getYear()));
-                b.setAprA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 4, budget.getCloseDate().getYear()));
-                b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 5, budget.getCloseDate().getYear()));
-                b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 6, budget.getCloseDate().getYear()));*/
-
                 //Finds By Period
-                b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Jul")));
-                b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Aug")));
-                b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Sep")));
-                b.setOctA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Oct")));
-                b.setNovA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Nov")));
-                b.setDecA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Dec")));
-                b.setJanA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Jan")));
-                b.setFebA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Feb")));
-                b.setMarA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Mar")));
-                b.setAprA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Apr")));
-                b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "May")));
-                b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Jun")));
+                b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.JULY)).abs());
+                b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.AUGUST)).abs());
+                b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.SEPTEMBER)).abs());
+                b.setOctA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget,Month.OCTOBER)).abs());
+                b.setNovA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.NOVEMBER)).abs());
+                b.setDecA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget,Month.DECEMBER)).abs());
+                b.setJanA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget,Month.JANUARY)).abs());
+                b.setFebA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.FEBRUARY)).abs());
+                b.setMarA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget,Month.MARCH)).abs());
+                b.setAprA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.APRIL)).abs());
+                b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.MAY)).abs());
+                b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget,Month.JUNE)).abs());
 
             } else if (deptUnits.contains(propertymgt) && (c.getCode().contains("111401") || c.getCode().contains("111402") || c.getCode().contains("111403") || c.getCode().contains("111404") || c.getCode().contains("111406") || c.getCode().contains("111407"))) {
 
-                /*                b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 7, budget.getStartDate().getYear()));
-                b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 8, budget.getStartDate().getYear()));
-                b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 9, budget.getStartDate().getYear()));
-                b.setOctA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 10, budget.getStartDate().getYear()));
-                b.setNovA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 11, budget.getStartDate().getYear()));
-                b.setDecA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 12, budget.getStartDate().getYear()));
-                b.setJanA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 1, budget.getCloseDate().getYear()));
-                b.setFebA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 2, budget.getCloseDate().getYear()));
-                b.setMarA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 3, budget.getCloseDate().getYear()));
-                b.setAprA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 4, budget.getCloseDate().getYear()));
-                b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 5, budget.getCloseDate().getYear()));
-                b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYear(c.getCode(), 6, budget.getCloseDate().getYear()));*/
-                b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Jul")));
-                b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Aug")));
-                b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Sep")));
-                b.setOctA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Oct")));
-                b.setNovA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Nov")));
-                b.setDecA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Dec")));
-                b.setJanA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Jan")));
-                b.setFebA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Feb")));
-                b.setMarA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Mar")));
-                b.setAprA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Apr")));
-                b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "May")));
-                b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Jun")));
+                b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.JULY)).abs());
+                b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.AUGUST)).abs());
+                b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.SEPTEMBER)).abs());
+                b.setOctA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget,Month.OCTOBER)).abs());
+                b.setNovA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.NOVEMBER)).abs());
+                b.setDecA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget,Month.DECEMBER)).abs());
+                b.setJanA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget,Month.JANUARY)).abs());
+                b.setFebA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.FEBRUARY)).abs());
+                b.setMarA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget,Month.MARCH)).abs());
+                b.setAprA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.APRIL)).abs());
+                b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.MAY)).abs());
+                b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget,Month.JUNE)).abs());
 
             } else {
-                /*                b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYearBySections(c.getCode(), 7, budget.getStartDate().getYear(), sctions));
-                
-                b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYearBySections(c.getCode(), 8, budget.getStartDate().getYear(), sctions));
-                b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYearBySections(c.getCode(), 9, budget.getStartDate().getYear(), sctions));
-                b.setOctA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYearBySections(c.getCode(), 10, budget.getStartDate().getYear(), sctions));
-                b.setNovA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYearBySections(c.getCode(), 11, budget.getStartDate().getYear(), sctions));
-                b.setDecA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYearBySections(c.getCode(), 12, budget.getStartDate().getYear(), sctions));
-                b.setJanA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYearBySections(c.getCode(), 1, budget.getCloseDate().getYear(), sctions));
-                b.setFebA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYearBySections(c.getCode(), 2, budget.getCloseDate().getYear(), sctions));
-                b.setMarA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYearBySections(c.getCode(), 3, budget.getCloseDate().getYear(), sctions));
-                b.setAprA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYearBySections(c.getCode(), 4, budget.getCloseDate().getYear(), sctions));
-                b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYearBySections(c.getCode(), 5, budget.getCloseDate().getYear(), sctions));
-                b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndMonthYearBySections(c.getCode(), 6, budget.getCloseDate().getYear(), sctions));*/
 
-                b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Jul"), sctions));
-                b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Aug"), sctions));
-                b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Sep"), sctions));
-                b.setOctA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Oct"), sctions));
-                b.setNovA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Nov"), sctions));
-                b.setDecA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Dec"), sctions));
-                b.setJanA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Jan"), sctions));
-                b.setFebA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Feb"), sctions));
-                b.setMarA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Mar"), sctions));
-                b.setAprA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Apr"), sctions));
-                b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "May"), sctions));
-                b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.generateCurrentPeriod(budget.getFinancialYear(), "Jun"), sctions));
-
+                b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.JULY), sctions).abs());
+                b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.AUGUST), sctions).abs());
+                b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.SEPTEMBER), sctions).abs());
+                b.setOctA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget,Month.OCTOBER), sctions).abs());
+                b.setNovA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.NOVEMBER), sctions).abs());
+                b.setDecA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget,Month.DECEMBER), sctions).abs());
+                b.setJanA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget,Month.JANUARY), sctions).abs());
+                b.setFebA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.FEBRUARY), sctions).abs());
+                b.setMarA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget,Month.MARCH), sctions).abs());
+                b.setAprA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.APRIL), sctions).abs());
+                b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.MAY), sctions).abs());
+                b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget,Month.JUNE), sctions).abs());
+         
             }
             b.setTotal(repository.sumOfAllMonthsByBudgetAndCoa(budget, c, deptUnits));
             b.setJul(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "jul"));
@@ -2155,4 +2132,758 @@ public class BudgetItemsService {
         }
         return new BigDecimal(o.toString());
     }
+
+    public PerformanceRow getTotalFuel(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceRow getTotalFuel = new PerformanceRow("TOTAL FUEL", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> fuelCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.Fuels_Lubricant_Oil);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.Fuels_Lubricant_Oil);
+            getTotalFuel.setPreviousBudgetApproved(formatCurrencyB(prevBudget));
+            getTotalFuel.setPreviousRevised(formatCurrencyB(prevBudget));
+            getTotalFuel.setPreviousBudgeActual(formatCurrencyB(getActualByBudgetAndCodes(previousBudgt.get(), fuelCodePrevBdgt).abs()));
+            getTotalFuel.setPreviousProjected("_");
+        } else {
+            getTotalFuel.setPreviousBudgetApproved("_");
+            getTotalFuel.setPreviousRevised("_");
+            getTotalFuel.setPreviousBudgeActual("_");
+            getTotalFuel.setPreviousProjected("_");
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.Fuels_Lubricant_Oil);
+        getTotalFuel.setChosenBudget(formatCurrencyB(curBudget));
+
+        return getTotalFuel;
+    }
+
+    public PerformanceData getTotalFuelData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalFuel = new PerformanceData("TOTAL FUEL", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> fuelCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.Fuels_Lubricant_Oil);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.Fuels_Lubricant_Oil);
+            getTotalFuel.setPreviousBudgetApproved(prevBudget);
+            getTotalFuel.setPreviousRevised(prevBudget);
+            getTotalFuel.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), fuelCodePrevBdgt).abs());
+            getTotalFuel.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalFuel.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalFuel.setPreviousRevised(BigDecimal.ZERO);
+            getTotalFuel.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalFuel.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.Fuels_Lubricant_Oil);
+        getTotalFuel.setChosenBudget(curBudget);
+
+        return getTotalFuel;
+    }
+
+    public PerformanceData getTotalPassengerServiceExpData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL PASSENGER SERVICE EXPENSES", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.Passenger_Service_Expenses);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.Passenger_Service_Expenses);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.Passenger_Service_Expenses);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalMaintenanceData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL MAINTENANCE", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.Maintenance);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.Maintenance);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.Maintenance);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalUtility_PropertyExpData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL PROPERTY EXPENSES", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.Utility_Property_Expenses);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.Utility_Property_Expenses);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.Utility_Property_Expenses);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalVariableCost(Budget current_Budget) {
+        PerformanceData getTotalVariableCost = new PerformanceData("TOTAL VARIABLE COST", true);
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+        if (previousBudgt.isPresent()) {
+            BigDecimal variablePrevBudget = getTotalFuelData(current_Budget).getPreviousBudgetApproved().
+                    add(getTotalPassengerServiceExpData(current_Budget).getPreviousBudgetApproved()).
+                    add(getTotalMaintenanceData(current_Budget).getPreviousBudgetApproved()).
+                    add(getTotalUtility_PropertyExpData(current_Budget).getPreviousBudgetApproved());
+
+            getTotalVariableCost.setPreviousBudgetApproved(variablePrevBudget);
+            getTotalVariableCost.setPreviousRevised(variablePrevBudget);
+
+            BigDecimal variableActualBudget = getTotalFuelData(current_Budget).getPreviousBudgeActual().
+                    add(getTotalPassengerServiceExpData(current_Budget).getPreviousBudgeActual()).
+                    add(getTotalMaintenanceData(current_Budget).getPreviousBudgeActual()).
+                    add(getTotalUtility_PropertyExpData(current_Budget).getPreviousBudgeActual());
+            getTotalVariableCost.setPreviousBudgeActual(variableActualBudget.abs());
+            getTotalVariableCost.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalVariableCost.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalVariableCost.setPreviousRevised(BigDecimal.ZERO);
+            getTotalVariableCost.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalVariableCost.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = getTotalFuelData(current_Budget).getChosenBudget().
+                add(getTotalPassengerServiceExpData(current_Budget).getChosenBudget()).
+                add(getTotalMaintenanceData(current_Budget).getChosenBudget()).
+                add(getTotalUtility_PropertyExpData(current_Budget).getChosenBudget());
+        getTotalVariableCost.setChosenBudget(curBudget);
+        return getTotalVariableCost;
+    }
+
+    public PerformanceData getTotalPersonnelExpData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL PERSONNEL EXPENSES", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.Personel_Costs);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.Personel_Costs);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.Personel_Costs);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalGeneralExpData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL PERSONNEL EXPENSES", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.General_Expenses);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.General_Expenses);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.General_Expenses);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalAdminExpData(Budget current_Budget) {
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL ADMINISTRATION EXPENSES", true);
+        PerformanceData genExp = getTotalGeneralExpData(current_Budget);
+        getTotalPassengerServiceExp.setChosenBudget(genExp.getChosenBudget());
+        getTotalPassengerServiceExp.setPreviousBudgetApproved(genExp.getPreviousBudgetApproved());
+        getTotalPassengerServiceExp.setPreviousBudgeActual(genExp.getPreviousBudgeActual());
+        getTotalPassengerServiceExp.setPreviousRevised(genExp.getPreviousRevised());
+        getTotalPassengerServiceExp.setPreviousProjected(genExp.getPreviousProjected());
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalLegal_BoardExpData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL BOARD & LEGAL EXPENSES", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.Board_Legal_Expenses);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.Board_Legal_Expenses);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.Board_Legal_Expenses);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalCommunicationsExpData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL COMMUNICATIONS EXPENSES", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.Communication_Expenses);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.Communication_Expenses);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.Communication_Expenses);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalUtilitiesExpData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL UTILITIES EXPENSES", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.Utilities);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.Utilities);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.Utilities);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalSupply_ServicesExpData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL SUPPLY & SERVICES EXPENSES", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.Supplies_Services);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.Supplies_Services);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.Supplies_Services);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalProfessional_ServicesExpData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL PROFESSIONAL SERVICES EXPENSES", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.Professional_Services);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.Professional_Services);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.Professional_Services);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalInsurance_LicensesExpData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL INSURANCE & LICENSES EXPENSES", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.Insurance_Licenses);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.Insurance_Licenses);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.Insurance_Licenses);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalTravel_TransportData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL TRAVEL & TRANSPORT EXPENSES", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.Travel_Transport);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.Travel_Transport);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.Travel_Transport);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalMiscellanousOtherExpData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL MISCELLANOUS OTHER EXPENSES", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.Miscellaneous_Other_Expenses);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.Miscellaneous_Other_Expenses);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.Miscellaneous_Other_Expenses);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalOtherAdminExpenses(Budget current_Budget) {
+        PerformanceData getTotalVariableCost = new PerformanceData("TOTAL OTHER ADMINSTRATION EXPENSES", true);
+
+        BigDecimal variablePrevBudget = getTotalLegal_BoardExpData(current_Budget).getPreviousBudgetApproved().
+                add(getTotalCommunicationsExpData(current_Budget).getPreviousBudgetApproved()).
+                add(getTotalUtilitiesExpData(current_Budget).getPreviousBudgetApproved()).
+                add(getTotalSupply_ServicesExpData(current_Budget).getPreviousBudgetApproved()).
+                add(getTotalProfessional_ServicesExpData(current_Budget).getPreviousBudgetApproved()).
+                add(getTotalInsurance_LicensesExpData(current_Budget).getPreviousBudgetApproved()).
+                add(getTotalTravel_TransportData(current_Budget).getPreviousBudgetApproved()).
+                add(getTotalMiscellanousOtherExpData(current_Budget).getPreviousBudgetApproved());
+
+        getTotalVariableCost.setPreviousBudgetApproved(variablePrevBudget);
+        getTotalVariableCost.setPreviousRevised(variablePrevBudget);
+
+        BigDecimal variableActualBudget = getTotalLegal_BoardExpData(current_Budget).getPreviousBudgeActual().
+                add(getTotalCommunicationsExpData(current_Budget).getPreviousBudgeActual()).
+                add(getTotalUtilitiesExpData(current_Budget).getPreviousBudgeActual()).
+                add(getTotalSupply_ServicesExpData(current_Budget).getPreviousBudgeActual()).
+                add(getTotalProfessional_ServicesExpData(current_Budget).getPreviousBudgeActual()).
+                add(getTotalInsurance_LicensesExpData(current_Budget).getPreviousBudgeActual()).
+                add(getTotalTravel_TransportData(current_Budget).getPreviousBudgeActual()).
+                add(getTotalMiscellanousOtherExpData(current_Budget).getPreviousBudgeActual());
+        getTotalVariableCost.setPreviousBudgeActual(variableActualBudget.abs());
+        getTotalVariableCost.setPreviousProjected(BigDecimal.ZERO);
+
+        BigDecimal curBudget = getTotalLegal_BoardExpData(current_Budget).getChosenBudget().
+                add(getTotalCommunicationsExpData(current_Budget).getChosenBudget()).
+                add(getTotalUtilitiesExpData(current_Budget).getChosenBudget()).
+                add(getTotalSupply_ServicesExpData(current_Budget).getChosenBudget()).
+                add(getTotalProfessional_ServicesExpData(current_Budget).getChosenBudget()).
+                add(getTotalInsurance_LicensesExpData(current_Budget).getChosenBudget()).
+                add(getTotalTravel_TransportData(current_Budget).getChosenBudget()).
+                add(getTotalMiscellanousOtherExpData(current_Budget).getChosenBudget());
+        getTotalVariableCost.setChosenBudget(curBudget);
+        return getTotalVariableCost;
+    }
+
+    public PerformanceData getTotalWageExpData(Budget current_Budget) {
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL WAGE EXPENSES", true);
+        PerformanceData genExp = getTotalPersonnelExpData(current_Budget);
+        getTotalPassengerServiceExp.setChosenBudget(genExp.getChosenBudget());
+        getTotalPassengerServiceExp.setPreviousBudgetApproved(genExp.getPreviousBudgetApproved());
+        getTotalPassengerServiceExp.setPreviousBudgeActual(genExp.getPreviousBudgeActual().abs());
+        getTotalPassengerServiceExp.setPreviousRevised(genExp.getPreviousRevised());
+        getTotalPassengerServiceExp.setPreviousProjected(genExp.getPreviousProjected());
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalNonWageExpData(Budget current_Budget) {
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL NON WAGE EXPENSES", true);
+        PerformanceData wageExp = getTotalWageExpData(current_Budget);
+        PerformanceData OperationExp = getTotalOperationExpData(current_Budget);
+        getTotalPassengerServiceExp.setChosenBudget(OperationExp.getChosenBudget().subtract(wageExp.getChosenBudget()));
+        getTotalPassengerServiceExp.setPreviousBudgetApproved(OperationExp.getPreviousBudgetApproved().subtract(wageExp.getPreviousBudgetApproved()));
+        getTotalPassengerServiceExp.setPreviousBudgeActual(OperationExp.getPreviousBudgeActual().subtract(wageExp.getPreviousBudgeActual()).abs());
+        getTotalPassengerServiceExp.setPreviousRevised(OperationExp.getPreviousRevised().subtract(wageExp.getPreviousRevised()));
+        getTotalPassengerServiceExp.setPreviousProjected(OperationExp.getPreviousProjected().subtract(wageExp.getPreviousProjected()));
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalOperationExpData(Budget current_Budget) {
+        PerformanceData getTotalOperationExp = new PerformanceData("TOTAL OPERATION EXPENSES", true);
+        BigDecimal variablePrevBudget = getTotalVariableCost(current_Budget).getPreviousBudgetApproved().
+                add(getTotalWageExpData(current_Budget).getPreviousBudgetApproved()).
+                add(getTotalAdminExpData(current_Budget).getPreviousBudgetApproved()).
+                add(getTotalOtherAdminExpenses(current_Budget).getPreviousBudgetApproved());
+
+        getTotalOperationExp.setPreviousBudgetApproved(variablePrevBudget);
+        getTotalOperationExp.setPreviousRevised(variablePrevBudget);
+
+        BigDecimal variableActualBudget = getTotalVariableCost(current_Budget).getPreviousBudgeActual().
+                add(getTotalWageExpData(current_Budget).getPreviousBudgeActual()).
+                add(getTotalAdminExpData(current_Budget).getPreviousBudgeActual()).
+                add(getTotalOtherAdminExpenses(current_Budget).getPreviousBudgeActual());
+        getTotalOperationExp.setPreviousBudgeActual(variableActualBudget.abs());
+        getTotalOperationExp.setPreviousProjected(BigDecimal.ZERO);
+
+        BigDecimal curBudget = getTotalVariableCost(current_Budget).getChosenBudget().
+                add(getTotalWageExpData(current_Budget).getChosenBudget()).
+                add(getTotalAdminExpData(current_Budget).getChosenBudget()).
+                add(getTotalOtherAdminExpenses(current_Budget).getChosenBudget());
+
+        getTotalOperationExp.setChosenBudget(curBudget);
+        return getTotalOperationExp;
+    }
+
+    public PerformanceData getTotalOperationIncomeData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL MISCELLANOUS OTHER EXPENSES", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass1(previousBudgt.get(), Classification1.Recurrent_Income);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification1(previousBudgt.get().getId(), Classification1.Recurrent_Income);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt));
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification1(current_Budget.getId(), Classification1.Recurrent_Income);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceRow getExpPercOnOperIncome(Budget current_Budget, PerformanceData expense) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceRow getTotalFuel = new PerformanceRow(expense.getLabel() + " %age on oper. income".toLowerCase(), true);
+        PerformanceData operIncome = getTotalOperationIncomeData(current_Budget);
+        if (previousBudgt.isPresent()) {
+            String prevBudgetPer = calculatePercentage(expense.getPreviousBudgetApproved(), operIncome.getPreviousBudgetApproved()) + "%";
+            getTotalFuel.setPreviousBudgetApproved(prevBudgetPer);
+            getTotalFuel.setPreviousRevised(prevBudgetPer);
+
+            String prevBudgetActualPer = calculatePercentage(expense.getPreviousBudgeActual(), operIncome.getPreviousBudgeActual()) + "%";
+            getTotalFuel.setPreviousBudgeActual(prevBudgetActualPer);
+            getTotalFuel.setPreviousProjected("_");
+        } else {
+            getTotalFuel.setPreviousBudgetApproved("_");
+            getTotalFuel.setPreviousRevised("_");
+            getTotalFuel.setPreviousBudgeActual("_");
+            getTotalFuel.setPreviousProjected("_");
+        }
+        String prevchosenBudgetPer = calculatePercentage(expense.getChosenBudget(), operIncome.getChosenBudget()) + "%";
+        getTotalFuel.setChosenBudget(prevchosenBudgetPer);
+
+        return getTotalFuel;
+    }
+
+    public PerformanceRow getExpPercOnOperExpense(Budget current_Budget, PerformanceData expense) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceRow getTotalFuel = new PerformanceRow(expense.getLabel() + " %age on oper. expense".toLowerCase(), true);
+        PerformanceData operExpense = getTotalOperationExpData(current_Budget);
+        if (previousBudgt.isPresent()) {
+            String prevBudgetPer = calculatePercentage(expense.getPreviousBudgetApproved(), operExpense.getPreviousBudgetApproved()) + "%";
+            getTotalFuel.setPreviousBudgetApproved(prevBudgetPer);
+            getTotalFuel.setPreviousRevised(prevBudgetPer);
+
+            String prevBudgetActualPer = calculatePercentage(expense.getPreviousBudgeActual(), operExpense.getPreviousBudgeActual()) + "%";
+            getTotalFuel.setPreviousBudgeActual(prevBudgetActualPer);
+            getTotalFuel.setPreviousProjected("_");
+        } else {
+            getTotalFuel.setPreviousBudgetApproved("_");
+            getTotalFuel.setPreviousRevised("_");
+            getTotalFuel.setPreviousBudgeActual("_");
+            getTotalFuel.setPreviousProjected("_");
+        }
+        String prevchosenBudgetPer = calculatePercentage(expense.getChosenBudget(), operExpense.getChosenBudget()) + "%";
+        getTotalFuel.setChosenBudget(prevchosenBudgetPer);
+
+        return getTotalFuel;
+    }
+
+    public PerformanceData getEBITDA(Budget current_Budget) {
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("EBITDA/ operating surplus", true);
+        PerformanceData operExp = getTotalOperationExpData(current_Budget);
+        PerformanceData OperationIncome = getTotalOperationIncomeData(current_Budget);
+        getTotalPassengerServiceExp.setChosenBudget(OperationIncome.getChosenBudget().subtract(operExp.getChosenBudget()));
+        getTotalPassengerServiceExp.setPreviousBudgetApproved(OperationIncome.getPreviousBudgetApproved().subtract(operExp.getPreviousBudgetApproved()));
+        getTotalPassengerServiceExp.setPreviousBudgeActual(OperationIncome.getPreviousBudgeActual().subtract(operExp.getPreviousBudgeActual()));
+        getTotalPassengerServiceExp.setPreviousRevised(OperationIncome.getPreviousRevised().subtract(operExp.getPreviousRevised()));
+        getTotalPassengerServiceExp.setPreviousProjected(OperationIncome.getPreviousProjected().subtract(operExp.getPreviousProjected()));
+
+        if (OperationIncome.getChosenBudget().doubleValue() - operExp.getChosenBudget().doubleValue() < 0) {
+            getTotalPassengerServiceExp.setLabel("EBITDA/ operating surplus (Deficit)");
+        }
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalDepreciationData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL DEPRECIATION", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass1(previousBudgt.get(), Classification1.Consumption_of_Fixed_Assets);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification1(previousBudgt.get().getId(), Classification1.Consumption_of_Fixed_Assets);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification1(current_Budget.getId(), Classification1.Consumption_of_Fixed_Assets);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalFinanceCostsData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL FINANCE COSTS", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> PassengerServiceExpCodePrevBdgt = sampleCoaService.findByBudgetAndClass2(previousBudgt.get(), Classification2.Finance_Costs);
+            BigDecimal prevBudget = repository.getTotalByBudgetAndClassification2(previousBudgt.get().getId(), Classification2.Finance_Costs);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), PassengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal curBudget = repository.getTotalByBudgetAndClassification2(current_Budget.getId(), Classification2.Finance_Costs);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    public PerformanceData getTotalOperationExpenditureData(Budget current_Budget) {
+        PerformanceData getTotalOperationExp = new PerformanceData("TOTAL EXPENDITURE", true);
+        BigDecimal variablePrevBudget = getTotalOperationExpData(current_Budget).getPreviousBudgetApproved().
+                add(getTotalDepreciationData(current_Budget).getPreviousBudgetApproved()).
+                add(getTotalFinanceCostsData(current_Budget).getPreviousBudgetApproved());
+
+        getTotalOperationExp.setPreviousBudgetApproved(variablePrevBudget);
+        getTotalOperationExp.setPreviousRevised(variablePrevBudget);
+
+        BigDecimal variableActualBudget = getTotalOperationExpData(current_Budget).getPreviousBudgeActual().
+                add(getTotalDepreciationData(current_Budget).getPreviousBudgeActual()).
+                add(getTotalFinanceCostsData(current_Budget).getPreviousBudgeActual());
+        getTotalOperationExp.setPreviousBudgeActual(variableActualBudget.abs());
+        getTotalOperationExp.setPreviousProjected(BigDecimal.ZERO);
+
+        BigDecimal curBudget = getTotalOperationExpData(current_Budget).getChosenBudget().
+                add(getTotalDepreciationData(current_Budget).getChosenBudget()).
+                add(getTotalFinanceCostsData(current_Budget).getChosenBudget());
+
+        getTotalOperationExp.setChosenBudget(curBudget);
+        return getTotalOperationExp;
+    }
+
+    public PerformanceData getTotalIncomeData(Budget current_Budget) {
+
+        int chosenYear = current_Budget.getStartDate().getYear();
+        Optional<Budget> previousBudgt = budgetRepository.findByStartDateYear(chosenYear - 1);
+
+        PerformanceData getTotalPassengerServiceExp = new PerformanceData("TOTAL INCOME", true);
+        if (previousBudgt.isPresent()) {
+            List<COA> recIncomeCodePrevBdgt = sampleCoaService.findByBudgetAndClass1(previousBudgt.get(), Classification1.Recurrent_Income);
+            List<COA> non_recIncomeCodePrevBdgt = sampleCoaService.findByBudgetAndClass1(previousBudgt.get(), Classification1.Non_Recurrent_Income);
+            List<COA> passengerServiceExpCodePrevBdgt = new ArrayList<>();
+            passengerServiceExpCodePrevBdgt.addAll(recIncomeCodePrevBdgt);
+            passengerServiceExpCodePrevBdgt.addAll(non_recIncomeCodePrevBdgt);
+            BigDecimal prevBudget1 = repository.getTotalByBudgetAndClassification1(previousBudgt.get().getId(), Classification1.Recurrent_Income);
+            BigDecimal prevBudget2 = repository.getTotalByBudgetAndClassification1(previousBudgt.get().getId(), Classification1.Non_Recurrent_Income);
+
+            BigDecimal prevBudget = prevBudget1.add(prevBudget2);
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(prevBudget);
+            getTotalPassengerServiceExp.setPreviousRevised(prevBudget);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(getActualByBudgetAndCodes(previousBudgt.get(), passengerServiceExpCodePrevBdgt).abs());
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        } else {
+            getTotalPassengerServiceExp.setPreviousBudgetApproved(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousRevised(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousBudgeActual(BigDecimal.ZERO);
+            getTotalPassengerServiceExp.setPreviousProjected(BigDecimal.ZERO);
+        }
+        BigDecimal prevBudget1 = repository.getTotalByBudgetAndClassification1(current_Budget.getId(), Classification1.Recurrent_Income);
+        BigDecimal prevBudget2 = repository.getTotalByBudgetAndClassification1(current_Budget.getId(), Classification1.Non_Recurrent_Income);
+
+        BigDecimal curBudget = prevBudget1.add(prevBudget2);
+        getTotalPassengerServiceExp.setChosenBudget(curBudget);
+
+        return getTotalPassengerServiceExp;
+    }
+
+    private BigDecimal getActualByBudgetAndCodes(Budget budget, List<COA> codes) {
+        return sALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(budget), extractCoaCodes(codes));
+    }
+
+    private String formatCurrencyB(BigDecimal amount) {
+
+        if (amount == null) {
+            return "0";
+        }
+
+        BigDecimal thousands = amount
+                .divide(BigDecimal.valueOf(1000), 1, RoundingMode.HALF_UP);
+
+        NumberFormat formatter = NumberFormat.getInstance(Locale.US);
+        formatter.setMaximumFractionDigits(1);
+        formatter.setMinimumFractionDigits(1);
+
+        return formatter.format(thousands);
+    }
+
+    public BigDecimal calculatePercentage(BigDecimal part, BigDecimal total) {
+
+        if (part == null || total == null || total.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return part
+                .divide(total, 6, RoundingMode.HALF_UP) // high precision division
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP);      // final percentage scale
+    }
+
+    public static Set<String> extractCoaCodes(List<COA> coaList) {
+        if (coaList == null || coaList.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        return coaList.stream()
+                .map(COA::getCode)
+                .filter(Objects::nonNull)
+                .filter(code -> !code.trim().isEmpty())
+                .collect(Collectors.toSet());
+    }
+
 }

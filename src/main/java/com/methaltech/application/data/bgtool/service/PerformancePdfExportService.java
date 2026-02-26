@@ -411,7 +411,7 @@ public class PerformancePdfExportService {
                 table.addCell(body(getCumulativeAchievement(act, ctx.getQuarter())));
 
                 // -------- % TARGET / ACTUAL ACHIEVEMENT --------
-                table.addCell(body(getActualAchievement(act, ctx)));
+                table.addCell(body(getPerAchievement(act, ctx.getQuarter())));
 
                 // -------- EXPLANATION --------
                 table.addCell(body(getVariation(act, ctx.getQuarter())));
@@ -435,6 +435,21 @@ public class PerformancePdfExportService {
                 "-";
         };
     }
+    
+    private String getPerAchievement(Urc_Activities act, int qtr) {
+        return switch (qtr) {
+            case 1 ->
+                act.getPerc_of_TargetAchieved_qtr1();
+            case 2 ->
+                act.getPerc_of_TargetAchieved_qtr2();
+            case 3 ->
+                act.getPerc_of_TargetAchieved_qtr3();
+            case 4 ->
+                act.getPerc_of_TargetAchieved_qtr4();
+            default ->
+                "-";
+        };
+    }    
 
     private String getActualAchievement(Urc_Activities act, PerformanceReportContext ctx) {
 

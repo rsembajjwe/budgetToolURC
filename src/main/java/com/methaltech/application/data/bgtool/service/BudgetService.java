@@ -1,7 +1,6 @@
 package com.methaltech.application.data.bgtool.service;
 
 import com.methaltech.application.data.Quarters;
-import com.methaltech.application.data.bgtool.repository.BudgetItemsRepository;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.Organisation;
 import com.methaltech.application.data.entity.bgtool.Budget;
@@ -33,7 +32,6 @@ import com.methaltech.application.data.livedata.repository.UrcDepartmentAnlDimRe
 import com.methaltech.application.data.livedata.service.SALFLDGService;
 import com.methaltech.application.data.livedata.service.UrcDeptSectionAnlDimService;
 import jakarta.persistence.EntityNotFoundException;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.ArrayList;
@@ -358,6 +356,14 @@ public class BudgetService {
         List<RevenueSource> revenueSources = createMockRevenueSources(budget);
 
         double totalBudget = departmentBudgets.stream().mapToDouble(DepartmentBudget::getTotalBudget).sum();
+        double cumQtr1Budget = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr1Budget).sum();
+        double cumQtr2Budget = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr2Budget).sum();
+        double cumQtr3Budget = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr3Budget).sum();
+        double cumQtr4Budget = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr4Budget).sum();
+        double cumQtr1Actual = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr1Actual).sum();
+        double cumQtr2Actual = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr2Actual).sum();
+        double cumQtr3Actual = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr3Actual).sum();
+        double cumQtr4Actual = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr4Actual).sum();
         double totalCommitted = departmentBudgets.stream().mapToDouble(DepartmentBudget::getTotalCommitted).sum();
         double totalSpent = departmentBudgets.stream().mapToDouble(DepartmentBudget::getTotalSpent).sum();
         double totalRevenue = revenueSources.stream().mapToDouble(RevenueSource::getAmount).sum();
@@ -365,10 +371,18 @@ public class BudgetService {
 
         return new BudgetSummary(
                 totalBudget,
-                totalCommitted,
                 totalSpent,
+                totalCommitted,
                 totalRevenue,
                 projectedRevenue,
+                cumQtr1Budget,
+                cumQtr2Budget,
+                cumQtr3Budget,
+                cumQtr4Budget,
+                cumQtr1Actual,
+                cumQtr2Actual,
+                cumQtr3Actual,
+                cumQtr4Actual,
                 departmentBudgets,
                 revenueSources
         );
@@ -376,23 +390,28 @@ public class BudgetService {
 
     public List<DepartmentBudget> getDepartmentBudgets(Budget budget) {
         List<UrcDepartmentAnlDim> departments = findActiveDepartments();
-        Random random = new Random();
-
         return departments.stream().map(dept -> {
-            // Generate mock budget data based on department
             Set<UrcDeptSectionAnlDimbgt> sections = deptSectionMergerService.getSectionsByDeptCode(dept.getANL_CODE());
 
-            double baseBudget = 50_000_000 + random.nextDouble() * 450_000_000; // 50M to 500M UGX
+            double baseBudget = 0; // 50M to 500M UGX
             baseBudget = budgetItemsService.calculateTotalDeptExpenditure(budget, sections.stream().toList()).doubleValue();
 
-            double spentPercentage = 0.3 + random.nextDouble() * 0.6; // 30% to 90%
-            double totalSpent = baseBudget * spentPercentage;
-            double totalCommitted = baseBudget * (0.05 + random.nextDouble() * 0.15); // 5% to 20%
+            double spentPercentage = 0; // 30% to 90%
+            double totalSpent = 0;
+            double totalCommitted = 0; // 5% to 20%
             totalCommitted = 0.0;
-            BigDecimal[] totals = budgetItemsService.computeGrandExpenditureTotals(budget, sections);
+
+            double cumQtr1Budget= 0.0;
+            double cumQtr2Budget= 0.0;
+            double cumQtr3Budget= 0.0;
+            double cumQtr4Budget= 0.0;
+
+            double cumQtr1Actual= 0.0;
+            double cumQtr2Actual= 0.0;
+            double cumQtr3Actual= 0.0;
+            double cumQtr4Actual= 0.0;
 
             Set<String> sects = new HashSet<>();
-
             if (dept.getANL_CODE() != null && !dept.getANL_CODE().isEmpty()) {
                 Optional<DeptSectionMerger> merger = sampleDeptSectionMergerService.findByDeptcodeCustom(dept.getANL_CODE());
                 if (merger.isPresent()) {
@@ -402,8 +421,14 @@ public class BudgetService {
                 }
             }
             String color = colors[Math.abs(dept.getANL_CODE().hashCode()) % colors.length];
-            int sectionCount = sects.size();// 1 + random.nextInt(5); // 1 to 5 sections
-            totalSpent = sampleSALFLDGService.getTotalAmountByPeriods(getFinancialYearPeriods(budget), sects).negate().doubleValue();
+            int sectionCount = sects.size();
+            if (dept.getANL_CODE().equals("#              ")) {
+                totalSpent = sampleSALFLDGService.findTotalAmountByPeriodsAndUnAnalyzed(getFinancialYearPeriods(budget)).doubleValue() + sampleSALFLDGService.getTotalAmountByPeriods(getFinancialYearPeriods(budget), sects).doubleValue();
+//totalSpent =sampleSALFLDGService.findTotalAmountByPeriodsAndUnAnalyzed(getFinancialYearPeriods(budget)).doubleValue();
+            } else {
+                totalSpent = sampleSALFLDGService.getTotalAmountByPeriods(getFinancialYearPeriods(budget), sects).doubleValue();
+            }
+
             totalCommitted = sampleSALFLDGService.getTotalCommittedAmountByPeriods(getFinancialYearPeriods(budget), sects).negate().doubleValue();
 
             return new DepartmentBudget(
@@ -418,7 +443,15 @@ public class BudgetService {
                     false,
                     false,
                     dept.getSTATUS(),
-                    sectionCount
+                    sectionCount,
+                    cumQtr1Budget,
+                    cumQtr2Budget,
+                    cumQtr3Budget,
+                    cumQtr4Budget,
+                    cumQtr1Actual,
+                    cumQtr2Actual,
+                    cumQtr3Actual,
+                    cumQtr4Actual
             );
         }).collect(Collectors.toList());
     }

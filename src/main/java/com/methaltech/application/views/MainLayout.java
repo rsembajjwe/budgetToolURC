@@ -258,12 +258,12 @@ public class MainLayout extends AppLayout {
         performanceReportHeader.setClassName("menu-header");
         nav.addItem(performanceReportHeader);
         if (accessChecker.hasAccess(PhysicalFinancialPerformanceView.class)) {
-            SideNavItem item = new SideNavItem("Performance Report N", PhysicalFinancialPerformanceView.class, VaadinIcon.AREA_SELECT.create());
+            SideNavItem item = new SideNavItem("Physical Performance Report", PhysicalFinancialPerformanceView.class, VaadinIcon.AREA_SELECT.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
         if (accessChecker.hasAccess(ActualView.class)) {
-            SideNavItem item = new SideNavItem("Performance Report O", ActualView.class, VaadinIcon.TRENDING_UP.create());
+            SideNavItem item = new SideNavItem("Financial Performance Report", ActualView.class, VaadinIcon.TRENDING_UP.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }

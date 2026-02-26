@@ -148,6 +148,12 @@ public class SALFLDGService {
         return nn;
     }
 
+    public List<SALFLDGProjection> findByPeriodAndDepartmentExpendituresWithNullSections(Set<Integer> period, Set<String> sections) {
+        List<SALFLDGProjection> nn = salfldgRepository.findByPeriodAndDepartmentExpendituresWithNullSections(period, sections);
+
+        return nn;
+    }
+
     public List<SALFLDGProjection> findExpendituresByPeriodAndSections(Set<Integer> period, String sections) {
         List<SALFLDGProjection> nn = salfldgRepository.findByPeriodAndDepartmentExpenditures(period, sections);
 
@@ -262,7 +268,18 @@ public class SALFLDGService {
 
     public BigDecimal getTotalAmountByPeriods(Set<Integer> periods, Set<String> analT1Values) {
         BigDecimal amount = salfldgRepository.findTotalAmountByPeriodsAndAnalT1Set(periods, analT1Values);
-        return amount; // always non-null
+        return amount.abs(); // always non-null
+    }
+
+    public BigDecimal getTotalAmountByPeriods(Set<Integer> periods) {
+        BigDecimal amount = salfldgRepository.findTotalAmountByPeriods(periods);
+        System.out.println(amount);
+        return amount.abs(); // always non-null
+    }
+
+    public BigDecimal findTotalAmountByPeriodsAndUnAnalyzed(Set<Integer> periods) {
+        BigDecimal amount = salfldgRepository.findTotalAmountByPeriodsAndUnAnalyzed(periods);
+        return amount.abs(); // always non-null
     }
 
     public BigDecimal getTotalCommittedAmountByPeriods(Set<Integer> periods, Set<String> analT1Values) {
@@ -282,7 +299,7 @@ public class SALFLDGService {
 
     public BigDecimal getTotalAmountByPeriods2(Set<Integer> periods, String analT1Values) {
         BigDecimal amount = salfldgRepository.findTotalAmountByPeriodsAndAnalT1Set(periods, analT1Values);
-        return amount; // always non-null
+        return amount.abs(); // always non-null
     }
 
     public BigDecimal findTotalAmountByPeriodsAndAccntCodes(Set<Integer> periods, Set<String> accno) {
@@ -385,6 +402,7 @@ public class SALFLDGService {
 
         return periods;
     }
+
     public Set<Integer> getFinancialYearPeriodsCummulative(Budget budget, int quarter) {
         Set<Integer> periods = new LinkedHashSet<>();
 
@@ -423,6 +441,7 @@ public class SALFLDGService {
 
         return periods;
     }
+
     public Optional<SALFLDG> findByActualByID(
             String accountCode,
             Integer period,

@@ -14,13 +14,13 @@
     --budget-cards-warning: #d97706;
     --budget-cards-danger: #dc2626;
     --budget-cards-info: #0891b2;
-    
+
     /* Card Type Colors */
     --card-blue: #3b82f6;
     --card-red: #ef4444;
     --card-green: #10b981;
     --card-emerald: #8b5cf6;
-    
+
     /* Glass Morphism */
     --budget-cards-glass-bg: rgba(248, 250, 252, 0.95);
     --budget-cards-glass-border: rgba(203, 213, 225, 0.3);
@@ -53,7 +53,8 @@
     box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
     position: relative;
     overflow: hidden;
-    height: 120px;
+    min-height: 180px;
+    height: auto;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -102,20 +103,20 @@
 }
 
 /* Card Type Specific Styling */
-.budget-summary-cards .card-blue::before { 
-    background: linear-gradient(90deg, var(--card-blue) 0%, #06b6d4 100%); 
+.budget-summary-cards .card-blue::before {
+    background: linear-gradient(90deg, var(--card-blue) 0%, #06b6d4 100%);
 }
 
-.budget-summary-cards .card-red::before { 
-    background: linear-gradient(90deg, var(--card-red) 0%, #f97316 100%); 
+.budget-summary-cards .card-red::before {
+    background: linear-gradient(90deg, var(--card-red) 0%, #f97316 100%);
 }
 
-.budget-summary-cards .card-green::before { 
-    background: linear-gradient(90deg, var(--card-green) 0%, #059669 100%); 
+.budget-summary-cards .card-green::before {
+    background: linear-gradient(90deg, var(--card-green) 0%, #059669 100%);
 }
 
-.budget-summary-cards .card-emerald::before { 
-    background: linear-gradient(90deg, var(--card-emerald) 0%, #7c3aed 100%); 
+.budget-summary-cards .card-emerald::before {
+    background: linear-gradient(90deg, var(--card-emerald) 0%, #7c3aed 100%);
 }
 
 /* ===================================================================
@@ -232,7 +233,7 @@
     .budget-summary-cards {
         gap: 1rem !important;
     }
-    
+
     .budget-summary-cards .summary-card {
         min-width: 180px !important;
         max-width: 240px !important;
@@ -244,23 +245,23 @@
         gap: 0.75rem !important;
         justify-content: center !important;
     }
-    
+
     .budget-summary-cards .summary-card {
         min-width: 160px !important;
         max-width: 200px !important;
         height: 100px;
         padding: 1rem;
     }
-    
+
     .budget-summary-cards .card-amount {
         font-size: 1rem;
     }
-    
+
     .budget-summary-cards .card-icon {
         width: 2rem;
         height: 2rem;
     }
-    
+
     .budget-summary-cards .card-icon vaadin-icon {
         width: 0.875rem !important;
         height: 0.875rem !important;
@@ -273,7 +274,7 @@
         gap: 0.75rem !important;
         align-items: stretch !important;
     }
-    
+
     .budget-summary-cards .summary-card {
         min-width: auto !important;
         max-width: none !important;
@@ -281,19 +282,19 @@
         height: 90px;
         padding: 0.75rem;
     }
-    
+
     .budget-summary-cards .card-title {
         font-size: 0.6875rem;
     }
-    
+
     .budget-summary-cards .card-amount {
         font-size: 0.875rem;
     }
-    
+
     .budget-summary-cards .card-subtitle {
         font-size: 0.6875rem;
     }
-    
+
     .budget-summary-cards .card-icon {
         width: 1.75rem;
         height: 1.75rem;
@@ -328,10 +329,18 @@
 }
 
 /* Stagger animation for multiple cards */
-.budget-summary-cards .summary-card:nth-child(1) { animation-delay: 0.1s; }
-.budget-summary-cards .summary-card:nth-child(2) { animation-delay: 0.2s; }
-.budget-summary-cards .summary-card:nth-child(3) { animation-delay: 0.3s; }
-.budget-summary-cards .summary-card:nth-child(4) { animation-delay: 0.4s; }
+.budget-summary-cards .summary-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+.budget-summary-cards .summary-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+.budget-summary-cards .summary-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+.budget-summary-cards .summary-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
 
 /* ===================================================================
    FOCUS STATES - ACCESSIBILITY
@@ -352,7 +361,7 @@
         border: 1px solid #e2e8f0;
         break-inside: avoid;
     }
-    
+
     .budget-summary-cards .summary-card:hover {
         transform: none;
     }
@@ -374,6 +383,53 @@
     color: #475569;
 }
 
+/* =========================================
+   SUMMARY CARD - QUARTERLY BREAKDOWN
+   ========================================= */
+.budget-summary-cards .card-breakdown {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.budget-summary-cards .breakdown-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.budget-summary-cards .breakdown-label {
+    color: #64748b;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.budget-summary-cards .breakdown-value {
+    color: #0f172a;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-align: right;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .budget-summary-cards .breakdown-label {
+        font-size: 0.65rem;
+    }
+    .budget-summary-cards .breakdown-value {
+        font-size: 0.7rem;
+    }
+}
+
 /* ===================================================================
    DARK MODE SUPPORT (Future Enhancement)
    ================================================================== */
@@ -382,7 +438,7 @@
         --budget-cards-glass-bg: rgba(15, 23, 42, 0.85);
         --budget-cards-glass-border: rgba(71, 85, 105, 0.3);
     }
-    
+
     .budget-summary-cards .summary-card {
         background: linear-gradient(135deg, var(--budget-cards-glass-bg) 0%, rgba(30, 41, 59, 0.85) 100%);
     }

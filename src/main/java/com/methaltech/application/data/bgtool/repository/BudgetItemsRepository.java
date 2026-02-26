@@ -1,6 +1,8 @@
 package com.methaltech.application.data.bgtool.repository;
 
 import com.methaltech.application.data.BudgetItemsSummaryProjection;
+import com.methaltech.application.data.Classification1;
+import com.methaltech.application.data.Classification2;
 import com.methaltech.application.data.Display;
 import com.methaltech.application.data.MonthlySumResponseFreight;
 import com.methaltech.application.data.ProcClass;
@@ -1650,5 +1652,71 @@ group by bi.deptUnit.id
             + "WHERE b.budget = :budget AND b.coacode = :coa")
     BigDecimal getTotalByBudgetAndCoa(@Param("budget") Budget budget,
             @Param("coa") COA coa);
+
+    @Query("""
+        select
+            coalesce(sum(
+                coalesce(b.jul, 0) +
+                coalesce(b.aug, 0) +
+                coalesce(b.sep, 0) +
+                coalesce(b.oct, 0) +
+                coalesce(b.nov, 0) +
+                coalesce(b.dec, 0) +
+                coalesce(b.jan, 0) +
+                coalesce(b.feb, 0) +
+                coalesce(b.mar, 0) +
+                coalesce(b.apr, 0) +
+                coalesce(b.may, 0) +
+                coalesce(b.jun, 0)
+            ), 0)
+        from BudgetItems b
+        join b.coacode c
+        where b.budget.id = :budgetId
+          and c.class2 = :class2
+    """)
+    BigDecimal getTotalByBudgetAndClassification2(
+            @Param("budgetId") Long budgetId,
+            @Param("class2") Classification2 class2
+    );
+
+    @Query("""
+        select
+            coalesce(sum(
+                coalesce(b.jul, 0) +
+                coalesce(b.aug, 0) +
+                coalesce(b.sep, 0) +
+                coalesce(b.oct, 0) +
+                coalesce(b.nov, 0) +
+                coalesce(b.dec, 0) +
+                coalesce(b.jan, 0) +
+                coalesce(b.feb, 0) +
+                coalesce(b.mar, 0) +
+                coalesce(b.apr, 0) +
+                coalesce(b.may, 0) +
+                coalesce(b.jun, 0)
+            ), 0)
+        from BudgetItems b
+        join b.coacode c
+        where b.budget.id = :budgetId
+          and c.class1 = :class1
+    """)
+    BigDecimal getTotalByBudgetAndClassification1(
+            @Param("budgetId") Long budgetId,
+            @Param("class1") Classification1 class1
+    );
+
+    @Query("""
+    select coalesce(sum(
+        coalesce(b.jul, 0) + coalesce(b.aug, 0) + coalesce(b.sep, 0) +
+        coalesce(b.oct, 0) + coalesce(b.nov, 0) + coalesce(b.dec, 0) +
+        coalesce(b.jan, 0) + coalesce(b.feb, 0) + coalesce(b.mar, 0) +
+        coalesce(b.apr, 0) + coalesce(b.may, 0) + coalesce(b.jun, 0)
+    ), 0)
+    from BudgetItems b
+    join b.coacode c
+    where b.budget.id = :budgetId
+      and c.code like '1%'
+""")
+    BigDecimal getTotalIncomeByBudget(@Param("budgetId") Long budgetId);
 
 }
