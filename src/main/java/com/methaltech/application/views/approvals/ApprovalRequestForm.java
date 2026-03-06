@@ -1,4 +1,3 @@
-
 package com.methaltech.application.views.approvals;
 
 import com.methaltech.application.data.bgtool.service.BudgetApprovalsService;
@@ -18,6 +17,7 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
@@ -28,27 +28,28 @@ import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.validator.DoubleRangeValidator;
 import com.vaadin.flow.data.validator.StringLengthValidator;
 import com.vaadin.flow.shared.Registration;
+import java.math.BigDecimal;
 
 import java.util.List;
 
 public class ApprovalRequestForm extends Dialog {
-    
+
     private final BudgetApprovalsService approvalsService;
     private final String currentUser;
-    
+
     private Binder<BudgetApprovals> binder;
     private BudgetApprovals currentApproval;
-    
+
     // Form fields
     private ComboBox<DepartmentBudget> departmentCombo;
     private TextField sectionField;
     private ComboBox<BudgetApprovals.RequestType> requestTypeCombo;
-    private NumberField requestedAmountField;
-    private NumberField currentBudgetField;
+    private BigDecimalField requestedAmountField;
+    private BigDecimalField currentBudgetField;
     private ComboBox<BudgetApprovals.PriorityLevel> priorityCombo;
     private TextArea justificationArea;
     private Upload documentUpload;
-    
+
     // Buttons
     private Button saveButton;
     private Button cancelButton;
@@ -56,14 +57,14 @@ public class ApprovalRequestForm extends Dialog {
     public ApprovalRequestForm(List<DepartmentBudget> departments, String currentUser, BudgetApprovalsService approvalsService) {
         this.approvalsService = approvalsService;
         this.currentUser = currentUser;
-        
+
         setWidth("800px");
         setHeight("700px");
         setModal(true);
         setDraggable(true);
         setResizable(true);
         addClassName("approval-request-form-dialog");
-        
+
         createForm(departments);
         setupValidation();
         setupEventHandlers();
@@ -78,7 +79,7 @@ public class ApprovalRequestForm extends Dialog {
         // Header
         H2 title = new H2("New Budget Request");
         title.addClassName("form-title");
-        
+
         Span subtitle = new Span("Submit a new budget approval request");
         subtitle.addClassName("form-subtitle");
 
@@ -86,8 +87,8 @@ public class ApprovalRequestForm extends Dialog {
         FormLayout formLayout = new FormLayout();
         formLayout.addClassName("approval-form");
         formLayout.setResponsiveSteps(
-            new FormLayout.ResponsiveStep("0", 1),
-            new FormLayout.ResponsiveStep("600px", 2)
+                new FormLayout.ResponsiveStep("0", 1),
+                new FormLayout.ResponsiveStep("600px", 2)
         );
 
         // Department selection
@@ -115,15 +116,13 @@ public class ApprovalRequestForm extends Dialog {
         requestTypeCombo.addClassName("request-type-combo");
 
         // Current budget (read-only)
-        currentBudgetField = new NumberField("Current Budget (UGX)");
+        currentBudgetField = new BigDecimalField("Current Budget (UGX)");
         currentBudgetField.setReadOnly(true);
         currentBudgetField.addClassName("current-budget-field");
 
         // Requested amount
-        requestedAmountField = new NumberField("Requested Amount (UGX)");
+        requestedAmountField = new BigDecimalField("Requested Amount (UGX)");
         requestedAmountField.setRequired(true);
-        requestedAmountField.setMin(1);
-        requestedAmountField.setStep(1000);
         requestedAmountField.addClassName("requested-amount-field");
 
         // Priority level
@@ -191,47 +190,52 @@ public class ApprovalRequestForm extends Dialog {
 
         // Department validation
         binder.forField(departmentCombo)
-            .asRequired("Department is required")
-            .bind(
-                approval -> null, // We'll handle this manually
-                (approval, dept) -> {
-                    if (dept != null) {
-                        approval.setDepartmentCode(dept.getDepartmentCode());
-                        approval.setDepartmentName(dept.getDepartmentName());
-                    }
-                }
-            );
+                .asRequired("Department is required")
+                .bind(
+                        approval -> null, // We'll handle this manually
+                        (approval, dept) -> {
+                            if (dept != null) {
+                                approval.setDepartmentCode(dept.getDepartmentCode());
+                                approval.setDepartmentName(dept.getDepartmentName());
+                            }
+                        }
+                );
 
         // Section validation
         binder.forField(sectionField)
-            .withValidator(new StringLengthValidator("Section name must be between 2 and 100 characters", 2, 100))
-            .bind(BudgetApprovals::getSectionName, BudgetApprovals::setSectionName);
+                .withValidator(new StringLengthValidator("Section name must be between 2 and 100 characters", 2, 100))
+                .bind(BudgetApprovals::getSectionName, BudgetApprovals::setSectionName);
 
         // Request type validation
         binder.forField(requestTypeCombo)
-            .asRequired("Request type is required")
-            .bind(BudgetApprovals::getRequestType, BudgetApprovals::setRequestType);
+                .asRequired("Request type is required")
+                .bind(BudgetApprovals::getRequestType, BudgetApprovals::setRequestType);
 
         // Requested amount validation
         binder.forField(requestedAmountField)
-            .asRequired("Requested amount is required")
-            .withValidator(new DoubleRangeValidator("Amount must be greater than 0", 1.0, Double.MAX_VALUE))
-            .bind(BudgetApprovals::getRequestedAmount, BudgetApprovals::setRequestedAmount);
+                .asRequired("Requested amount is required")
+                .withValidator(
+                        amount -> amount != null
+                        && amount.compareTo(BigDecimal.ZERO) > 0,
+                        "Amount must be greater than 0"
+                )
+                .bind(BudgetApprovals::getRequestedAmount,
+                        BudgetApprovals::setRequestedAmount);
 
         // Current budget
         binder.forField(currentBudgetField)
-            .bind(BudgetApprovals::getCurrentBudget, BudgetApprovals::setCurrentBudget);
+                .bind(BudgetApprovals::getCurrentBudget, BudgetApprovals::setCurrentBudget);
 
         // Priority validation
         binder.forField(priorityCombo)
-            .asRequired("Priority level is required")
-            .bind(BudgetApprovals::getPriorityLevel, BudgetApprovals::setPriorityLevel);
+                .asRequired("Priority level is required")
+                .bind(BudgetApprovals::getPriorityLevel, BudgetApprovals::setPriorityLevel);
 
         // Justification validation
         binder.forField(justificationArea)
-            .asRequired("Justification is required")
-            .withValidator(new StringLengthValidator("Justification must be between 50 and 2000 characters", 50, 2000))
-            .bind(BudgetApprovals::getJustification, BudgetApprovals::setJustification);
+                .asRequired("Justification is required")
+                .withValidator(new StringLengthValidator("Justification must be between 50 and 2000 characters", 50, 2000))
+                .bind(BudgetApprovals::getJustification, BudgetApprovals::setJustification);
     }
 
     private void setupEventHandlers() {
@@ -266,8 +270,8 @@ public class ApprovalRequestForm extends Dialog {
             // Save the approval request
             BudgetApprovals savedApproval = approvalsService.createApprovalRequest(currentApproval);
 
-            showNotification("Budget request submitted successfully. Request ID: " + savedApproval.getRequestId(), 
-                           NotificationVariant.LUMO_SUCCESS);
+            showNotification("Budget request submitted successfully. Request ID: " + savedApproval.getRequestId(),
+                    NotificationVariant.LUMO_SUCCESS);
 
             // Fire save event
             fireEvent(new SaveEvent(this, savedApproval));
@@ -287,6 +291,7 @@ public class ApprovalRequestForm extends Dialog {
 
     // Event handling
     public static class SaveEvent extends ComponentEvent<ApprovalRequestForm> {
+
         private final BudgetApprovals approval;
 
         public SaveEvent(ApprovalRequestForm source, BudgetApprovals approval) {

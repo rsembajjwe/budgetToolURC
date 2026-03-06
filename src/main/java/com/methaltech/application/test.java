@@ -1,32 +1,26 @@
 package com.methaltech.application;
 
-import com.methaltech.application.data.Quarters;
+import com.methaltech.application.data.GetPeriods;
 import com.methaltech.application.data.bgtool.service.BudgetItemsService;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.DeptSectionMerger;
-import com.methaltech.application.data.livedata.repository.SALFLDGRepository;
 import com.methaltech.application.data.livedata.service.SALFLDGService;
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.net.ssl.SSLContext;
 
 public class test {
 
     private static List<Integer> years = new ArrayList<>();
     BudgetItemsService samplBudgetItemsService;
     SALFLDGService sALFLDGService;
+    GetPeriods per=new GetPeriods();
 
     public test(SALFLDGService sALFLDGService) {
         this.sALFLDGService = sALFLDGService;

@@ -20,6 +20,8 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
@@ -349,17 +351,44 @@ public class ApprovalWorkflowGrid extends VerticalLayout {
         // This would typically reload the data from the service
     }
 
-    private String formatCurrency(double amount) {
-        if (Math.abs(amount) >= 1_000_000_000) {
-            return String.format("UGX %.1fB", amount / 1_000_000_000);
-        } else if (Math.abs(amount) >= 1_000_000) {
-            return String.format("UGX %.1fM", amount / 1_000_000);
-        } else if (Math.abs(amount) >= 1_000) {
-            return String.format("UGX %.0fK", amount / 1_000);
-        } else {
-            return String.format("UGX %.0f", amount);
-        }
+private String formatCurrency(BigDecimal amount) {
+
+    if (amount == null) {
+        return "UGX 0";
     }
+
+    BigDecimal absAmount = amount.abs();
+
+    BigDecimal billion = BigDecimal.valueOf(1_000_000_000);
+    BigDecimal million = BigDecimal.valueOf(1_000_000);
+    BigDecimal thousand = BigDecimal.valueOf(1_000);
+
+    if (absAmount.compareTo(billion) >= 0) {
+
+        BigDecimal value = amount
+                .divide(billion, 1, RoundingMode.HALF_UP);
+
+        return "UGX " + value + "B";
+
+    } else if (absAmount.compareTo(million) >= 0) {
+
+        BigDecimal value = amount
+                .divide(million, 1, RoundingMode.HALF_UP);
+
+        return "UGX " + value + "M";
+
+    } else if (absAmount.compareTo(thousand) >= 0) {
+
+        BigDecimal value = amount
+                .divide(thousand, 0, RoundingMode.HALF_UP);
+
+        return "UGX " + value + "K";
+
+    } else {
+
+        return "UGX " + amount.setScale(0, RoundingMode.HALF_UP);
+    }
+}
 
     private void showNotification(String message, NotificationVariant variant) {
         Notification notification = Notification.show(message, 3000, Notification.Position.TOP_END);

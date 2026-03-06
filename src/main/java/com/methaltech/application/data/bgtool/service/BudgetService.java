@@ -1,5 +1,7 @@
 package com.methaltech.application.data.bgtool.service;
 
+import com.methaltech.application.data.FundType;
+import com.methaltech.application.data.GetPeriods;
 import com.methaltech.application.data.Quarters;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.Organisation;
@@ -32,6 +34,7 @@ import com.methaltech.application.data.livedata.repository.UrcDepartmentAnlDimRe
 import com.methaltech.application.data.livedata.service.SALFLDGService;
 import com.methaltech.application.data.livedata.service.UrcDeptSectionAnlDimService;
 import jakarta.persistence.EntityNotFoundException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.ArrayList;
@@ -75,7 +78,10 @@ public class BudgetService {
     private final UrcDeptSectionAnlDimService sampleSectionService;
     private final UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService;
     private final SALFLDGService sampleSALFLDGService;
+    private final QtrReleasesServiceImpl qtrReleasesServiceImpl;
     private final Random random = new Random();
+    GetPeriods periodsGen = new GetPeriods();
+    BigDecimal igrTotalRevenueBudget = BigDecimal.ZERO;
 
     private final String[] colors = {
         "#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6",
@@ -93,7 +99,8 @@ public class BudgetService {
             UrcDepartmentAnlDimRepository urcDepartmentAnlDimRepository,
             BudgetItemsService budgetItemsService, DeptSectionMergerService deptSectionMergerService,
             DeptSectionMergerService sampleDeptSectionMergerService, UrcDeptSectionAnlDimService sampleSectionService,
-            UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, SALFLDGService sampleSALFLDGService
+            UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, SALFLDGService sampleSALFLDGService,
+            QtrReleasesServiceImpl qtrReleasesServiceImpl
     ) {
         this.repository = repository;
         this.coalevel1Repository = coalevel1Repository;
@@ -114,6 +121,7 @@ public class BudgetService {
         this.sampleSectionService = sampleSectionService;
         this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
         this.sampleSALFLDGService = sampleSALFLDGService;
+        this.qtrReleasesServiceImpl = qtrReleasesServiceImpl;
     }
 
     public Optional<Budget> get(Long id) {
@@ -355,25 +363,60 @@ public class BudgetService {
         List<DepartmentBudget> departmentBudgets = getDepartmentBudgets(budget);
         List<RevenueSource> revenueSources = createMockRevenueSources(budget);
 
-        double totalBudget = departmentBudgets.stream().mapToDouble(DepartmentBudget::getTotalBudget).sum();
-        double cumQtr1Budget = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr1Budget).sum();
-        double cumQtr2Budget = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr2Budget).sum();
-        double cumQtr3Budget = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr3Budget).sum();
-        double cumQtr4Budget = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr4Budget).sum();
-        double cumQtr1Actual = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr1Actual).sum();
-        double cumQtr2Actual = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr2Actual).sum();
-        double cumQtr3Actual = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr3Actual).sum();
-        double cumQtr4Actual = departmentBudgets.stream().mapToDouble(DepartmentBudget::getCumQtr4Actual).sum();
-        double totalCommitted = departmentBudgets.stream().mapToDouble(DepartmentBudget::getTotalCommitted).sum();
-        double totalSpent = departmentBudgets.stream().mapToDouble(DepartmentBudget::getTotalSpent).sum();
-        double totalRevenue = revenueSources.stream().mapToDouble(RevenueSource::getAmount).sum();
-        double projectedRevenue = revenueSources.stream().mapToDouble(RevenueSource::getProjected).sum();
+        BigDecimal totalBudget = sumBigDecimal(departmentBudgets, DepartmentBudget::getTotalBudget);
+        BigDecimal cumQtr1Budget = sumBigDecimal(departmentBudgets, DepartmentBudget::getCumQtr1Budget);
+        BigDecimal cumQtr2Budget = sumBigDecimal(departmentBudgets, DepartmentBudget::getCumQtr2Budget);
+        BigDecimal cumQtr3Budget = sumBigDecimal(departmentBudgets, DepartmentBudget::getCumQtr3Budget);
+        BigDecimal cumQtr4Budget = sumBigDecimal(departmentBudgets, DepartmentBudget::getCumQtr4Budget);
+
+        BigDecimal cumQtr1Actual = sumBigDecimal(departmentBudgets, DepartmentBudget::getCumQtr1Actual);
+        BigDecimal cumQtr2Actual = sumBigDecimal(departmentBudgets, DepartmentBudget::getCumQtr2Actual);
+        BigDecimal cumQtr3Actual = sumBigDecimal(departmentBudgets, DepartmentBudget::getCumQtr3Actual);
+        BigDecimal cumQtr4Actual = sumBigDecimal(departmentBudgets, DepartmentBudget::getCumQtr4Actual);
+
+        BigDecimal totalCommitted = sumBigDecimal(departmentBudgets, DepartmentBudget::getTotalCommitted);
+        BigDecimal totalSpent = sumBigDecimal(departmentBudgets, DepartmentBudget::getTotalSpent);
+
+        //BigDecimal totalRevenue = sumBigDecimal(revenueSources, RevenueSource::getAmount);
+        // BigDecimal projectedRevenue = sumBigDecimal(revenueSources, RevenueSource::getProjected);
+        BigDecimal projectedRevenue = budgetItemsService.calculateTotalProjectedIncome(budget);
+
+        igrTotalRevenueBudget = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriods(budget));
+        BigDecimal igrRevenueQtr1Budget = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriodsByQuarter(budget, 1));
+        BigDecimal igrRevenueQtr2Budget = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriodsByQuarter(budget, 2));
+        BigDecimal igrRevenueQtr3Budget = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriodsByQuarter(budget, 3));
+
+        BigDecimal gouTotalRevenueBudget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundType(budget, FundType.GOU);
+        BigDecimal gouRevenueQtr1Budget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundTypeQ1(budget, FundType.GOU);
+        BigDecimal gouRevenueQtr2Budget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundTypeQ2(budget, FundType.GOU);
+        BigDecimal gouRevenueQtr3Budget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundTypeQ3(budget, FundType.GOU);
+
+        BigDecimal extTotalRevenueBudget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundType(budget, FundType.EXTERNAL_FUNDIG);
+        BigDecimal extRevenueQtr1Budget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundTypeQ1(budget, FundType.EXTERNAL_FUNDIG);
+        BigDecimal extRevenueQtr2Budget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundTypeQ2(budget, FundType.EXTERNAL_FUNDIG);
+        BigDecimal extRevenueQtr3Budget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundTypeQ3(budget, FundType.EXTERNAL_FUNDIG);
+
+        BigDecimal projectedRevenueQtr1Budget = budgetItemsService.calculateTotalProjectedIncomeQ1(budget);
+        BigDecimal projectedRevenueQtr2Budget = budgetItemsService.calculateTotalProjectedIncomeQ2(budget);
+        BigDecimal projectedRevenueQtr3Budget = budgetItemsService.calculateTotalProjectedIncomeQ3(budget);
+        BigDecimal projectedRevenueQtr4Budget = budgetItemsService.calculateTotalProjectedIncomeQ4(budget);
+
+        BigDecimal revenueQtr1Actual = sampleSALFLDGService.findTotalIncomeByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 1));
+        BigDecimal revenueQtr2Actual= sampleSALFLDGService.findTotalIncomeByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 2));
+        BigDecimal revenueQtr3Actual= sampleSALFLDGService.findTotalIncomeByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 3));
+        BigDecimal revenueQtr4Actual= sampleSALFLDGService.findTotalIncomeByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 4));
+        BigDecimal revenueActual= sampleSALFLDGService.findTotalIncomeByPeriods(periodsGen.getFinancialYearPeriods(budget));
+        
+        BigDecimal opexBudget=  budgetItemsService.calculateTotalOpexBudget(budget);
+        BigDecimal capexBudget= budgetItemsService.calculateTotalCapexBudget(budget);
+        BigDecimal opexActual= sampleSALFLDGService.findTotalOpexByPeriods(periodsGen.getFinancialYearPeriods(budget));
+        BigDecimal capexActual= sampleSALFLDGService.findTotalCapexByPeriods(periodsGen.getFinancialYearPeriods(budget));        
 
         return new BudgetSummary(
                 totalBudget,
                 totalSpent,
                 totalCommitted,
-                totalRevenue,
+                igrTotalRevenueBudget,
                 projectedRevenue,
                 cumQtr1Budget,
                 cumQtr2Budget,
@@ -384,8 +427,46 @@ public class BudgetService {
                 cumQtr3Actual,
                 cumQtr4Actual,
                 departmentBudgets,
-                revenueSources
+                revenueSources,
+                igrTotalRevenueBudget,
+                igrRevenueQtr1Budget,
+                igrRevenueQtr2Budget,
+                igrRevenueQtr3Budget,
+                igrTotalRevenueBudget,
+                gouTotalRevenueBudget,
+                gouRevenueQtr1Budget,
+                gouRevenueQtr2Budget,
+                gouRevenueQtr3Budget,
+                gouTotalRevenueBudget,
+                extTotalRevenueBudget,
+                extRevenueQtr1Budget,
+                extRevenueQtr2Budget,
+                extRevenueQtr3Budget,
+                extTotalRevenueBudget,
+                projectedRevenueQtr1Budget,
+               projectedRevenueQtr2Budget,
+                projectedRevenueQtr3Budget,
+                projectedRevenueQtr4Budget,
+               revenueQtr1Actual,
+                revenueQtr2Actual,
+                revenueQtr3Actual,
+                revenueQtr4Actual,
+                revenueActual,
+                opexBudget,
+                capexBudget,
+                opexActual,
+                capexActual
         );
+    }
+
+    private static <T> BigDecimal sumBigDecimal(
+            java.util.Collection<T> items,
+            java.util.function.Function<T, BigDecimal> getter
+    ) {
+        return items.stream()
+                .map(getter)
+                .map(v -> v != null ? v : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public List<DepartmentBudget> getDepartmentBudgets(Budget budget) {
@@ -393,23 +474,27 @@ public class BudgetService {
         return departments.stream().map(dept -> {
             Set<UrcDeptSectionAnlDimbgt> sections = deptSectionMergerService.getSectionsByDeptCode(dept.getANL_CODE());
 
-            double baseBudget = 0; // 50M to 500M UGX
-            baseBudget = budgetItemsService.calculateTotalDeptExpenditure(budget, sections.stream().toList()).doubleValue();
+            BigDecimal baseBudget = BigDecimal.ZERO; // 50M to 500M UGX
+            baseBudget = budgetItemsService.calculateTotalDeptExpenditure(budget, sections.stream().toList());
 
-            double spentPercentage = 0; // 30% to 90%
-            double totalSpent = 0;
-            double totalCommitted = 0; // 5% to 20%
-            totalCommitted = 0.0;
+            BigDecimal spentPercentage = BigDecimal.ZERO; // 30% to 90%
+            BigDecimal totalSpent = BigDecimal.ZERO;
+            BigDecimal totalCommitted = BigDecimal.ZERO; // 5% to 20%
+            totalCommitted = BigDecimal.ZERO;
 
-            double cumQtr1Budget= 0.0;
-            double cumQtr2Budget= 0.0;
-            double cumQtr3Budget= 0.0;
-            double cumQtr4Budget= 0.0;
+            BigDecimal cumQtr1Budget = BigDecimal.ZERO;
+            cumQtr1Budget = budgetItemsService.calculateTotalDeptExpenditureQtr1(budget, sections.stream().toList());
+            BigDecimal cumQtr2Budget = BigDecimal.ZERO;
+            cumQtr2Budget = budgetItemsService.calculateTotalDeptExpenditureQtr2(budget, sections.stream().toList());
+            BigDecimal cumQtr3Budget = BigDecimal.ZERO;
+            cumQtr3Budget = budgetItemsService.calculateTotalDeptExpenditureQtr3(budget, sections.stream().toList());
+            BigDecimal cumQtr4Budget = BigDecimal.ZERO;
+            cumQtr4Budget = budgetItemsService.calculateTotalDeptExpenditureQtr4(budget, sections.stream().toList());
 
-            double cumQtr1Actual= 0.0;
-            double cumQtr2Actual= 0.0;
-            double cumQtr3Actual= 0.0;
-            double cumQtr4Actual= 0.0;
+            BigDecimal cumQtr1Actual = BigDecimal.ZERO;
+            BigDecimal cumQtr2Actual = BigDecimal.ZERO;
+            BigDecimal cumQtr3Actual = BigDecimal.ZERO;
+            BigDecimal cumQtr4Actual = BigDecimal.ZERO;
 
             Set<String> sects = new HashSet<>();
             if (dept.getANL_CODE() != null && !dept.getANL_CODE().isEmpty()) {
@@ -423,13 +508,26 @@ public class BudgetService {
             String color = colors[Math.abs(dept.getANL_CODE().hashCode()) % colors.length];
             int sectionCount = sects.size();
             if (dept.getANL_CODE().equals("#              ")) {
-                totalSpent = sampleSALFLDGService.findTotalAmountByPeriodsAndUnAnalyzed(getFinancialYearPeriods(budget)).doubleValue() + sampleSALFLDGService.getTotalAmountByPeriods(getFinancialYearPeriods(budget), sects).doubleValue();
-//totalSpent =sampleSALFLDGService.findTotalAmountByPeriodsAndUnAnalyzed(getFinancialYearPeriods(budget)).doubleValue();
+                System.out.println(dept.getANL_CODE() + "Contains #");
+                totalSpent = sampleSALFLDGService.findTotalAmountByPeriodsAndUnAnalyzed(getFinancialYearPeriods(budget)).add(sampleSALFLDGService.getTotalAmountByPeriods(getFinancialYearPeriods(budget), sects));
+                cumQtr1Actual = sampleSALFLDGService.findTotalAmountByPeriodsAndUnAnalyzed(periodsGen.getFinancialYearPeriodsByQuarter(budget, 1))
+                        .add(sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 1), sects));
+                cumQtr2Actual = sampleSALFLDGService.findTotalAmountByPeriodsAndUnAnalyzed(periodsGen.getFinancialYearPeriodsByQuarter(budget, 2))
+                        .add(sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 2), sects));
+                cumQtr3Actual = sampleSALFLDGService.findTotalAmountByPeriodsAndUnAnalyzed(periodsGen.getFinancialYearPeriodsByQuarter(budget, 3))
+                        .add(sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 3), sects));
+                cumQtr4Actual = sampleSALFLDGService.findTotalAmountByPeriodsAndUnAnalyzed(periodsGen.getFinancialYearPeriodsByQuarter(budget, 4))
+                        .add(sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 4), sects));
             } else {
-                totalSpent = sampleSALFLDGService.getTotalAmountByPeriods(getFinancialYearPeriods(budget), sects).doubleValue();
+                totalSpent = sampleSALFLDGService.getTotalAmountByPeriods(getFinancialYearPeriods(budget), sects);
+
+                cumQtr1Actual = sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 1), sects);
+                cumQtr2Actual = sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 2), sects);
+                cumQtr3Actual = sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 3), sects);
+                cumQtr4Actual = sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 4), sects);
             }
 
-            totalCommitted = sampleSALFLDGService.getTotalCommittedAmountByPeriods(getFinancialYearPeriods(budget), sects).negate().doubleValue();
+            totalCommitted = sampleSALFLDGService.getTotalCommittedAmountByPeriods(getFinancialYearPeriods(budget), sects).negate();
 
             return new DepartmentBudget(
                     dept.getANL_CODE(),
@@ -485,13 +583,13 @@ public class BudgetService {
 
         return sections.stream().map(section -> {
             // Generate mock budget data for each section
-            double baseBudget = 20_000_000 + random.nextDouble() * 180_000_000; // 20M to 200M UGX
+            BigDecimal baseBudget = BigDecimal.ZERO; // 20M to 200M UGX
             double spentPercentage = 0.2 + random.nextDouble() * 0.7; // 20% to 90%
-            double spentAmount = baseBudget * spentPercentage;
+            BigDecimal spentAmount = BigDecimal.ZERO;
             double committedPercentage = 0.0; // 5% to 20%
-            double committedAmount = 0.0;
-            baseBudget = budgetItemsService.calculateTotalDeptExpenditure2(budget, section).doubleValue();
-            spentAmount = sampleSALFLDGService.getTotalAmountByPeriods2(getFinancialYearPeriods(budget), section.getANL_CODE()).negate().doubleValue();
+            BigDecimal committedAmount = BigDecimal.ZERO;
+            baseBudget = budgetItemsService.calculateTotalDeptExpenditure2(budget, section);
+            spentAmount = sampleSALFLDGService.getTotalAmountByPeriods2(getFinancialYearPeriods(budget), section.getANL_CODE()).negate();
             SectionBudget sectionBudget = new SectionBudget(section, baseBudget, spentAmount, committedAmount);
             sectionBudget.setDepartmentCode(departmentCode);
             sectionBudget.setDescription(generateSectionDescription(section.getNAME()));
@@ -507,9 +605,9 @@ public class BudgetService {
         }
 
         Random random = new Random();
-        double baseBudget = 50_000_000 + random.nextDouble() * 150_000_000;
-        double spentAmount = baseBudget * (0.3 + random.nextDouble() * 0.5);
-        double committedAmount = baseBudget * (0.05 + random.nextDouble() * 0.15);
+        BigDecimal baseBudget = BigDecimal.ZERO;
+        BigDecimal spentAmount = BigDecimal.ZERO;
+        BigDecimal committedAmount = BigDecimal.ZERO;
 
         SectionBudget sectionBudget = new SectionBudget(section, baseBudget, spentAmount, committedAmount);
         sectionBudget.setDescription(generateSectionDescription(section.getNAME()));
@@ -570,20 +668,18 @@ public class BudgetService {
         List<RevenueSource> revenuesourcesfinal = new ArrayList<>();
         revenuesources = organisationRepository.findByBudgetWithCoaAccounts(budget);
         for (Organisation sour : revenuesources) {
-            double totrev = organisationRepository.sumAnnualByBudgetAndOrganisation(budget, sour).doubleValue();
-            double totcol = sampleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(budget), extractCodes(sour.getCoaAccounts())).doubleValue();
-            revenuesourcesfinal.add(new RevenueSource(sour.getCode(), sour.getName(), sour.getCode(), totcol, totrev, colors[random.nextInt(colors.length)]));
+            igrTotalRevenueBudget = BigDecimal.ZERO;
+            BigDecimal totrev = organisationRepository.sumAnnualByBudgetAndOrganisation(budget, sour);
+            if (sour.getFundType() == FundType.IGR) {
+                igrTotalRevenueBudget = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriods(budget));
+            } else {
+                igrTotalRevenueBudget = qtrReleasesServiceImpl.sumTotalReleasesByBudgetAndOrganisation(budget, sour);
+            }
+            //BigDecimal totcol = sampleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(budget), extractCodes(sour.getCoaAccounts()));
+            revenuesourcesfinal.add(new RevenueSource(sour.getCode(), sour.getName(), sour.getCode(), igrTotalRevenueBudget, totrev, colors[random.nextInt(colors.length)]));
 
         }
         return revenuesourcesfinal;
-        /*        return Arrays.asList(
-        new RevenueSource("rev-1", "Government Grants", "grants", 425_000_000, 450_000_000, "#3B82F6"),
-        new RevenueSource("rev-2", "Service Fees", "fees", 340_000_000, 360_000_000, "#10B981"),
-        new RevenueSource("rev-3", "Product Sales", "sales", 260_000_000, 290_000_000, "#F59E0B"),
-        new RevenueSource("rev-4", "Private Donations", "donations", 190_000_000, 200_000_000, "#EF4444"),
-        new RevenueSource("rev-5", "Investment Returns", "investments", 90_000_000, 100_000_000, "#8B5CF6"),
-        new RevenueSource("rev-6", "Consulting Services", "other", 35_000_000, 25_000_000, "#06B6D4")
-        );*/
     }
 
     public List<UrcDepartmentAnlDim> findActiveDepartments() {

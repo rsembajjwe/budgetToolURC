@@ -1,5 +1,6 @@
 package com.methaltech.application.data.bgtool.repository;
 
+import com.methaltech.application.data.FundType;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.Organisation;
 import com.methaltech.application.data.entity.bgtool.QtrReleaseCumulativeDto;
@@ -79,6 +80,88 @@ public interface QtrReleasesRepository extends JpaRepository<QtrReleases, Long> 
     BigDecimal sumAmountByPeriodsAndActivity(
             @Param("periods") Set<Integer> periods,
             @Param("activity") Urc_Activities activity
+    );
+
+    @Query("""
+        SELECT COALESCE(SUM(
+            COALESCE(q.qtr1Release, 0) +
+            COALESCE(q.qtr2Release, 0) +
+            COALESCE(q.qtr3Release, 0) +
+            COALESCE(q.qtr4Release, 0)
+        ), 0)
+        FROM QtrReleases q
+        WHERE q.budget = :budget
+          AND q.organisation.fundType = :fundType
+    """)
+    BigDecimal sumTotalReleasesByBudgetAndFundType(
+            @Param("budget") Budget budget,
+            @Param("fundType") FundType fundType
+    );
+    
+        @Query("""
+        SELECT COALESCE(SUM(
+            COALESCE(q.qtr1Release, 0) +
+            COALESCE(q.qtr2Release, 0) +
+            COALESCE(q.qtr3Release, 0) +
+            COALESCE(q.qtr4Release, 0)
+        ), 0)
+        FROM QtrReleases q
+        WHERE q.budget = :budget
+          AND q.organisation = :organisation
+    """)
+    BigDecimal sumTotalReleasesByBudgetAndOrganisation(
+            @Param("budget") Budget budget,
+            @Param("organisation") Organisation organisation
+    );
+    
+    @Query("""
+        SELECT COALESCE(SUM(
+            COALESCE(q.qtr1Release, 0)
+        ), 0)
+        FROM QtrReleases q
+        WHERE q.budget = :budget
+          AND q.organisation.fundType = :fundType
+    """)
+    BigDecimal sumTotalReleasesByBudgetAndFundTypeQ1(
+            @Param("budget") Budget budget,
+            @Param("fundType") FundType fundType
+    );   
+        @Query("""
+        SELECT COALESCE(SUM(
+            COALESCE(q.qtr2Release, 0)
+        ), 0)
+        FROM QtrReleases q
+        WHERE q.budget = :budget
+          AND q.organisation.fundType = :fundType
+    """)
+    BigDecimal sumTotalReleasesByBudgetAndFundTypeQ2(
+            @Param("budget") Budget budget,
+            @Param("fundType") FundType fundType
+    );
+    
+        @Query("""
+        SELECT COALESCE(SUM(
+            COALESCE(q.qtr3Release, 0)
+        ), 0)
+        FROM QtrReleases q
+        WHERE q.budget = :budget
+          AND q.organisation.fundType = :fundType
+    """)
+    BigDecimal sumTotalReleasesByBudgetAndFundTypeQ3(
+            @Param("budget") Budget budget,
+            @Param("fundType") FundType fundType
+    );
+        @Query("""
+        SELECT COALESCE(SUM(
+            COALESCE(q.qtr4Release, 0)
+        ), 0)
+        FROM QtrReleases q
+        WHERE q.budget = :budget
+          AND q.organisation.fundType = :fundType
+    """)
+    BigDecimal sumTotalReleasesByBudgetAndFundTypeQ4(
+            @Param("budget") Budget budget,
+            @Param("fundType") FundType fundType
     );
 
 }

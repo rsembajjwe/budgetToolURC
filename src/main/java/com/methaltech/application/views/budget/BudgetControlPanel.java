@@ -21,6 +21,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
+import java.math.BigDecimal;
 import java.util.Optional;
 
 public class BudgetControlPanel extends VerticalLayout {
@@ -349,14 +350,14 @@ public class BudgetControlPanel extends VerticalLayout {
         }
     }
 
-    private String getUtilizationColor(double percentage) {
-        if (percentage > 100) {
+    private String getUtilizationColor(BigDecimal percentage) {
+        if (percentage.doubleValue() > 100) {
             return "#dc2626";
         }
-        if (percentage > 90) {
+        if (percentage.doubleValue() > 90) {
             return "#f97316";
         }
-        if (percentage > 75) {
+        if (percentage.doubleValue() > 75) {
             return "#f59e0b";
         }
         return "#10b981";

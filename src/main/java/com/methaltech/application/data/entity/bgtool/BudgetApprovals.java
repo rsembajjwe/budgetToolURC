@@ -1,14 +1,8 @@
 package com.methaltech.application.data.entity.bgtool;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
-
-import jakarta.persistence.*;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import lombok.Data;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -50,10 +44,10 @@ public class BudgetApprovals  implements Serializable{
     private RequestType requestType;
     
     @Column(name = "REQUESTED_AMOUNT", nullable = false)
-    private Double requestedAmount;
+    private BigDecimal requestedAmount;
     
     @Column(name = "CURRENT_BUDGET")
-    private Double currentBudget;
+    private BigDecimal currentBudget;
     
     @Column(name = "JUSTIFICATION", columnDefinition = "TEXT")
     private String justification;
@@ -116,7 +110,7 @@ public class BudgetApprovals  implements Serializable{
     private String cfoComments;
     
     @Column(name = "FINAL_APPROVED_AMOUNT")
-    private Double finalApprovedAmount;
+    private BigDecimal finalApprovedAmount;
     
     @Column(name = "REJECTION_REASON")
     private String rejectionReason;

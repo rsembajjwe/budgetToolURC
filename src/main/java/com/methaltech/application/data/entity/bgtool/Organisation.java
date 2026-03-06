@@ -1,8 +1,14 @@
 package com.methaltech.application.data.entity.bgtool;
 
+import com.methaltech.application.data.FundType;
+import com.methaltech.application.data.Role;
 import java.util.List;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -28,7 +34,7 @@ import lombok.ToString;
 @Setter
 @ToString(onlyExplicitlyIncluded = true) // Optional: to avoid lazy loading in toString
 @EqualsAndHashCode(onlyExplicitlyIncluded = true) // Important!
-public class Organisation  implements Serializable{
+public class Organisation implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,6 +50,10 @@ public class Organisation  implements Serializable{
     @ManyToOne
     @JoinColumn(name = "budget_id")
     private Budget budget;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "FundType")
+    private FundType fundType;
 
     @OneToMany(mappedBy = "organisation", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<COA> coaAccounts = new HashSet<>();

@@ -1,8 +1,8 @@
-
 package com.methaltech.application.data.entity.bgtool;
 
-
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import lombok.Data;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -10,53 +10,70 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SectionBudget  implements Serializable{
+public class SectionBudget implements Serializable {
+
     private String sectionCode;
     private String sectionName;
     private String categoryId;
     private String departmentCode;
-    private double allocatedBudget;
-    private double spentAmount;
-    private double committedAmount;
-    private double availableAmount;
+    private BigDecimal allocatedBudget;
+    private BigDecimal spentAmount;
+    private BigDecimal committedAmount;
+    private BigDecimal availableAmount;
     private String status;
     private String description;
+    private static final BigDecimal NEAR_LIMIT_LOW = BigDecimal.valueOf(75);
+    private static final BigDecimal NEAR_LIMIT_HIGH = BigDecimal.valueOf(90);
 
     // Constructor from entity
-    public SectionBudget(UrcDeptSectionAnlDimbgt section, double allocatedBudget, double spentAmount, double committedAmount) {
+    public SectionBudget(UrcDeptSectionAnlDimbgt section, BigDecimal allocatedBudget, BigDecimal spentAmount, BigDecimal committedAmount) {
         this.sectionCode = section.getANL_CODE();
         this.sectionName = section.getNAME();
         this.categoryId = section.getANL_CAT_ID();
         this.allocatedBudget = allocatedBudget;
         this.spentAmount = spentAmount;
         this.committedAmount = committedAmount;
-        this.availableAmount = allocatedBudget - spentAmount - committedAmount;
+        this.availableAmount = allocatedBudget.subtract(spentAmount).subtract(committedAmount);
         this.status = calculateStatus();
     }
 
-    public double getSpentPercentage() {
-        return allocatedBudget > 0 ? (spentAmount / allocatedBudget) * 100 : 0;
+    public BigDecimal getSpentPercentage() {
+        return percentage(spentAmount, allocatedBudget);
     }
 
-    public double getUtilizationPercentage() {
-        return allocatedBudget > 0 ? ((spentAmount + committedAmount) / allocatedBudget) * 100 : 0;
+    public BigDecimal getUtilizationPercentage() {
+        return percentage(
+                safe(spentAmount).add(safe(committedAmount)),
+                allocatedBudget
+        );
     }
 
-    public double getRemainingBudget() {
-        return allocatedBudget - spentAmount;
+    public BigDecimal getRemainingBudget() {
+        return safe(allocatedBudget)
+                .subtract(safe(spentAmount))
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
     public boolean isOverBudget() {
-        return spentAmount > allocatedBudget;
+        return safe(spentAmount)
+                .compareTo(safe(allocatedBudget)) > 0;
     }
 
     public boolean isNearLimit() {
-        double utilization = getUtilizationPercentage();
-        return utilization > 75 && utilization <= 90;
+
+        BigDecimal utilization = getUtilizationPercentage();
+
+        return utilization.compareTo(NEAR_LIMIT_LOW) > 0
+                && utilization.compareTo(NEAR_LIMIT_HIGH) <= 0;
     }
 
+    private static final BigDecimal CRITICAL_LIMIT = BigDecimal.valueOf(90);
+
     public boolean isCritical() {
-        return getUtilizationPercentage() > 90;
+
+        BigDecimal utilization = getUtilizationPercentage();
+
+        return utilization.compareTo(CRITICAL_LIMIT) > 0;
     }
 
     private String calculateStatus() {
@@ -73,19 +90,43 @@ public class SectionBudget  implements Serializable{
 
     public String getStatusClass() {
         switch (status) {
-            case "Over Budget": return "status-over";
-            case "Critical": return "status-critical";
-            case "Near Limit": return "status-near";
-            default: return "status-good";
+            case "Over Budget":
+                return "status-over";
+            case "Critical":
+                return "status-critical";
+            case "Near Limit":
+                return "status-near";
+            default:
+                return "status-good";
         }
     }
 
     public String getProgressBarClass() {
         switch (status) {
-            case "Over Budget": return "progress-over";
-            case "Critical": return "progress-critical";
-            case "Near Limit": return "progress-near";
-            default: return "progress-good";
+            case "Over Budget":
+                return "progress-over";
+            case "Critical":
+                return "progress-critical";
+            case "Near Limit":
+                return "progress-near";
+            default:
+                return "progress-good";
         }
+    }
+
+    private BigDecimal safe(BigDecimal value) {
+        return value != null ? value : BigDecimal.ZERO;
+    }
+
+    private BigDecimal percentage(BigDecimal part, BigDecimal total) {
+
+        if (total == null || total.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return safe(part)
+                .divide(total, 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP);
     }
 }

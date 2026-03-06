@@ -22,6 +22,7 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
@@ -30,7 +31,12 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @Entity
-@Table(name = "coa")
+@Table(
+        name = "coa",
+        uniqueConstraints = {
+            @UniqueConstraint(name = "ux_coa_code_budget", columnNames = {"code", "budget_id"})
+        }
+)
 @NoArgsConstructor
 @ToString(exclude = {"id", "code", "budget", "coalevel1", "coalevel11", "coalevel12", "coalevel13", "dsections"})
 public @Data
@@ -40,12 +46,13 @@ class COA implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     //@Column(unique = true)
+    @Column(nullable = false, length = 50)
     private String code;
     private String name;
     private boolean stateOpen;
 
-    @ManyToOne
-    @JoinColumn(name = "budget_id")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "budget_id", nullable = false)
     private Budget budget;
 
     @ManyToOne
@@ -271,15 +278,23 @@ class COA implements Serializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof COA)) {
+        if (!(o instanceof COA other)) {
             return false;
         }
-        COA coa = (COA) o;
-        return code != null && code.equals(coa.code);
+
+        if (code == null || other.code == null) {
+            return false;
+        }
+
+        Long thisBudgetId = (budget != null ? budget.getId() : null);
+        Long otherBudgetId = (other.budget != null ? other.budget.getId() : null);
+
+        return code.equals(other.code) && java.util.Objects.equals(thisBudgetId, otherBudgetId);
     }
 
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(code);
+        Long budgetId = (budget != null ? budget.getId() : null);
+        return java.util.Objects.hash(code, budgetId);
     }
 }

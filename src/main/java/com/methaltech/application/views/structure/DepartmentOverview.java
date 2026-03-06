@@ -18,6 +18,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
+import java.math.BigDecimal;
 
 import java.text.NumberFormat;
 import java.util.List;
@@ -36,7 +37,7 @@ public class DepartmentOverview extends VerticalLayout {
     private final Budget budget;
 
     @Autowired
-    public DepartmentOverview(List<DepartmentBudget> departmentBudgets, CoaService sampleCoaService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, SALFLDGService sampleSALFLDGService,DeptSectionMergerService sampleDeptSectionMergerService,Budget budget) {
+    public DepartmentOverview(List<DepartmentBudget> departmentBudgets, CoaService sampleCoaService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, SALFLDGService sampleSALFLDGService, DeptSectionMergerService sampleDeptSectionMergerService, Budget budget) {
         // Create UGX currency formatter
         currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
         currencyFormat.setCurrency(java.util.Currency.getInstance("UGX"));
@@ -44,7 +45,7 @@ public class DepartmentOverview extends VerticalLayout {
         this.sampleCoaService = sampleCoaService;
         this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
         this.sampleSALFLDGService = sampleSALFLDGService;
-        this.budget=budget;
+        this.budget = budget;
 
         setWidthFull();
         setPadding(false);
@@ -199,7 +200,7 @@ public class DepartmentOverview extends VerticalLayout {
         return details.toString();
     }
 
-    private VerticalLayout createBudgetItem(String label, double amount) {
+    private VerticalLayout createBudgetItem(String label, BigDecimal amount) {
         VerticalLayout item = new VerticalLayout();
         item.setSpacing(false);
         item.setPadding(false);
@@ -213,9 +214,9 @@ public class DepartmentOverview extends VerticalLayout {
 
         // Enhanced color coding
         if ("Available".equals(label)) {
-            if (amount < 0) {
+            if (amount.doubleValue() < 0) {
                 amountSpan.addClassName("amount-negative");
-            } else if (amount < 50000) {
+            } else if (amount.doubleValue() < 50000) {
                 amountSpan.addClassName("amount-low");
             }
         }
@@ -272,9 +273,6 @@ public class DepartmentOverview extends VerticalLayout {
         progressHeader.setPadding(false);
         progressHeader.setSpacing(false);
 
-        Span progressLabel = new Span(String.format("%.1f%% spent", department.getSpentPercentage()));
-        progressLabel.addClassName("progress-label");
-
         HorizontalLayout statusContainer = new HorizontalLayout();
         statusContainer.setAlignItems(FlexComponent.Alignment.CENTER);
         statusContainer.setPadding(false);
@@ -289,20 +287,25 @@ public class DepartmentOverview extends VerticalLayout {
             statusContainer.add(alertIcon);
         }
 
+        BigDecimal spentPct = department.getSpentPercentage(); // can be null
+        double progress = pctToFraction(spentPct);            // clamps 0..1
+
+        ProgressBar progressBar = new ProgressBar(0, 1, progress);
+        progressBar.setWidthFull();
+        progressBar.addClassName(getProgressBarClass(spentPct == null ? 0.0 : spentPct.doubleValue()));
+
+        double spentPctVal = spentPct == null ? 0.0 : spentPct.doubleValue();
+        Span progressLabel = new Span(String.format(Locale.US, "%.1f%% spent", spentPctVal));
+        progressLabel.addClassName("progress-label");
         statusContainer.add(statusLabel);
         progressHeader.add(progressLabel, statusContainer);
-
-        ProgressBar progressBar = new ProgressBar();
-        progressBar.setWidthFull();
-        progressBar.setValue(Math.min(department.getSpentPercentage() / 100.0, 1.0));
-        progressBar.addClassName(getProgressBarClass(department.getSpentPercentage()));
 
         progressSection.add(progressHeader, progressBar);
 
         return progressSection;
     }
 
-    private String formatCurrency(double amount) {
+    private String formatCurrency(BigDecimal amount) {
         NumberFormat formatter = NumberFormat.getInstance(Locale.US);
         formatter.setMaximumFractionDigits(1);
         return "UGX " + formatter.format(amount);
@@ -318,5 +321,19 @@ public class DepartmentOverview extends VerticalLayout {
         } else {
             return "progress-good";
         }
+    }
+
+    private static double clamp01(double v) {
+        if (Double.isNaN(v) || Double.isInfinite(v)) {
+            return 0.0;
+        }
+        return Math.max(0.0, Math.min(1.0, v));
+    }
+
+    private static double pctToFraction(BigDecimal pct) {
+        if (pct == null) {
+            return 0.0;
+        }
+        return clamp01(pct.doubleValue() / 100.0);
     }
 }

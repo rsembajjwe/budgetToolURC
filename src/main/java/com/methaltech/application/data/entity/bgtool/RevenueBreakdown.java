@@ -12,10 +12,13 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 public class RevenueBreakdown extends VerticalLayout {
 
@@ -66,7 +69,7 @@ public class RevenueBreakdown extends VerticalLayout {
         FlexLayout contentGrid2 = new FlexLayout();
         contentGrid2.setWidthFull();
         contentGrid2.setFlexWrap(FlexLayout.FlexWrap.WRAP); // Ensure it wraps on smaller screens
-        
+
         contentGrid2.setAlignItems(FlexComponent.Alignment.START);
         contentGrid2.getStyle().set("gap", "2rem");
 
@@ -85,16 +88,16 @@ public class RevenueBreakdown extends VerticalLayout {
         Div summaryPanel = createSummaryPanel(revenueSources);
         summaryPanel.addClassName("summary-panel");
         summaryPanel.getStyle().set("margin-left", "1rem");
-        
+
         sourcesList.setWidth("48%");
         summaryPanel.setWidth("48%");
-        
+
         contentGrid2.add(sourcesList, summaryPanel);
 
         // Control flex grow
         contentGrid2.setFlexGrow(2, sourcesList);
         contentGrid2.setFlexGrow(1, summaryPanel);
-        
+
         add(contentGrid2);
     }
 
@@ -184,7 +187,7 @@ public class RevenueBreakdown extends VerticalLayout {
         // Enhanced progress bar
         ProgressBar progressBar = new ProgressBar();
         progressBar.setWidthFull();
-        progressBar.setValue(Math.min(source.getProjectedPercentage() / 100.0, 1.0));
+        progressBar.setValue(Math.min(source.getProjectedPercentage().doubleValue() / 100.0, 1.0));
         progressBar.getStyle()
                 .set("--vaadin-progress-value-color", source.getColor())
                 .set("height", "8px")
@@ -213,8 +216,15 @@ public class RevenueBreakdown extends VerticalLayout {
         H3 title = new H3("Revenue Summary");
         title.addClassName("summary-title");
 
-        double totalRevenue = revenueSources.stream().mapToDouble(RevenueSource::getAmount).sum();
-        double totalProjected = revenueSources.stream().mapToDouble(RevenueSource::getProjected).sum();
+        BigDecimal totalRevenue = revenueSources.stream()
+                .map(RevenueSource::getAmount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalProjected = revenueSources.stream()
+                .map(RevenueSource::getProjected)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         VerticalLayout summaryContent = new VerticalLayout();
         summaryContent.setSpacing(true);
@@ -228,8 +238,10 @@ public class RevenueBreakdown extends VerticalLayout {
         );
 
         // Collection rate with special styling
-        HorizontalLayout collectionRateRow = createSummaryRow("Collection Rate",
-                (totalRevenue / totalProjected) * 100, false, true);
+        BigDecimal collectionRate = percentage(totalRevenue, totalProjected);
+
+        HorizontalLayout collectionRateRow
+                = createSummaryRow("Collection Rate", collectionRate, false, true);
         collectionRateRow.getStyle()
                 .set("border-top", "1px solid var(--gray-300)")
                 .set("padding-top", "var(--space-4)")
@@ -247,7 +259,7 @@ public class RevenueBreakdown extends VerticalLayout {
         distributionContent.setWidthFull();
 
         for (RevenueSource source : revenueSources) {
-            double percentage = (source.getAmount() / totalRevenue) * 100;
+            double percentage = (source.getAmount().doubleValue() / totalRevenue.doubleValue()) * 100;
             distributionContent.add(createDistributionRow(source, percentage));
         }
 
@@ -255,7 +267,19 @@ public class RevenueBreakdown extends VerticalLayout {
         return panel;
     }
 
-    private HorizontalLayout createSummaryRow(String label, double value, boolean isCurrency, boolean isPercentage) {
+    private BigDecimal percentage(BigDecimal part, BigDecimal total) {
+
+        if (total == null || total.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return part
+                .divide(total, 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private HorizontalLayout createSummaryRow(String label, BigDecimal value, boolean isCurrency, boolean isPercentage) {
         HorizontalLayout row = new HorizontalLayout();
         row.setWidthFull();
         row.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
@@ -314,18 +338,7 @@ public class RevenueBreakdown extends VerticalLayout {
         return row;
     }
 
-    /*    private String formatCurrency(double amount) {
-    if (Math.abs(amount) >= 1_000_000_000) {
-    return String.format("UGX %.1fB", amount / 1_000_000_000);
-    } else if (Math.abs(amount) >= 1_000_000) {
-    return String.format("UGX %.1fM", amount / 1_000_000);
-    } else if (Math.abs(amount) >= 1_000) {
-    return String.format("UGX %.0fK", amount / 1_000);
-    } else {
-    return String.format("UGX %.0f", amount);
-    }
-    }*/
-    private String formatCurrency(double amount) {
+    private String formatCurrency(BigDecimal amount) {
         NumberFormat formatter = NumberFormat.getInstance(Locale.US);
         return "UGX " + formatter.format(amount);
     }

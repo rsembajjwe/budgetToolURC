@@ -1,5 +1,7 @@
 package com.methaltech.application.data.entity.bgtool;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import lombok.Data;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -12,39 +14,60 @@ public class DepartmentBudget {
     private String departmentCode;
     private String departmentName;
     private String categoryId;
-    private double totalBudget;
-    private double totalSpent;
-    private double totalCommitted;
+    private BigDecimal totalBudget;
+    private BigDecimal totalSpent;
+    private BigDecimal totalCommitted;
     private String color;
     private boolean budgetCheckEnabled;
     private boolean budgetStopEnabled;
     private boolean postingProhibited;
     private String status;
     private int sectionCount;
-    private double cumQtr1Budget;
-    private double cumQtr2Budget;
-    private double cumQtr3Budget;
-    private double cumQtr4Budget;
+    private BigDecimal cumQtr1Budget;
+    private BigDecimal cumQtr2Budget;
+    private BigDecimal cumQtr3Budget;
+    private BigDecimal cumQtr4Budget;
 
-    private double cumQtr1Actual;
-    private double cumQtr2Actual;
-    private double cumQtr3Actual;
-    private double cumQtr4Actual;
+    private BigDecimal cumQtr1Actual;
+    private BigDecimal cumQtr2Actual;
+    private BigDecimal cumQtr3Actual;
+    private BigDecimal cumQtr4Actual;
 
-    public double getSpentPercentage() {
-        return totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+public BigDecimal getSpentPercentage() {
+
+    if (totalBudget == null || totalBudget.compareTo(BigDecimal.ZERO) <= 0) {
+        return BigDecimal.ZERO;
     }
 
-    public double getRemainingBudget() {
-        return totalBudget - totalSpent;
-    }
+    return totalSpent
+            .divide(totalBudget, 6, RoundingMode.HALF_UP)
+            .multiply(BigDecimal.valueOf(100))
+            .setScale(2, RoundingMode.HALF_UP);
+}
 
-    public double getAvailableBudget() {
-        return totalBudget - totalSpent - totalCommitted;
-    }
+ public BigDecimal getRemainingBudget() {
+
+    BigDecimal budget = totalBudget != null ? totalBudget : BigDecimal.ZERO;
+    BigDecimal spent = totalSpent != null ? totalSpent : BigDecimal.ZERO;
+
+    return budget
+            .subtract(spent)
+            .setScale(2, RoundingMode.HALF_UP);
+}
+
+public BigDecimal getAvailableBudget() {
+
+    BigDecimal budget = totalBudget != null ? totalBudget : BigDecimal.ZERO;
+    BigDecimal spent = totalSpent != null ? totalSpent : BigDecimal.ZERO;
+    BigDecimal committed = totalCommitted != null ? totalCommitted : BigDecimal.ZERO;
+
+    return budget
+            .subtract(spent.add(committed))
+            .setScale(2, RoundingMode.HALF_UP);
+}
 
     public String getStatusText() {
-        double spentPercentage = getSpentPercentage();
+        double spentPercentage = getSpentPercentage().doubleValue();
         if (spentPercentage > 100) {
             return "Over Budget";
         } else if (spentPercentage > 90) {
@@ -57,7 +80,7 @@ public class DepartmentBudget {
     }
 
     public String getStatusClass() {
-        double spentPercentage = getSpentPercentage();
+        double spentPercentage = getSpentPercentage().doubleValue();
         if (spentPercentage > 100) {
             return "status-over";
         } else if (spentPercentage > 90) {
@@ -68,4 +91,5 @@ public class DepartmentBudget {
             return "status-good";
         }
     }
+    
 }

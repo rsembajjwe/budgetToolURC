@@ -117,6 +117,9 @@ public interface CoaRepository extends JpaRepository<COA, Long> {
 
     @Query("SELECT c FROM COA c WHERE c.code = :code AND c.budget = :budget AND c.stateOpen = true")
     COA findByCodeAndBudget(@Param("code") String code, @Param("budget") Budget budget);
+    
+    @Query("SELECT c FROM COA c WHERE c.code = :code AND c.budget = :budget")
+    Optional<COA> findByCodeAndBudget3(@Param("code") String code, @Param("budget") Budget budget);    
 
     @Query("SELECT c FROM COA c WHERE c.code = :code AND c.budget = :budget AND c.stateOpen = true")
     List<COA> findByCodeAndBudget2(@Param("code") String code, @Param("budget") Budget budget);

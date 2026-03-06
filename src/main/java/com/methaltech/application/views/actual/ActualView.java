@@ -308,7 +308,6 @@ public class ActualView extends Div {
             chosenBudget = e.getValue();
             setSpanValues(e.getValue());
             setSpanQtrValues(e.getValue());
-            System.out.println("Budget changed " + chosenBudget);
 
             if (!comboBoxD_Section.isEmpty() && !budget.isEmpty()) {
                 downloadWorkplan.setEnabled(true);
@@ -372,7 +371,7 @@ public class ActualView extends Div {
 
         })).setHeader(julSpan).setWidth("150px");
         julAColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-            System.out.println(urcActivity + " Checking..........");
+      
             BigDecimal value = urcActivity.getJulA();
             Span span = createSpan(value);
             if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
@@ -2055,7 +2054,14 @@ public class ActualView extends Div {
         } else if (comboBoxD_Section.getValue().contains(propertymgt) && (coa.getCode().contains("111401") || coa.getCode().contains("111402") || coa.getCode().contains("111403") || coa.getCode().contains("111404") || coa.getCode().contains("111406") || coa.getCode().contains("111407"))) {
             lis = sampleSALFLDGService.findByPeriodAndAccntCode(extra.getFinancialYearPeriodByMonth(bgt,month), coacode.trim());
         } else {
-            lis = sampleSALFLDGService.findByPeriodAndAccntCodeAndAnalT1InAllS(extra.getFinancialYearPeriodByMonth(bgt,month), coacode.trim(), selectedAnlCodes);
+            if(selectedAnlCodes.contains("#")){
+                System.out.println("contains # "+selectedAnlCodes);
+                lis = sampleSALFLDGService.findByPeriodAndAccntCodeAndAnalT1InOrUnAnalyzed(extra.getFinancialYearPeriodByMonth(bgt,month), coacode.trim(), selectedAnlCodes);
+            }else{
+                System.out.println("Doesn`t contain # "+selectedAnlCodes);
+               lis = sampleSALFLDGService.findByPeriodAndAccntCodeAndAnalT1InAllS(extra.getFinancialYearPeriodByMonth(bgt,month), coacode.trim(), selectedAnlCodes); 
+            }
+            
         }
 
         return lis;

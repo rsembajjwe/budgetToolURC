@@ -4,6 +4,7 @@ import com.methaltech.application.data.BudgetItemsSummaryProjection;
 import com.methaltech.application.data.Classification1;
 import com.methaltech.application.data.Classification2;
 import com.methaltech.application.data.Display;
+import com.methaltech.application.data.FundType;
 import com.methaltech.application.data.MonthlySumResponseFreight;
 import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.entity.bgtool.Budget;
@@ -743,17 +744,116 @@ group by bi.deptUnit.id
 
     @Query("""
     SELECT COALESCE(SUM(
-        b.jan + b.feb + b.mar + b.apr + b.may + b.jun +
-        b.jul + b.aug + b.sep + b.oct + b.nov + b.dec), 0)
+        COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0) +
+        COALESCE(b.apr,0) + COALESCE(b.may,0) + COALESCE(b.jun,0) +
+        COALESCE(b.jul,0) + COALESCE(b.aug,0) + COALESCE(b.sep,0) +
+        COALESCE(b.oct,0) + COALESCE(b.nov,0) + COALESCE(b.dec,0)
+    ), 0)
     FROM BudgetItems b
     WHERE b.budget = :budget
-      AND b.coalevel1.id IN (2, 3)
-           AND b.deptUnit IN :deptUnits
+       AND (b.coacode.code LIKE '2%' OR b.coacode.code LIKE '3%')
+      AND b.deptUnit IN :deptUnits
 """)
     BigDecimal calculateTotalDeptExpenditure(
             @Param("budget") Budget budget,
             @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits
     );
+
+    @Query("""
+SELECT COALESCE(SUM(
+    COALESCE(b.jul,0) + COALESCE(b.aug,0) + COALESCE(b.sep,0)
+), 0)
+FROM BudgetItems b
+WHERE b.budget = :budget
+  AND SUBSTRING(b.coacode.code, 1, 1) IN ('2','3')
+  AND b.deptUnit IN :deptUnits
+""")
+    BigDecimal calculateTotalDeptExpenditureQtr1(@Param("budget") Budget budget,
+            @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits);
+
+    @Query("""
+SELECT COALESCE(SUM(
+    COALESCE(b.oct,0) + COALESCE(b.nov,0) + COALESCE(b.dec,0)
+), 0)
+FROM BudgetItems b
+WHERE b.budget = :budget
+  AND SUBSTRING(b.coacode.code, 1, 1) IN ('2','3')
+  AND b.deptUnit IN :deptUnits
+""")
+    BigDecimal calculateTotalDeptExpenditureQtr2(@Param("budget") Budget budget,
+            @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits);
+
+    @Query("""
+SELECT COALESCE(SUM(
+    COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0)
+), 0)
+FROM BudgetItems b
+WHERE b.budget = :budget
+  AND SUBSTRING(b.coacode.code, 1, 1) IN ('2','3')
+  AND b.deptUnit IN :deptUnits
+""")
+    BigDecimal calculateTotalDeptExpenditureQtr3(@Param("budget") Budget budget,
+            @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits);
+
+    @Query("""
+SELECT COALESCE(SUM(
+    COALESCE(b.apr,0) + COALESCE(b.may,0) + COALESCE(b.jun,0)
+), 0)
+FROM BudgetItems b
+WHERE b.budget = :budget
+  AND SUBSTRING(b.coacode.code, 1, 1) IN ('2','3')
+  AND b.deptUnit IN :deptUnits
+""")
+    BigDecimal calculateTotalDeptExpenditureQtr4(@Param("budget") Budget budget,
+            @Param("deptUnits") List<UrcDeptSectionAnlDimbgt> deptUnits);
+
+    @Query("""
+SELECT COALESCE(SUM(
+        COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0) +
+        COALESCE(b.apr,0) + COALESCE(b.may,0) + COALESCE(b.jun,0) +
+        COALESCE(b.jul,0) + COALESCE(b.aug,0) + COALESCE(b.sep,0) +
+        COALESCE(b.oct,0) + COALESCE(b.nov,0) + COALESCE(b.dec,0)
+), 0)
+FROM BudgetItems b
+WHERE b.budget = :budget
+  AND b.coacode.code LIKE '1%'
+  AND b.budgetType.fundType = :fundType
+""")
+    BigDecimal calculateTotalIncomeByOrgFundTypeQtr4(@Param("budget") Budget budget, @Param("fundType") FundType fundType);
+
+    @Query("""
+SELECT COALESCE(SUM(
+        COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0)
+), 0)
+FROM BudgetItems b
+WHERE b.budget = :budget
+  AND b.coacode.code LIKE '1%'
+  AND b.budgetType.fundType = :fundType
+""")
+    BigDecimal calculateTotalIncomeByOrgFundTypeQtr3(@Param("budget") Budget budget, @Param("fundType") FundType fundType);
+
+    @Query("""
+SELECT COALESCE(SUM(
+        COALESCE(b.jul,0) + COALESCE(b.aug,0) + COALESCE(b.sep,0) +
+        COALESCE(b.oct,0) + COALESCE(b.nov,0) + COALESCE(b.dec,0)
+), 0)
+FROM BudgetItems b
+WHERE b.budget = :budget
+  AND b.coacode.code LIKE '1%'
+  AND b.budgetType.fundType = :fundType
+""")
+    BigDecimal calculateTotalIncomeByOrgFundTypeQtr2(@Param("budget") Budget budget, @Param("fundType") FundType fundType);
+
+    @Query("""
+SELECT COALESCE(SUM(
+        COALESCE(b.jul,0) + COALESCE(b.aug,0) + COALESCE(b.sep,0)
+), 0)
+FROM BudgetItems b
+WHERE b.budget = :budget
+  AND b.coacode.code LIKE '1%'
+  AND b.budgetType.fundType = :fundType
+""")
+    BigDecimal calculateTotalIncomeByOrgFundTypeQtr1(@Param("budget") Budget budget, @Param("fundType") FundType fundType);
 
     @Query("""
     SELECT COALESCE(SUM(
@@ -767,6 +867,133 @@ group by bi.deptUnit.id
     BigDecimal calculateTotalDeptExpenditure(
             @Param("budget") Budget budget,
             @Param("deptUnits") UrcDeptSectionAnlDimbgt deptUnits
+    );
+
+    @Query("""
+    SELECT COALESCE(SUM(
+        COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0) +
+        COALESCE(b.apr,0) + COALESCE(b.may,0) + COALESCE(b.jun,0) +
+        COALESCE(b.jul,0) + COALESCE(b.aug,0) + COALESCE(b.sep,0) +
+        COALESCE(b.oct,0) + COALESCE(b.nov,0) + COALESCE(b.dec,0)
+    ), 0)
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+       AND (b.coacode.code LIKE '1%')
+""")
+    BigDecimal calculateTotalProjectedIncome(@Param("budget") Budget budget);
+
+    @Query("""
+    SELECT COALESCE(SUM(
+        COALESCE(b.jul,0) + COALESCE(b.aug,0) + COALESCE(b.sep,0)
+    ), 0)
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+       AND (b.coacode.code LIKE '1%')
+""")
+    BigDecimal calculateTotalProjectedIncomeQtr1(@Param("budget") Budget budget);
+
+    @Query("""
+    SELECT COALESCE(SUM(
+        COALESCE(b.oct,0) + COALESCE(b.nov,0) + COALESCE(b.dec,0)
+    ), 0)
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+       AND (b.coacode.code LIKE '1%')
+""")
+    BigDecimal calculateTotalProjectedIncomeQtr2(@Param("budget") Budget budget);
+
+    @Query("""
+    SELECT COALESCE(SUM(
+        COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0)
+    ), 0)
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+       AND (b.coacode.code LIKE '1%')
+""")
+    BigDecimal calculateTotalProjectedIncomeQtr3(@Param("budget") Budget budget);
+
+    @Query("""
+    SELECT COALESCE(SUM(
+        COALESCE(b.apr,0) + COALESCE(b.may,0) + COALESCE(b.jun,0)
+    ), 0)
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+       AND (b.coacode.code LIKE '1%')
+""")
+    BigDecimal calculateTotalProjectedIncomeQtr4(@Param("budget") Budget budget);
+
+    @Query("""
+    SELECT COALESCE(SUM(
+        COALESCE(b.jul,0) + COALESCE(b.aug,0) + COALESCE(b.sep,0)
+    ), 0)
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+       AND (b.coacode.code LIKE '11%' OR b.coacode.code LIKE '14%')
+""")
+    BigDecimal calculateTotalProjectedIncomeQ1(
+            @Param("budget") Budget budget
+    );
+
+    @Query("""
+    SELECT COALESCE(SUM(
+        COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0) +
+        COALESCE(b.apr,0) + COALESCE(b.may,0) + COALESCE(b.jun,0) +
+        COALESCE(b.jul,0) + COALESCE(b.aug,0) + COALESCE(b.sep,0) +
+        COALESCE(b.oct,0) + COALESCE(b.nov,0) + COALESCE(b.dec,0)
+    ), 0)
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+       AND (b.coacode.code LIKE '2%')
+""")
+    BigDecimal calculateTotalOpexBudget(@Param("budget") Budget budget);
+    
+    @Query("""
+    SELECT COALESCE(SUM(
+        COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0) +
+        COALESCE(b.apr,0) + COALESCE(b.may,0) + COALESCE(b.jun,0) +
+        COALESCE(b.jul,0) + COALESCE(b.aug,0) + COALESCE(b.sep,0) +
+        COALESCE(b.oct,0) + COALESCE(b.nov,0) + COALESCE(b.dec,0)
+    ), 0)
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+       AND (b.coacode.code LIKE '3%')
+""")
+    BigDecimal calculateTotalCapexBudget(@Param("budget") Budget budget);    
+
+    @Query("""
+    SELECT COALESCE(SUM(
+        COALESCE(b.oct,0) + COALESCE(b.nov,0) + COALESCE(b.dec,0)
+    ), 0)
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+       AND (b.coacode.code LIKE '11%' OR b.coacode.code LIKE '14%')
+""")
+    BigDecimal calculateTotalProjectedIncomeQ2(
+            @Param("budget") Budget budget
+    );
+
+    @Query("""
+    SELECT COALESCE(SUM(
+        COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0)
+    ), 0)
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+       AND (b.coacode.code LIKE '11%' OR b.coacode.code LIKE '14%')
+""")
+    BigDecimal calculateTotalProjectedIncomeQ3(
+            @Param("budget") Budget budget
+    );
+
+    @Query("""
+    SELECT COALESCE(SUM(
+        COALESCE(b.apr,0) + COALESCE(b.may,0) + COALESCE(b.jun,0)
+    ), 0)
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+       AND (b.coacode.code LIKE '11%' OR b.coacode.code LIKE '14%')
+""")
+    BigDecimal calculateTotalProjectedIncomeQ4(
+            @Param("budget") Budget budget
     );
 
     @Query("""

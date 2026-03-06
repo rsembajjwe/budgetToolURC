@@ -15,6 +15,8 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -39,7 +41,7 @@ public class SectionBudgetChart extends VerticalLayout {
 
         createOverviewMetrics();
         createHeader();
-       // createChart();
+        // createChart();
         createInsights();
         createTrendAnalysis();
     }
@@ -55,15 +57,30 @@ public class SectionBudgetChart extends VerticalLayout {
         metricsGrid.addClassName("chart-metrics-grid");
 
         // Calculate metrics
-        double spentPercentage = department.getSpentPercentage();
-        double availablePercentage = 100 - spentPercentage;
-        double efficiency = spentPercentage > 0 ? (department.getTotalBudget() / department.getTotalSpent()) * 100 : 0;
+        BigDecimal spentPercentage = department.getSpentPercentage();
+        BigDecimal availablePercentage
+                = BigDecimal.valueOf(100)
+                        .subtract(spentPercentage)
+                        .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal efficiency;
+
+        if (department.getTotalSpent() != null
+                && department.getTotalSpent().compareTo(BigDecimal.ZERO) > 0) {
+
+            efficiency = department.getTotalBudget()
+                    .divide(department.getTotalSpent(), 6, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(100))
+                    .setScale(2, RoundingMode.HALF_UP);
+
+        } else {
+            efficiency = BigDecimal.ZERO;
+        }
 
         metricsGrid.add(
                 createMetricItem("Budget Utilization", String.format("%.1f%%", spentPercentage),
-                        VaadinIcon.CHART_LINE, getUtilizationColor(spentPercentage), "metric-utilization"),
+                        VaadinIcon.CHART_LINE, getUtilizationColor(spentPercentage.doubleValue()), "metric-utilization"),
                 createMetricItem("Available Budget", String.format("%.1f%%", availablePercentage),
-                        VaadinIcon.MONEY_DEPOSIT, getAvailabilityColor(availablePercentage), "metric-available"),
+                        VaadinIcon.MONEY_DEPOSIT, getAvailabilityColor(availablePercentage.doubleValue()), "metric-available"),
                 createMetricItem("Sections Active", String.valueOf(department.getSectionCount()),
                         VaadinIcon.BUILDING, "#3b82f6", "metric-sections"),
                 createMetricItem("Budget Status", department.getStatusText(),
@@ -521,9 +538,9 @@ public class SectionBudgetChart extends VerticalLayout {
         trendMetrics.setPadding(false);
         trendMetrics.addClassName("trend-metrics");
 
-        double monthlyBurn = department.getTotalSpent() / 12; // Mock monthly burn rate
+        double monthlyBurn = department.getTotalSpent().doubleValue() / 12; // Mock monthly burn rate
         double projectedSpend = monthlyBurn * 12;
-        double variance = ((projectedSpend - department.getTotalBudget()) / department.getTotalBudget()) * 100;
+        double variance = ((projectedSpend - department.getTotalBudget().doubleValue()) / department.getTotalBudget().doubleValue()) * 100;
 
         trendMetrics.add(
                 createTrendMetric("Monthly Burn Rate", formatCurrency(monthlyBurn), VaadinIcon.FIRE, "#f59e0b"),
@@ -598,8 +615,8 @@ public class SectionBudgetChart extends VerticalLayout {
         insightsList.setWidthFull();
         insightsList.addClassName("insights-list");
 
-        double spentPercentage = department.getSpentPercentage();
-        List<InsightItem> insights = generateInsights(spentPercentage);
+        BigDecimal spentPercentage = department.getSpentPercentage();
+        List<InsightItem> insights = generateInsights(spentPercentage.doubleValue());
 
         for (InsightItem insight : insights) {
             insightsList.add(createEnhancedInsightItem(insight));
@@ -635,7 +652,7 @@ public class SectionBudgetChart extends VerticalLayout {
                     "Review planned activities and timeline"));
         }
 
-        if (department.getAvailableBudget() < 50_000_000) {
+        if (department.getAvailableBudget().doubleValue() < 50_000_000) {
             insights.add(new InsightItem("error", "high",
                     "Low Available Budget",
                     "Available budget is below UGX 50M threshold.",
@@ -821,5 +838,17 @@ public class SectionBudgetChart extends VerticalLayout {
         public String getRecommendation() {
             return recommendation;
         }
+    }
+
+    private BigDecimal percentage(BigDecimal part, BigDecimal total) {
+
+        if (total == null || total.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return part
+                .divide(total, 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP);
     }
 }

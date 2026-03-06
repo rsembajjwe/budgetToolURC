@@ -23,6 +23,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
+import java.math.BigDecimal;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -39,20 +40,21 @@ public class DepartmentSectionCards extends VerticalLayout {
     private final BudgetService budgetService;
     private final Budget budget;
     utilityActuals utils;
-    
+
     private final CoaService sampleCoaService;
     private final UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService;
     private final SALFLDGService sampleSALFLDGService;
-@Autowired
-    public DepartmentSectionCards(DepartmentBudget department, BudgetService budgetService, Budget budget,CoaService sampleCoaService,UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService,SALFLDGService sampleSALFLDGService) {
+
+    @Autowired
+    public DepartmentSectionCards(DepartmentBudget department, BudgetService budgetService, Budget budget, CoaService sampleCoaService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, SALFLDGService sampleSALFLDGService) {
         this.department = department;
         this.budgetService = budgetService;
         this.currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
         this.currencyFormat.setCurrency(java.util.Currency.getInstance("UGX"));
         this.budget = budget;
-        this.sampleCoaService=sampleCoaService;
-        this.sampleUrcDeptSectionAnlDimbgtService=sampleUrcDeptSectionAnlDimbgtService;
-        this.sampleSALFLDGService=sampleSALFLDGService;
+        this.sampleCoaService = sampleCoaService;
+        this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
+        this.sampleSALFLDGService = sampleSALFLDGService;
 
         setWidthFull();
         setPadding(false);
@@ -157,9 +159,9 @@ public class DepartmentSectionCards extends VerticalLayout {
 
         ProgressBar departmentProgress = new ProgressBar();
         departmentProgress.setWidthFull();
-        departmentProgress.setValue(Math.min(department.getSpentPercentage() / 100.0, 1.0));
+        departmentProgress.setValue(Math.min(department.getSpentPercentage().doubleValue() / 100.0, 1.0));
         departmentProgress.addClassName("department-progress-bar");
-        departmentProgress.addClassName(getDepartmentProgressClass(department.getSpentPercentage()));
+        departmentProgress.addClassName(getDepartmentProgressClass(department.getSpentPercentage().doubleValue()));
 
         progressSection.add(progressHeader, departmentProgress);
 
@@ -356,7 +358,7 @@ public class DepartmentSectionCards extends VerticalLayout {
         Div statusContainer = new Div();
         statusContainer.addClassName("enhanced-status-container");
 
-        double spentPercentage = section.getSpentPercentage();
+        BigDecimal spentPercentage = section.getSpentPercentage();
         String statusText = section.getStatus();
         String statusClass = section.getStatusClass();
 
@@ -406,7 +408,7 @@ public class DepartmentSectionCards extends VerticalLayout {
         return statusContainer;
     }
 
-    private VerticalLayout createEnhancedBudgetItem(String label, double amount, VaadinIcon iconType, String className) {
+    private VerticalLayout createEnhancedBudgetItem(String label, BigDecimal amount, VaadinIcon iconType, String className) {
         VerticalLayout item = new VerticalLayout();
         item.setSpacing(false);
         item.setPadding(false);
@@ -425,10 +427,10 @@ public class DepartmentSectionCards extends VerticalLayout {
 
         // Enhanced color coding
         if ("Available".equals(label)) {
-            if (amount < 0) {
+            if (amount.doubleValue() < 0) {
                 amountSpan.addClassName("amount-negative");
                 icon.addClassName("icon-negative");
-            } else if (amount < 10_000_000) { // Less than 10M UGX
+            } else if (amount.doubleValue() < 10_000_000) { // Less than 10M UGX
                 amountSpan.addClassName("amount-low");
                 icon.addClassName("icon-warning");
             } else {
@@ -453,8 +455,8 @@ public class DepartmentSectionCards extends VerticalLayout {
         progressSection.setWidthFull();
         progressSection.addClassName("enhanced-section-progress");
 
-        double spentPercentage = section.getSpentPercentage();
-        double utilizationPercentage = section.getUtilizationPercentage();
+        BigDecimal spentPercentage = section.getSpentPercentage();
+        BigDecimal utilizationPercentage = section.getUtilizationPercentage();
 
         HorizontalLayout progressHeader = new HorizontalLayout();
         progressHeader.setWidthFull();
@@ -494,12 +496,17 @@ public class DepartmentSectionCards extends VerticalLayout {
         // Enhanced progress bar with multiple indicators
         ProgressBar progressBar = new ProgressBar();
         progressBar.setWidthFull();
-        progressBar.setValue(Math.min(spentPercentage / 100.0, 1.0));
+        // progressBar.setValue(Math.min(spentPercentage.doubleValue() / 100.0, 1.0));
         progressBar.addClassName("enhanced-progress-bar");
         progressBar.addClassName(section.getProgressBarClass());
 
+        BigDecimal spentPct = section.getSpentPercentage(); // whatever your variable is
+        progressBar.setMin(0);
+        progressBar.setMax(1);
+        progressBar.setValue(pctToFraction(spentPct)); // ✅ always 0..1
+
         // Progress insights
-        if (section.getCommittedAmount() > 0) {
+        if (section.getCommittedAmount().doubleValue() > 0) {
             HorizontalLayout insightsRow = new HorizontalLayout();
             insightsRow.setWidthFull();
             insightsRow.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
@@ -550,19 +557,7 @@ public class DepartmentSectionCards extends VerticalLayout {
         return actions;
     }
 
-    /*
-    private String formatCurrency(double amount) {
-    if (Math.abs(amount) >= 1_000_000_000) {
-    return String.format("UGX %.1fB", amount / 1_000_000_000);
-    } else if (Math.abs(amount) >= 1_000_000) {
-    return String.format("UGX %.1fM", amount / 1_000_000);
-    } else if (Math.abs(amount) >= 1_000) {
-    return String.format("UGX %.0fK", amount / 1_000);
-    } else {
-    return String.format("UGX %.0f", amount);
-    }
-    }*/
-    private String formatCurrency(double amount) {
+    private String formatCurrency(BigDecimal amount) {
         NumberFormat formatter = NumberFormat.getInstance(Locale.US);
         formatter.setMaximumFractionDigits(1);
         return "UGX " + formatter.format(amount);
@@ -575,5 +570,19 @@ public class DepartmentSectionCards extends VerticalLayout {
                 .set("border-radius", "var(--lumo-border-radius-l)")
                 .set("box-shadow", "var(--lumo-box-shadow-l)")
                 .set("backdrop-filter", "blur(10px)");
+    }
+
+    private static double clamp01(double v) {
+        if (Double.isNaN(v) || Double.isInfinite(v)) {
+            return 0.0;
+        }
+        return Math.max(0.0, Math.min(1.0, v));
+    }
+
+    private static double pctToFraction(BigDecimal pct) {
+        if (pct == null) {
+            return 0.0;
+        }
+        return clamp01(pct.doubleValue() / 100.0);
     }
 }

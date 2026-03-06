@@ -85,11 +85,30 @@ public class SALFLDGService {
     }*/
     public List<COA> listOFCoa(List<String> analT1Set, List<Integer> period, Budget budget) {
         List<COA> listcoaList = new ArrayList<>();
-        List<String> per = salfldgRepository.findDistinctAccntCodeByAnalT1InAndPeriodIn(analT1Set, period);
+        List<String> per = new ArrayList<>();
+        if (analT1Set.contains("#              ")) {
 
-        for (String c : per) {
-            COA coa = coaRepository.findByCodeAndBudget(c, budget);
-            listcoaList.add(coa);
+            per = salfldgRepository.findDistinctAccntCodeByAnalT1InAndNullAndPeriodIn(analT1Set, period);
+        } else {
+            per = salfldgRepository.findDistinctAccntCodeByAnalT1InAndPeriodIn(analT1Set, period);
+        }
+        List<String> filtered = per.stream()
+                .filter(Objects::nonNull)
+                .filter(s -> s.startsWith("1")
+                || s.startsWith("2")
+                || s.startsWith("311")
+                || s.startsWith("312"))
+                .collect(Collectors.toList());
+
+        for (String c : filtered) {
+            Optional<COA> coa = coaRepository.findByCodeAndBudget3(c, budget);
+            if (coa.isPresent()) {
+                //System.out.println(c + " " + coa);
+                listcoaList.add(coa.get());
+            } else {
+                //System.out.println(c + " Not found");
+            }
+
         }
         return listcoaList;
     }
@@ -120,6 +139,12 @@ public class SALFLDGService {
 
     public List<SALFLDGProjection> findByPeriodAndAccntCodeAndAnalT1InAllS(int period, String accntCode, List<String> analT1List) {
         List<SALFLDGProjection> nn = salfldgRepository.findByPeriodAndAccntCodeAndAnalT1InS(period, accntCode, analT1List);
+
+        return nn;
+    }
+
+    public List<SALFLDGProjection> findByPeriodAndAccntCodeAndAnalT1InOrUnAnalyzed(int period, String accntCode, List<String> analT1List) {
+        List<SALFLDGProjection> nn = salfldgRepository.findByPeriodAndAccntCodeAndAnalT1InOrUnAnalyzed(period, accntCode, analT1List);
 
         return nn;
     }
@@ -271,9 +296,40 @@ public class SALFLDGService {
         return amount.abs(); // always non-null
     }
 
+    public BigDecimal findTotalAmountByPeriodsAndIGR(Set<Integer> periods) {
+        if (periods == null || periods.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal v = salfldgRepository.findTotalIncomeByPeriodsAndIGR(periods);
+        return v != null ? v : BigDecimal.ZERO;
+    }
+
+    public BigDecimal findTotalIncomeByPeriods(Set<Integer> periods) {
+        if (periods == null || periods.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal v = salfldgRepository.findTotalIncomeByPeriods(periods);
+        return v != null ? v : BigDecimal.ZERO;
+    }
+
+    public BigDecimal findTotalOpexByPeriods(Set<Integer> periods) {
+        if (periods == null || periods.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal v = salfldgRepository.findTotalOpexByPeriods(periods);
+        return v != null ? v : BigDecimal.ZERO;
+    }
+
+    public BigDecimal findTotalCapexByPeriods(Set<Integer> periods) {
+        if (periods == null || periods.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal v = salfldgRepository.findTotalCapexByPeriods(periods);
+        return v != null ? v : BigDecimal.ZERO;
+    }
+
     public BigDecimal getTotalAmountByPeriods(Set<Integer> periods) {
         BigDecimal amount = salfldgRepository.findTotalAmountByPeriods(periods);
-        System.out.println(amount);
         return amount.abs(); // always non-null
     }
 

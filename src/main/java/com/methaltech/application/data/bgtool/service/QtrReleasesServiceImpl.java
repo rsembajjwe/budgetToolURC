@@ -1,5 +1,6 @@
 package com.methaltech.application.data.bgtool.service;
 
+import com.methaltech.application.data.FundType;
 import com.methaltech.application.data.bgtool.repository.QtrReleasesRepository;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.Organisation;
@@ -142,8 +143,8 @@ public class QtrReleasesServiceImpl implements QtrReleasesService {
         return qtrReleasesRepository
                 .findCumulativeQuarterTotalsByBudget(budgetId, deptSections);
     }
-    
-        public BigDecimal getTotalAmountByPeriodsAndActivity(
+
+    public BigDecimal getTotalAmountByPeriodsAndActivity(
             Set<Integer> periods,
             Urc_Activities activity) {
 
@@ -153,5 +154,54 @@ public class QtrReleasesServiceImpl implements QtrReleasesService {
 
         return qtrReleasesRepository.sumAmountByPeriodsAndActivity(periods, activity);
     }
+    
+        @Transactional(readOnly = true)
+    public BigDecimal sumTotalReleasesByBudgetAndOrganisation(Budget budget, Organisation organisation) {
+        if (budget == null || organisation == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal total = qtrReleasesRepository.sumTotalReleasesByBudgetAndOrganisation(budget, organisation);
+        return total != null ? total : BigDecimal.ZERO;
+    }
 
+    @Transactional(readOnly = true)
+    public BigDecimal getTotalReleasedByBudgetAndFundType(Budget budget, FundType fundType) {
+        if (budget == null || fundType == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal total = qtrReleasesRepository.sumTotalReleasesByBudgetAndFundType(budget, fundType);
+        return total != null ? total : BigDecimal.ZERO;
+    }
+    @Transactional(readOnly = true)
+    public BigDecimal getTotalReleasedByBudgetAndFundTypeQ1(Budget budget, FundType fundType) {
+        if (budget == null || fundType == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal total = qtrReleasesRepository.sumTotalReleasesByBudgetAndFundTypeQ1(budget, fundType);
+        return total != null ? total : BigDecimal.ZERO;
+    }
+        @Transactional(readOnly = true)
+    public BigDecimal getTotalReleasedByBudgetAndFundTypeQ2(Budget budget, FundType fundType) {
+        if (budget == null || fundType == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal total = qtrReleasesRepository.sumTotalReleasesByBudgetAndFundTypeQ2(budget, fundType);
+        return total != null ? total : BigDecimal.ZERO;
+    }
+        @Transactional(readOnly = true)
+    public BigDecimal getTotalReleasedByBudgetAndFundTypeQ3(Budget budget, FundType fundType) {
+        if (budget == null || fundType == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal total = qtrReleasesRepository.sumTotalReleasesByBudgetAndFundTypeQ3(budget, fundType);
+        return total != null ? total : BigDecimal.ZERO;
+    }
+        @Transactional(readOnly = true)
+    public BigDecimal getTotalReleasedByBudgetAndFundTypeQ4(Budget budget, FundType fundType) {
+        if (budget == null || fundType == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal total = qtrReleasesRepository.sumTotalReleasesByBudgetAndFundTypeQ4(budget, fundType);
+        return total != null ? total : BigDecimal.ZERO;
+    }
 }

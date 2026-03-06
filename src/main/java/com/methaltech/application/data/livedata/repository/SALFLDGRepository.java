@@ -47,6 +47,39 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
             @Param("period") int period,
             @Param("analT1Set") Set<String> analT1Set);
 
+    @Query(value = """
+    SELECT COALESCE(SUM(AMOUNT), 0)
+    FROM URC_A_SALFLDG_View
+    WHERE PERIOD = :period
+      AND ACCNT_CODE = :accntCode
+      AND (
+            ANAL_T1 IN (:analT1Set)
+            OR ANAL_T1 IS NULL
+            OR LTRIM(RTRIM(ANAL_T1)) = ''
+          )
+""", nativeQuery = true)
+    BigDecimal findTotalAmountByPeriodAndCodeAndUnAnalyzed(
+            @Param("accntCode") String accntCode,
+            @Param("period") int period,
+            @Param("analT1Set") Set<String> analT1Set);
+
+    @Query("SELECT DISTINCT s.accntCode FROM SALFLDG s WHERE (s.analT1 IN :analT1List OR s.analT1 IS NULL OR LTRIM(RTRIM(s.analT1)) = '') AND s.period IN :periodList AND  LEN(s.accntCode) <= 6 AND (s.accntCode LIKE '1%' OR s.accntCode LIKE '2%' OR s.accntCode LIKE '3%')")
+    List<String> findDistinctAccntCodeByAnalT1InAndNullAndPeriodIn(List<String> analT1List, List<Integer> periodList);
+
+    @Query(value = """
+    SELECT COALESCE(SUM(AMOUNT), 0)
+    FROM URC_A_SALFLDG_View
+    WHERE 
+        PERIOD IN (:periods)
+        AND (ANAL_T1 IN (:analT1Values) OR (ANAL_T1 IS NULL) OR ( ANAL_T1 != '') OR ( ANAL_T1 != '               '))
+        AND ACCNT_CODE = :accntCode
+""", nativeQuery = true)
+    BigDecimal findTotalAmountByPeriodsAndAnalT1AndNullSet(
+            @Param("accntCode") String accntCode,
+            @Param("periods") Set<Integer> periods,
+            @Param("analT1Values") Set<String> analT1Values
+    );
+
     @Query("SELECT COALESCE(SUM(s.amount), 0) "
             + "FROM SALFLDG s "
             + "WHERE s.accntCode = :accntCode "
@@ -67,7 +100,7 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
 
     List<String> findDistinctAccntCodeByAnalT1AndPeriod(String analT1, int period);
 
-    @Query("SELECT DISTINCT s.accntCode FROM SALFLDG s WHERE s.analT1 IN :analT1List AND s.period IN :periodList")
+    @Query("SELECT DISTINCT s.accntCode FROM SALFLDG s WHERE s.analT1 IN :analT1List AND s.period IN :periodList AND  LEN(s.accntCode) <= 6 AND (s.accntCode LIKE '1%' OR s.accntCode LIKE '2%' OR s.accntCode LIKE '3%')")
     List<String> findDistinctAccntCodeByAnalT1InAndPeriodIn(List<String> analT1List, List<Integer> periodList);
 
     @Query("SELECT COALESCE(SUM(ABS(s.amount)), 0) FROM SALFLDG s WHERE s.analT1 = :analT1List AND s.period IN :periodList")
@@ -106,12 +139,34 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
             @Param("accntCode") String accntCode,
             @Param("analT1") List<String> analT1);
 
+    @Query(value = """
+    SELECT
+        ACCNT_CODE      AS accntCode,
+        JRNAL_NO        AS jrnalNo,
+        AMOUNT          AS amount,
+        DESCRIPTN       AS descriptn,
+        TRANS_DATETIME  AS transDatetime,
+        ANAL_T1         AS analT1,
+        PERIOD          AS period
+    FROM URC_A_SALFLDG_View
+    WHERE PERIOD = :period
+      AND ACCNT_CODE = :accntCode
+      AND (
+            NULLIF(LTRIM(RTRIM(ANAL_T1)), '') IS NULL
+            OR LTRIM(RTRIM(ANAL_T1)) IN (:analT1)
+          )
+    """, nativeQuery = true)
+    List<SALFLDGProjection> findByPeriodAndAccntCodeAndAnalT1InOrUnAnalyzed(
+            @Param("period") int period,
+            @Param("accntCode") String accntCode,
+            @Param("analT1") List<String> analT1);
+
     @Query(value = "SELECT ACCNT_CODE AS accntCode, JRNAL_NO AS jrnalNo, AMOUNT AS amount, DESCRIPTN AS descriptn, "
             + "TRANS_DATETIME AS transDatetime, ANAL_T1 AS analT1, PERIOD AS period "
             + "FROM URC_A_SALFLDG_View "
             + "WHERE PERIOD IN :period "
             + "AND ACCNT_CODE = :accntCode "
-            + "AND ANAL_T1 IN (:analT1)", nativeQuery = true)
+            + "AND (NULLIF(LTRIM(RTRIM(ANAL_T1)), '') IS NULL OR LTRIM(RTRIM(ANAL_T1)) IN (:analT1))", nativeQuery = true)
     List<SALFLDGProjection> findByPeriodAndAccntCodeAndAnalT1InS2(
             @Param("period") List<Integer> period,
             @Param("accntCode") String accntCode,
@@ -200,7 +255,45 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
             @Param("analT1Values") Set<String> analT1Values
     );
 
-@Query(value = """
+    @Query(value = """
+        SELECT COALESCE(SUM(AMOUNT), 0)
+        FROM URC_A_SALFLDG_View
+        WHERE PERIOD IN (:periods)
+          AND (ACCNT_CODE LIKE '11%' OR ACCNT_CODE LIKE '14%')
+          AND LEN(ACCNT_CODE) <= 6
+        """, nativeQuery = true)
+    BigDecimal findTotalIncomeByPeriodsAndIGR(@Param("periods") Set<Integer> periods);
+
+    @Query(value = """
+        SELECT COALESCE(SUM(AMOUNT), 0)
+        FROM URC_A_SALFLDG_View
+        WHERE PERIOD IN (:periods)
+          AND (ACCNT_CODE LIKE '1%')
+          AND LEN(ACCNT_CODE) <= 6
+        """, nativeQuery = true)
+    BigDecimal findTotalIncomeByPeriods(@Param("periods") Set<Integer> periods);
+
+    @Query(value = """
+        SELECT COALESCE(SUM(AMOUNT), 0)
+        FROM URC_A_SALFLDG_View
+        WHERE PERIOD IN (:periods)
+          AND (ACCNT_CODE LIKE '2%')
+          AND LEN(ACCNT_CODE) <= 6
+        """, nativeQuery = true)
+    BigDecimal findTotalOpexByPeriods(@Param("periods") Set<Integer> periods);
+
+    @Query(value = """
+        SELECT COALESCE(SUM(AMOUNT), 0)
+        FROM URC_A_SALFLDG_View
+        WHERE PERIOD IN (:periods)
+          AND (ACCNT_CODE LIKE '3%')
+        AND ACCNT_CODE NOT LIKE '321%'
+          AND ACCNT_CODE NOT LIKE '314%'                       
+          AND LEN(ACCNT_CODE) <= 6
+        """, nativeQuery = true)
+    BigDecimal findTotalCapexByPeriods(@Param("periods") Set<Integer> periods);
+
+    @Query(value = """
     SELECT COALESCE(SUM(AMOUNT), 0)
     FROM URC_A_SALFLDG_View
     WHERE 
@@ -211,9 +304,9 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
         AND LEN(ACCNT_CODE) <= 6
         AND (ANAL_T1 IS NULL OR LTRIM(RTRIM(ANAL_T1)) = '')
 """, nativeQuery = true)
-BigDecimal findTotalAmountByPeriodsAndUnAnalyzed(    @Param("periods") Set<Integer> periods);
+    BigDecimal findTotalAmountByPeriodsAndUnAnalyzed(@Param("periods") Set<Integer> periods);
 
-@Query(value = """
+    @Query(value = """
     SELECT ACCNT_CODE AS accntCode,
            JRNAL_NO AS jrnalNo,
            AMOUNT AS amount,
@@ -232,10 +325,10 @@ BigDecimal findTotalAmountByPeriodsAndUnAnalyzed(    @Param("periods") Set<Integ
          OR LTRIM(RTRIM(ANAL_T1)) = ''
       )
 """, nativeQuery = true)
-List<SALFLDGProjection> findByPeriodAndDepartmentExpendituresWithNullSections(
-    @Param("period") Set<Integer> period,
-    @Param("analT1Values") Set<String> analT1Values
-);
+    List<SALFLDGProjection> findByPeriodAndDepartmentExpendituresWithNullSections(
+            @Param("period") Set<Integer> period,
+            @Param("analT1Values") Set<String> analT1Values
+    );
 
     @Query(value = """
     SELECT COALESCE(SUM(AMOUNT), 0)

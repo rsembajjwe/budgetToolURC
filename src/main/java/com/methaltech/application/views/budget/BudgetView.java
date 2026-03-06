@@ -4,6 +4,7 @@ import com.methaltech.application.data.Classification1;
 import com.methaltech.application.data.Classification2;
 import com.methaltech.application.data.Classification3;
 import com.methaltech.application.data.Display;
+import com.methaltech.application.data.FundType;
 import com.methaltech.application.data.PeriodExtractor;
 import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.bgtool.service.*;
@@ -38,6 +39,7 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
@@ -65,6 +67,7 @@ import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
+import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.renderer.LitRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -98,6 +101,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.PrintSetup;
 import org.apache.poi.ss.usermodel.Row;
@@ -392,7 +396,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             BudgetItemsService budgetItemsService,
             ProcurementTypeService sampleProcurementTypeService, FundsourceService fundsourceService,
             UrcDepartmentAnlDimService sampleUrcAnlCodeService, DeptSectionMergerService sampleDeptSectionMergerService,
-            FreightVolumesService sampleFreightVolumesService,CoaClassificationImportService service) {
+            FreightVolumesService sampleFreightVolumesService, CoaClassificationImportService service) {
         this.sampleBudgetService = sampleBudgetService;
         this.sampleCurrencyDataService = sampleCurrencyDataService;
         this.sampleCurrencyService = sampleCurrencyService;
@@ -423,7 +427,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         this.fundsourceService = fundsourceService;
         this.sampleUrcAnlCodeService = sampleUrcAnlCodeService;
         this.sampleDeptSectionMergerService = sampleDeptSectionMergerService;
-        this.service=service;
+        this.service = service;
         addClassNames("budget-view");
 
         // Create UI
@@ -619,7 +623,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         createIconItem(budgetStructure, VaadinIcon.BUILDING, "Budget Categories", null, true).addClickListener(e -> {
 
             Dialog dialog = new Dialog();
-            dialog.setWidth("500px");
+            dialog.setWidth("850px");
             dialog.setHeight(70, Unit.PERCENTAGE);
             dialog.setHeaderTitle("Budget Category");
             Button closeButton = new Button(new Icon("lumo", "cross"),
@@ -2179,80 +2183,205 @@ public class BudgetView extends Div implements BeforeEnterObserver {
         return dialogLayout;
     }
 
-    private VerticalLayout createOrganisationGridDialogLayout() {
-        BudgetTypeNameField = new TextField("Budget Category");
-        BudgetTypeNameField.setPlaceholder("Budget Category");
+private VerticalLayout createOrganisationGridDialogLayout() {
 
-        HorizontalLayout buttonLayout = new HorizontalLayout();
+    // ---- Grid ----
+    gridOrganisation = new Grid<>(Organisation.class, false);
+    gridOrganisation.setWidthFull();
+    gridOrganisation.setHeight("420px");
+    gridOrganisation.setSelectionMode(Grid.SelectionMode.SINGLE);
+    gridOrganisation.addThemeVariants(
+            GridVariant.LUMO_NO_BORDER,
+            GridVariant.LUMO_ROW_STRIPES,
+            GridVariant.LUMO_WRAP_CELL_CONTENT
+    );
 
-        Button cancel = new Button("Cancel");
-        buttonLayout.setClassName("button-layout");
-        saveCategory.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonLayout.add(BudgetTypeNameField, saveCategory);
-        BudgetTypeNameField.setWidthFull();
-        BudgetTypeNameField.setClearButtonVisible(true);
-        buttonLayout.setWidthFull();
-        buttonLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
+    // ---- Inline editor ----
+    Binder<Organisation> binder = new Binder<>(Organisation.class);
+    Editor<Organisation> editor = gridOrganisation.getEditor(); // using your preferred Editor<T>
+    editor.setBinder(binder);
+    editor.setBuffered(true);
 
-        gridOrganisation = new Grid<>(Organisation.class, false);
-        gridOrganisation.setHeight(200, Unit.PIXELS);
-        gridOrganisation.setSelectionMode(Grid.SelectionMode.SINGLE);
-        // Configure Grid
-        gridOrganisation.addColumn("name").setAutoWidth(true);
-        gridOrganisation.addColumn("code").setAutoWidth(true);
-        gridOrganisation.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_WRAP_CELL_CONTENT);
+    // Track which row is being edited (for reliable button visibility)
+    AtomicReference<Long> editingOrgId = new AtomicReference<>(null);
 
-        gridOrganisation.asSingleSelect().addValueChangeListener(event -> {
-            if (event.getValue() != null) {
-                BudgetTypeNameField.setValue(event.getValue().getName());
-                sampleOrganisation = event.getValue();
-                UI.getCurrent().navigate(BudgetView.class);
+    Runnable refreshAll = () -> {
+        if (gridOrganisation.getDataProvider() != null) {
+            gridOrganisation.getDataProvider().refreshAll();
+        }
+    };
 
-            } else {
-                sampleOrganisation = new Organisation();
-                BudgetTypeNameField.clear();
-                UI.getCurrent().navigate(BudgetView.class);
+    // ---- Editor fields ----
+    TextField nameEditor = new TextField();
+    nameEditor.setWidthFull();
 
+    ComboBox<FundType> fundTypeEditor = new ComboBox<>();
+    fundTypeEditor.setItems(FundType.values());
+    fundTypeEditor.setPlaceholder("Fund type");
+    fundTypeEditor.setWidthFull();
+
+    binder.forField(nameEditor)
+            .asRequired("Name is required")
+            .bind(Organisation::getName, Organisation::setName);
+
+    binder.forField(fundTypeEditor)
+            .asRequired("Fund type is required")
+            .bind(Organisation::getFundType, Organisation::setFundType);
+
+    // ---- Columns ----
+    Grid.Column<Organisation> nameCol = gridOrganisation
+            .addColumn(Organisation::getName)
+            .setHeader("Name")
+            .setAutoWidth(true)
+            .setFlexGrow(1);
+    nameCol.setEditorComponent(nameEditor);
+
+    gridOrganisation
+            .addColumn(Organisation::getCode)
+            .setHeader("Code")
+            .setAutoWidth(true)
+            .setFlexGrow(0);
+
+    Grid.Column<Organisation> fundTypeCol = gridOrganisation
+            .addColumn(o -> o.getFundType() == null ? "-" : o.getFundType().name())
+            .setHeader("Fund Type")
+            .setAutoWidth(true)
+            .setFlexGrow(0);
+    fundTypeCol.setEditorComponent(fundTypeEditor);
+
+    // ---- In-grid Actions: Edit OR Save/Cancel + Delete ----
+    gridOrganisation.addComponentColumn(org -> {
+
+        HorizontalLayout actions = new HorizontalLayout();
+        actions.setPadding(false);
+        actions.setSpacing(true);
+
+        Button editBtn = new Button("Edit");
+        editBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+
+        Button saveBtn = new Button("Save");
+        saveBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+
+        Button cancelBtn = new Button("Cancel");
+        cancelBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
+
+        Button deleteBtn = new Button("Delete");
+        deleteBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
+
+        // Visibility driven by shared "editingOrgId" state (reliable with Grid virtualization)
+        boolean isEditingThisRow = editingOrgId.get() != null
+                && org.getId() != null
+                && org.getId().equals(editingOrgId.get());
+
+        editBtn.setVisible(!isEditingThisRow);
+        saveBtn.setVisible(isEditingThisRow);
+        cancelBtn.setVisible(isEditingThisRow);
+        deleteBtn.setVisible(true);
+
+        editBtn.addClickListener(e -> {
+            // close any other row editor first
+            if (editor.isOpen()) {
+                editor.cancel();
+            }
+            // mark this row active and open editor
+            editingOrgId.set(org.getId());
+            editor.editItem(org);
+            nameEditor.focus();
+            refreshAll.run();
+        });
+
+        saveBtn.addClickListener(e -> {
+            if (!editor.isOpen()) return;
+            Organisation item = editor.getItem();
+            if (item == null || item.getId() == null) return;
+            if (org.getId() == null || !org.getId().equals(item.getId())) return;
+
+            if (binder.validate().isOk()) {
+                editor.save(); // writes values into the entity
+                sampleOrganisationService.update(item);
+
+                editingOrgId.set(null);
+
+                // If your refreshGridOrganisation() re-sets items, call it here
+                refreshGridOrganisation();
+                refreshAll.run();
+
+                Notification.show("Saved", 1500, Notification.Position.TOP_END);
             }
         });
 
-        saveCategory.addClickListener(e -> {
-            if (validEditorTextFieldsOrganisation().toString().length() > 0) {
-                NotificationDialogue(validEditorTextFieldsOrganisation().toString());
-            } else {
-                sampleOrganisation = gridOrganisation.asSingleSelect().getValue();
-                if (sampleOrganisation == null) {
-                    Organisation org = new Organisation();
-                    org.setBudget(sampleBudget);
-                    org.setName(BudgetTypeNameField.getValue());
-                    org.setCode(generateBudgetTypeCode());
-                    sampleOrganisation = sampleOrganisationService.create(org);  // Assign the created organisation to sampleOrganisation
-                } else {
-                    sampleOrganisation.setName(BudgetTypeNameField.getValue());
-                    sampleOrganisationService.update(sampleOrganisation);
+        cancelBtn.addClickListener(e -> {
+            if (editor.isOpen()) editor.cancel();
+            editingOrgId.set(null);
+            refreshAll.run();
+        });
+
+        deleteBtn.addClickListener(e -> {
+            // If this is the active row, cancel editing first
+            if (editingOrgId.get() != null && org.getId() != null && org.getId().equals(editingOrgId.get())) {
+                if (editor.isOpen()) editor.cancel();
+                editingOrgId.set(null);
+                refreshAll.run();
+            }
+
+            ConfirmDialog dialog = new ConfirmDialog();
+            dialog.setHeader("Delete Organisation");
+            dialog.setText("Are you sure you want to delete '" + (org.getName() == null ? "" : org.getName()) + "'?");
+            dialog.setCancelable(true);
+            dialog.setCancelText("Cancel");
+            dialog.setConfirmText("Delete");
+            dialog.setConfirmButtonTheme("error primary");
+
+            dialog.addConfirmListener(ev -> {
+                try {
+                    sampleOrganisationService.delete(org.getId());
+                    refreshGridOrganisation();
+                    refreshAll.run();
+                    Notification.show("Deleted", 1500, Notification.Position.TOP_END);
+                } catch (Exception ex) {
+                    Notification.show("Delete failed: " + ex.getMessage(), 4000, Notification.Position.TOP_END);
                 }
-            }
+            });
 
-            BudgetTypeNameField.clear();
-            refreshGridOrganisation();
+            dialog.open();
         });
 
-        refreshGridOrganisation();
-        // gridOrganisation.select(sampleOrganisationService.findById(Long.valueOf("1")));
-        //gridOrganisation.setEnabled(false);
-        //System.out.println(sampleOrganisationService.findById(Long.valueOf("1")).toString());
-        H1 title = new H1("BUDGETS");
-        title.getStyle().set("font-size", "var(--lumo-font-size-l)")
-                .set("margin", "0");
-        VerticalLayout dialogLayout = new VerticalLayout(buttonLayout, gridOrganisation);
-        dialogLayout.setPadding(true);
-        dialogLayout.setSpacing(false);
-        dialogLayout.setAlignItems(FlexComponent.Alignment.BASELINE);
-        dialogLayout.setWidth("100%");
-        dialogLayout.setHeight("100%");
-        //dialogLayout.getStyle().set("width", "18rem").set("max-width", "100%");
-        return dialogLayout;
-    }
+        actions.add(editBtn, saveBtn, cancelBtn, deleteBtn);
+        return actions;
+
+    }).setHeader("Actions").setAutoWidth(true).setFlexGrow(0);
+
+    // Safety: if editor closes by other means (refresh, escape, etc.), reset state
+    editor.addCloseListener(e -> {
+        editingOrgId.set(null);
+        refreshAll.run();
+    });
+
+    // Optional: double-click row to edit
+    gridOrganisation.addItemDoubleClickListener(e -> {
+        Organisation org = e.getItem();
+        if (org.getId() == null) return;
+
+        if (editor.isOpen()) editor.cancel();
+        editingOrgId.set(org.getId());
+        editor.editItem(org);
+        nameEditor.focus();
+        refreshAll.run();
+    });
+
+    // ---- Load data ----
+    refreshGridOrganisation();
+
+    // ---- Layout (no top input fields) ----
+    VerticalLayout dialogLayout = new VerticalLayout(gridOrganisation);
+    dialogLayout.setPadding(true);
+    dialogLayout.setSpacing(false);
+    dialogLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+    dialogLayout.setWidthFull();
+    dialogLayout.setHeightFull();
+
+    return dialogLayout;
+}
 
     private VerticalLayout createProcurementTypeGridDialogLayout() {
         ProcurementTypeNameField = new TextField("Procurement Type");
@@ -2680,7 +2809,7 @@ public class BudgetView extends Div implements BeforeEnterObserver {
                 Classification2.Maintenance, Classification2.Miscellaneous_Income, Classification2.Miscellaneous_Other_Expenses, Classification2.Other_Fees_Charges,
                 Classification2.Other_Fees_Charges, Classification2.Other_Fees_Charges, Classification2.Passenger_Service_Expenses, Classification2.Passenger_Ticket_Sales,
                 Classification2.Passenger_Ticket_Sales, Classification2.Personel_Costs, Classification2.Rent_Income, Classification2.Rent_Income,
-                Classification2.Supplies_Services, Classification2.Travel_Transport, Classification2.Utilities, Classification2.Utility_Property_Expenses,Classification2.Professional_Services);
+                Classification2.Supplies_Services, Classification2.Travel_Transport, Classification2.Utilities, Classification2.Utility_Property_Expenses, Classification2.Professional_Services);
         class3.setItems(Classification3.Northern_Route, Classification3.Southern_Route);
         Button selectallUnits = new Button("Select all");
 
@@ -2754,8 +2883,8 @@ public class BudgetView extends Div implements BeforeEnterObserver {
                 .set("color", "#0f0")
                 .set("padding", "10px");
         log.setText("Waiting for upload...");
-        FormLayout dialogLayout = new FormLayout(label, new Hr(), CodeField, COANameField, procclass, displayBox, checkbox, class1, class2, class3, buttonLayoutrefresh,upload, clear, new Text("Import Log:"), log);
-        
+        FormLayout dialogLayout = new FormLayout(label, new Hr(), CodeField, COANameField, procclass, displayBox, checkbox, class1, class2, class3, buttonLayoutrefresh, upload, clear, new Text("Import Log:"), log);
+
         /*        dialogLayout.setPadding(true);
         dialogLayout.setSpacing(false);
         dialogLayout.setAlignItems(FlexComponent.Alignment.STRETCH);*/
@@ -2773,7 +2902,10 @@ public class BudgetView extends Div implements BeforeEnterObserver {
             // Coalevel11Box.clear();
             // Coalevel12Box.clear();
             CodeField.clear();
-            COANameField.clear();class1.clear(); class2.clear(); class3.clear();
+            COANameField.clear();
+            class1.clear();
+            class2.clear();
+            class3.clear();
 
             coaSAVE = new COA();
             gridCOA.deselectAll();
@@ -2862,7 +2994,10 @@ public class BudgetView extends Div implements BeforeEnterObserver {
                         class3.setValue(sampleCOA.getClass3());
                     }
 
-                    coaunits.clear();class1.clear(); class2.clear(); class3.clear();
+                    coaunits.clear();
+                    class1.clear();
+                    class2.clear();
+                    class3.clear();
                     if (!sampleCOA.getDsections().isEmpty()) {
                         coaunits.select(new HashSet<>(sampleCOA.getDsections()));
                     }
