@@ -81,7 +81,7 @@ public class BudgetService {
     private final QtrReleasesServiceImpl qtrReleasesServiceImpl;
     private final Random random = new Random();
     GetPeriods periodsGen = new GetPeriods();
-    BigDecimal igrTotalRevenueBudget = BigDecimal.ZERO;
+    BigDecimal igrTotalRevenueActual = BigDecimal.ZERO;
 
     private final String[] colors = {
         "#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6",
@@ -381,20 +381,26 @@ public class BudgetService {
         // BigDecimal projectedRevenue = sumBigDecimal(revenueSources, RevenueSource::getProjected);
         BigDecimal projectedRevenue = budgetItemsService.calculateTotalProjectedIncome(budget);
 
-        igrTotalRevenueBudget = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriods(budget));
-        BigDecimal igrRevenueQtr1Budget = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriodsByQuarter(budget, 1));
-        BigDecimal igrRevenueQtr2Budget = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriodsByQuarter(budget, 2));
-        BigDecimal igrRevenueQtr3Budget = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriodsByQuarter(budget, 3));
+        igrTotalRevenueActual = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriods(budget));
+        BigDecimal igrRevenueQtr1Actual = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriodsByQuarter(budget, 1));
+        BigDecimal igrRevenueQtr2Actual = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriodsByQuarter(budget, 2));
+        BigDecimal igrRevenueQtr3Actual = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriodsByQuarter(budget, 3));
+        
+        BigDecimal igrBudgetRevenue = budgetItemsService.calculateTotalIGRBudget(budget);
+        BigDecimal gou_ExtBudgetRevenue = budgetItemsService.calculateTotalNotIGRBudget(budget);
+        
+        BigDecimal gou_ExtTotalRevenueActual = sampleSALFLDGService.findTotalIncomeByPeriodsAndGOU_EXT(periodsGen.getFinancialYearPeriods(budget));
 
-        BigDecimal gouTotalRevenueBudget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundType(budget, FundType.GOU);
+        /*        BigDecimal gouTotalRevenueBudget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundType(budget, FundType.GOU);
         BigDecimal gouRevenueQtr1Budget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundTypeQ1(budget, FundType.GOU);
         BigDecimal gouRevenueQtr2Budget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundTypeQ2(budget, FundType.GOU);
         BigDecimal gouRevenueQtr3Budget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundTypeQ3(budget, FundType.GOU);
-
+        
         BigDecimal extTotalRevenueBudget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundType(budget, FundType.EXTERNAL_FUNDIG);
         BigDecimal extRevenueQtr1Budget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundTypeQ1(budget, FundType.EXTERNAL_FUNDIG);
         BigDecimal extRevenueQtr2Budget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundTypeQ2(budget, FundType.EXTERNAL_FUNDIG);
-        BigDecimal extRevenueQtr3Budget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundTypeQ3(budget, FundType.EXTERNAL_FUNDIG);
+        BigDecimal extRevenueQtr3Budget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundTypeQ3(budget, FundType.EXTERNAL_FUNDIG);*/
+        BigDecimal zeroValue = BigDecimal.ZERO;
 
         BigDecimal projectedRevenueQtr1Budget = budgetItemsService.calculateTotalProjectedIncomeQ1(budget);
         BigDecimal projectedRevenueQtr2Budget = budgetItemsService.calculateTotalProjectedIncomeQ2(budget);
@@ -416,7 +422,7 @@ public class BudgetService {
                 totalBudget,
                 totalSpent,
                 totalCommitted,
-                igrTotalRevenueBudget,
+                revenueActual,
                 projectedRevenue,
                 cumQtr1Budget,
                 cumQtr2Budget,
@@ -428,21 +434,21 @@ public class BudgetService {
                 cumQtr4Actual,
                 departmentBudgets,
                 revenueSources,
-                igrTotalRevenueBudget,
-                igrRevenueQtr1Budget,
-                igrRevenueQtr2Budget,
-                igrRevenueQtr3Budget,
-                igrTotalRevenueBudget,
-                gouTotalRevenueBudget,
-                gouRevenueQtr1Budget,
-                gouRevenueQtr2Budget,
-                gouRevenueQtr3Budget,
-                gouTotalRevenueBudget,
-                extTotalRevenueBudget,
-                extRevenueQtr1Budget,
-                extRevenueQtr2Budget,
-                extRevenueQtr3Budget,
-                extTotalRevenueBudget,
+                igrBudgetRevenue,
+                zeroValue,
+                zeroValue,
+                zeroValue,
+                zeroValue,
+                gou_ExtTotalRevenueActual,
+                zeroValue,
+                zeroValue,
+                zeroValue,
+                zeroValue,
+                zeroValue,
+                zeroValue,
+                zeroValue,
+                zeroValue,
+                zeroValue,
                 projectedRevenueQtr1Budget,
                projectedRevenueQtr2Budget,
                 projectedRevenueQtr3Budget,
@@ -455,7 +461,9 @@ public class BudgetService {
                 opexBudget,
                 capexBudget,
                 opexActual,
-                capexActual
+                capexActual,
+                igrTotalRevenueActual,
+                gou_ExtTotalRevenueActual
         );
     }
 
@@ -668,15 +676,15 @@ public class BudgetService {
         List<RevenueSource> revenuesourcesfinal = new ArrayList<>();
         revenuesources = organisationRepository.findByBudgetWithCoaAccounts(budget);
         for (Organisation sour : revenuesources) {
-            igrTotalRevenueBudget = BigDecimal.ZERO;
+            igrTotalRevenueActual = BigDecimal.ZERO;
             BigDecimal totrev = organisationRepository.sumAnnualByBudgetAndOrganisation(budget, sour);
             if (sour.getFundType() == FundType.IGR) {
-                igrTotalRevenueBudget = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriods(budget));
+                igrTotalRevenueActual = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriods(budget));
             } else {
-                igrTotalRevenueBudget = qtrReleasesServiceImpl.sumTotalReleasesByBudgetAndOrganisation(budget, sour);
+                igrTotalRevenueActual = qtrReleasesServiceImpl.sumTotalReleasesByBudgetAndOrganisation(budget, sour);
             }
             //BigDecimal totcol = sampleSALFLDGService.findTotalAmountByPeriodsAndAccntCodes(getFinancialYearPeriods(budget), extractCodes(sour.getCoaAccounts()));
-            revenuesourcesfinal.add(new RevenueSource(sour.getCode(), sour.getName(), sour.getCode(), igrTotalRevenueBudget, totrev, colors[random.nextInt(colors.length)]));
+            revenuesourcesfinal.add(new RevenueSource(sour.getCode(), sour.getName(), sour.getCode(), igrTotalRevenueActual, totrev, colors[random.nextInt(colors.length)]));
 
         }
         return revenuesourcesfinal;

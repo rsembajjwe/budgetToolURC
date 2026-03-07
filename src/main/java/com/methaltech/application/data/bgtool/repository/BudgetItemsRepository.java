@@ -881,6 +881,32 @@ WHERE b.budget = :budget
        AND (b.coacode.code LIKE '1%')
 """)
     BigDecimal calculateTotalProjectedIncome(@Param("budget") Budget budget);
+    
+        @Query("""
+    SELECT COALESCE(SUM(
+        COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0) +
+        COALESCE(b.apr,0) + COALESCE(b.may,0) + COALESCE(b.jun,0) +
+        COALESCE(b.jul,0) + COALESCE(b.aug,0) + COALESCE(b.sep,0) +
+        COALESCE(b.oct,0) + COALESCE(b.nov,0) + COALESCE(b.dec,0)
+    ), 0)
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+       AND (b.coacode.code LIKE '11%' OR b.coacode.code LIKE '14%')
+""")
+    BigDecimal calculateTotalIGRBudget(@Param("budget") Budget budget);
+    
+            @Query("""
+    SELECT COALESCE(SUM(
+        COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0) +
+        COALESCE(b.apr,0) + COALESCE(b.may,0) + COALESCE(b.jun,0) +
+        COALESCE(b.jul,0) + COALESCE(b.aug,0) + COALESCE(b.sep,0) +
+        COALESCE(b.oct,0) + COALESCE(b.nov,0) + COALESCE(b.dec,0)
+    ), 0)
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+       AND ((b.coacode.code NOT LIKE '11%' OR b.coacode.code NOT LIKE '14%') AND b.coacode.code LIKE '1%')
+""")
+    BigDecimal calculateTotalNotIGRBudget(@Param("budget") Budget budget);
 
     @Query("""
     SELECT COALESCE(SUM(

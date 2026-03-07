@@ -9,8 +9,8 @@ public class BudgetSummary {
     private BigDecimal totalBudget;
     private BigDecimal totalSpent;
     private BigDecimal totalCommitted;
-    private BigDecimal totalRevenue;
-    private BigDecimal projectedRevenue;
+    private BigDecimal totalActualRevenue;
+    private BigDecimal budgetedRevenue;
     private BigDecimal cumQtr1Budget;
     private BigDecimal cumQtr2Budget;
     private BigDecimal cumQtr3Budget;
@@ -55,6 +55,8 @@ public class BudgetSummary {
     private BigDecimal capexBudget;
     private BigDecimal opexActual;
     private BigDecimal capexActual;
+    private BigDecimal igrTotalActualRevenue;
+    private BigDecimal gouTotalActualRevenue;
 
     public BudgetSummary() {
     }
@@ -65,8 +67,8 @@ public class BudgetSummary {
         this.totalBudget = totalBudget;
         this.totalCommitted = totalCommitted;
         this.totalSpent = totalSpent;
-        this.totalRevenue = totalRevenue;
-        this.projectedRevenue = projectedRevenue;
+        this.totalActualRevenue = totalRevenue;
+        this.budgetedRevenue = projectedRevenue;
         this.departmentBudgets = departmentBudgets;
         this.revenueSources = revenueSources;
     }
@@ -76,8 +78,8 @@ public class BudgetSummary {
         this.totalBudget = totalBudget;
         this.totalSpent = totalSpent;
         this.totalCommitted = totalCommitted;
-        this.totalRevenue = totalRevenue;
-        this.projectedRevenue = projectedRevenue;
+        this.totalActualRevenue = totalRevenue;
+        this.budgetedRevenue = projectedRevenue;
         this.cumQtr1Budget = cumQtr1Budget;
         this.cumQtr2Budget = cumQtr2Budget;
         this.cumQtr3Budget = cumQtr3Budget;
@@ -94,8 +96,8 @@ public class BudgetSummary {
         this.totalBudget = totalBudget;
         this.totalSpent = totalSpent;
         this.totalCommitted = totalCommitted;
-        this.totalRevenue = totalRevenue;
-        this.projectedRevenue = projectedRevenue;
+        this.totalActualRevenue = totalRevenue;
+        this.budgetedRevenue = projectedRevenue;
         this.cumQtr1Budget = cumQtr1Budget;
         this.cumQtr2Budget = cumQtr2Budget;
         this.cumQtr3Budget = cumQtr3Budget;
@@ -268,19 +270,19 @@ public class BudgetSummary {
     }
 
     public BigDecimal getTotalRevenue() {
-        return totalRevenue;
+        return totalActualRevenue;
     }
 
     public void setTotalRevenue(BigDecimal totalRevenue) {
-        this.totalRevenue = totalRevenue;
+        this.totalActualRevenue = totalRevenue;
     }
 
     public BigDecimal getProjectedRevenue() {
-        return projectedRevenue;
+        return budgetedRevenue;
     }
 
     public void setProjectedRevenue(BigDecimal projectedRevenue) {
-        this.projectedRevenue = projectedRevenue;
+        this.budgetedRevenue = projectedRevenue;
     }
 
     public BigDecimal getCumQtr1Budget() {
@@ -422,7 +424,7 @@ public class BudgetSummary {
     }
 
     public BigDecimal getRevenuePercentage() {
-        return percentage(totalRevenue, projectedRevenue);
+        return percentage(totalActualRevenue, budgetedRevenue);
     }
 
     public BigDecimal getRevenuePerformancePercentage() {
@@ -456,13 +458,13 @@ public class BudgetSummary {
         return totalBudget != null ? totalBudget : BigDecimal.ZERO;
     }
     private BigDecimal getTotalRevenueSafe() {
-        return totalRevenue != null ? totalRevenue : BigDecimal.ZERO;
+        return totalActualRevenue != null ? totalActualRevenue : BigDecimal.ZERO;
     }
     private BigDecimal getActualRevenueSafe() {
         return revenueActual != null ? revenueActual : BigDecimal.ZERO;
     }
     private BigDecimal getProjectedRevenueSafe() {
-        return projectedRevenue != null ? projectedRevenue : BigDecimal.ZERO;
+        return budgetedRevenue != null ? budgetedRevenue : BigDecimal.ZERO;
     }
 
     private BigDecimal getTotalSpentSafe() {
@@ -593,12 +595,28 @@ public class BudgetSummary {
                 .setScale(2, RoundingMode.HALF_UP);       // final display scale
     }
 
-    public BudgetSummary(BigDecimal totalBudget, BigDecimal totalSpent, BigDecimal totalCommitted, BigDecimal totalRevenue, BigDecimal projectedRevenue, BigDecimal cumQtr1Budget, BigDecimal cumQtr2Budget, BigDecimal cumQtr3Budget, BigDecimal cumQtr4Budget, BigDecimal cumQtr1Actual, BigDecimal cumQtr2Actual, BigDecimal cumQtr3Actual, BigDecimal cumQtr4Actual, List<DepartmentBudget> departmentBudgets, List<RevenueSource> revenueSources, BigDecimal igrTotalRevenueBudget, BigDecimal igrRevenueQtr1Budget, BigDecimal igrRevenueQtr2Budget, BigDecimal igrRevenueQtr3Budget, BigDecimal igrRevenueQtr4Budget, BigDecimal gouTotalRevenueBudget, BigDecimal gouRevenueQtr1Budget, BigDecimal gouRevenueQtr2Budget, BigDecimal gouRevenueQtr3Budget, BigDecimal gouRevenueQtr4Budget, BigDecimal extTotalRevenueBudget, BigDecimal extRevenueQtr1Budget, BigDecimal extRevenueQtr2Budget, BigDecimal extRevenueQtr3Budget, BigDecimal extRevenueQtr4Budget, BigDecimal projectedRevenueQtr1Budget, BigDecimal projectedRevenueQtr2Budget, BigDecimal projectedRevenueQtr3Budget, BigDecimal projectedRevenueQtr4Budget, BigDecimal revenueQtr1Actual, BigDecimal revenueQtr2Actual, BigDecimal revenueQtr3Actual, BigDecimal revenueQtr4Actual, BigDecimal revenueActual, BigDecimal opexBudget, BigDecimal capexBudget, BigDecimal opexActual, BigDecimal capexActual) {
+    public BigDecimal getIgrTotalActualRevenue() {
+        return igrTotalActualRevenue;
+    }
+
+    public void setIgrTotalActualRevenue(BigDecimal igrTotalActualRevenue) {
+        this.igrTotalActualRevenue = igrTotalActualRevenue;
+    }
+
+    public BigDecimal getGouTotalActualRevenue() {
+        return gouTotalActualRevenue;
+    }
+
+    public void setGouTotalActualRevenue(BigDecimal gouTotalActualRevenue) {
+        this.gouTotalActualRevenue = gouTotalActualRevenue;
+    }
+
+    public BudgetSummary(BigDecimal totalBudget, BigDecimal totalSpent, BigDecimal totalCommitted, BigDecimal totalActualRevenue, BigDecimal budgetedRevenue, BigDecimal cumQtr1Budget, BigDecimal cumQtr2Budget, BigDecimal cumQtr3Budget, BigDecimal cumQtr4Budget, BigDecimal cumQtr1Actual, BigDecimal cumQtr2Actual, BigDecimal cumQtr3Actual, BigDecimal cumQtr4Actual, List<DepartmentBudget> departmentBudgets, List<RevenueSource> revenueSources, BigDecimal igrTotalRevenueBudget, BigDecimal igrRevenueQtr1Budget, BigDecimal igrRevenueQtr2Budget, BigDecimal igrRevenueQtr3Budget, BigDecimal igrRevenueQtr4Budget, BigDecimal gouTotalRevenueBudget, BigDecimal gouRevenueQtr1Budget, BigDecimal gouRevenueQtr2Budget, BigDecimal gouRevenueQtr3Budget, BigDecimal gouRevenueQtr4Budget, BigDecimal extTotalRevenueBudget, BigDecimal extRevenueQtr1Budget, BigDecimal extRevenueQtr2Budget, BigDecimal extRevenueQtr3Budget, BigDecimal extRevenueQtr4Budget, BigDecimal projectedRevenueQtr1Budget, BigDecimal projectedRevenueQtr2Budget, BigDecimal projectedRevenueQtr3Budget, BigDecimal projectedRevenueQtr4Budget, BigDecimal revenueQtr1Actual, BigDecimal revenueQtr2Actual, BigDecimal revenueQtr3Actual, BigDecimal revenueQtr4Actual, BigDecimal revenueActual, BigDecimal opexBudget, BigDecimal capexBudget, BigDecimal opexActual, BigDecimal capexActual, BigDecimal igrTotalActualRevenue, BigDecimal gouTotalActualRevenue) {
         this.totalBudget = totalBudget;
         this.totalSpent = totalSpent;
         this.totalCommitted = totalCommitted;
-        this.totalRevenue = totalRevenue;
-        this.projectedRevenue = projectedRevenue;
+        this.totalActualRevenue = totalActualRevenue;
+        this.budgetedRevenue = budgetedRevenue;
         this.cumQtr1Budget = cumQtr1Budget;
         this.cumQtr2Budget = cumQtr2Budget;
         this.cumQtr3Budget = cumQtr3Budget;
@@ -637,7 +655,12 @@ public class BudgetSummary {
         this.capexBudget = capexBudget;
         this.opexActual = opexActual;
         this.capexActual = capexActual;
+        this.igrTotalActualRevenue = igrTotalActualRevenue;
+        this.gouTotalActualRevenue = gouTotalActualRevenue;
     }
+    
+
+
 
 
     

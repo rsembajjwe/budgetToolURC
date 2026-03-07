@@ -1983,6 +1983,14 @@ public class BudgetItemsService {
         return repository.calculateTotalProjectedIncome(budget);
     }
 
+    public BigDecimal calculateTotalIGRBudget(Budget budget) {
+        return repository.calculateTotalIGRBudget(budget);
+    }
+
+    public BigDecimal calculateTotalNotIGRBudget(Budget budget) {
+        return repository.calculateTotalNotIGRBudget(budget);
+    }
+
     public BigDecimal calculateTotalProjectedIncomeQtr1(Budget budget) {
         return repository.calculateTotalProjectedIncomeQtr1(budget);
     }

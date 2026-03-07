@@ -303,6 +303,14 @@ public class SALFLDGService {
         BigDecimal v = salfldgRepository.findTotalIncomeByPeriodsAndIGR(periods);
         return v != null ? v : BigDecimal.ZERO;
     }
+    
+        public BigDecimal findTotalIncomeByPeriodsAndGOU_EXT(Set<Integer> periods) {
+        if (periods == null || periods.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal v = salfldgRepository.findTotalIncomeByPeriodsAndGOU_EXT(periods);
+        return v != null ? v : BigDecimal.ZERO;
+    }
 
     public BigDecimal findTotalIncomeByPeriods(Set<Integer> periods) {
         if (periods == null || periods.isEmpty()) {

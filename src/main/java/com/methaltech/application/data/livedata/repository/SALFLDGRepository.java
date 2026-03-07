@@ -263,6 +263,15 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
           AND LEN(ACCNT_CODE) <= 6
         """, nativeQuery = true)
     BigDecimal findTotalIncomeByPeriodsAndIGR(@Param("periods") Set<Integer> periods);
+    
+        @Query(value = """
+        SELECT COALESCE(SUM(AMOUNT), 0)
+        FROM URC_A_SALFLDG_View
+        WHERE PERIOD IN (:periods)
+          AND (ACCNT_CODE NOT LIKE '11%' AND ACCNT_CODE NOT LIKE '14%' AND ACCNT_CODE LIKE '1%')
+          AND LEN(ACCNT_CODE) <= 6
+        """, nativeQuery = true)
+    BigDecimal findTotalIncomeByPeriodsAndGOU_EXT(@Param("periods") Set<Integer> periods);
 
     @Query(value = """
         SELECT COALESCE(SUM(AMOUNT), 0)

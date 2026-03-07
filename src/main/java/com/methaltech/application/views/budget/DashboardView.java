@@ -379,6 +379,7 @@ public class DashboardView extends VerticalLayout {
             // Summary cards with enhanced styling
             BudgetSummaryCards summaryCards = new BudgetSummaryCards(budgetSummary, sampleCoaService, sampleUrcDeptSectionAnlDimbgtService, sampleSALFLDGService, sampleDeptSectionMergerService, selectedBudget);
             summaryCards.addClassName("budget-summary-cards");
+            summaryCards.setJustifyContentMode(JustifyContentMode.CENTER);
 
             // Main content grid
             HorizontalLayout mainGrid = new HorizontalLayout();
@@ -392,14 +393,15 @@ public class DashboardView extends VerticalLayout {
             DepartmentOverview departmentOverview = new DepartmentOverview(budgetSummary.getDepartmentBudgets(), sampleCoaService, sampleUrcDeptSectionAnlDimbgtService, sampleSALFLDGService, sampleDeptSectionMergerService, selectedBudget);
             departmentOverview.addClassName("department-overview");
 
-            mainGrid.add(departmentOverview);
+            
 
             // Revenue breakdown with premium styling
             RevenueBreakdown revenueBreakdown = new RevenueBreakdown(budgetSummary.getRevenueSources());
             revenueBreakdown.addClassName("revenue-breakdown");
 
             contentContainer.removeAll();
-            contentContainer.add(summaryCards, mainGrid, revenueBreakdown);
+            mainGrid.add(departmentOverview, revenueBreakdown);
+            contentContainer.add(summaryCards, mainGrid);
 
             updateStatusIndicator();
         } catch (Exception e) {
