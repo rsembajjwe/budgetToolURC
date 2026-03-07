@@ -8,6 +8,7 @@ import com.methaltech.application.data.livedata.service.SALFLDGService;
 import com.methaltech.application.views.actual.utilityActuals;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.H6;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -34,11 +35,16 @@ public class BudgetSummaryCards extends HorizontalLayout {
     private final Budget budget;
     PeriodExtractor extract = new PeriodExtractor();
 
-    public BudgetSummaryCards(BudgetSummary budgetSummary, CoaService sampleCoaService,
-            UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, SALFLDGService sampleSALFLDGService, DeptSectionMergerService sampleDeptSectionMergerService, Budget budget) {
-        // Create UGX currency formatter
+    public BudgetSummaryCards(BudgetSummary budgetSummary,
+            CoaService sampleCoaService,
+            UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService,
+            SALFLDGService sampleSALFLDGService,
+            DeptSectionMergerService sampleDeptSectionMergerService,
+            Budget budget) {
+
         currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
         currencyFormat.setCurrency(java.util.Currency.getInstance("UGX"));
+
         this.sampleDeptSectionMergerService = sampleDeptSectionMergerService;
         this.sampleCoaService = sampleCoaService;
         this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
@@ -46,173 +52,214 @@ public class BudgetSummaryCards extends HorizontalLayout {
         this.budget = budget;
 
         setWidthFull();
-        setSpacing(true);
+        setSpacing(false);
         setPadding(false);
-        addClassName("budget-summary-cards-professional");
-        setJustifyContentMode(FlexComponent.JustifyContentMode.START);
+        addClassName("budget-summary-cards");
+        setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+        setDefaultVerticalComponentAlignment(FlexComponent.Alignment.STRETCH);
 
-        // Enable flex wrap using CSS
+        getStyle().set("display", "flex");
         getStyle().set("flex-wrap", "wrap");
-        getStyle().set("gap", "var(--lumo-space-m)");
+        getStyle().set("justify-content", "center");
+        getStyle().set("align-items", "stretch");
+        getStyle().set("gap", "1rem");
+        getStyle().set("box-sizing", "border-box");
 
-        // Div spent = createSummaryCard("Total Spent", budgetSummary.getTotalSpent(), VaadinIcon.TRENDING_DOWN, "card-red", String.format("%.1f%% of budget", budgetSummary.getSpentPercentage()));
-        Div spent = createQuarterlySummaryCardActual("1.4 Total Spent", budgetSummary.getTotalSpent(),
-                budgetSummary.getCumQtr1Actual(), budgetSummary.getCumQtr2Actual(),
-                budgetSummary.getCumQtr3Actual(), budgetSummary.getCumQtr4Actual(), budgetSummary.getOpexActual().abs(), budgetSummary.getCapexActual().abs(), budgetSummary.getRemainingBudget(), 100 - budgetSummary.getSpentPercentage().doubleValue(),
-                VaadinIcon.TRENDING_DOWN, "card-red", String.format("%.1f%% of budget",
-                        budgetSummary.getSpentPercentage()), "Actual Exp.");
-// Create context menu and attach to component
+        Div spent = createQuarterlySummaryCardActual(
+                "1.4 Total Spent",
+                budgetSummary.getTotalSpent(),
+                budgetSummary.getCumQtr1Actual(),
+                budgetSummary.getCumQtr2Actual(),
+                budgetSummary.getCumQtr3Actual(),
+                budgetSummary.getCumQtr4Actual(),
+                budgetSummary.getOpexActual().abs(),
+                budgetSummary.getCapexActual().abs(),
+                budgetSummary.getRemainingBudget(),
+                100 - budgetSummary.getSpentPercentage().doubleValue(),
+                VaadinIcon.TRENDING_DOWN,
+                "card-red",
+                String.format("%.1f%% of budget", budgetSummary.getSpentPercentage()),
+                "Actual Exp."
+        );
+
         ContextMenu contextMenu = new ContextMenu(spent);
-        contextMenu.setOpenOnClick(false); // default = right-click
+        contextMenu.setOpenOnClick(false);
 
-// Add menu items
         contextMenu.addItem("Download Qtr 1 Expenses", event -> {
-            Set<String> sections = new HashSet<>();
-            for (DepartmentBudget f : budgetSummary.getDepartmentBudgets()) {
-                String deptcode = f.getDepartmentCode();
-                Set<String> sectionCodes = sampleDeptSectionMergerService.extractSectionAnlCodes(deptcode);
-                sections.addAll(sectionCodes);
-            }
-            utils = new utilityActuals(budget, sampleCoaService, sampleUrcDeptSectionAnlDimbgtService, sampleSALFLDGService, sections);
-            utils.exportAndDownloadExcelTransactionDetails(budget, utils.refreshgridTransactions2(1), this, 1);
+            Set<String> sections = collectSections(budgetSummary);
+            utils = new utilityActuals(
+                    budget, sampleCoaService,
+                    sampleUrcDeptSectionAnlDimbgtService,
+                    sampleSALFLDGService, sections
+            );
+            utils.exportAndDownloadExcelTransactionDetails(
+                    budget, utils.refreshgridTransactions2(1), this, 1
+            );
         });
 
         contextMenu.addItem("Download Qtr 2 Expenses", event -> {
-            Set<String> sections = new HashSet<>();
-            for (DepartmentBudget f : budgetSummary.getDepartmentBudgets()) {
-                String deptcode = f.getDepartmentCode();
-                Set<String> sectionCodes = sampleDeptSectionMergerService.extractSectionAnlCodes(deptcode);
-                sections.addAll(sectionCodes);
-            }
-            utils = new utilityActuals(budget, sampleCoaService, sampleUrcDeptSectionAnlDimbgtService, sampleSALFLDGService, sections);
-            utils.exportAndDownloadExcelTransactionDetails(budget, utils.refreshgridTransactions2(2), this, 2);
+            Set<String> sections = collectSections(budgetSummary);
+            utils = new utilityActuals(
+                    budget, sampleCoaService,
+                    sampleUrcDeptSectionAnlDimbgtService,
+                    sampleSALFLDGService, sections
+            );
+            utils.exportAndDownloadExcelTransactionDetails(
+                    budget, utils.refreshgridTransactions2(2), this, 2
+            );
         });
-        contextMenu.addItem("Download Qtr 3 Expenses", event -> {
-            Set<String> sections = new HashSet<>();
-            for (DepartmentBudget f : budgetSummary.getDepartmentBudgets()) {
-                String deptcode = f.getDepartmentCode();
-                Set<String> sectionCodes = sampleDeptSectionMergerService.extractSectionAnlCodes(deptcode);
-                sections.addAll(sectionCodes);
-            }
-            utils = new utilityActuals(budget, sampleCoaService, sampleUrcDeptSectionAnlDimbgtService, sampleSALFLDGService, sections);
-            utils.exportAndDownloadExcelTransactionDetails(budget, utils.refreshgridTransactions2(3), this, 3);
-        });
-        contextMenu.addItem("Download Qtr 4 Expenses", event -> {
-            Set<String> sections = new HashSet<>();
-            for (DepartmentBudget f : budgetSummary.getDepartmentBudgets()) {
-                String deptcode = f.getDepartmentCode();
-                Set<String> sectionCodes = sampleDeptSectionMergerService.extractSectionAnlCodes(deptcode);
-                sections.addAll(sectionCodes);
-            }
-            utils = new utilityActuals(budget, sampleCoaService, sampleUrcDeptSectionAnlDimbgtService, sampleSALFLDGService, sections);
-            utils.exportAndDownloadExcelTransactionDetails(budget, utils.refreshgridTransactions2(), this, 4);
-        });
-        contextMenu.addItem("Download All Expenses", event -> {
-            Set<String> sections = new HashSet<>();
-            for (DepartmentBudget f : budgetSummary.getDepartmentBudgets()) {
-                String deptcode = f.getDepartmentCode();
-                Set<String> sectionCodes = sampleDeptSectionMergerService.extractSectionAnlCodes(deptcode);
-                sections.addAll(sectionCodes);
-            }
-            utils = new utilityActuals(budget, sampleCoaService, sampleUrcDeptSectionAnlDimbgtService, sampleSALFLDGService, sections);
-            utils.exportAndDownloadExcelTransactionDetails(budget, utils.refreshgridTransactions2(), this, 4);
 
+        contextMenu.addItem("Download Qtr 3 Expenses", event -> {
+            Set<String> sections = collectSections(budgetSummary);
+            utils = new utilityActuals(
+                    budget, sampleCoaService,
+                    sampleUrcDeptSectionAnlDimbgtService,
+                    sampleSALFLDGService, sections
+            );
+            utils.exportAndDownloadExcelTransactionDetails(
+                    budget, utils.refreshgridTransactions2(3), this, 3
+            );
         });
+
+        contextMenu.addItem("Download Qtr 4 Expenses", event -> {
+            Set<String> sections = collectSections(budgetSummary);
+            utils = new utilityActuals(
+                    budget, sampleCoaService,
+                    sampleUrcDeptSectionAnlDimbgtService,
+                    sampleSALFLDGService, sections
+            );
+            utils.exportAndDownloadExcelTransactionDetails(
+                    budget, utils.refreshgridTransactions2(), this, 4
+            );
+        });
+
+        contextMenu.addItem("Download All Expenses", event -> {
+            Set<String> sections = collectSections(budgetSummary);
+            utils = new utilityActuals(
+                    budget, sampleCoaService,
+                    sampleUrcDeptSectionAnlDimbgtService,
+                    sampleSALFLDGService, sections
+            );
+            utils.exportAndDownloadExcelTransactionDetails(
+                    budget, utils.refreshgridTransactions2(), this, 4
+            );
+        });
+
         spent.addDoubleClickListener(e -> {
-            Set<String> sections = new HashSet<>();
-            for (DepartmentBudget f : budgetSummary.getDepartmentBudgets()) {
-                String deptcode = f.getDepartmentCode();
-                Set<String> sectionCodes = sampleDeptSectionMergerService.extractSectionAnlCodes(deptcode);
-                sections.addAll(sectionCodes);
-            }
-            utils = new utilityActuals(budget, sampleCoaService, sampleUrcDeptSectionAnlDimbgtService, sampleSALFLDGService, sections);
+            Set<String> sections = collectSections(budgetSummary);
+            utils = new utilityActuals(
+                    budget, sampleCoaService,
+                    sampleUrcDeptSectionAnlDimbgtService,
+                    sampleSALFLDGService, sections
+            );
             utils.createTransactionsDialog2(this);
         });
-        /*            BigDecimal actualRevenue,//Actual Revenue
-        BigDecimal igr,//IGR Revenue
-        BigDecimal gou_Ext,//GOU&EXTERNAL
-        BigDecimal projectedIgr,
-        BigDecimal projectedgou_Ext,*/
+
         Div financialHighlights = createFinancialHighlightsCard(
-                budgetSummary.getTotalBudget(), // Approved Budget
-                budgetSummary.getProjectedRevenue(), // projectedRevenue
-                budgetSummary.getRevenueActual(), // actualRevenue // 
-                budgetSummary.getTotalSpent(), // actualExpenditure
-                budgetSummary.getBudgetPerformancePercentage(), // Revenue Performance %
-                budgetSummary.getAbsorptionRatePercentage() // Absorption %
+                budgetSummary.getTotalBudget(),
+                budgetSummary.getProjectedRevenue(),
+                budgetSummary.getRevenueActual(),
+                budgetSummary.getTotalSpent(),
+                budgetSummary.getBudgetPerformancePercentage(),
+                budgetSummary.getAbsorptionRatePercentage()
         );
-        add(financialHighlights);
-        add(
-                createQuarterlySummaryCard("1.2 Total Budget", budgetSummary.getTotalBudget(), budgetSummary.getCumQtr1Budget(), budgetSummary.getCumQtr2Budget(), budgetSummary.getCumQtr3Budget(), budgetSummary.getCumQtr4Budget(), budgetSummary.getOpexBudget(), budgetSummary.getCapexBudget(), VaadinIcon.DIAMOND, "card-blue", null, "Budget"),
-                createQuarterlySummaryCardRevenue("1.3 Revenue Collected", budgetSummary.getRevenueActual(),budgetSummary.getIgrTotalActualRevenue(),budgetSummary.getGouTotalActualRevenue(),budgetSummary.getIgrTotalRevenueBudget(),budgetSummary.getGouTotalRevenueBudget(), budgetSummary.getProjectedRevenue(),VaadinIcon.TRENDING_UP, "card-emerald", String.format("%.1f%% of target", percentage(budgetSummary.getRevenueActual(), budgetSummary.getProjectedRevenue()))),
-                spent
+
+        Div totalBudget = createQuarterlySummaryCard(
+                "1.2 Total Budget",
+                budgetSummary.getTotalBudget(),
+                budgetSummary.getCumQtr1Budget(),
+                budgetSummary.getCumQtr2Budget(),
+                budgetSummary.getCumQtr3Budget(),
+                budgetSummary.getCumQtr4Budget(),
+                budgetSummary.getOpexBudget(),
+                budgetSummary.getCapexBudget(),
+                VaadinIcon.DIAMOND,
+                "card-blue",
+                "Approved budget",
+                "Budget"
         );
+
+        Div revenueCollected = createQuarterlySummaryCardRevenue(
+                "1.3 Revenue Collected",
+                budgetSummary.getRevenueActual(),
+                budgetSummary.getIgrTotalActualRevenue(),
+                budgetSummary.getGouTotalActualRevenue(),
+                budgetSummary.getIgrTotalRevenueBudget(),
+                budgetSummary.getGouTotalRevenueBudget(),
+                budgetSummary.getProjectedRevenue(),
+                VaadinIcon.TRENDING_UP,
+                "card-emerald",
+                String.format("%.1f%% of target",
+                        percentage(budgetSummary.getRevenueActual(), budgetSummary.getProjectedRevenue()))
+        );
+
+        add(financialHighlights, totalBudget, revenueCollected, spent);
     }
 
-    private Div createSummaryCard(String title, BigDecimal amount, VaadinIcon iconType,
-            String cardClass) {
-        return createSummaryCard(title, amount, iconType, cardClass, null);
+    private Set<String> collectSections(BudgetSummary budgetSummary) {
+        Set<String> sections = new HashSet<>();
+        for (DepartmentBudget f : budgetSummary.getDepartmentBudgets()) {
+            String deptcode = f.getDepartmentCode();
+            Set<String> sectionCodes = sampleDeptSectionMergerService.extractSectionAnlCodes(deptcode);
+            sections.addAll(sectionCodes);
+        }
+        return sections;
     }
 
-    private Div createSummaryCard(String title, BigDecimal amount, VaadinIcon iconType,
-            String cardClass, String subtitle) {
-        Div card = new Div();
+    private void styleCard(Div card) {
         card.addClassName("summary-card");
-        card.addClassName(cardClass);
-        card.setMinWidth("150px");
-        card.setMaxWidth("170px");
+        card.setWidthFull();
+        card.getStyle().set("box-sizing", "border-box");
+        card.getStyle().set("flex", "1 1 320px");
+        card.getStyle().set("min-width", "280px");
+        card.getStyle().set("max-width", "100%");
+    }
 
-        // Set flex grow on the parent layout instead
-        this.setFlexGrow(1, card);
+    private HorizontalLayout buildCardHeader(String title, VaadinIcon iconType) {
+        HorizontalLayout header = new HorizontalLayout();
+        header.addClassName("summary-card-header");
+        header.setWidthFull();
+        header.setPadding(false);
+        header.setSpacing(false);
+        header.setAlignItems(FlexComponent.Alignment.START);
+        header.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
 
-        HorizontalLayout content = new HorizontalLayout();
-        content.setWidthFull();
-        content.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
-        content.setAlignItems(FlexComponent.Alignment.CENTER);
-        content.setPadding(false);
-        content.setSpacing(false);
-        content.setAlignItems(FlexComponent.Alignment.START);
-
-        VerticalLayout textContent = new VerticalLayout();
-        textContent.setSpacing(false);
-        textContent.setPadding(false);
-        textContent.setFlexGrow(1);
+        VerticalLayout titleArea = new VerticalLayout();
+        titleArea.setPadding(false);
+        titleArea.setSpacing(false);
+        titleArea.addClassName("summary-card-header-text");
 
         Span titleSpan = new Span(title);
         titleSpan.addClassName("card-title");
 
-        H6 amountH3 = new H6(formatAmount(amount));
-        amountH3.addClassName("card-amount");
-        amountH3.getStyle().set("word-break", "break-word");
-
-        textContent.add(titleSpan, amountH3);
-
-        if (subtitle != null) {
-            Span subtitleSpan = new Span(subtitle);
-            subtitleSpan.addClassName("card-subtitle");
-            textContent.add(subtitleSpan);
-        }
+        titleArea.add(titleSpan);
 
         Div iconContainer = new Div();
         iconContainer.addClassName("card-icon");
-        iconContainer.getStyle().set("flex-shrink", "0");
         Icon icon = new Icon(iconType);
         icon.setSize("1rem");
         iconContainer.add(icon);
 
-        content.add(textContent, iconContainer);
-        card.add(content);
+        header.add(titleArea, iconContainer);
+        return header;
+    }
 
-        // Add hover effect
-        card.getElement().addEventListener("mouseenter", e -> {
-            card.getElement().getStyle().set("transform", "translateY(-4px)");
-        });
+    private Div buildMainValue(String amount, String subtitle) {
+        Div section = new Div();
+        section.addClassName("card-main-value");
 
-        card.getElement().addEventListener("mouseleave", e -> {
-            card.getElement().getStyle().set("transform", "translateY(0)");
-        });
+        H4 amountText = new H4(amount);
+        amountText.addClassName("card-amount");
 
-        return card;
+        section.add(amountText);
+
+        if (subtitle != null && !subtitle.isBlank()) {
+            Span badge = new Span(subtitle);
+            badge.addClassName("card-status-badge");
+            section.add(badge);
+        }
+
+        return section;
     }
 
     private Div createQuarterlySummaryCard(
@@ -225,134 +272,64 @@ public class BudgetSummaryCards extends HorizontalLayout {
             BigDecimal opexB,
             BigDecimal capexB,
             VaadinIcon iconType,
-            String cardClass, String subtitle, String head
+            String cardClass,
+            String subtitle,
+            String head
     ) {
         Div card = new Div();
-        card.addClassName("summary-card");
+        styleCard(card);
         card.addClassName(cardClass);
 
-        // Let CSS control sizing; avoid conflicting min/max unless you must
-        // card.setMinWidth("200px");
-        // card.setMaxWidth("280px");
-        this.setFlexGrow(1, card);
+        HorizontalLayout header = buildCardHeader(title, iconType);
+        Div mainValue = buildMainValue(formatAmount(total), subtitle);
 
-        HorizontalLayout header = new HorizontalLayout();
-        header.setWidthFull();
-        header.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
-        header.setAlignItems(FlexComponent.Alignment.CENTER);
-        header.setPadding(false);
-        header.setSpacing(false);
-
-        VerticalLayout textContent = new VerticalLayout();
-        textContent.setSpacing(false);
-        textContent.setPadding(false);
-
-        Span titleSpan = new Span(title);
-        titleSpan.addClassName("card-title");
-
-        H6 totalAmount = new H6(formatAmount(total));
-        totalAmount.addClassName("card-amount");
-        totalAmount.getStyle().set("word-break", "break-word");
-
-        textContent.add(titleSpan, totalAmount);
-
-        if (subtitle != null) {
-            Span subtitleSpan = new Span(subtitle);
-            subtitleSpan.addClassName("card-subtitle");
-            textContent.add(subtitleSpan);
-        }
-
-        Div iconContainer = new Div();
-        iconContainer.addClassName("card-icon");
-        Icon icon = new Icon(iconType);
-        icon.setSize("1rem");
-        iconContainer.add(icon);
-
-        header.add(textContent, iconContainer);
-
-        // Breakdown (Q1-Q4)
         Div breakdown = new Div();
         breakdown.addClassName("card-breakdown");
         breakdown.add(
-                breakdownRow("Q1.", q1),
-                breakdownRow("Q2.", q2),
-                breakdownRow("Q3.", q3),
-                breakdownRow("Q4.", q4),
-                metricRow("Opex Exp.", opexB, percentage(opexB, total) + "% of " + head),
-                metricRow("Capex Exp.", capexB, percentage(capexB, total) + "% of " + head)
+                compactMetricRow("Q1", formatAmount(q1)),
+                compactMetricRow("Q2", formatAmount(q2)),
+                compactMetricRow("Q3", formatAmount(q3)),
+                compactMetricRow("Q4", formatAmount(q4)),
+                compactMetricRow("Opex", formatAmount(opexB), percentage(opexB, total) + "% of " + head),
+                compactMetricRow("Capex", formatAmount(capexB), percentage(capexB, total) + "% of " + head)
         );
 
-        card.add(header, breakdown);
-
-        // IMPORTANT: remove Java hover listeners; CSS already handles it elegantly
+        card.add(header, mainValue, breakdown);
         return card;
     }
-    
-        private Div createQuarterlySummaryCardRevenue(
+
+    private Div createQuarterlySummaryCardRevenue(
             String title,
-            BigDecimal actualRevenue,//Actual Revenue
-            BigDecimal igr,//IGR Revenue
-            BigDecimal gou_Ext,//GOU&EXTERNAL
+            BigDecimal actualRevenue,
+            BigDecimal igr,
+            BigDecimal gouExt,
             BigDecimal projectedIgr,
-            BigDecimal projectedgou_Ext,
+            BigDecimal projectedGouExt,
             BigDecimal budgetRevenue,
             VaadinIcon iconType,
-            String cardClass, String subtitle
+            String cardClass,
+            String subtitle
     ) {
         Div card = new Div();
-        card.addClassName("summary-card");
+        styleCard(card);
         card.addClassName(cardClass);
 
-        // Let CSS control sizing; avoid conflicting min/max unless you must
-        // card.setMinWidth("200px");
-        // card.setMaxWidth("280px");
-        this.setFlexGrow(1, card);
+        HorizontalLayout header = buildCardHeader(title, iconType);
+        Div mainValue = buildMainValue(formatAmount(actualRevenue), subtitle);
 
-        HorizontalLayout header = new HorizontalLayout();
-        header.setWidthFull();
-        header.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
-        header.setAlignItems(FlexComponent.Alignment.CENTER);
-        header.setPadding(false);
-        header.setSpacing(false);
-
-        VerticalLayout textContent = new VerticalLayout();
-        textContent.setSpacing(false);
-        textContent.setPadding(false);
-
-        Span titleSpan = new Span(title);
-        titleSpan.addClassName("card-title");
-
-        H6 totalAmount = new H6(formatAmount(actualRevenue));
-        totalAmount.addClassName("card-amount");
-        totalAmount.getStyle().set("word-break", "break-word");
-
-        textContent.add(titleSpan, totalAmount);
-
-        if (subtitle != null) {
-            Span subtitleSpan = new Span(subtitle);
-            subtitleSpan.addClassName("card-subtitle");
-            textContent.add(subtitleSpan);
-        }
-
-        Div iconContainer = new Div();
-        iconContainer.addClassName("card-icon");
-        Icon icon = new Icon(iconType);
-        icon.setSize("1rem");
-        iconContainer.add(icon);
-
-        header.add(textContent, iconContainer);
-
-        // Breakdown (Q1-Q4)
         Div breakdown = new Div();
         breakdown.addClassName("card-breakdown");
         breakdown.add(
-                metricRow("IGR.", igr, percentage(igr, projectedIgr) + "% of IGR Revenue Budget | " + percentage(igr, actualRevenue)+ "% of Total Actual Revenue | "+ percentage(igr, budgetRevenue)+ "% of Total Budgeted Revenue"),
-                metricRow("GOU & EXTERNAL.", gou_Ext, percentage(gou_Ext, projectedgou_Ext) + "% of GOU & External Funding Budget | " + percentage(gou_Ext, actualRevenue)+ "% of Total Actual Revenue | "+ percentage(gou_Ext, budgetRevenue)+ "% of Total Budgeted Revenue")
+                compactMetricRow("IGR", formatAmount(igr)),
+                compactMetricRow("IGR vs Budget", percentage(igr, projectedIgr) + "%"),
+                compactMetricRow("IGR Share", percentage(igr, actualRevenue) + "% of actual"),
+                compactMetricRow("GOU/External", formatAmount(gouExt)),
+                compactMetricRow("GOU vs Budget", percentage(gouExt, projectedGouExt) + "%"),
+                compactMetricRow("GOU Share", percentage(gouExt, actualRevenue) + "% of actual"),
+                compactMetricRow("Vs Total Budget Revenue", percentage(actualRevenue, budgetRevenue) + "%")
         );
 
-        card.add(header, breakdown);
-
-        // IMPORTANT: remove Java hover listeners; CSS already handles it elegantly
+        card.add(header, mainValue, breakdown);
         return card;
     }
 
@@ -368,81 +345,105 @@ public class BudgetSummaryCards extends HorizontalLayout {
             BigDecimal remainingB,
             double percentageRemaining,
             VaadinIcon iconType,
-            String cardClass, String subtitle, String head
+            String cardClass,
+            String subtitle,
+            String head
     ) {
         Div card = new Div();
-        card.addClassName("summary-card");
+        styleCard(card);
         card.addClassName(cardClass);
 
-        // Let CSS control sizing; avoid conflicting min/max unless you must
-        // card.setMinWidth("200px");
-        // card.setMaxWidth("280px");
-        this.setFlexGrow(1, card);
+        HorizontalLayout header = buildCardHeader(title, iconType);
+        Div mainValue = buildMainValue(formatAmount(total), subtitle);
 
-        HorizontalLayout header = new HorizontalLayout();
-        header.setWidthFull();
-        header.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
-        header.setAlignItems(FlexComponent.Alignment.CENTER);
-        header.setPadding(false);
-        header.setSpacing(false);
-
-        VerticalLayout textContent = new VerticalLayout();
-        textContent.setSpacing(false);
-        textContent.setPadding(false);
-
-        Span titleSpan = new Span(title);
-        titleSpan.addClassName("card-title");
-
-        H6 totalAmount = new H6(formatAmount(total));
-        totalAmount.addClassName("card-amount");
-        totalAmount.getStyle().set("word-break", "break-word");
-
-        textContent.add(titleSpan, totalAmount);
-
-        if (subtitle != null) {
-            Span subtitleSpan = new Span(subtitle);
-            subtitleSpan.addClassName("card-subtitle");
-            textContent.add(subtitleSpan);
-        }
-
-        Div iconContainer = new Div();
-        iconContainer.addClassName("card-icon");
-        Icon icon = new Icon(iconType);
-        icon.setSize("1rem");
-        iconContainer.add(icon);
-
-        header.add(textContent, iconContainer);
-
-        // Breakdown (Q1-Q4)
         Div breakdown = new Div();
         breakdown.addClassName("card-breakdown");
         breakdown.add(
-                breakdownRow("Q1.", q1),
-                breakdownRow("Q2.", q2),
-                breakdownRow("Q3.", q3),
-                breakdownRow("Q4.", q4),
-                metricRow("Opex Exp.", opexB, percentage(opexB, total) + "% of Actaul Budget"),
-                metricRow("Capex Exp.", capexB, percentage(capexB, total) + "% of Actaul Budget"),
-                metricRow("Remaining Budget.", remainingB, percentageRemaining + "% of Budget")
+                compactMetricRow("Q1", formatAmount(q1)),
+                compactMetricRow("Q2", formatAmount(q2)),
+                compactMetricRow("Q3", formatAmount(q3)),
+                compactMetricRow("Q4", formatAmount(q4)),
+                compactMetricRow("Opex", formatAmount(opexB), percentage(opexB, total) + "% of actual"),
+                compactMetricRow("Capex", formatAmount(capexB), percentage(capexB, total) + "% of actual"),
+                compactMetricRow("Remaining", formatAmount(remainingB), String.format("%.2f%% of budget", percentageRemaining))
         );
 
-        card.add(header, breakdown);
-
-        // IMPORTANT: remove Java hover listeners; CSS already handles it elegantly
+        card.add(header, mainValue, breakdown);
         return card;
     }
 
-    private Div breakdownRow(String label, BigDecimal value) {
+    private Div createFinancialHighlightsCard(
+            BigDecimal approvedBudget,
+            BigDecimal projectedRevenue,
+            BigDecimal actualRevenue,
+            BigDecimal actualExpenditure,
+            BigDecimal revenuePerformancePercent,
+            BigDecimal absorptionRatePercent
+    ) {
+        BigDecimal netPosition = actualRevenue.subtract(actualExpenditure);
+        boolean deficit = netPosition.compareTo(BigDecimal.ZERO) < 0;
+
+        Div card = new Div();
+        styleCard(card);
+        card.addClassName("financial-card");
+
+        HorizontalLayout header = buildCardHeader("1.1 Financial Highlights", VaadinIcon.TRENDING_UP);
+        Div mainValue = buildMainValue(
+                formatAmount(netPosition),
+                deficit ? "Deficit position" : "Surplus position"
+        );
+
+        Div breakdown = new Div();
+        breakdown.addClassName("card-breakdown");
+        breakdown.add(
+                compactMetricRow("Approved Budget", formatAmount(approvedBudget)),
+                compactMetricRow("Income Projection", formatAmount(projectedRevenue)),
+                compactMetricRow("Actual Revenue", formatAmount(actualRevenue), revenuePerformancePercent + "% performance"),
+                compactMetricRow("Actual Expenditure", formatAmount(actualExpenditure), absorptionRatePercent + "% absorption"),
+                compactMetricRow(
+                        deficit ? "Net Deficit" : "Net Surplus",
+                        formatAmount(netPosition),
+                        deficit ? "Below balance" : "Above balance",
+                        deficit ? "negative-metric" : "positive-metric"
+                )
+        );
+
+        card.add(header, mainValue, breakdown);
+        return card;
+    }
+
+    private Div compactMetricRow(String label, String value) {
+        return compactMetricRow(label, value, null, null);
+    }
+
+    private Div compactMetricRow(String label, String value, String meta) {
+        return compactMetricRow(label, value, meta, null);
+    }
+
+    private Div compactMetricRow(String label, String value, String meta, String extraClass) {
         Div row = new Div();
         row.addClassName("breakdown-row");
+        if (extraClass != null && !extraClass.isBlank()) {
+            row.addClassName(extraClass);
+        }
 
-        Span l = new Span(label);
-        l.addClassName("breakdown-label");
+        Div left = new Div();
+        left.addClassName("breakdown-left");
 
-        Span v = new Span(formatAmount(value));
-        v.addClassName("breakdown-value");
+        Span labelSpan = new Span(label);
+        labelSpan.addClassName("breakdown-label");
+        left.add(labelSpan);
 
-        row.add(l, v);
+        if (meta != null && !meta.isBlank()) {
+            Span metaSpan = new Span(meta);
+            metaSpan.addClassName("breakdown-meta");
+            left.add(metaSpan);
+        }
+
+        Span valueSpan = new Span(value);
+        valueSpan.addClassName("breakdown-value");
+
+        row.add(left, valueSpan);
         return row;
     }
 
@@ -462,105 +463,7 @@ public class BudgetSummaryCards extends HorizontalLayout {
         return "UGX " + formatter.format(amount);
     }
 
-    private Div createFinancialHighlightsCard(
-            BigDecimal approvedBudget,
-            BigDecimal projectedRevenue,
-            BigDecimal actualRevenue,
-            BigDecimal actualExpenditure,
-            BigDecimal revenuePerformancePercent,
-            BigDecimal absorptionRatePercent
-    ) {
-
-        // BigDecimal totalRevenue = igr.add(gou).add(external);
-        BigDecimal netPosition = actualRevenue.subtract(actualExpenditure);
-
-        boolean deficit = netPosition.compareTo(BigDecimal.ZERO) < 0;
-
-        Div card = new Div();
-        card.addClassName("summary-card");
-        card.addClassName("financial-card");
-        this.setFlexGrow(1, card);
-
-        // Header
-        HorizontalLayout header = new HorizontalLayout();
-        header.setWidthFull();
-        header.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
-        header.setAlignItems(FlexComponent.Alignment.CENTER);
-        header.setPadding(false);
-        header.setSpacing(false);
-
-        VerticalLayout titleLayout = new VerticalLayout();
-        titleLayout.setSpacing(false);
-        titleLayout.setPadding(false);
-
-        Span title = new Span("1.1 Financial Highlights");
-        title.addClassName("card-title");
-
-        titleLayout.add(title);
-
-        Div iconContainer = new Div();
-        iconContainer.addClassName("card-icon");
-        iconContainer.add(new Icon(VaadinIcon.TRENDING_UP));
-
-        header.add(titleLayout, iconContainer);
-
-        // Body Metrics
-        Div body = new Div();
-        body.addClassName("card-breakdown");
-
-        body.add(
-                metricRow("Approved Expenditure Budget", approvedBudget),
-                metricRow("Approved Income Projection", projectedRevenue),
-                metricRow("Total Actual Revenue", actualRevenue,
-                        revenuePerformancePercent + "% performance"),
-                metricRow("Total Actual Expenditure", actualExpenditure,
-                        absorptionRatePercent + "% absorption"),
-                netPositionRow(deficit ? "Net Position (Deficit)" : "Net Position (Surplus)",
-                        netPosition, deficit)
-        );
-
-        card.add(header, body);
-        return card;
-    }
-
-    private Div metricRow(String label, BigDecimal value) {
-        return metricRow(label, value, null);
-    }
-
-    private Div metricRow(String label, BigDecimal value, String subtitle) {
-        Div row = new Div();
-        row.addClassName("breakdown-row");
-
-        VerticalLayout text = new VerticalLayout();
-        text.setPadding(false);
-        text.setSpacing(false);
-
-        Span l = new Span(label);
-        l.addClassName("breakdown-label");
-
-        Span v = new Span(formatAmount(value));
-        v.addClassName("breakdown-value");
-
-        text.add(l, v);
-
-        if (subtitle != null) {
-            Span sub = new Span(subtitle);
-            sub.addClassName("card-subtitle");
-            text.add(sub);
-        }
-
-        row.add(text);
-        return row;
-    }
-
-    private Div netPositionRow(String label, BigDecimal value, boolean deficit) {
-        Div row = metricRow(label, value);
-        row.addClassName(deficit ? "negative-metric" : "positive-metric");
-        return row;
-    }
-
     private BigDecimal percentage(BigDecimal part, BigDecimal total) {
-
         if (part == null) {
             part = BigDecimal.ZERO;
         }
@@ -568,10 +471,8 @@ public class BudgetSummaryCards extends HorizontalLayout {
             return BigDecimal.ZERO;
         }
 
-        return part
-                .divide(total, 6, RoundingMode.HALF_UP) // intermediate precision
+        return part.divide(total, 6, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100))
-                .setScale(2, RoundingMode.HALF_UP);       // final display scale
+                .setScale(2, RoundingMode.HALF_UP);
     }
-
 }

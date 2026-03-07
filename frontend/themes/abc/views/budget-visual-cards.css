@@ -1,0 +1,68 @@
+.budget-visual-cards {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: stretch;
+    justify-content: center;
+    box-sizing: border-box;
+    margin-top: 1rem;
+}
+
+.budget-visual-cards .graph-card {
+    flex: 1 1 320px;
+    min-width: 280px;
+    max-width: 100%;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(203, 213, 225, 0.45);
+    border-radius: 18px;
+    padding: 1rem;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.budget-visual-cards .graph-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 34px rgba(15, 23, 42, 0.12);
+}
+
+.graph-card-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.graph-card-title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+.graph-card-subtitle {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.graph-card-chart {
+    width: 100%;
+    min-height: 220px;
+    flex: 1;
+}
+
+@media (max-width: 768px) {
+    .budget-visual-cards .graph-card {
+        flex: 1 1 100%;
+        min-width: 100%;
+    }
+
+    .graph-card-chart {
+        min-height: 220px;
+    }
+}

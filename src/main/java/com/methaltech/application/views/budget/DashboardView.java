@@ -151,6 +151,7 @@ public class DashboardView extends VerticalLayout {
 
     private static final DateTimeFormatter FILE_TS = DateTimeFormatter.ofPattern("yyyyMMdd_HHmm");
     private static final DateTimeFormatter PRINT_TS = DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' HH:mm");
+    BudgetVisualCards visualCards;
 
     @Autowired
     public DashboardView(BudgetService budgetService, AuthenticatedUser authenticatedUser, UserService userService, CoaService sampleCoaService,
@@ -249,6 +250,8 @@ public class DashboardView extends VerticalLayout {
                 selectedBudget = e.getValue();
                 loadDashboardData();
                 updateStatusIndicator();
+                //  Budget currentBudget = selectedBudget != null ? selectedBudget : fiscalYear.getValue();
+
             }
         });
 
@@ -313,7 +316,7 @@ public class DashboardView extends VerticalLayout {
         exportwordButton.addClickListener(e -> {
             generateWordReport();
             //showNotification("Export functionality coming soon!", NotificationVariant.LUMO_PRIMARY);
-        });        
+        });
 
         // Settings button
         Button settingsButton = new Button(new Icon(VaadinIcon.COG));
@@ -329,7 +332,7 @@ public class DashboardView extends VerticalLayout {
             showNotification("User profile coming soon!", NotificationVariant.LUMO_CONTRAST);
         });
 
-        rightSide.add(notificationButton, refreshButton, exportButton, exportwordButton,settingsButton, userButton);
+        rightSide.add(notificationButton, refreshButton, exportButton, exportwordButton, settingsButton, userButton);
 
         headerContent.add(leftSide, rightSide);
         header.add(headerContent);
@@ -379,7 +382,14 @@ public class DashboardView extends VerticalLayout {
             // Summary cards with enhanced styling
             BudgetSummaryCards summaryCards = new BudgetSummaryCards(budgetSummary, sampleCoaService, sampleUrcDeptSectionAnlDimbgtService, sampleSALFLDGService, sampleDeptSectionMergerService, selectedBudget);
             summaryCards.addClassName("budget-summary-cards");
-            summaryCards.setJustifyContentMode(JustifyContentMode.CENTER);
+
+            visualCards = new BudgetVisualCards(budgetSummary);
+            add(summaryCards, visualCards);
+
+            System.out.println("Fiscal year changed to: " + fiscalYear.getValue());
+            System.out.println("Total budget: " + budgetSummary.getTotalBudget());
+            System.out.println("Total spent: " + budgetSummary.getTotalSpent());
+            System.out.println("Revenue actual: " + budgetSummary.getRevenueActual());
 
             // Main content grid
             HorizontalLayout mainGrid = new HorizontalLayout();
@@ -392,8 +402,6 @@ public class DashboardView extends VerticalLayout {
             // Department overview with enhanced design
             DepartmentOverview departmentOverview = new DepartmentOverview(budgetSummary.getDepartmentBudgets(), sampleCoaService, sampleUrcDeptSectionAnlDimbgtService, sampleSALFLDGService, sampleDeptSectionMergerService, selectedBudget);
             departmentOverview.addClassName("department-overview");
-
-            
 
             // Revenue breakdown with premium styling
             RevenueBreakdown revenueBreakdown = new RevenueBreakdown(budgetSummary.getRevenueSources());
@@ -1287,7 +1295,6 @@ public class DashboardView extends VerticalLayout {
         }
     }
 
-
     private String buildRecommendations(BudgetSummary s) {
         StringBuilder rec = new StringBuilder();
 
@@ -1330,7 +1337,6 @@ public class DashboardView extends VerticalLayout {
         return rec.toString();
     }
 
-
 // Status shading (soft)
     private String statusColorHex(BigDecimal spentPct) {
         double v = safe(spentPct).doubleValue();
@@ -1353,6 +1359,5 @@ public class DashboardView extends VerticalLayout {
         }
         return "FFDCE6";
     }
-
 
 }
