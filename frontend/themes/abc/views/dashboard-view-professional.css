@@ -115,6 +115,9 @@
 
     /* Centering styles */
     align-items: center;     /* Vertical center */
+    padding-left: 15px;
+    padding-right: 15px;
+  
 }
 
 .dashboard-view::before {
@@ -146,8 +149,7 @@
     top: 0;
     z-index: 1000;
     transition: all var(--dashboard-transition-normal);
-    min-height: 85px;
-    max-height: 85px;
+
 }
 
 .dashboard-header:hover {
@@ -532,7 +534,7 @@
 }
 
 .content-container {
-    gap: var(--dashboard-space-3xl) !important;
+    gap: 0.75rem !important;
 }
 
 /* ===================================================================

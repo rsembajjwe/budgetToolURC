@@ -1,13 +1,7 @@
 package com.methaltech.application.views.budget;
 
-import com.itextpdf.io.font.constants.StandardFonts;
-import com.itextpdf.kernel.colors.ColorConstants;
-import com.itextpdf.kernel.font.PdfFont;
-import com.itextpdf.kernel.font.PdfFontFactory;
-import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
-import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
@@ -34,35 +28,11 @@ import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.*;
-import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.server.StreamRegistration;
-import com.vaadin.flow.server.StreamResource;
 
 import java.io.*;
-import java.math.BigDecimal;
-import java.text.NumberFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
-import java.util.Objects;
-
-import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.server.StreamRegistration;
-import com.vaadin.flow.server.StreamResource;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.util.Units;
 import org.apache.poi.xwpf.usermodel.*;
-
-import java.io.*;
-import java.math.BigDecimal;
-import java.text.NumberFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
 
 import com.methaltech.application.data.bgtool.service.BudgetService;
 import com.methaltech.application.data.bgtool.service.CoaService;
@@ -80,6 +50,7 @@ import com.methaltech.application.data.livedata.service.SALFLDGService;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.MainLayout;
 import com.methaltech.application.views.structure.DepartmentOverview;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -95,12 +66,14 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamRegistration;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
+import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.RolesAllowed;
 import java.io.ByteArrayInputStream;
@@ -109,8 +82,9 @@ import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTPageMar;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSectPr;
@@ -128,7 +102,7 @@ public class DashboardView extends VerticalLayout {
     private final BudgetService budgetService;
     private final UserService userService;
     private AuthenticatedUser authenticatedUser;
-    private VerticalLayout contentContainer;
+    private final VerticalLayout contentContainer = new VerticalLayout();
     private ComboBox<Budget> fiscalYear = new ComboBox<>();
     private Budget selectedBudget;
     private Span statusIndicator;
@@ -152,6 +126,14 @@ public class DashboardView extends VerticalLayout {
     private static final DateTimeFormatter FILE_TS = DateTimeFormatter.ofPattern("yyyyMMdd_HHmm");
     private static final DateTimeFormatter PRINT_TS = DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' HH:mm");
     BudgetVisualCards visualCards;
+    private final Tab overviewTab = new Tab("Overview");
+    private final Tab departmentTab = new Tab("Department Analysis");
+    private final Tab revenueTab = new Tab("Revenue Analysis");
+
+    private final Tabs dashboardTabs = new Tabs(overviewTab, departmentTab, revenueTab);
+    private final Div tabContent = new Div();
+
+    private final Map<Tab, Component> tabsToPages = new LinkedHashMap<>();
 
     @Autowired
     public DashboardView(BudgetService budgetService, AuthenticatedUser authenticatedUser, UserService userService, CoaService sampleCoaService,
@@ -339,6 +321,113 @@ public class DashboardView extends VerticalLayout {
         add(header);
     }
 
+    private HorizontalLayout buildLeftHeader() {
+        HorizontalLayout leftSide = new HorizontalLayout();
+        leftSide.setPadding(false);
+        leftSide.setSpacing(true);
+        leftSide.setAlignItems(FlexComponent.Alignment.CENTER);
+        leftSide.addClassName("dashboard-header-left");
+
+        VerticalLayout titleBlock = new VerticalLayout();
+        titleBlock.setPadding(false);
+        titleBlock.setSpacing(false);
+        titleBlock.setMargin(false);
+
+        H2 title = new H2("Budget Dashboard");
+        title.addClassName("dashboard-title");
+
+        Span subtitle = new Span("Executive overview, departmental analysis, and revenue performance.");
+        subtitle.addClassName("dashboard-subtitle");
+
+        titleBlock.add(title, subtitle);
+
+        Div fiscalWrap = new Div();
+        fiscalWrap.addClassName("fiscal-year-wrap");
+
+        Span fiscalLabel = new Span("Fiscal Year");
+        fiscalLabel.addClassName("fiscal-label");
+
+        fiscalYear.setWidth("260px");
+        fiscalYear.setPlaceholder("Select fiscal year");
+        fiscalYear.addClassName("fiscal-year-selector");
+        fiscalYear.setItemLabelGenerator(Budget::getFinancialYear);
+        fiscalYear.addValueChangeListener(e -> {
+            if (e.getValue() != null) {
+                selectedBudget = e.getValue();
+                loadDashboardData();
+                updateStatusIndicator();
+            }
+        });
+
+        fiscalWrap.add(fiscalLabel, fiscalYear);
+        leftSide.add(titleBlock, fiscalWrap);
+
+        return leftSide;
+    }
+
+    private HorizontalLayout buildRightHeader() {
+        HorizontalLayout rightSide = new HorizontalLayout();
+        rightSide.setPadding(false);
+        rightSide.setSpacing(true);
+        rightSide.setAlignItems(FlexComponent.Alignment.CENTER);
+        rightSide.addClassName("dashboard-header-right");
+
+        VerticalLayout statusBlock = new VerticalLayout();
+        statusBlock.setPadding(false);
+        statusBlock.setSpacing(false);
+        statusBlock.setMargin(false);
+        statusBlock.addClassName("status-block");
+
+        statusIndicator = new Span("System Online");
+        statusIndicator.addClassName("status-indicator");
+
+        lastUpdated = new Span("Last updated: --");
+        lastUpdated.addClassName("last-updated");
+
+        statusBlock.add(statusIndicator, lastUpdated);
+
+        Button refreshButton = new Button("Refresh", new Icon(VaadinIcon.REFRESH));
+        refreshButton.addClassName("primary-action");
+        refreshButton.addClickListener(e -> refreshDashboard());
+
+        Button exportPdfButton = new Button("Export PDF", new Icon(VaadinIcon.DOWNLOAD));
+        exportPdfButton.addClassName("secondary-action");
+        exportPdfButton.addClickListener(e -> generatePDFReport());
+
+        rightSide.add(statusBlock, refreshButton, exportPdfButton);
+        return rightSide;
+    }
+
+    private void createMainContent() {
+        contentContainer.setWidthFull();
+        contentContainer.setSpacing(true);
+        contentContainer.setPadding(false);
+        contentContainer.setMargin(false);
+        contentContainer.addClassName("content-container");
+
+        dashboardTabs.setWidthFull();
+        dashboardTabs.addClassName("dashboard-tabs");
+        dashboardTabs.addSelectedChangeListener(event -> showSelectedTab(event.getSelectedTab()));
+
+        tabContent.setWidthFull();
+        tabContent.addClassName("dashboard-tab-content");
+
+        contentContainer.add(dashboardTabs, tabContent);
+        add(contentContainer);
+        expand(contentContainer);
+    }
+
+    private void showSelectedTab(Tab selectedTab) {
+        tabContent.removeAll();
+
+        Component page = tabsToPages.get(selectedTab);
+        if (page != null) {
+            tabContent.add(page);
+        } else {
+            tabContent.add(new Span("No content available."));
+        }
+    }
+
     private void loadFiscalYearData() {
         fiscalYear.setItems(query -> budgetService.list(
                 PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
@@ -351,27 +440,10 @@ public class DashboardView extends VerticalLayout {
         }
     }
 
-    private void createMainContent() {
-        Div mainContent = new Div();
-        mainContent.addClassName("main-content");
-
-        contentContainer = new VerticalLayout();
-        contentContainer.setWidthFull();
-        contentContainer.setHeightFull();
-        contentContainer.setSpacing(true);
-        contentContainer.setPadding(false);
-        contentContainer.setMargin(false);
-        contentContainer.addClassName("content-container");
-
-        loadDashboardData();
-
-        mainContent.add(contentContainer);
-        add(mainContent);
-    }
-
     private void loadDashboardData() {
         try {
             Budget currentBudget = selectedBudget != null ? selectedBudget : fiscalYear.getValue();
+
             if (currentBudget == null) {
                 showEmptyState();
                 return;
@@ -379,42 +451,70 @@ public class DashboardView extends VerticalLayout {
 
             BudgetSummary budgetSummary = budgetService.getBudgetSummary(currentBudget);
 
-            // Summary cards with enhanced styling
-            BudgetSummaryCards summaryCards = new BudgetSummaryCards(budgetSummary, sampleCoaService, sampleUrcDeptSectionAnlDimbgtService, sampleSALFLDGService, sampleDeptSectionMergerService, selectedBudget);
+            BudgetSummaryCards summaryCards = new BudgetSummaryCards(
+                    budgetSummary,
+                    sampleCoaService,
+                    sampleUrcDeptSectionAnlDimbgtService,
+                    sampleSALFLDGService,
+                    sampleDeptSectionMergerService,
+                    currentBudget
+            );
             summaryCards.addClassName("budget-summary-cards");
 
-            visualCards = new BudgetVisualCards(budgetSummary);
-            add(summaryCards, visualCards);
+            BudgetVisualCards visualCards = new BudgetVisualCards(budgetSummary);
+            visualCards.addClassName("budget-visual-cards-wrapper");
 
-            System.out.println("Fiscal year changed to: " + fiscalYear.getValue());
-            System.out.println("Total budget: " + budgetSummary.getTotalBudget());
-            System.out.println("Total spent: " + budgetSummary.getTotalSpent());
-            System.out.println("Revenue actual: " + budgetSummary.getRevenueActual());
-
-            // Main content grid
-            HorizontalLayout mainGrid = new HorizontalLayout();
-            mainGrid.setWidthFull();
-            mainGrid.setSpacing(true);
-            mainGrid.setPadding(false);
-            mainGrid.setMargin(false);
-            mainGrid.addClassName("dashboard-grid");
-
-            // Department overview with enhanced design
-            DepartmentOverview departmentOverview = new DepartmentOverview(budgetSummary.getDepartmentBudgets(), sampleCoaService, sampleUrcDeptSectionAnlDimbgtService, sampleSALFLDGService, sampleDeptSectionMergerService, selectedBudget);
+            DepartmentOverview departmentOverview = new DepartmentOverview(
+                    budgetSummary.getDepartmentBudgets(),
+                    sampleCoaService,
+                    sampleUrcDeptSectionAnlDimbgtService,
+                    sampleSALFLDGService,
+                    sampleDeptSectionMergerService,
+                    currentBudget
+            );
             departmentOverview.addClassName("department-overview");
 
-            // Revenue breakdown with premium styling
-            RevenueBreakdown revenueBreakdown = new RevenueBreakdown(budgetSummary.getRevenueSources());
+            RevenueBreakdown revenueBreakdown = new RevenueBreakdown(
+                    budgetSummary.getRevenueSources()
+            );
             revenueBreakdown.addClassName("revenue-breakdown");
 
-            contentContainer.removeAll();
-            mainGrid.add(departmentOverview, revenueBreakdown);
-            contentContainer.add(summaryCards, mainGrid);
+            VerticalLayout overviewPage = new VerticalLayout(summaryCards, visualCards);
+            overviewPage.setWidthFull();
+            overviewPage.setPadding(false);
+            overviewPage.setSpacing(true);
+            overviewPage.setMargin(false);
+            overviewPage.addClassName("dashboard-page");
 
+            VerticalLayout departmentPage = new VerticalLayout(departmentOverview);
+            departmentPage.setWidthFull();
+            departmentPage.setPadding(false);
+            departmentPage.setSpacing(true);
+            departmentPage.setMargin(false);
+            departmentPage.addClassName("dashboard-page");
+
+            VerticalLayout revenuePage = new VerticalLayout(revenueBreakdown);
+            revenuePage.setWidthFull();
+            revenuePage.setPadding(false);
+            revenuePage.setSpacing(true);
+            revenuePage.setMargin(false);
+            revenuePage.addClassName("dashboard-page");
+
+            tabsToPages.clear();
+            tabsToPages.put(overviewTab, overviewPage);
+            tabsToPages.put(departmentTab, departmentPage);
+            tabsToPages.put(revenueTab, revenuePage);
+
+            Tab selectedTab = dashboardTabs.getSelectedTab() != null
+                    ? dashboardTabs.getSelectedTab()
+                    : overviewTab;
+
+            showSelectedTab(selectedTab);
             updateStatusIndicator();
+
         } catch (Exception e) {
-            System.out.println(e.getMessage());
-            showNotification("Error loading dashboard data2: " + e.getMessage(), NotificationVariant.LUMO_ERROR);
+            e.printStackTrace();
+            showNotification("Error loading dashboard data: " + e.getMessage(), NotificationVariant.LUMO_ERROR);
         }
     }
 

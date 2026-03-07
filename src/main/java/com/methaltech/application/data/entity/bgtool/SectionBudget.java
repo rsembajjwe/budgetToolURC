@@ -129,4 +129,31 @@ public class SectionBudget implements Serializable {
                 .multiply(BigDecimal.valueOf(100))
                 .setScale(2, RoundingMode.HALF_UP);
     }
+    public BigDecimal getCommittedPercentage() {
+    return percentage(committedAmount, allocatedBudget);
+}
+
+public BigDecimal getAvailablePercentage() {
+    return percentage(availableAmount, allocatedBudget);
+}
+
+public BigDecimal getTotalConsumedAmount() {
+    return safe(spentAmount).add(safe(committedAmount));
+}
+
+public BigDecimal getTotalConsumedPercentage() {
+    return percentage(getTotalConsumedAmount(), allocatedBudget);
+}
+
+public boolean isHealthy() {
+    return "On Track".equals(status);
+}
+
+public boolean hasCommitments() {
+    return safe(committedAmount).compareTo(BigDecimal.ZERO) > 0;
+}
+
+public boolean hasAvailableBudget() {
+    return safe(availableAmount).compareTo(BigDecimal.ZERO) > 0;
+}
 }

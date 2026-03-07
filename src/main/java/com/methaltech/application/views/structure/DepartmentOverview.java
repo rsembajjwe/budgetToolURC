@@ -162,7 +162,7 @@ public class DepartmentOverview extends VerticalLayout {
         budgetInfo.add(
                 createBudgetItem("Budget", department.getTotalBudget()),
                 createBudgetItemSpent,
-                createBudgetItem("Committed", department.getTotalCommitted()),
+                //createBudgetItem("Committed", department.getTotalCommitted()),
                 createBudgetItem("Available", department.getAvailableBudget())
         );
 

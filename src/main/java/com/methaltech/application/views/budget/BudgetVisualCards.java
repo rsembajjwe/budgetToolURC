@@ -10,7 +10,9 @@ public class BudgetVisualCards extends Div {
 
     private final GraphCard utilizationCard;
     private final GraphCard revenuePerformanceCard;
-    private final GraphCard opexCapexCard;
+    private final GraphCard netPositionCard;
+    private final GraphCard expenditureMixCard;
+    private final GraphCard revenueCompositionCard;
     private final GraphCard quarterlyActualsCard;
 
     public BudgetVisualCards(BudgetSummary summary) {
@@ -19,95 +21,146 @@ public class BudgetVisualCards extends Div {
 
         utilizationCard = new GraphCard("", "", "radialBar", "{}");
         revenuePerformanceCard = new GraphCard("", "", "radialBar", "{}");
-        opexCapexCard = new GraphCard("", "", "donut", "{}");
+        netPositionCard = new GraphCard("", "", "bar", "{}");
+        expenditureMixCard = new GraphCard("", "", "donut", "{}");
+        revenueCompositionCard = new GraphCard("", "", "donut", "{}");
         quarterlyActualsCard = new GraphCard("", "", "bar", "{}");
 
-        add(utilizationCard, revenuePerformanceCard, opexCapexCard, quarterlyActualsCard);
+        add(
+                utilizationCard,
+                revenuePerformanceCard,
+                netPositionCard,
+                expenditureMixCard,
+                revenueCompositionCard,
+                quarterlyActualsCard
+        );
 
         refresh(summary);
     }
 
-public void refresh(BudgetSummary summary) {
-    utilizationCard.updateChart(
-            "Budget Utilization",
-            formatPercent(percentage(summary.getTotalSpent(), summary.getTotalBudget())) + " used",
-            "radialBar",
-            createRadialConfig(
-                    percentage(summary.getTotalSpent(), summary.getTotalBudget()).doubleValue(),
-                    "Used",
-                    "#ef4444"
-            )
-    );
+    public void refresh(BudgetSummary summary) {
+        BigDecimal totalSpent = nz(summary.getTotalSpent()).abs();
+        BigDecimal totalBudget = nz(summary.getTotalBudget()).abs();
+        BigDecimal remainingBudget = nz(summary.getRemainingBudget()).abs();
 
-    revenuePerformanceCard.updateChart(
-            "Revenue Performance",
-            formatPercent(percentage(summary.getRevenueActual(), summary.getProjectedRevenue())) + " achieved",
-            "radialBar",
-            createRadialConfig(
-                    percentage(summary.getRevenueActual(), summary.getProjectedRevenue()).doubleValue(),
-                    "Revenue",
-                    "#10b981"
-            )
-    );
+        BigDecimal revenueActual = nz(summary.getRevenueActual()).abs();
+        BigDecimal projectedRevenue = nz(summary.getProjectedRevenue()).abs();
 
-    opexCapexCard.updateChart(
-            "Opex vs Capex",
-            "Actual expenditure split",
-            "donut",
-            createDonutConfig(
-                    new double[]{
-                            n(summary.getOpexActual()),
-                            n(summary.getCapexActual())
-                    },
-                    new String[]{"Opex", "Capex"},
-                    new String[]{"#3b82f6", "#8b5cf6"}
-            )
-    );
+        BigDecimal opexActual = nz(summary.getOpexActual()).abs();
+        BigDecimal capexActual = nz(summary.getCapexActual()).abs();
 
-    quarterlyActualsCard.updateChart(
-            "Quarterly Actuals",
-            "Actual expenditure by quarter",
-            "bar",
-            createBarConfig(
-                    new String[]{"Q1", "Q2", "Q3", "Q4"},
-                    new double[]{
-                            n(summary.getCumQtr1Actual()),
-                            n(summary.getCumQtr2Actual()),
-                            n(summary.getCumQtr3Actual()),
-                            n(summary.getCumQtr4Actual())
-                    },
-                    "Actuals"
-            )
-    );
-}
+        BigDecimal igrActual = nz(summary.getIgrTotalActualRevenue()).abs();
+        BigDecimal gouActual = nz(summary.getGouTotalActualRevenue()).abs();
 
-private String createRadialConfig(double value, String label, String color) {
-    double safeValue = Math.max(0, Math.min(100, value));
+        BigDecimal q1 = nz(summary.getCumQtr1Actual()).abs();
+        BigDecimal q2 = nz(summary.getCumQtr2Actual()).abs();
+        BigDecimal q3 = nz(summary.getCumQtr3Actual()).abs();
+        BigDecimal q4 = nz(summary.getCumQtr4Actual()).abs();
 
-    return """
-    {
-      "series": [%s],
-      "labels": ["%s"],
-      "colors": ["%s"],
-      "height": 220,
-      "plotOptions": {
-        "radialBar": {
-          "hollow": { "size": "62%%" },
-          "track": { "background": "#eef2f7" },
-          "dataLabels": {
-            "name": { "fontSize": "14px" },
-            "value": {
-              "fontSize": "22px",
-              "fontWeight": 700
+        BigDecimal netPosition = revenueActual.subtract(totalSpent);
+
+        utilizationCard.updateChart(
+                "Budget Utilization",
+                formatPercent(percentage(totalSpent, totalBudget)) + " used",
+                "radialBar",
+                createRadialConfig(
+                        percentage(totalSpent, totalBudget).doubleValue(),
+                        "Used",
+                        "#ef4444"
+                )
+        );
+
+        revenuePerformanceCard.updateChart(
+                "Revenue Performance",
+                formatPercent(percentage(revenueActual, projectedRevenue)) + " achieved",
+                "radialBar",
+                createRadialConfig(
+                        percentage(revenueActual, projectedRevenue).doubleValue(),
+                        "Revenue",
+                        "#10b981"
+                )
+        );
+
+        netPositionCard.updateChart(
+                "Net Position",
+                netPosition.signum() < 0 ? "Deficit" : "Surplus",
+                "bar",
+                createComparisonBarConfig(
+                        new String[]{"Revenue", "Expenditure"},
+                        new double[]{revenueActual.doubleValue(), totalSpent.doubleValue()},
+                        "UGX"
+                )
+        );
+
+        expenditureMixCard.updateChart(
+                "Expenditure Mix",
+                "Opex vs Capex",
+                "donut",
+                createDonutConfigSafe(
+                        new double[]{opexActual.doubleValue(), capexActual.doubleValue()},
+                        new String[]{"Opex", "Capex"},
+                        new String[]{"#3b82f6", "#8b5cf6"}
+                )
+        );
+
+        revenueCompositionCard.updateChart(
+                "Revenue Composition",
+                "IGR vs GOU/External",
+                "donut",
+                createDonutConfigSafe(
+                        new double[]{igrActual.doubleValue(), gouActual.doubleValue()},
+                        new String[]{"IGR", "GOU/External"},
+                        new String[]{"#10b981", "#f59e0b"}
+                )
+        );
+
+        quarterlyActualsCard.updateChart(
+                "Quarterly Expenditure",
+                "Actual expenditure by quarter",
+                "bar",
+                createBarConfig(
+                        new String[]{"Q1", "Q2", "Q3", "Q4"},
+                        new double[]{q1.doubleValue(), q2.doubleValue(), q3.doubleValue(), q4.doubleValue()},
+                        "Actuals"
+                )
+        );
+    }
+
+    private String createRadialConfig(double value, String label, String color) {
+        double safeValue = Math.max(0, Math.min(100, value));
+
+        return """
+        {
+          "series": [%s],
+          "labels": ["%s"],
+          "colors": ["%s"],
+          "height": 220,
+          "plotOptions": {
+            "radialBar": {
+              "hollow": { "size": "62%%" },
+              "track": { "background": "#eef2f7" },
+              "dataLabels": {
+                "name": { "fontSize": "14px" },
+                "value": { "fontSize": "22px", "fontWeight": 700 }
+              }
             }
           }
         }
-      }
+        """.formatted(safeValue, escape(label), escape(color));
     }
-    """.formatted(safeValue, escape(label), escape(color));
-}
 
-    private String createDonutConfig(double[] values, String[] labels, String[] colors) {
+    private String createDonutConfigSafe(double[] values, String[] labels, String[] colors) {
+        boolean allZero = true;
+        for (double v : values) {
+            if (v > 0) {
+                allZero = false;
+                break;
+            }
+        }
+
+        double[] safeValues = allZero ? new double[]{1, 1} : values;
+        String[] safeColors = allZero ? new String[]{"#cbd5e1", "#e2e8f0"} : colors;
+
         return """
         {
           "series": [%s],
@@ -122,9 +175,9 @@ private String createRadialConfig(double value, String label, String color) {
           }
         }
         """.formatted(
-                joinNumbers(values),
+                joinNumbers(safeValues),
                 joinQuoted(labels),
-                joinQuoted(colors)
+                joinQuoted(safeColors)
         );
     }
 
@@ -153,6 +206,32 @@ private String createRadialConfig(double value, String label, String color) {
         );
     }
 
+    private String createComparisonBarConfig(String[] categories, double[] values, String seriesName) {
+        return """
+        {
+          "series": [{
+            "name": "%s",
+            "data": [%s]
+          }],
+          "xaxis": {
+            "categories": [%s]
+          },
+          "height": 220,
+          "plotOptions": {
+            "bar": {
+              "horizontal": true,
+              "borderRadius": 6,
+              "barHeight": "45%%"
+            }
+          }
+        }
+        """.formatted(
+                escape(seriesName),
+                joinNumbers(values),
+                joinQuoted(categories)
+        );
+    }
+
     private BigDecimal percentage(BigDecimal part, BigDecimal total) {
         if (part == null) {
             part = BigDecimal.ZERO;
@@ -166,8 +245,8 @@ private String createRadialConfig(double value, String label, String color) {
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
-    private double n(BigDecimal value) {
-        return value == null ? 0.0 : value.doubleValue();
+    private BigDecimal nz(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 
     private String formatPercent(BigDecimal value) {
