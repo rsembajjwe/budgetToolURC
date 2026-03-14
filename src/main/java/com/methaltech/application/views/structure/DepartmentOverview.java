@@ -129,7 +129,7 @@ public class DepartmentOverview extends VerticalLayout {
         BigDecimal avgUtilization = percentage(totalSpent, totalBudget);
 
         metricsRow.add(
-                createOverviewMetric("Departments", String.valueOf(departmentBudgets.size()), VaadinIcon.USERS),
+                createOverviewMetric("Cost Centres", String.valueOf(departmentBudgets.size()), VaadinIcon.USERS),
                 createOverviewMetric("Allocated Budget", formatCurrency(totalBudget), VaadinIcon.WALLET),
                 createOverviewMetric("Total Spent", formatCurrency(totalSpent), VaadinIcon.TRENDING_DOWN),
                 createOverviewMetric("Available Budget", formatCurrency(totalAvailable), VaadinIcon.MONEY_DEPOSIT),
@@ -412,74 +412,102 @@ public class DepartmentOverview extends VerticalLayout {
     }
 
     private String createBudgetVsSpentConfig(List<DepartmentBudget> departments) {
+
         String[] categories = departments.stream()
-                .map(d -> nvl(d.getDepartmentCode(), "N/A"))
+                .map(d -> nvl(shortDeptName(d.getDepartmentName()), "N/A"))
                 .toArray(String[]::new);
 
         String budgetSeries = departments.stream()
-                .map(d -> nz(d.getTotalBudget()).abs().toPlainString())
+                .map(d -> toMillions(d.getTotalBudget()))
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("");
 
         String spentSeries = departments.stream()
-                .map(d -> nz(d.getTotalSpent()).abs().toPlainString())
+                .map(d -> toMillions(d.getTotalSpent()))
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("");
 
         return """
-        {
-          "series": [
-            { "name": "Budget", "data": [%s] },
-            { "name": "Spent", "data": [%s] }
-          ],
-          "xaxis": {
-            "categories": [%s]
-          },
-          "height": 260,
-          "plotOptions": {
-            "bar": {
-              "borderRadius": 6,
-              "columnWidth": "45%%"
-            }
-          }
+    {
+      "series": [
+        { "name": "Budget (UGX M)", "data": [%s] },
+        { "name": "Spent (UGX M)", "data": [%s] }
+      ],
+      "xaxis": {
+        "categories": [%s],
+        "title": { "text": "Departments" }
+      },
+      "yaxis": {
+        "title": { "text": "UGX (Millions)" }
+      },
+      "height": 260,
+      "plotOptions": {
+        "bar": {
+          "borderRadius": 6,
+          "columnWidth": "45%%"
         }
-        """.formatted(
+      },
+      "dataLabels": {
+        "enabled": true
+      }
+    }
+    """.formatted(
                 budgetSeries,
                 spentSeries,
                 joinQuoted(categories)
         );
     }
 
+    private String toMillions(BigDecimal value) {
+        return nz(value)
+                .divide(BigDecimal.valueOf(1_000_000), 2, RoundingMode.HALF_UP)
+                .toPlainString();
+    }
+
     private String createDepartmentUtilizationConfig(List<DepartmentBudget> departments) {
+
         String[] categories = departments.stream()
-                .map(d -> nvl(d.getDepartmentCode(), "N/A"))
+                .map(d -> nvl(shortDeptName(d.getDepartmentName()), "N/A"))
                 .toArray(String[]::new);
 
-        String values = departments.stream()
+        String utilizationSeries = departments.stream()
                 .map(d -> nz(d.getSpentPercentage()).toPlainString())
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("");
 
         return """
-        {
-          "series": [{
-            "name": "Utilization",
-            "data": [%s]
-          }],
-          "xaxis": {
-            "categories": [%s]
-          },
-          "height": 260,
-          "plotOptions": {
-            "bar": {
-              "borderRadius": 6,
-              "columnWidth": "45%%"
-            }
-          }
+    {
+      "series": [{
+        "name": "Utilization",
+        "data": [%s]
+      }],
+      "xaxis": {
+        "categories": [%s]
+      },
+      "chartUnit": "percent",
+      "yaxis": {
+        "title": {
+          "text": "Budget Utilization (%%)"
         }
-        """.formatted(values, joinQuoted(categories));
+      },
+      "height": 260,
+      "plotOptions": {
+        "bar": {
+          "borderRadius": 6,
+          "columnWidth": "45%%"
+        }
+      }
+               
     }
-
+    """.formatted(
+                utilizationSeries,
+                joinQuoted(categories)
+        );
+    }
+private String shortDeptName(String name) {
+    if (name == null) return "N/A";
+    return name.length() > 14 ? name.substring(0, 14) + "..." : name;
+}
     private String createDepartmentStatusConfig(List<DepartmentBudget> departments) {
         long onTrack = departments.stream().filter(d -> "On Track".equalsIgnoreCase(nvl(d.getStatusText(), ""))).count();
         long near = departments.stream().filter(d -> "Near Limit".equalsIgnoreCase(nvl(d.getStatusText(), ""))).count();

@@ -18,7 +18,6 @@ public class SectionBudget implements Serializable {
     private String departmentCode;
     private BigDecimal allocatedBudget;
     private BigDecimal spentAmount;
-    private BigDecimal committedAmount;
     private BigDecimal availableAmount;
     private String status;
     private String description;
@@ -26,36 +25,35 @@ public class SectionBudget implements Serializable {
     private static final BigDecimal NEAR_LIMIT_HIGH = BigDecimal.valueOf(90);
 
     // Constructor from entity
-    public SectionBudget(UrcDeptSectionAnlDimbgt section, BigDecimal allocatedBudget, BigDecimal spentAmount, BigDecimal committedAmount) {
+    public SectionBudget(UrcDeptSectionAnlDimbgt section, BigDecimal allocatedBudget, BigDecimal spentAmount) {
         this.sectionCode = section.getANL_CODE();
         this.sectionName = section.getNAME();
         this.categoryId = section.getANL_CAT_ID();
         this.allocatedBudget = allocatedBudget;
         this.spentAmount = spentAmount;
-        this.committedAmount = committedAmount;
-        this.availableAmount = allocatedBudget.subtract(spentAmount).subtract(committedAmount);
+        this.availableAmount = allocatedBudget.subtract(spentAmount.abs());
         this.status = calculateStatus();
     }
 
     public BigDecimal getSpentPercentage() {
-        return percentage(spentAmount, allocatedBudget);
+        return percentage(spentAmount.abs(), allocatedBudget);
     }
 
     public BigDecimal getUtilizationPercentage() {
         return percentage(
-                safe(spentAmount).add(safe(committedAmount)),
+                safe(spentAmount.abs()),
                 allocatedBudget
         );
     }
 
     public BigDecimal getRemainingBudget() {
         return safe(allocatedBudget)
-                .subtract(safe(spentAmount))
+                .subtract(safe(spentAmount.abs()))
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
     public boolean isOverBudget() {
-        return safe(spentAmount)
+        return safe(spentAmount.abs())
                 .compareTo(safe(allocatedBudget)) > 0;
     }
 
@@ -129,31 +127,24 @@ public class SectionBudget implements Serializable {
                 .multiply(BigDecimal.valueOf(100))
                 .setScale(2, RoundingMode.HALF_UP);
     }
-    public BigDecimal getCommittedPercentage() {
-    return percentage(committedAmount, allocatedBudget);
-}
 
-public BigDecimal getAvailablePercentage() {
-    return percentage(availableAmount, allocatedBudget);
-}
+    public BigDecimal getAvailablePercentage() {
+        return percentage(availableAmount, allocatedBudget);
+    }
 
-public BigDecimal getTotalConsumedAmount() {
-    return safe(spentAmount).add(safe(committedAmount));
-}
+    public BigDecimal getTotalConsumedAmount() {
+        return safe(spentAmount.abs());
+    }
 
-public BigDecimal getTotalConsumedPercentage() {
-    return percentage(getTotalConsumedAmount(), allocatedBudget);
-}
+    public BigDecimal getTotalConsumedPercentage() {
+        return percentage(getTotalConsumedAmount(), allocatedBudget);
+    }
 
-public boolean isHealthy() {
-    return "On Track".equals(status);
-}
+    public boolean isHealthy() {
+        return "On Track".equals(status);
+    }
 
-public boolean hasCommitments() {
-    return safe(committedAmount).compareTo(BigDecimal.ZERO) > 0;
-}
-
-public boolean hasAvailableBudget() {
-    return safe(availableAmount).compareTo(BigDecimal.ZERO) > 0;
-}
+    public boolean hasAvailableBudget() {
+        return safe(availableAmount).compareTo(BigDecimal.ZERO) > 0;
+    }
 }

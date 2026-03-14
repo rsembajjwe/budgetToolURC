@@ -82,6 +82,7 @@ public class BudgetService {
     private final Random random = new Random();
     GetPeriods periodsGen = new GetPeriods();
     BigDecimal igrTotalRevenueActual = BigDecimal.ZERO;
+    BigDecimal totalSpent = BigDecimal.ZERO;
 
     private final String[] colors = {
         "#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6",
@@ -385,10 +386,10 @@ public class BudgetService {
         BigDecimal igrRevenueQtr1Actual = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriodsByQuarter(budget, 1));
         BigDecimal igrRevenueQtr2Actual = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriodsByQuarter(budget, 2));
         BigDecimal igrRevenueQtr3Actual = sampleSALFLDGService.findTotalAmountByPeriodsAndIGR(periodsGen.getFinancialYearPeriodsByQuarter(budget, 3));
-        
+
         BigDecimal igrBudgetRevenue = budgetItemsService.calculateTotalIGRBudget(budget);
         BigDecimal gou_ExtBudgetRevenue = budgetItemsService.calculateTotalNotIGRBudget(budget);
-        
+
         BigDecimal gou_ExtTotalRevenueActual = sampleSALFLDGService.findTotalIncomeByPeriodsAndGOU_EXT(periodsGen.getFinancialYearPeriods(budget));
 
         /*        BigDecimal gouTotalRevenueBudget = qtrReleasesServiceImpl.getTotalReleasedByBudgetAndFundType(budget, FundType.GOU);
@@ -408,15 +409,15 @@ public class BudgetService {
         BigDecimal projectedRevenueQtr4Budget = budgetItemsService.calculateTotalProjectedIncomeQ4(budget);
 
         BigDecimal revenueQtr1Actual = sampleSALFLDGService.findTotalIncomeByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 1));
-        BigDecimal revenueQtr2Actual= sampleSALFLDGService.findTotalIncomeByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 2));
-        BigDecimal revenueQtr3Actual= sampleSALFLDGService.findTotalIncomeByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 3));
-        BigDecimal revenueQtr4Actual= sampleSALFLDGService.findTotalIncomeByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 4));
-        BigDecimal revenueActual= sampleSALFLDGService.findTotalIncomeByPeriods(periodsGen.getFinancialYearPeriods(budget));
-        
-        BigDecimal opexBudget=  budgetItemsService.calculateTotalOpexBudget(budget);
-        BigDecimal capexBudget= budgetItemsService.calculateTotalCapexBudget(budget);
-        BigDecimal opexActual= sampleSALFLDGService.findTotalOpexByPeriods(periodsGen.getFinancialYearPeriods(budget));
-        BigDecimal capexActual= sampleSALFLDGService.findTotalCapexByPeriods(periodsGen.getFinancialYearPeriods(budget));        
+        BigDecimal revenueQtr2Actual = sampleSALFLDGService.findTotalIncomeByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 2));
+        BigDecimal revenueQtr3Actual = sampleSALFLDGService.findTotalIncomeByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 3));
+        BigDecimal revenueQtr4Actual = sampleSALFLDGService.findTotalIncomeByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 4));
+        BigDecimal revenueActual = sampleSALFLDGService.findTotalIncomeByPeriods(periodsGen.getFinancialYearPeriods(budget));
+
+        BigDecimal opexBudget = budgetItemsService.calculateTotalOpexBudget(budget);
+        BigDecimal capexBudget = budgetItemsService.calculateTotalCapexBudget(budget);
+        BigDecimal opexActual = sampleSALFLDGService.findTotalOpexByPeriods(periodsGen.getFinancialYearPeriods(budget));
+        BigDecimal capexActual = sampleSALFLDGService.findTotalCapexByPeriods(periodsGen.getFinancialYearPeriods(budget));
 
         return new BudgetSummary(
                 totalBudget,
@@ -450,10 +451,10 @@ public class BudgetService {
                 zeroValue,
                 zeroValue,
                 projectedRevenueQtr1Budget,
-               projectedRevenueQtr2Budget,
+                projectedRevenueQtr2Budget,
                 projectedRevenueQtr3Budget,
                 projectedRevenueQtr4Budget,
-               revenueQtr1Actual,
+                revenueQtr1Actual,
                 revenueQtr2Actual,
                 revenueQtr3Actual,
                 revenueQtr4Actual,
@@ -480,16 +481,15 @@ public class BudgetService {
     public List<DepartmentBudget> getDepartmentBudgets(Budget budget) {
         List<UrcDepartmentAnlDim> departments = findActiveDepartments();
         return departments.stream().map(dept -> {
-            Set<UrcDeptSectionAnlDimbgt> sections = deptSectionMergerService.getSectionsByDeptCode(dept.getANL_CODE());
+            Set<UrcDeptSectionAnlDimbgt> sections = deptSectionMergerService.getSectionsByDeptCode2(dept.getANL_CODE());
 
             BigDecimal baseBudget = BigDecimal.ZERO; // 50M to 500M UGX
             baseBudget = budgetItemsService.calculateTotalDeptExpenditure(budget, sections.stream().toList());
 
             BigDecimal spentPercentage = BigDecimal.ZERO; // 30% to 90%
-            BigDecimal totalSpent = BigDecimal.ZERO;
+
             BigDecimal totalCommitted = BigDecimal.ZERO; // 5% to 20%
             totalCommitted = BigDecimal.ZERO;
-
             BigDecimal cumQtr1Budget = BigDecimal.ZERO;
             cumQtr1Budget = budgetItemsService.calculateTotalDeptExpenditureQtr1(budget, sections.stream().toList());
             BigDecimal cumQtr2Budget = BigDecimal.ZERO;
@@ -505,18 +505,23 @@ public class BudgetService {
             BigDecimal cumQtr4Actual = BigDecimal.ZERO;
 
             Set<String> sects = new HashSet<>();
-            if (dept.getANL_CODE() != null && !dept.getANL_CODE().isEmpty()) {
-                Optional<DeptSectionMerger> merger = sampleDeptSectionMergerService.findByDeptcodeCustom(dept.getANL_CODE());
-                if (merger.isPresent()) {
-                    DeptSectionMerger deptSectionMerger = merger.get();
-                    sects = deptSectionMerger.getSectioncodes();
-
-                }
+            /*            if (dept.getANL_CODE() != null && !dept.getANL_CODE().isEmpty()) {
+            Optional<DeptSectionMerger> merger = sampleDeptSectionMergerService.findByDeptcodeCustom(dept.getANL_CODE());
+            if (merger.isPresent()) {
+            DeptSectionMerger deptSectionMerger = merger.get();
+            sects = deptSectionMerger.getSectioncodes();
+            
             }
+            }*/
+            sects = sections.stream()
+                    .map(UrcDeptSectionAnlDimbgt::getANL_CODE)
+                    .filter(Objects::nonNull)
+                    .map(code -> String.format("%-15s", code)) // right-pad with spaces to length 15
+                    .collect(Collectors.toSet());
             String color = colors[Math.abs(dept.getANL_CODE().hashCode()) % colors.length];
             int sectionCount = sects.size();
-            if (dept.getANL_CODE().equals("#              ")) {
-                System.out.println(dept.getANL_CODE() + "Contains #");
+            if (dept.getANL_CODE().contains("#")) {
+
                 totalSpent = sampleSALFLDGService.findTotalAmountByPeriodsAndUnAnalyzed(getFinancialYearPeriods(budget)).add(sampleSALFLDGService.getTotalAmountByPeriods(getFinancialYearPeriods(budget), sects));
                 cumQtr1Actual = sampleSALFLDGService.findTotalAmountByPeriodsAndUnAnalyzed(periodsGen.getFinancialYearPeriodsByQuarter(budget, 1))
                         .add(sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 1), sects));
@@ -526,8 +531,18 @@ public class BudgetService {
                         .add(sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 3), sects));
                 cumQtr4Actual = sampleSALFLDGService.findTotalAmountByPeriodsAndUnAnalyzed(periodsGen.getFinancialYearPeriodsByQuarter(budget, 4))
                         .add(sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 4), sects));
+
+                sects.forEach(v -> {
+                    System.out.println(v + ":Code " + totalSpent);
+                });
+                System.out.println(sects + ":Code " + totalSpent);
             } else {
+
                 totalSpent = sampleSALFLDGService.getTotalAmountByPeriods(getFinancialYearPeriods(budget), sects);
+                sects.forEach(v -> {
+                    System.out.println(v + ":Code " + totalSpent);
+                });
+                System.out.println(sects + ":Code " + totalSpent);
 
                 cumQtr1Actual = sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 1), sects);
                 cumQtr2Actual = sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 2), sects);
@@ -597,8 +612,8 @@ public class BudgetService {
             double committedPercentage = 0.0; // 5% to 20%
             BigDecimal committedAmount = BigDecimal.ZERO;
             baseBudget = budgetItemsService.calculateTotalDeptExpenditure2(budget, section);
-            spentAmount = sampleSALFLDGService.getTotalAmountByPeriods2(getFinancialYearPeriods(budget), section.getANL_CODE()).negate();
-            SectionBudget sectionBudget = new SectionBudget(section, baseBudget, spentAmount, committedAmount);
+            spentAmount = sampleSALFLDGService.getTotalAmountByPeriods2(getFinancialYearPeriods(budget), section.getANL_CODE()).abs();
+            SectionBudget sectionBudget = new SectionBudget(section, baseBudget, spentAmount);
             sectionBudget.setDepartmentCode(departmentCode);
             sectionBudget.setDescription(generateSectionDescription(section.getNAME()));
 
@@ -617,7 +632,7 @@ public class BudgetService {
         BigDecimal spentAmount = BigDecimal.ZERO;
         BigDecimal committedAmount = BigDecimal.ZERO;
 
-        SectionBudget sectionBudget = new SectionBudget(section, baseBudget, spentAmount, committedAmount);
+        SectionBudget sectionBudget = new SectionBudget(section, baseBudget, spentAmount);
         sectionBudget.setDescription(generateSectionDescription(section.getNAME()));
 
         return sectionBudget;
@@ -692,7 +707,75 @@ public class BudgetService {
 
     public List<UrcDepartmentAnlDim> findActiveDepartments() {
         //return urcDepartmentAnlDimRepository.findByANL_CODEStartingWithD();
-        return urcDepartmentAnlDimRepository.findAll();
+        List<UrcDepartmentAnlDim> deptList = new ArrayList();
+        UrcDepartmentAnlDim notAnalysed = new UrcDepartmentAnlDim();
+        notAnalysed.setANL_CODE("#              ");
+        notAnalysed.setNAME("Not Analysed");
+
+        UrcDepartmentAnlDim civil = new UrcDepartmentAnlDim();
+        civil.setANL_CODE("D0003");
+        civil.setNAME("Civil Department");
+
+        UrcDepartmentAnlDim mechanical = new UrcDepartmentAnlDim();
+        mechanical.setANL_CODE("D0002");
+        mechanical.setNAME("Mechanical Department");
+
+        UrcDepartmentAnlDim hr = new UrcDepartmentAnlDim();
+        hr.setANL_CODE("S016");
+        hr.setNAME("Human Resource Section");
+
+        UrcDepartmentAnlDim md = new UrcDepartmentAnlDim();
+        md.setANL_CODE("D0007");
+        md.setNAME("MD Section");
+
+        UrcDepartmentAnlDim security = new UrcDepartmentAnlDim();
+        security.setANL_CODE("S015");
+        security.setNAME("Security Section");
+
+        UrcDepartmentAnlDim internal_Audit = new UrcDepartmentAnlDim();
+        internal_Audit.setANL_CODE("D0008");
+        internal_Audit.setNAME("Internal Audit Department");
+
+        UrcDepartmentAnlDim operations = new UrcDepartmentAnlDim();
+        operations.setANL_CODE("D0001");
+        operations.setNAME("Operations Department");
+
+        UrcDepartmentAnlDim corporate_planning = new UrcDepartmentAnlDim();
+        corporate_planning.setANL_CODE("S014");
+        corporate_planning.setNAME("Corporate Planning Section");
+
+        UrcDepartmentAnlDim finance = new UrcDepartmentAnlDim();
+        finance.setANL_CODE("D0006");
+        finance.setNAME("Finance Section");
+
+        UrcDepartmentAnlDim procurement = new UrcDepartmentAnlDim();
+        procurement.setANL_CODE("S013");
+        procurement.setNAME("Procurement Section");
+
+        UrcDepartmentAnlDim ict = new UrcDepartmentAnlDim();
+        ict.setANL_CODE("S011");
+        ict.setNAME("Information Technology Section");
+
+        UrcDepartmentAnlDim legal = new UrcDepartmentAnlDim();
+        legal.setANL_CODE("D0005");
+        legal.setNAME("Legal Department");
+
+        deptList.add(civil);
+        deptList.add(mechanical);
+        deptList.add(hr);
+        deptList.add(md);
+        deptList.add(security);
+        deptList.add(internal_Audit);
+        deptList.add(operations);
+        deptList.add(corporate_planning);
+        deptList.add(finance);
+        deptList.add(procurement);
+        deptList.add(ict);
+        deptList.add(legal);
+        deptList.add(notAnalysed);
+
+        //return urcDepartmentAnlDimRepository.findAll();
+        return deptList;
     }
 
     public Optional<Budget> getMostRecurrentBudget() {

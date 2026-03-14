@@ -87,8 +87,9 @@ public class BudgetVisualCards extends Div {
                 "bar",
                 createComparisonBarConfig(
                         new String[]{"Revenue", "Expenditure"},
+                        new double[]{toMillions(revenueActual), toMillions(totalSpent)},
                         new double[]{revenueActual.doubleValue(), totalSpent.doubleValue()},
-                        "UGX"
+                        "UGX (M)"
                 )
         );
 
@@ -120,10 +121,17 @@ public class BudgetVisualCards extends Div {
                 "bar",
                 createBarConfig(
                         new String[]{"Q1", "Q2", "Q3", "Q4"},
+                        new double[]{toMillions(q1), toMillions(q2), toMillions(q3), toMillions(q4)},
                         new double[]{q1.doubleValue(), q2.doubleValue(), q3.doubleValue(), q4.doubleValue()},
-                        "Actuals"
+                        "Actuals (M)"
                 )
         );
+    }
+
+    private double toMillions(BigDecimal value) {
+        return nz(value)
+                .divide(BigDecimal.valueOf(1_000_000), 2, RoundingMode.HALF_UP)
+                .doubleValue();
     }
 
     private String createRadialConfig(double value, String label, String color) {
@@ -206,6 +214,38 @@ public class BudgetVisualCards extends Div {
         );
     }
 
+    private String createBarConfig(String[] categories, double[] displayValues, double[] fullValues, String seriesName) {
+        return """
+    {
+      "series": [{
+        "name": "%s",
+        "data": [%s]
+      }],
+      "xaxis": {
+        "categories": [%s]
+      },
+      "yaxis": {
+        "title": {
+          "text": "UGX (Millions)"
+        }
+      },
+      "fullValues": [%s],
+      "height": 220,
+      "plotOptions": {
+        "bar": {
+          "borderRadius": 6,
+          "columnWidth": "45%%"
+        }
+      }
+    }
+    """.formatted(
+                escape(seriesName),
+                joinNumbers(displayValues),
+                joinQuoted(categories),
+                joinNumbers(fullValues)
+        );
+    }
+
     private String createComparisonBarConfig(String[] categories, double[] values, String seriesName) {
         return """
         {
@@ -229,6 +269,38 @@ public class BudgetVisualCards extends Div {
                 escape(seriesName),
                 joinNumbers(values),
                 joinQuoted(categories)
+        );
+    }
+
+    private String createComparisonBarConfig(String[] categories, double[] displayValues, double[] fullValues, String seriesName) {
+        return """
+    {
+      "series": [{
+        "name": "%s",
+        "data": [%s]
+      }],
+      "xaxis": {
+        "categories": [%s],
+        "title": {
+          "text": "UGX (Millions)"
+        }
+      },
+      "chartUnit": "money",
+      "fullValues": [%s],
+      "height": 220,
+      "plotOptions": {
+        "bar": {
+          "horizontal": true,
+          "borderRadius": 6,
+          "barHeight": "45%%"
+        }
+      }
+    }
+    """.formatted(
+                escape(seriesName),
+                joinNumbers(displayValues),
+                joinQuoted(categories),
+                joinNumbers(fullValues)
         );
     }
 

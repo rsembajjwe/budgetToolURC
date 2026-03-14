@@ -82,12 +82,8 @@ import com.vaadin.flow.server.StreamRegistration;
 import com.vaadin.flow.server.StreamResource;
 
 import java.io.*;
-import java.math.BigDecimal;
 import java.util.*;
 
-import java.text.NumberFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -102,13 +98,10 @@ import org.apache.poi.util.Units;
 import org.apache.poi.xwpf.usermodel.*;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
 
-import java.io.*;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
 import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
 
 @Route(value = "blo-dashboard", layout = MainLayout.class)
@@ -670,8 +663,8 @@ public class BLODashboardView extends VerticalLayout {
         budgetSummary.setPadding(false);
         budgetSummary.addClassName("dept-budget-summary");
         VerticalLayout totalSpan = createBudgetSummaryItem("Total Budget", selectedDepartment.getTotalBudget(), "summary-budget");
-        VerticalLayout totalSpentSpan = createBudgetSummaryItem("Total Spent", selectedDepartment.getTotalSpent(), "summary-spent");
-        VerticalLayout totalCommittedSpan = createBudgetSummaryItem("Committed", selectedDepartment.getTotalCommitted(), "summary-committed");
+        VerticalLayout totalSpentSpan = createBudgetSummaryItem("Total Spent", selectedDepartment.getTotalSpent().abs(), "summary-spent");
+        //VerticalLayout totalCommittedSpan = createBudgetSummaryItem("Committed", selectedDepartment.getTotalCommitted(), "summary-committed");
         VerticalLayout availableSpan = createBudgetSummaryItem("Available", selectedDepartment.getAvailableBudget(), "summary-available");
         totalSpentSpan.addDoubleClickListener(e -> {
             String deptcode = selectedDepartment.getDepartmentCode();
@@ -681,7 +674,7 @@ public class BLODashboardView extends VerticalLayout {
             utils.createTransactionsDialog2(overviewContent);
         });
 
-        budgetSummary.add(totalSpan, totalSpentSpan, totalCommittedSpan, availableSpan);
+        budgetSummary.add(totalSpan, totalSpentSpan, availableSpan);
 
         overviewContent.add(deptInfo, budgetSummary);
         overviewCard.add(overviewContent);

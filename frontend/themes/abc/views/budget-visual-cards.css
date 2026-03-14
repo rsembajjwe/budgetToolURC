@@ -57,6 +57,76 @@
     flex: 1;
 }
 
+.graph-expand-button {
+    border-radius: 10px;
+    color: #64748b;
+}
+
+.graph-expand-button:hover {
+    color: #0f172a;
+    background: rgba(148, 163, 184, 0.12);
+}
+
+.graph-zoom-dialog::part(content) {
+    padding: 1rem;
+    border-radius: 18px;
+}
+
+.graph-dialog-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.graph-dialog-subtitle {
+    color: #64748b;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.graph-dialog-chart {
+    min-height: 560px;
+}
+
+.graph-toolbar {
+    gap: 0.25rem;
+}
+
+.graph-toolbar-button,
+.graph-toolbar-link > button {
+    border-radius: 10px;
+    color: #64748b;
+}
+
+.graph-toolbar-button:hover,
+.graph-toolbar-link > button:hover {
+    color: #0f172a;
+    background: rgba(148, 163, 184, 0.12);
+}
+
+.graph-zoom-dialog::part(content) {
+    padding: 1rem;
+    border-radius: 18px;
+}
+
+.graph-dialog-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.graph-dialog-subtitle {
+    color: #64748b;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.graph-dialog-chart {
+    min-height: 560px;
+}
+
 @media (max-width: 768px) {
     .budget-visual-cards .graph-card {
         flex: 1 1 100%;

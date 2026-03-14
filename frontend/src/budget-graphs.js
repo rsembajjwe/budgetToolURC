@@ -81,22 +81,67 @@ window.renderBudgetChart = function (host, chartType, config) {
     }
 
     if (chartType === "bar") {
+        const fullValues = config.fullValues || [];
+        const unit = config.chartUnit || "money";
+        const isHorizontal =
+                options.plotOptions &&
+                options.plotOptions.bar &&
+                options.plotOptions.bar.horizontal === true;
+
         options.dataLabels = {
             enabled: true,
             formatter: function (val) {
-                return formatUGX(val);
+                if (val === null || val === undefined || isNaN(val))
+                    return "";
+                if (unit === "percent")
+                    return Number(val).toFixed(1) + "%";
+                return formatUGX(val) + "M";
             },
-            offsetY: -6,
+            offsetY: isHorizontal ? 0 : -6,
             style: {
                 fontSize: "11px",
                 fontWeight: 600
             }
         };
 
+        if (unit === "percent") {
+            options.yaxis = options.yaxis || {};
+            options.yaxis.labels = {
+                formatter: function (val) {
+                    return val + "%";
+                }
+            };
+        } else {
+            if (isHorizontal) {
+                options.xaxis = options.xaxis || {};
+                options.xaxis.labels = {
+                    formatter: function (val) {
+                        if (isNaN(val))
+                            return val;
+                        return formatUGX(val) + "M";
+                    }
+                };
+            } else {
+                options.yaxis = options.yaxis || {};
+                options.yaxis.labels = {
+                    formatter: function (val) {
+                        if (isNaN(val))
+                            return val;
+                        return formatUGX(val) + "M";
+                    }
+                };
+            }
+        }
+
         options.tooltip = {
             y: {
-                formatter: function (val) {
-                    return "UGX " + formatUGX(val);
+                formatter: function (val, opts) {
+                    if (unit === "percent") {
+                        return Number(val).toFixed(2) + "%";
+                    }
+                    const index = opts.dataPointIndex;
+                    const raw = fullValues[index] !== undefined ? fullValues[index] : val * 1000000;
+                    return "UGX " + formatUGX(raw);
                 }
             }
         };
@@ -105,4 +150,31 @@ window.renderBudgetChart = function (host, chartType, config) {
     const chart = new ApexCharts(host, options);
     host._apexChart = chart;
     chart.render();
+};
+
+window.exportBudgetChartPng = function (host, fileName) {
+    if (!host || !host._apexChart)
+        return;
+
+    host._apexChart.dataURI().then(({ imgURI }) => {
+        const link = document.createElement("a");
+        link.href = imgURI;
+        link.download = (fileName || "chart") + ".png";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+};
+
+window.downloadBudgetChartImage = function (host, fileName) {
+    if (!host || !host._apexChart)
+        return;
+
+    host._apexChart.dataURI().then(({ imgURI }) => {
+        const win = window.open();
+        if (win) {
+            win.document.write(`<img src="${imgURI}" style="max-width:100%">`);
+            win.document.title = fileName || "chart";
+    }
+    });
 };

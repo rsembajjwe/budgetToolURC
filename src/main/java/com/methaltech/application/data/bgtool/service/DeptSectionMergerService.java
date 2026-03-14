@@ -130,7 +130,52 @@ public class DeptSectionMergerService {
 
         }
         List<String> sectionCodes2 = sectionCodes.stream().map(String::trim).collect(Collectors.toList());
+       // System.out.println(sectionCodes2 + " Section code");
         return sectrepository.findByCustomANL_CODE2(sectionCodes2);
+    }
+
+    public Set<UrcDeptSectionAnlDimbgt> getSectionsByDeptCode2(String deptcode) {
+        List<String> sectionCodes2 = new ArrayList();
+
+        if (deptcode.equals("#              ")) {
+            sectionCodes2.add("#              ");
+        } else if (deptcode.equals("D0003")) {
+            sectionCodes2.add("S004");
+            sectionCodes2.add("S005");
+        } else if (deptcode.equals("D0002")) {
+            sectionCodes2.add("S002");
+            sectionCodes2.add("S003");
+        } else if (deptcode.equals("S016")) {
+            sectionCodes2.add("S016");
+        } else if (deptcode.equals("D0007")) {
+            sectionCodes2.add("S017");
+        } else if (deptcode.equals("S015")) {
+            sectionCodes2.add("S015");
+        } else if (deptcode.equals("D0008")) {
+            sectionCodes2.add("S018");
+        } else if (deptcode.equals("D0001")) {
+
+            sectionCodes2.add("S001");
+            sectionCodes2.add("S006");
+            sectionCodes2.add("S020");
+        } else if (deptcode.equals("S014")) {
+            sectionCodes2.add("S014");
+        } else if (deptcode.equals("D0006")) {
+            sectionCodes2.add("S009");
+            sectionCodes2.add("S010");
+            sectionCodes2.add("S012");
+            sectionCodes2.add("S021");
+        } else if (deptcode.equals("S013")) {
+            sectionCodes2.add("S013");
+        } else if (deptcode.equals("S011")) {
+            sectionCodes2.add("S011");
+        } else if (deptcode.equals("D0005")) {
+            sectionCodes2.add("S007");
+            sectionCodes2.add("S008");
+        }
+        Set<UrcDeptSectionAnlDimbgt> sections=sectrepository.findByCustomANL_CODE2(sectionCodes2);
+        System.out.println(sectionCodes2+" : "+sections);
+        return sections;
     }
 
     public Set<String> extractSectionAnlCodes(String deptcode) {

@@ -140,14 +140,14 @@ public class DepartmentSectionCards extends VerticalLayout {
 
         BigDecimal totalAllocated = BigDecimal.ZERO;
         BigDecimal totalSpent = BigDecimal.ZERO;
-        BigDecimal totalCommitted = BigDecimal.ZERO;
+        //BigDecimal totalCommitted = BigDecimal.ZERO;
         BigDecimal totalAvailable = BigDecimal.ZERO;
         int overBudgetCount = 0;
 
         for (SectionBudget section : sections) {
             totalAllocated = totalAllocated.add(nz(section.getAllocatedBudget()));
-            totalSpent = totalSpent.add(nz(section.getSpentAmount()));
-            totalCommitted = totalCommitted.add(nz(section.getCommittedAmount()));
+            totalSpent = totalSpent.add(nz(section.getSpentAmount())).abs();
+            //totalCommitted = totalCommitted.add(nz(section.getCommittedAmount()));
             totalAvailable = totalAvailable.add(nz(section.getAvailableAmount()));
 
             if (section.isOverBudget()) {
@@ -371,7 +371,7 @@ public class DepartmentSectionCards extends VerticalLayout {
         budgetGrid.add(
                 createEnhancedBudgetItem("Allocated", nz(section.getAllocatedBudget()), VaadinIcon.WALLET, "budget-allocated"),
                 spentLayoutCard,
-                createEnhancedBudgetItem("Committed", nz(section.getCommittedAmount()), VaadinIcon.CLOCK, "budget-committed"),
+                //createEnhancedBudgetItem("Committed", nz(section.getCommittedAmount()), VaadinIcon.CLOCK, "budget-committed"),
                 createEnhancedBudgetItem("Available", nz(section.getAvailableAmount()), VaadinIcon.MONEY_DEPOSIT, "budget-available")
         );
 
@@ -555,27 +555,27 @@ public class DepartmentSectionCards extends VerticalLayout {
         progressBar.setValue(pctToFraction(spentPercentage));
         progressBar.addClassName("enhanced-progress-bar");
         progressBar.addClassName(nvl(section.getProgressBarClass(), "progress-good"));
+        progressSection.add(progressHeader, progressBar);
+        /*        if (nz(section.getCommittedAmount()).compareTo(BigDecimal.ZERO) > 0) {
+HorizontalLayout insightsRow = new HorizontalLayout();
+insightsRow.setWidthFull();
+insightsRow.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+insightsRow.setAlignItems(FlexComponent.Alignment.CENTER);
+insightsRow.setPadding(false);
+insightsRow.setSpacing(false);
+insightsRow.addClassName("progress-insights");
 
-        if (nz(section.getCommittedAmount()).compareTo(BigDecimal.ZERO) > 0) {
-            HorizontalLayout insightsRow = new HorizontalLayout();
-            insightsRow.setWidthFull();
-            insightsRow.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
-            insightsRow.setAlignItems(FlexComponent.Alignment.CENTER);
-            insightsRow.setPadding(false);
-            insightsRow.setSpacing(false);
-            insightsRow.addClassName("progress-insights");
+Span committedLabel = new Span("Committed: " + formatCurrency(nz(section.getCommittedAmount())));
+committedLabel.addClassName("committed-label");
 
-            Span committedLabel = new Span("Committed: " + formatCurrency(nz(section.getCommittedAmount())));
-            committedLabel.addClassName("committed-label");
+Span remainingLabel = new Span("Remaining: " + formatCurrency(nz(section.getRemainingBudget())));
+remainingLabel.addClassName("remaining-label");
 
-            Span remainingLabel = new Span("Remaining: " + formatCurrency(nz(section.getRemainingBudget())));
-            remainingLabel.addClassName("remaining-label");
-
-            insightsRow.add(committedLabel, remainingLabel);
-            progressSection.add(progressHeader, progressBar, insightsRow);
-        } else {
-            progressSection.add(progressHeader, progressBar);
-        }
+insightsRow.add(committedLabel, remainingLabel);
+progressSection.add(progressHeader, progressBar, insightsRow);
+} else {
+progressSection.add(progressHeader, progressBar);
+}*/
 
         return progressSection;
     }
