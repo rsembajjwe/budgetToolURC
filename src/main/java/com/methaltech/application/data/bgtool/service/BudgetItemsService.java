@@ -30,6 +30,7 @@ import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import com.methaltech.application.data.entity.bgtool.dto.PerformanceData;
 import com.methaltech.application.data.livedata.repository.SALFLDGRepository;
 import com.methaltech.application.data.livedata.service.SALFLDGService;
+import com.methaltech.application.data.salaryScale;
 import com.methaltech.application.views.procurementplan.CoaProcPlanDTO;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -360,6 +361,17 @@ public class BudgetItemsService {
     public BudgetItems getBudgetItemsByAnalcode(Long analcode) {
         return repository.findByAnalcode(analcode);
     }
+
+    public Optional<BudgetItems> getBudgetItemsByGradeAndBudget(salaryScale grade, Budget budget) {
+        return repository.findFirstByGradeAndBudget(grade, budget);
+    }
+
+    /*    public int deleteByBudgetAndCoas(Budget budget, List<COA> coas) {
+    if (budget == null || coas == null || coas.isEmpty()) {
+    return 0;
+    }
+    return repository.deleteByBudgetAndCoas(budget, coas);
+    }*/
 
     public BudgetItems findBudgetAndCodeAndAnalcode(Budget budget, COA coacode, Long analcode) {
         return repository.findBudgetAndCodeAndAnalcode(budget, coacode, analcode);
@@ -1303,7 +1315,7 @@ public class BudgetItemsService {
 
             if (e != null) {
                 String code = e.getCode() != null ? e.getCode() : "NULL";
-                System.out.println(code + " Bgt");
+              
             }
         });
         List<COA> coaList2 = sALFLDGService.listOFCoa(sctions.stream().toList(), perio.getFinancialYearPeriods(budget).stream().toList(), budget);
@@ -1311,7 +1323,7 @@ public class BudgetItemsService {
 
             if (e != null) {
                 String code = e.getCode() != null ? e.getCode() : "NULL";
-                System.out.println(code + " Sun");
+                
             }
         });
 
@@ -1335,7 +1347,7 @@ public class BudgetItemsService {
 
             if (e != null) {
                 String code = e.getCode() != null ? e.getCode() : "NULL";
-                System.out.println(code);
+                
             }
         });
         UrcDeptSectionAnlDimbgt freightAnlDimbgt = urcDeptSectionAnlDimRepository.findByCustomANL_CODE("S020");
@@ -1431,10 +1443,7 @@ public class BudgetItemsService {
             b.setQtr4(b.getApr().add(b.getMay().add(b.getJun())));
             b.setQtr4A(b.getAprA().add(b.getMayA().add(b.getJunA())));
             b.setTotalA(b.getQtr1A().add(b.getQtr2A().add(b.getQtr3A().add(b.getQtr4A()))));
-            if (c.getCode().contains("223007")) {
-                //String code = e.getCode() != null ? e.getCode() : "NULL";
-                System.out.println(c.getCode() + ": " + b.getTotalA());
-            }
+
             budgetItemses.add(b);
         }
         return budgetItemses;
@@ -2218,8 +2227,7 @@ public class BudgetItemsService {
             return 0;
         }
 
-        List<Long> ids
-                = repository.findIdsByBudgetAndCoacodeIn(budget, coas);
+        List<Long> ids                = repository.findIdsByBudgetAndCoacodeIn(budget, coas);
 
         if (ids.isEmpty()) {
             return 0;

@@ -504,10 +504,14 @@ public class DepartmentOverview extends VerticalLayout {
                 joinQuoted(categories)
         );
     }
-private String shortDeptName(String name) {
-    if (name == null) return "N/A";
-    return name.length() > 14 ? name.substring(0, 14) + "..." : name;
-}
+
+    private String shortDeptName(String name) {
+        if (name == null) {
+            return "N/A";
+        }
+        return name.length() > 14 ? name.substring(0, 14) + "..." : name;
+    }
+
     private String createDepartmentStatusConfig(List<DepartmentBudget> departments) {
         long onTrack = departments.stream().filter(d -> "On Track".equalsIgnoreCase(nvl(d.getStatusText(), ""))).count();
         long near = departments.stream().filter(d -> "Near Limit".equalsIgnoreCase(nvl(d.getStatusText(), ""))).count();

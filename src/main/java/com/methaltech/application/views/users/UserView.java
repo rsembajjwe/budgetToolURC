@@ -609,14 +609,8 @@ public class UserView extends Div implements BeforeEnterObserver {
         public PersonContextMenu(Grid<User> target) {
             super(target);
 
-            addItem("Edit", e -> e.getItem().ifPresent(person -> {
-                // System.out.printf("Edit: %s%n", person.getFullName());
-            }));
-            addItem("Delete", e -> e.getItem().ifPresent(person -> {
-                // System.out.printf("Delete: %s%n", person.getFullName());
-            }));
             addItem("Add Department Units", e -> e.getItem().ifPresent(person -> {
-                // System.out.printf("Delete: %s%n", person.getFullName());
+                
                 List<D_Unit> bug = sampleUnitsBudgetService.listUnitsbyBudget(sampleBudget, samplePerson);
                 unitsList = new MultiSelectComboBox("Units");
                 //unitsList.setItemLabelGenerator(unitsBudget -> unitsBudget.getUnits().getUnit());

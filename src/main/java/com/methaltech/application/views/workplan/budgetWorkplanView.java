@@ -389,7 +389,7 @@ public class budgetWorkplanView extends Div {
                     if (budgetItemsService.isSumProgrammeGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), programmesActivities, comboBoxD_Section.getSelectedItems()) == true) {
 
                         for (Urc_Activities d : programmesActivities) {
-                            System.out.println(d.getActivityCode());
+                           
 
                             if (budgetItemsService.isSumActvityGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems()) == true) {
                                 listUrc_Activities.add(d);
@@ -1651,7 +1651,7 @@ public class budgetWorkplanView extends Div {
 
         short rownum = tr;
         int rowstart = tr + 1;
-        System.out.println(rownum + "......" + rowstart);
+        
         int rowend = 0;
         int rowstart2 = 0;
         sheet.addMergedRegion(new CellRangeAddress(2, 4, 0, 0));
@@ -2424,7 +2424,7 @@ public class budgetWorkplanView extends Div {
 
         short rownum = tr;
         int rowstart = tr + 1;
-        System.out.println(rownum + "......" + rowstart);
+        
         int rowend = 0;
         int rowstart2 = 0;
         sheet.addMergedRegion(new CellRangeAddress(2, 3, 0, 0));

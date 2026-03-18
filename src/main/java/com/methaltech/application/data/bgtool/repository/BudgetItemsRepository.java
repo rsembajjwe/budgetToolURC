@@ -17,6 +17,7 @@ import com.methaltech.application.data.entity.bgtool.Organisation;
 import com.methaltech.application.data.entity.bgtool.QuarterBudgetSum;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
+import com.methaltech.application.data.salaryScale;
 import com.methaltech.application.views.procurementplan.CoaProcPlanDTO;
 import java.math.BigDecimal;
 import java.util.List;
@@ -473,6 +474,21 @@ group by bi.deptUnit.id
 
     BudgetItems findByAnalcode(Long analcode);
 
+    List<BudgetItems> findAllByGradeAndBudget(salaryScale grade, Budget budget);
+
+    Optional<BudgetItems> findFirstByGradeAndBudget(salaryScale grade, Budget budget);
+    
+    
+    @Transactional
+    @Modifying
+    @Query("""
+        delete from BudgetItems b
+        where b.budget = :budget
+          and b.coacode in :coas
+    """)
+    int deleteByBudgetAndCoas(@Param("budget") Budget budget,
+                              @Param("coas") List<COA> coas);
+    
     @Query("SELECT b FROM BudgetItems b "
             + "WHERE b.budget = :budget "
             + "AND b.coacode = :coacode")
@@ -881,8 +897,8 @@ WHERE b.budget = :budget
        AND (b.coacode.code LIKE '1%')
 """)
     BigDecimal calculateTotalProjectedIncome(@Param("budget") Budget budget);
-    
-        @Query("""
+
+    @Query("""
     SELECT COALESCE(SUM(
         COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0) +
         COALESCE(b.apr,0) + COALESCE(b.may,0) + COALESCE(b.jun,0) +
@@ -894,8 +910,8 @@ WHERE b.budget = :budget
        AND (b.coacode.code LIKE '11%' OR b.coacode.code LIKE '14%')
 """)
     BigDecimal calculateTotalIGRBudget(@Param("budget") Budget budget);
-    
-            @Query("""
+
+    @Query("""
     SELECT COALESCE(SUM(
         COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0) +
         COALESCE(b.apr,0) + COALESCE(b.may,0) + COALESCE(b.jun,0) +
@@ -972,7 +988,7 @@ WHERE b.budget = :budget
        AND (b.coacode.code LIKE '2%')
 """)
     BigDecimal calculateTotalOpexBudget(@Param("budget") Budget budget);
-    
+
     @Query("""
     SELECT COALESCE(SUM(
         COALESCE(b.jan,0) + COALESCE(b.feb,0) + COALESCE(b.mar,0) +
@@ -984,7 +1000,7 @@ WHERE b.budget = :budget
     WHERE b.budget = :budget
        AND (b.coacode.code LIKE '3%')
 """)
-    BigDecimal calculateTotalCapexBudget(@Param("budget") Budget budget);    
+    BigDecimal calculateTotalCapexBudget(@Param("budget") Budget budget);
 
     @Query("""
     SELECT COALESCE(SUM(

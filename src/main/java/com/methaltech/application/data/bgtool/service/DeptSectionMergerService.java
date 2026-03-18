@@ -174,7 +174,7 @@ public class DeptSectionMergerService {
             sectionCodes2.add("S008");
         }
         Set<UrcDeptSectionAnlDimbgt> sections=sectrepository.findByCustomANL_CODE2(sectionCodes2);
-        System.out.println(sectionCodes2+" : "+sections);
+        
         return sections;
     }
 

@@ -2,6 +2,7 @@ package com.methaltech.application.data.entity.bgtool;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.methaltech.application.data.ProcClass;
+import com.methaltech.application.data.salaryScale;
 import jakarta.persistence.Column;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -31,6 +32,7 @@ class BudgetItems implements Serializable {
     private String product;
     private String category;
     private Long analcode;
+    private salaryScale grade;
     @Column(precision = 25, scale = 6)
     private BigDecimal cost;
 

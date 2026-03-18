@@ -532,17 +532,9 @@ public class BudgetService {
                 cumQtr4Actual = sampleSALFLDGService.findTotalAmountByPeriodsAndUnAnalyzed(periodsGen.getFinancialYearPeriodsByQuarter(budget, 4))
                         .add(sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 4), sects));
 
-                sects.forEach(v -> {
-                    System.out.println(v + ":Code " + totalSpent);
-                });
-                System.out.println(sects + ":Code " + totalSpent);
             } else {
 
                 totalSpent = sampleSALFLDGService.getTotalAmountByPeriods(getFinancialYearPeriods(budget), sects);
-                sects.forEach(v -> {
-                    System.out.println(v + ":Code " + totalSpent);
-                });
-                System.out.println(sects + ":Code " + totalSpent);
 
                 cumQtr1Actual = sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 1), sects);
                 cumQtr2Actual = sampleSALFLDGService.getTotalAmountByPeriods(periodsGen.getFinancialYearPeriodsByQuarter(budget, 2), sects);

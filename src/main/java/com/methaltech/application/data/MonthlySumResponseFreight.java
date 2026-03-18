@@ -67,6 +67,6 @@ public MonthlySumResponseFreight(){
         this.qtr2 = oct.add(nov).add(dec);
         this.qtr3 = jan.add(feb).add(mar);
         this.qtr4 = apr.add(may).add(jun);
-        System.out.println(qtr1+" Its ran this one");
+  
     }    
 }

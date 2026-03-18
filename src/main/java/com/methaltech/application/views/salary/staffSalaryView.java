@@ -76,6 +76,7 @@ import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
@@ -129,6 +130,7 @@ public class staffSalaryView extends Div {
 
     private Button save = new Button("Save");
     private Button delete = new Button("Delete");
+    private Button deleteAll = new Button("Delete All");
     private Button cancel = new Button("Cancel");
     Span span = new Span();
 
@@ -228,6 +230,7 @@ public class staffSalaryView extends Div {
                 save.setEnabled(false);
                 cancel.setEnabled(false);
                 delete.setEnabled(false);
+                deleteAll.setEnabled(false);
                 upload.setVisible(false);
             }
             budgetItemfundSource.setItems(sampleFundsourceService.findFundsourcesByBudget(e.getValue()));
@@ -274,9 +277,7 @@ public class staffSalaryView extends Div {
 
                 deleteButton.addClickListener(es -> {
                     StaffSalary salary = gridStaffSalary.asSingleSelect().getValue();
-                    sampleBudgetItemsService.deleteByAnalcode(salary.getId());
-                    sampleStaffSalaryService.deleteBystaff(salary);
-                    deleteItemsalaryBudget();
+                    itemBudgetUpdate(comboBoxBudget.getValue(), salary);
                     setSalaryGrid2();
                     clearForm();
                     dialog.close();
@@ -291,6 +292,35 @@ public class staffSalaryView extends Div {
                 Notification.show("Select a Staff");
             }
         });
+        deleteAll.addClickListener(e -> {
+            if (!comboBoxBudget.isEmpty()) {
+                Dialog dialog = new Dialog();
+
+                dialog.setHeaderTitle("Permanently Delete this staff data and budget");
+                dialog.add("Are you sure you want to delete this staff data permanently?");
+
+                Button deleteButton = new Button("Delete");
+                deleteButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_ERROR);
+                deleteButton.getStyle().set("margin-right", "auto");
+                dialog.getFooter().add(deleteButton);
+
+                deleteButton.addClickListener(es -> {
+                    deleteAllItemsalaryBudget();
+                    setSalaryGrid2();
+                    clearForm();
+                    dialog.close();
+                });
+
+                Button cancelButton = new Button("Cancel", (ez) -> dialog.close());
+                cancelButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+                dialog.getFooter().add(cancelButton);
+                dialog.open();
+
+            } else {
+                Notification.show("Select a Financial Year");
+            }
+        });
+
         save.addClickListener(event -> {
 
             if (!comboBoxBudget.isEmpty() && !fname.isEmpty() && !salaryz.isEmpty()) {
@@ -317,9 +347,11 @@ public class staffSalaryView extends Div {
                 salary.setBudgetType(comboBoxOrganisation.getValue());
                 salary.setActivity(comboBoxUrc_Activities.getValue());
                 salary.setDeptUnit(comboBoxD_Section.getValue());
-                sampleStaffSalaryService.saveStaffSalary(salary);
-                //setSalaryGrid();
-                itemsalaryBudget(salary, comboBoxOrganisation.getValue());
+               StaffSalary save= sampleStaffSalaryService.saveStaffSalary(salary);
+                if(save!=null){
+                    System.out.println(save+" Saved");
+                }
+                itemBudgetSave(comboBoxBudget.getValue(), salary);
 
                 //setCOACombo(comboBoxBudget.getValue());
                 setSalaryGrid2();
@@ -411,7 +443,7 @@ public class staffSalaryView extends Div {
     public FormLayout volumesDetails() {
         FormLayout form = new FormLayout();
         HorizontalLayout ho = new HorizontalLayout();
-        ho.add(save, delete, cancel);
+        ho.add(save, delete, deleteAll, cancel);
         form.add(code, fname, lname, email, tel, mob, position, grade, Address,
                 Address2, nextofkin,
                 salaryz, ho
@@ -428,11 +460,18 @@ public class staffSalaryView extends Div {
         COA nssf = sampleCoaService.findByCodeAndBudget("212101", comboBoxBudget.getValue());
         COA gratuity = sampleCoaService.findByCodeAndBudget("213004", comboBoxBudget.getValue());
         COA workmancompesation = sampleCoaService.findByCodeAndBudget("213005", comboBoxBudget.getValue());
-        BudgetItems item = sampleBudgetItemsService.getBudgetItemsByAnalcode(salarywage.getId());
+        Optional<BudgetItems> itemItem = sampleBudgetItemsService.getBudgetItemsByGradeAndBudget(salarywage.getGrade(), salarywage.getBudget());
+
         Coalevel1 coa = coalevel1Service.findByCode(2);
+        BudgetItems item;
+        if (itemItem.isPresent()) {
+            item = itemItem.get();
+        } else {
+            item = null;
+        }
         if (item != null) {
 
-            item.setItem(salarywage.getFname() + " " + salarywage.getLname());
+            item.setItem(salarywage.getFname() + " Salary");
             item.setCost(salarywage.getSalary());
             item.setQty(new BigDecimal("12"));
 
@@ -443,7 +482,7 @@ public class staffSalaryView extends Div {
             item.setBudgetType(org);
             item.setCoacode(salary_wages);
             item.setDeptUnit(comboBoxD_Section.getValue());
-            item.setAnalcode(salarywage.getId());
+            //item.setAnalcode(salarywage.getId());
             item.setActivity(comboBoxUrc_Activities.getValue());
             item.setBudgetType(comboBoxOrganisation.getValue());
             item.setBcategory(salary_wages.getCode());
@@ -461,9 +500,10 @@ public class staffSalaryView extends Div {
             item.setOct(salarywage.getSalary());
             item.setNov(salarywage.getSalary());
             item.setDec(salarywage.getSalary());
+            item.setGrade(salarywage.getGrade());
         } else {
             item = new BudgetItems();
-            item.setItem(salarywage.getFname() + " " + salarywage.getLname());
+            item.setItem(salarywage.getFname() + " Salary");
             item.setCost(salarywage.getSalary());
             item.setQty(new BigDecimal("12"));
 
@@ -475,7 +515,7 @@ public class staffSalaryView extends Div {
             item.setCoacode(salary_wages);
             item.setDeptUnit(comboBoxD_Section.getValue());
             item.setFundsource(budgetItemfundSource.getValue());
-            item.setAnalcode(salarywage.getId());
+            //item.setAnalcode(salarywage.getId());
             item.setActivity(comboBoxUrc_Activities.getValue());
             item.setBudgetType(comboBoxOrganisation.getValue());
             item.setBcategory(salary_wages.getCode());
@@ -492,9 +532,16 @@ public class staffSalaryView extends Div {
             item.setOct(salarywage.getSalary());
             item.setNov(salarywage.getSalary());
             item.setDec(salarywage.getSalary());
+            item.setGrade(salarywage.getGrade());
         }
         if (item.getCost() != null || item.getCost() != BigDecimal.ZERO || item.getQty() != null || item.getQty() != BigDecimal.ZERO) {
-            sampleBudgetItemsService.update(item);
+            BudgetItems saved = sampleBudgetItemsService.update(item);
+            if (saved != null) {
+                System.out.println(saved + " Saved");
+            } else {
+                System.out.println("Not " + saved);
+            }
+
             BudgetItems nssfB = sampleBudgetItemsService.findBudgetAndCode(comboBoxBudget.getValue(), nssf);
 
             if (nssfB != null) {
@@ -689,6 +736,37 @@ public class staffSalaryView extends Div {
 
     }
 
+    public void deleteAllItemsalaryBudget() {
+        COA salary_wages = sampleCoaService.findByCodeAndBudget("211101", comboBoxBudget.getValue());
+        COA nssf = sampleCoaService.findByCodeAndBudget("212101", comboBoxBudget.getValue());
+        COA gratuity = sampleCoaService.findByCodeAndBudget("213004", comboBoxBudget.getValue());
+        COA workmancompesation = sampleCoaService.findByCodeAndBudget("213005", comboBoxBudget.getValue());
+
+        List<COA> coaList = new ArrayList();
+        coaList.add(salary_wages);
+        coaList.add(nssf);
+        coaList.add(gratuity);
+        coaList.add(workmancompesation);
+        int deleted = budgetItemsService.deleteByBudgetAndCoas(comboBoxBudget.getValue(), coaList);
+        sampleStaffSalaryService.deleteByBudget(comboBoxBudget.getValue());
+
+    }
+
+    public void deleteAllItemsalaryBudgetOnly() {
+        COA salary_wages = sampleCoaService.findByCodeAndBudget("211101", comboBoxBudget.getValue());
+        COA nssf = sampleCoaService.findByCodeAndBudget("212101", comboBoxBudget.getValue());
+        COA gratuity = sampleCoaService.findByCodeAndBudget("213004", comboBoxBudget.getValue());
+        COA workmancompesation = sampleCoaService.findByCodeAndBudget("213005", comboBoxBudget.getValue());
+
+        List<COA> coaList = new ArrayList();
+        coaList.add(salary_wages);
+        coaList.add(nssf);
+        coaList.add(gratuity);
+        coaList.add(workmancompesation);
+        int deleted = budgetItemsService.deleteByBudgetAndCoas(comboBoxBudget.getValue(), coaList);
+
+    }
+
     public void deleteItemsalaryBudget() {
         StockUnitMeasure measure = sampleStockUnitMeasureService.getStockUnitMeasureByUnit("MONTH").get(0);
         Currency cur = sampleCurrencyService.findCurrenciesByCurrencyShortAndBudget("UGX", comboBoxBudget.getValue());
@@ -856,13 +934,13 @@ public class staffSalaryView extends Div {
                 "Provide the file in one of the supported formats (.xls, .xlsx, .csv).");
         upload.setI18n(i18n);
         upload.setVisible(true);
-        if (!comboBoxBudget.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty()&& !comboBoxUrc_Activities.isEmpty()) {
+        if (!comboBoxBudget.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxUrc_Activities.isEmpty()) {
 
         } else {
             upload.setVisible(true);
         }
         upload.addSucceededListener(event -> {
-            if (!comboBoxBudget.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty()&& !comboBoxUrc_Activities.isEmpty()) {
+            if (!comboBoxBudget.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxUrc_Activities.isEmpty()) {
                 String fileName = event.getFileName();
                 InputStream inputStream = buffer.getInputStream(fileName);
                 //System.out.println("Uploaded");
@@ -1134,7 +1212,6 @@ public class staffSalaryView extends Div {
                         BigDecimal test = BigDecimal.ZERO;
                         if (cell != null) {
                             cell.setCellType(CellType.STRING);
-                            System.out.println(cell.getRichStringCellValue());
 
                             try {
                                 info.setSalary(new BigDecimal(salary.getStringCellValue()));
@@ -1152,12 +1229,15 @@ public class staffSalaryView extends Div {
             }
             if (messages.isEmpty()) {
                 int x = 0;
-                for (StaffSalary a : listStaffSalary) {
+                sampleStaffSalaryService.saveStaffSalary(listStaffSalary);
+                List<StaffSalary> aggregateSalaryByGrade = sampleStaffSalaryService.aggregateSalaryByGrade(listStaffSalary);
+                for (StaffSalary a : aggregateSalaryByGrade) {
                     x++;
-                    BudgetItems budget = new BudgetItems();
-                    if (sampleStaffSalaryService.saveStaffSalary(a) != null) {
-                        itemsalaryBudget(a, comboBoxOrganisation.getValue());
-                    }
+                    a.setBudget(comboBoxBudget.getValue());
+                    itemsalaryBudget(a, comboBoxOrganisation.getValue());
+                    /*                    if (sampleStaffSalaryService.saveStaffSalary(a) != null) {
+                    itemsalaryBudget(a, comboBoxOrganisation.getValue());
+                    }*/
                 }
                 if (!comboBoxBudget.isEmpty()) {
                     setSalaryGrid2();
@@ -1168,6 +1248,28 @@ public class staffSalaryView extends Div {
 
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void itemBudgetUpdate(Budget budget, StaffSalary staff) {
+        sampleStaffSalaryService.deleteBystaff(staff);
+        deleteAllItemsalaryBudgetOnly();
+        List<StaffSalary> salaries = sampleStaffSalaryService.findByBudget(budget);
+        List<StaffSalary> aggregateSalaryByGrade = sampleStaffSalaryService.aggregateSalaryByGrade(salaries);
+        for (StaffSalary a : aggregateSalaryByGrade) {
+            a.setBudget(budget);
+            itemsalaryBudget(a, comboBoxOrganisation.getValue());
+
+        }
+    }
+        public void itemBudgetSave(Budget budget, StaffSalary staff) {
+        deleteAllItemsalaryBudgetOnly();
+        List<StaffSalary> salaries = sampleStaffSalaryService.findByBudget(budget);
+        List<StaffSalary> aggregateSalaryByGrade = sampleStaffSalaryService.aggregateSalaryByGrade(salaries);
+        for (StaffSalary a : aggregateSalaryByGrade) {
+            a.setBudget(budget);
+            itemsalaryBudget(a, comboBoxOrganisation.getValue());
+
         }
     }
 

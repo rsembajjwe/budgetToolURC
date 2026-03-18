@@ -18,10 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 public interface StaffSalaryRepository extends JpaRepository<StaffSalary, Long> {
 
     List<StaffSalary> findByBudget(Budget budget);
+
     @Modifying
     @Transactional
     @Query("DELETE FROM StaffSalary s WHERE s = :staffSalary")
     void deleteStaffSalary(@Param("staffSalary") StaffSalary staffSalary);
+
     List<StaffSalary> findByBudgetAndDeptUnitAndBudgetTypeAndActivity(
             Budget budget,
             UrcDeptSectionAnlDimbgt deptUnit,
@@ -70,5 +72,8 @@ public interface StaffSalaryRepository extends JpaRepository<StaffSalary, Long> 
 
     // Method to retrieve the last saved item
     StaffSalary findFirstByOrderByIdDesc();
+
+    @Transactional
+    long deleteByBudget(Budget budget);
 
 }
