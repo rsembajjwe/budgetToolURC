@@ -170,6 +170,27 @@
     width: 100%;
     gap: 1rem;
     flex-wrap: wrap;
+
+    padding: 0.8rem 1.2rem;
+    border-radius: 12px;
+
+    /* 3D base */
+    background: linear-gradient(
+        to bottom,
+        var(--lumo-base-color),
+        rgba(0, 0, 0, 0.03)
+    );
+
+    /* Multi-layer shadow (key for 3D) */
+    box-shadow:
+        0 6px 0 rgba(0, 0, 0, 0.25),     /* hard bottom edge */
+        0 8px 12px rgba(0, 0, 0, 0.2),   /* depth */
+        inset 0 1px 0 rgba(255, 255, 255, 0.6); /* top highlight */
+
+    border: 1px solid var(--lumo-contrast-10pct);
+
+    transition: all 0.15s ease-in-out;
+    cursor: pointer;
 }
 
 .budget-label {
@@ -508,6 +529,17 @@
     flex: 1 1 320px;
     min-width: 280px;
     max-width: 100%;
+}
+
+/* Make entire footer row bold */
+vaadin-grid::part(footer-cell).total-footer-row {
+    font-weight: 700;
+}
+
+/* Blue color for Actual columns in footer */
+vaadin-grid::part(footer-cell).actual-footer {
+    color: #1976d2; /* nice professional blue */
+    font-weight: 700;
 }
 
 @media print {

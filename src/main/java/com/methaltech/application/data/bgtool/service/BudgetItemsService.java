@@ -38,6 +38,7 @@ import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -53,6 +54,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -372,7 +374,6 @@ public class BudgetItemsService {
     }
     return repository.deleteByBudgetAndCoas(budget, coas);
     }*/
-
     public BudgetItems findBudgetAndCodeAndAnalcode(Budget budget, COA coacode, Long analcode) {
         return repository.findBudgetAndCodeAndAnalcode(budget, coacode, analcode);
     }
@@ -1303,150 +1304,278 @@ public class BudgetItemsService {
         return result != null ? result : Collections.emptyList();
     }
 
-    public List<BudgetItemsActuals> findDistinctBudgetItemses(Budget budget, Set<UrcDeptSectionAnlDimbgt> deptUnits) {
-
-        Set<String> sctions = new HashSet<>();
-        for (UrcDeptSectionAnlDimbgt sects : deptUnits) {
-            sctions.add(sects.getANL_CODE());
-            //System.out.println(sects.getANL_CODE() + "Final Code");
-        }
-        List<COA> coaList = repository.findDistinctCoacodeByBudgetAndDeptUnitIn(budget, deptUnits);
-        coaList.forEach(e -> {
-
-            if (e != null) {
-                String code = e.getCode() != null ? e.getCode() : "NULL";
-              
-            }
-        });
-        List<COA> coaList2 = sALFLDGService.listOFCoa(sctions.stream().toList(), perio.getFinancialYearPeriods(budget).stream().toList(), budget);
-        coaList2.forEach(e -> {
-
-            if (e != null) {
-                String code = e.getCode() != null ? e.getCode() : "NULL";
-                
-            }
-        });
-
-        // Combine the two lists into a single list
-        List<COA> combinedList = Stream.concat(coaList.stream(), coaList2.stream())
-                .collect(Collectors.toList());
-
-        Set<COA> combinedSet = combinedList.stream()
+    public List<BudgetItemsActuals> findDistinctBudgetItemses(
+            Budget budget,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits
+    ) {
+        Set<String> sections = deptUnits.stream()
+                .filter(Objects::nonNull)
+                .map(UrcDeptSectionAnlDimbgt::getANL_CODE)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        // Sort the set in ascending order
-        //List<COA> finalListWithoutDuplicates = combinedSet.stream().sorted(Comparator.comparing(COA::getCode)).collect(Collectors.toList());
-        List<COA> finalListWithoutDuplicates = combinedSet.stream()
-                .filter(Objects::nonNull) // Filter out null values
-                .sorted(Comparator.comparing(
-                        coa -> Optional.ofNullable(coa.getCode()).orElse("")) // Handle null codes
-                ).collect(Collectors.toList());
+        List<COA> coaList1 = repository.findDistinctCoacodeByBudgetAndDeptUnitIn(budget, deptUnits);
+        List<COA> coaList2 = sALFLDGService.listOFCoa(
+                new ArrayList<>(sections),
+                new ArrayList<>(perio.getFinancialYearPeriods(budget)),
+                budget
+        );
 
-        finalListWithoutDuplicates.forEach(e -> {
+        List<COA> finalCoaList = Stream.concat(
+                safeList(coaList1).stream(),
+                safeList(coaList2).stream()
+        )
+                .filter(Objects::nonNull)
+                .filter(coa -> coa.getCode() != null)
+                .distinct()
+                .sorted(Comparator.comparing(COA::getCode, Comparator.nullsFirst(String::compareTo)))
+                .collect(Collectors.toList());
 
-            if (e != null) {
-                String code = e.getCode() != null ? e.getCode() : "NULL";
-                
-            }
-        });
-        UrcDeptSectionAnlDimbgt freightAnlDimbgt = urcDeptSectionAnlDimRepository.findByCustomANL_CODE("S020");
-        UrcDeptSectionAnlDimbgt propertymgt = urcDeptSectionAnlDimRepository.findByCustomANL_CODE("S004");
-        List<BudgetItemsActuals> budgetItemses = new ArrayList<>();
-        PeriodExtractor extActuals = new PeriodExtractor();
-        for (COA c : finalListWithoutDuplicates) {
-            BudgetItemsActuals b = new BudgetItemsActuals();
+        UrcDeptSectionAnlDimbgt freightDept = urcDeptSectionAnlDimRepository.findByCustomANL_CODE("S020");
+        UrcDeptSectionAnlDimbgt propertyDept = urcDeptSectionAnlDimRepository.findByCustomANL_CODE("S004");
 
-            b.setBudget(budget);
-            b.setItem(c.getName());
-            b.setCoacode(c);
-            b.setDeptUnit(deptUnits);
-            if (deptUnits.contains(freightAnlDimbgt) && (c.getDisplay() == Display.FREIGHT || c.getCode().contains("111109") || c.getCode().contains("111110"))) {
-                //Finds By Period
-                b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.JULY)).abs());
-                b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.AUGUST)).abs());
-                b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.SEPTEMBER)).abs());
-                b.setOctA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.OCTOBER)).abs());
-                b.setNovA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.NOVEMBER)).abs());
-                b.setDecA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.DECEMBER)).abs());
-                b.setJanA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.JANUARY)).abs());
-                b.setFebA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.FEBRUARY)).abs());
-                b.setMarA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.MARCH)).abs());
-                b.setAprA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.APRIL)).abs());
-                b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.MAY)).abs());
-                b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.JUNE)).abs());
+        PeriodExtractor periodExtractor = new PeriodExtractor();
+        boolean containsFreight = deptUnits.contains(freightDept);
+        boolean containsProperty = deptUnits.contains(propertyDept);
+        boolean containsUnanalyzed = sections.contains("#              ");
 
-            } else if (deptUnits.contains(propertymgt) && (c.getCode().contains("111401") || c.getCode().contains("111402") || c.getCode().contains("111403") || c.getCode().contains("111404") || c.getCode().contains("111406") || c.getCode().contains("111407"))) {
+        List<BudgetItemsActuals> results = new ArrayList<>();
 
-                b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.JULY)).abs());
-                b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.AUGUST)).abs());
-                b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.SEPTEMBER)).abs());
-                b.setOctA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.OCTOBER)).abs());
-                b.setNovA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.NOVEMBER)).abs());
-                b.setDecA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.DECEMBER)).abs());
-                b.setJanA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.JANUARY)).abs());
-                b.setFebA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.FEBRUARY)).abs());
-                b.setMarA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.MARCH)).abs());
-                b.setAprA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.APRIL)).abs());
-                b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.MAY)).abs());
-                b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.JUNE)).abs());
+        for (COA coa : finalCoaList) {
+            BudgetItemsActuals item = new BudgetItemsActuals();
+            item.setBudget(budget);
+            item.setItem(coa.getName());
+            item.setCoacode(coa);
+            item.setDeptUnit(deptUnits);
 
-            } else {
-                if (sctions.contains("#              ")) {
-                    b.setJulA(salfldgRepository.findTotalAmountByPeriodAndCodeAndUnAnalyzed(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.JULY), sctions).abs());
-                    b.setAugA(salfldgRepository.findTotalAmountByPeriodAndCodeAndUnAnalyzed(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.AUGUST), sctions).abs());
-                    b.setSepA(salfldgRepository.findTotalAmountByPeriodAndCodeAndUnAnalyzed(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.SEPTEMBER), sctions).abs());
-                    b.setOctA(salfldgRepository.findTotalAmountByPeriodAndCodeAndUnAnalyzed(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.OCTOBER), sctions).abs());
-                    b.setNovA(salfldgRepository.findTotalAmountByPeriodAndCodeAndUnAnalyzed(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.NOVEMBER), sctions).abs());
-                    b.setDecA(salfldgRepository.findTotalAmountByPeriodAndCodeAndUnAnalyzed(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.DECEMBER), sctions).abs());
-                    b.setJanA(salfldgRepository.findTotalAmountByPeriodAndCodeAndUnAnalyzed(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.JANUARY), sctions).abs());
-                    b.setFebA(salfldgRepository.findTotalAmountByPeriodAndCodeAndUnAnalyzed(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.FEBRUARY), sctions).abs());
-                    b.setMarA(salfldgRepository.findTotalAmountByPeriodAndCodeAndUnAnalyzed(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.MARCH), sctions).abs());
-                    b.setAprA(salfldgRepository.findTotalAmountByPeriodAndCodeAndUnAnalyzed(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.APRIL), sctions).abs());
-                    b.setMayA(salfldgRepository.findTotalAmountByPeriodAndCodeAndUnAnalyzed(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.MAY), sctions).abs());
-                    b.setJunA(salfldgRepository.findTotalAmountByPeriodAndCodeAndUnAnalyzed(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.JUNE), sctions).abs());
-                } else {
-                    b.setJulA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.JULY), sctions).abs());
-                    b.setAugA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.AUGUST), sctions).abs());
-                    b.setSepA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.SEPTEMBER), sctions).abs());
-                    b.setOctA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.OCTOBER), sctions).abs());
-                    b.setNovA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.NOVEMBER), sctions).abs());
-                    b.setDecA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.DECEMBER), sctions).abs());
-                    b.setJanA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.JANUARY), sctions).abs());
-                    b.setFebA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.FEBRUARY), sctions).abs());
-                    b.setMarA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.MARCH), sctions).abs());
-                    b.setAprA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.APRIL), sctions).abs());
-                    b.setMayA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.MAY), sctions).abs());
-                    b.setJunA(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(c.getCode(), extActuals.getFinancialYearPeriodByMonth(budget, Month.JUNE), sctions).abs());
-                }
+            populateActuals(
+                    item,
+                    budget,
+                    coa,
+                    sections,
+                    containsFreight,
+                    containsProperty,
+                    containsUnanalyzed,
+                    periodExtractor
+            );
 
-            }
-            b.setTotal(repository.sumOfAllMonthsByBudgetAndCoa(budget, c, deptUnits));
-            b.setJul(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "jul"));
-            b.setAug(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "aug"));
-            b.setSep(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "sep"));
-            b.setOct(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "oct"));
-            b.setNov(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "nov"));
-            b.setDec(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "dec"));
-            b.setJan(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "jan"));
-            b.setFeb(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "feb"));
-            b.setMar(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "mar"));
-            b.setApr(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "apr"));
-            b.setMay(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "may"));
-            b.setJun(findSumOfIndividualMonthsByBudgetCoaDepts(budget, c, deptUnits, "jun"));
-            b.setQtr1(b.getJul().add(b.getAug().add(b.getSep())));
-            b.setQtr1A(b.getJulA().add(b.getAugA().add(b.getSepA())));
-            b.setQtr2(b.getOct().add(b.getNov().add(b.getDec())));
-            b.setQtr2A(b.getOctA().add(b.getNovA().add(b.getDecA())));
-            b.setQtr3(b.getJan().add(b.getFeb().add(b.getMar())));
-            b.setQtr3A(b.getJanA().add(b.getFebA().add(b.getMarA())));
-            b.setQtr4(b.getApr().add(b.getMay().add(b.getJun())));
-            b.setQtr4A(b.getAprA().add(b.getMayA().add(b.getJunA())));
-            b.setTotalA(b.getQtr1A().add(b.getQtr2A().add(b.getQtr3A().add(b.getQtr4A()))));
+            populateBudgetValues(item, budget, coa, deptUnits);
+            populateQuarterTotals(item);
 
-            budgetItemses.add(b);
+            results.add(item);
         }
-        return budgetItemses;
+
+        return results;
+    }
+
+    public List<BudgetItemsActuals> findDistinctBudgetItemsesExp(
+            Budget budget,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits
+    ) {
+        Set<String> sections = deptUnits.stream()
+                .filter(Objects::nonNull)
+                .map(UrcDeptSectionAnlDimbgt::getANL_CODE)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        List<COA> coaList1 = repository.findDistinctCoacodeByBudgetAndDeptUnitIn(budget, deptUnits);
+        List<COA> coaList2 = sALFLDGService.listOFCoa(
+                new ArrayList<>(sections),
+                new ArrayList<>(perio.getFinancialYearPeriods(budget)),
+                budget
+        );
+
+        List<COA> finalCoaList = Stream.concat(
+                safeList(coaList1).stream(),
+                safeList(coaList2).stream()
+        )
+                .filter(Objects::nonNull)
+                .filter(coa -> coa.getCode() != null)
+                .filter(coa -> !coa.getCode().startsWith("1"))
+                .distinct()
+                .sorted(Comparator.comparing(COA::getCode, Comparator.nullsFirst(String::compareTo)))
+                .collect(Collectors.toList());
+
+        UrcDeptSectionAnlDimbgt freightDept = urcDeptSectionAnlDimRepository.findByCustomANL_CODE("S020");
+        UrcDeptSectionAnlDimbgt propertyDept = urcDeptSectionAnlDimRepository.findByCustomANL_CODE("S004");
+
+        PeriodExtractor periodExtractor = new PeriodExtractor();
+        boolean containsFreight = deptUnits.contains(freightDept);
+        boolean containsProperty = deptUnits.contains(propertyDept);
+        boolean containsUnanalyzed = sections.contains("#              ");
+
+        List<BudgetItemsActuals> results = new ArrayList<>();
+
+        for (COA coa : finalCoaList) {
+            BudgetItemsActuals item = new BudgetItemsActuals();
+            item.setBudget(budget);
+            item.setItem(coa.getName());
+            item.setCoacode(coa);
+            item.setDeptUnit(deptUnits);
+
+            populateActuals(
+                    item,
+                    budget,
+                    coa,
+                    sections,
+                    containsFreight,
+                    containsProperty,
+                    containsUnanalyzed,
+                    periodExtractor
+            );
+
+            populateBudgetValues(item, budget, coa, deptUnits);
+            populateQuarterTotals(item);
+
+            results.add(item);
+        }
+
+        return results;
+    }
+
+    private void populateActuals(
+            BudgetItemsActuals item,
+            Budget budget,
+            COA coa,
+            Set<String> sections,
+            boolean containsFreight,
+            boolean containsProperty,
+            boolean containsUnanalyzed,
+            PeriodExtractor periodExtractor
+    ) {
+        String code = coa.getCode();
+
+        if (isFreightCoa(coa, code, containsFreight)) {
+            setActualValuesForAllMonths(item, budget, month
+                    -> safeAbs(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(
+                            code,
+                            periodExtractor.getFinancialYearPeriodByMonth(budget, month)
+                    ))
+            );
+            return;
+        }
+
+        if (isPropertyCoa(code, containsProperty)) {
+            setActualValuesForAllMonths(item, budget, month
+                    -> safeAbs(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(
+                            code,
+                            periodExtractor.getFinancialYearPeriodByMonth(budget, month)
+                    ))
+            );
+            return;
+        }
+
+        if (containsUnanalyzed) {
+            setActualValuesForAllMonths(item, budget, month
+                    -> safeAbs(salfldgRepository.findTotalAmountByPeriodAndCodeAndUnAnalyzed(
+                            code,
+                            periodExtractor.getFinancialYearPeriodByMonth(budget, month),
+                            sections
+                    ))
+            );
+        } else {
+            setActualValuesForAllMonths(item, budget, month
+                    -> safeAbs(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(
+                            code,
+                            periodExtractor.getFinancialYearPeriodByMonth(budget, month),
+                            sections
+                    ))
+            );
+        }
+    }
+
+    private BigDecimal positive(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value.abs();
+    }
+
+    private void populateBudgetValues(
+            BudgetItemsActuals item,
+            Budget budget,
+            COA coa,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits
+    ) {
+        item.setTotal(safe(repository.sumOfAllMonthsByBudgetAndCoa(budget, coa, deptUnits)));
+
+        item.setJul(safe(findSumOfIndividualMonthsByBudgetCoaDepts(budget, coa, deptUnits, "jul")));
+        item.setAug(safe(findSumOfIndividualMonthsByBudgetCoaDepts(budget, coa, deptUnits, "aug")));
+        item.setSep(safe(findSumOfIndividualMonthsByBudgetCoaDepts(budget, coa, deptUnits, "sep")));
+        item.setOct(safe(findSumOfIndividualMonthsByBudgetCoaDepts(budget, coa, deptUnits, "oct")));
+        item.setNov(safe(findSumOfIndividualMonthsByBudgetCoaDepts(budget, coa, deptUnits, "nov")));
+        item.setDec(safe(findSumOfIndividualMonthsByBudgetCoaDepts(budget, coa, deptUnits, "dec")));
+        item.setJan(safe(findSumOfIndividualMonthsByBudgetCoaDepts(budget, coa, deptUnits, "jan")));
+        item.setFeb(safe(findSumOfIndividualMonthsByBudgetCoaDepts(budget, coa, deptUnits, "feb")));
+        item.setMar(safe(findSumOfIndividualMonthsByBudgetCoaDepts(budget, coa, deptUnits, "mar")));
+        item.setApr(safe(findSumOfIndividualMonthsByBudgetCoaDepts(budget, coa, deptUnits, "apr")));
+        item.setMay(safe(findSumOfIndividualMonthsByBudgetCoaDepts(budget, coa, deptUnits, "may")));
+        item.setJun(safe(findSumOfIndividualMonthsByBudgetCoaDepts(budget, coa, deptUnits, "jun")));
+    }
+
+    private void populateQuarterTotals(BudgetItemsActuals item) {
+        item.setQtr1(sum(item.getJul(), item.getAug(), item.getSep()));
+        item.setQtr1A(sum(item.getJulA(), item.getAugA(), item.getSepA()));
+
+        item.setQtr2(sum(item.getOct(), item.getNov(), item.getDec()));
+        item.setQtr2A(sum(item.getOctA(), item.getNovA(), item.getDecA()));
+
+        item.setQtr3(sum(item.getJan(), item.getFeb(), item.getMar()));
+        item.setQtr3A(sum(item.getJanA(), item.getFebA(), item.getMarA()));
+
+        item.setQtr4(sum(item.getApr(), item.getMay(), item.getJun()));
+        item.setQtr4A(sum(item.getAprA(), item.getMayA(), item.getJunA()));
+
+        item.setTotalA(sum(item.getQtr1A(), item.getQtr2A(), item.getQtr3A(), item.getQtr4A()));
+        System.out.println(item.getTotalA()+"..... "+item.getTotalA().abs());
+    }
+
+    private void setActualValuesForAllMonths(
+            BudgetItemsActuals item,
+            Budget budget,
+            Function<Month, BigDecimal> valueProvider
+    ) {
+        item.setJulA(safe(valueProvider.apply(Month.JULY)));
+        item.setAugA(safe(valueProvider.apply(Month.AUGUST)));
+        item.setSepA(safe(valueProvider.apply(Month.SEPTEMBER)));
+        item.setOctA(safe(valueProvider.apply(Month.OCTOBER)));
+        item.setNovA(safe(valueProvider.apply(Month.NOVEMBER)));
+        item.setDecA(safe(valueProvider.apply(Month.DECEMBER)));
+        item.setJanA(safe(valueProvider.apply(Month.JANUARY)));
+        item.setFebA(safe(valueProvider.apply(Month.FEBRUARY)));
+        item.setMarA(safe(valueProvider.apply(Month.MARCH)));
+        item.setAprA(safe(valueProvider.apply(Month.APRIL)));
+        item.setMayA(safe(valueProvider.apply(Month.MAY)));
+        item.setJunA(safe(valueProvider.apply(Month.JUNE)));
+    }
+
+    private boolean isFreightCoa(COA coa, String code, boolean containsFreight) {
+        return containsFreight
+                && (coa.getDisplay() == Display.FREIGHT
+                || code.contains("111109")
+                || code.contains("111110"));
+    }
+
+    private boolean isPropertyCoa(String code, boolean containsProperty) {
+        return containsProperty
+                && Set.of("111401", "111402", "111403", "111404", "111406", "111407")
+                        .stream()
+                        .anyMatch(code::contains);
+    }
+
+    private BigDecimal sum(BigDecimal... values) {
+        return Arrays.stream(values)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal safe(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private BigDecimal safeAbs(BigDecimal value) {
+        return safe(value).abs();
+    }
+
+    private <T> List<T> safeList(List<T> list) {
+        return list == null ? Collections.emptyList() : list;
     }
 
     public List<BudgetItemsActuals> findToActualAndBudget(Budget budget, Set<UrcDeptSectionAnlDimbgt> deptUnits) {
@@ -1553,7 +1682,7 @@ public class BudgetItemsService {
             b.setQtr3A(b.getJanA().add(b.getFebA().add(b.getMarA())));
             b.setQtr4(b.getApr().add(b.getMay().add(b.getJun())));
             b.setQtr4A(b.getAprA().add(b.getMayA().add(b.getJunA())));
-            b.setTotalA(b.getQtr1A().add(b.getQtr2A().add(b.getQtr3A().add(b.getQtr4A()))));
+            b.setTotalA(b.getQtr1A().add(b.getQtr2A().add(b.getQtr3A().add(b.getQtr4A()))).abs());
 
             budgetItemses.add(b);
         }
@@ -2227,7 +2356,7 @@ public class BudgetItemsService {
             return 0;
         }
 
-        List<Long> ids                = repository.findIdsByBudgetAndCoacodeIn(budget, coas);
+        List<Long> ids = repository.findIdsByBudgetAndCoacodeIn(budget, coas);
 
         if (ids.isEmpty()) {
             return 0;

@@ -78,7 +78,8 @@
     "construct-style-sheets-polyfill": "3.1.0",
     "date-fns": "2.29.3",
     "lit": "3.1.2",
-    "proj4": "2.9.2"
+    "proj4": "2.9.2",
+    "quill": "2.0.3"
   },
   "devDependencies": {
     "@rollup/plugin-replace": "5.0.5",
@@ -174,7 +175,8 @@
       "construct-style-sheets-polyfill": "3.1.0",
       "date-fns": "2.29.3",
       "lit": "3.1.2",
-      "proj4": "2.9.2"
+      "proj4": "2.9.2",
+      "quill": "2.0.3"
     },
     "devDependencies": {
       "@rollup/plugin-replace": "5.0.5",
@@ -194,7 +196,7 @@
       "workbox-core": "7.0.0",
       "workbox-precaching": "7.0.0"
     },
-    "hash": "195983796ca37f9bb05f4b2a63d5dfadd57e03391c9937f5bb856c0a9df72c2b"
+    "hash": "4a5a30ea2681d50fe81618d23911806fcb3466a525ce6ab5a9076e705c5e38ea"
   },
   "overrides": {
     "@vaadin/bundles": "$@vaadin/bundles",
@@ -272,6 +274,7 @@
     "proj4": "$proj4",
     "@vaadin/vaadin-themable-mixin": "$@vaadin/vaadin-themable-mixin",
     "date-fns": "$date-fns",
-    "apexcharts": "$apexcharts"
+    "apexcharts": "$apexcharts",
+    "quill": "$quill"
   }
 }

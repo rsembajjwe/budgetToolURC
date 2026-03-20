@@ -482,6 +482,7 @@ public class BudgetService {
         List<UrcDepartmentAnlDim> departments = findActiveDepartments();
         return departments.stream().map(dept -> {
             Set<UrcDeptSectionAnlDimbgt> sections = deptSectionMergerService.getSectionsByDeptCode2(dept.getANL_CODE());
+            
 
             BigDecimal baseBudget = BigDecimal.ZERO; // 50M to 500M UGX
             baseBudget = budgetItemsService.calculateTotalDeptExpenditure(budget, sections.stream().toList());
@@ -564,7 +565,8 @@ public class BudgetService {
                     cumQtr1Actual,
                     cumQtr2Actual,
                     cumQtr3Actual,
-                    cumQtr4Actual
+                    cumQtr4Actual,
+                    sections
             );
         }).collect(Collectors.toList());
     }

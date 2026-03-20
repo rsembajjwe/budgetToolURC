@@ -1,8 +1,10 @@
 package com.methaltech.application.data.entity.bgtool;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import java.math.BigDecimal;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -82,8 +84,10 @@ class Urc_Activities implements Serializable {
     @JoinColumn(name = "budget_id")
     private Budget budget;
 
-    @Column(length = 255)
-    private Set<String> deliverable_outputs;
+    @ElementCollection
+    @CollectionTable(name = "activity_deliverable_outputs", joinColumns = @JoinColumn(name = "activity_id"))
+    @Column(name = "deliverable_output")
+    private Set<String> deliverable_outputs = new HashSet<>();
 
     @Column(precision = 19, scale = 2)
     private BigDecimal qtr1;
@@ -133,6 +137,18 @@ class Urc_Activities implements Serializable {
     private String expl_of_variations_qtr3;
     @Column(length = 500)
     private String expl_of_variations_qtr4;
+
+    @Column(name = "perc_of_TargetAchieved_qtr11")
+    private Double perc_of_TargetAchieved_qtr11;
+
+    @Column(name = "perc_of_TargetAchieved_qtr21")
+    private Double perc_of_TargetAchieved_qtr21;
+
+    @Column(name = "perc_of_TargetAchieved_qtr31")
+    private Double perc_of_TargetAchieved_qtr31;
+
+    @Column(name = "perc_of_TargetAchieved_qtr41")
+    private Double perc_of_TargetAchieved_qtr41;
 
     // Helper methods
     public String getDisplayName() {

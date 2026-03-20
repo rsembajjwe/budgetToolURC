@@ -1,6 +1,7 @@
 package com.methaltech.application.data.bgtool.repository;
 
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -39,4 +40,11 @@ public interface UrcDeptSectionAnlDimbgtRepository extends JpaRepository<UrcDept
 
     @Query("SELECT u FROM UrcDeptSectionAnlDimbgt u WHERE u.ANL_CODE = :sectionCode")
     UrcDeptSectionAnlDimbgt findBySectionCode(@Param("sectionCode") String sectionCode);
+
+    @Query(value = """
+        SELECT *
+        FROM URC_DEPTSECTION_ANL_DIM_V
+        WHERE ANL_CODE IN (:anlCodes)
+        """, nativeQuery = true)
+    Set<UrcDeptSectionAnlDimbgt> findByAnlCodeIn(@Param("anlCodes") Collection<String> anlCodes);
 }

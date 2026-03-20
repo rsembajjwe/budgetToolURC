@@ -28,6 +28,7 @@ import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.*;
+import com.methaltech.application.data.bgtool.service.BudgetItemsService;
 
 import java.io.*;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -36,8 +37,10 @@ import org.apache.poi.xwpf.usermodel.*;
 
 import com.methaltech.application.data.bgtool.service.BudgetService;
 import com.methaltech.application.data.bgtool.service.CoaService;
+import com.methaltech.application.data.bgtool.service.DepartmentGeneralPhysicalPerformanceService;
 import com.methaltech.application.data.bgtool.service.DeptSectionMergerService;
 import com.methaltech.application.data.bgtool.service.UrcDeptSectionAnlDimbgtService;
+import com.methaltech.application.data.bgtool.service.Urc_ActivitiesService;
 import com.methaltech.application.data.bgtool.service.UserService;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.BudgetSummary;
@@ -112,6 +115,9 @@ public class DashboardView extends VerticalLayout {
     private final UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService;
     private final SALFLDGService sampleSALFLDGService;
     private final DeptSectionMergerService sampleDeptSectionMergerService;
+    private final BudgetItemsService budgetItemsService;
+    private final Urc_ActivitiesService sampleUrc_ActivitiesService;
+    private final DepartmentGeneralPhysicalPerformanceService departmentGeneralPhysicalPerformanceService;
 
     private static final PageSize REPORT_PAGE_SIZE = PageSize.A4;
     private static final float PAGE_MARGIN_TOP = 48f;
@@ -137,7 +143,8 @@ public class DashboardView extends VerticalLayout {
 
     @Autowired
     public DashboardView(BudgetService budgetService, AuthenticatedUser authenticatedUser, UserService userService, CoaService sampleCoaService,
-            UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, SALFLDGService sampleSALFLDGService, DeptSectionMergerService sampleDeptSectionMergerService) {
+            UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, SALFLDGService sampleSALFLDGService, DeptSectionMergerService sampleDeptSectionMergerService,
+            BudgetItemsService budgetItemsService,Urc_ActivitiesService sampleUrc_ActivitiesService,DepartmentGeneralPhysicalPerformanceService departmentGeneralPhysicalPerformanceService) {
         this.budgetService = budgetService;
         this.authenticatedUser = authenticatedUser;
         this.userService = userService;
@@ -145,6 +152,9 @@ public class DashboardView extends VerticalLayout {
         this.sampleCoaService = sampleCoaService;
         this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
         this.sampleSALFLDGService = sampleSALFLDGService;
+        this.budgetItemsService=budgetItemsService;
+        this.sampleUrc_ActivitiesService=sampleUrc_ActivitiesService;
+        this.departmentGeneralPhysicalPerformanceService=departmentGeneralPhysicalPerformanceService;
         setWidthFull();
         setHeightFull();
         setPadding(false);
@@ -470,7 +480,10 @@ public class DashboardView extends VerticalLayout {
                     sampleUrcDeptSectionAnlDimbgtService,
                     sampleSALFLDGService,
                     sampleDeptSectionMergerService,
-                    currentBudget
+                    currentBudget,
+                    budgetItemsService,
+                    sampleUrc_ActivitiesService,
+                    departmentGeneralPhysicalPerformanceService
             );
             departmentOverview.addClassName("department-overview");
 

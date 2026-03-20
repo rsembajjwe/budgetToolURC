@@ -1,3 +1,9 @@
+import { injectGlobalCss } from 'Frontend/generated/jar-resources/theme-util.js';
+
+import { css, unsafeCSS, registerStyles } from '@vaadin/vaadin-themable-mixin';
+import $cssFromFile_0 from 'quill/dist/quill.snow.css?inline';
+
+injectGlobalCss($cssFromFile_0.toString(), 'CSSImport end', document);
 import '@vaadin/polymer-legacy-adapter/style-modules.js';
 import '@vaadin/horizontal-layout/theme/lumo/vaadin-horizontal-layout.js';
 import '@vaadin/vertical-layout/theme/lumo/vaadin-vertical-layout.js';
@@ -7,6 +13,7 @@ import '@vaadin/app-layout/theme/lumo/vaadin-app-layout.js';
 import '@vaadin/context-menu/theme/lumo/vaadin-context-menu.js';
 import 'Frontend/generated/jar-resources/contextMenuConnector.js';
 import 'Frontend/generated/jar-resources/contextMenuTargetConnector.js';
+import 'Frontend/src/quill-editor-field.js';
 import 'Frontend/src/budget-graphs.js';
 import '@vaadin/login/theme/lumo/vaadin-login-overlay.js';
 import '@vaadin/field-highlighter/theme/lumo/vaadin-field-highlighter.js';

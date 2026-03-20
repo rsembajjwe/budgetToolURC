@@ -2,6 +2,7 @@ package com.methaltech.application.data.entity.bgtool;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Set;
 import lombok.Data;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -32,6 +33,7 @@ public class DepartmentBudget {
     private BigDecimal cumQtr2Actual;
     private BigDecimal cumQtr3Actual;
     private BigDecimal cumQtr4Actual;
+    Set<UrcDeptSectionAnlDimbgt> sections;
 
 public BigDecimal getSpentPercentage() {
 

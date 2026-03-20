@@ -81,7 +81,7 @@ class BudgetItemsActuals {
     }*/
 
     public void setTotalA(BigDecimal total) {
-        this.totalA = sumNullable(julA, augA, sepA, octA, novA, decA, janA, febA, marA, aprA, mayA, junA);
+        this.totalA = sumNullable(julA, augA, sepA, octA, novA, decA, janA, febA, marA, aprA, mayA, junA).abs();
     }
 
     public void setQtr1(BigDecimal qtr1) {
