@@ -51,6 +51,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.textfield.BigDecimalField;
+import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
@@ -481,7 +482,6 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             switch (quarter) {
                 case 1:
                     if (isBlank(activity.getCum_achievements_qtr1())
-                            || isBlank(activity.getPerc_of_TargetAchieved_qtr1())
                             || isBlank(activity.getExpl_of_variations_qtr1())) {
                         return false;
                     }
@@ -489,7 +489,6 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
                 case 2:
                     if (isBlank(activity.getCum_achievements_qtr2())
-                            || isBlank(activity.getPerc_of_TargetAchieved_qtr2())
                             || isBlank(activity.getExpl_of_variations_qtr2())) {
                         return false;
                     }
@@ -497,7 +496,6 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
                 case 3:
                     if (isBlank(activity.getCum_achievements_qtr3())
-                            || isBlank(activity.getPerc_of_TargetAchieved_qtr3())
                             || isBlank(activity.getExpl_of_variations_qtr3())) {
                         return false;
                     }
@@ -505,7 +503,6 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
                 case 4:
                     if (isBlank(activity.getCum_achievements_qtr4())
-                            || isBlank(activity.getPerc_of_TargetAchieved_qtr4())
                             || isBlank(activity.getExpl_of_variations_qtr4())) {
                         return false;
                     }
@@ -574,17 +571,20 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                 List<Urc_Activities> tempActs = new ArrayList<>();
                 for (Urc_Activities activ : acts) {
                     if (qtr == 2) {
-                        activ.setPerc_of_TargetAchieved_qtr2(activ.getPerc_of_TargetAchieved_qtr1());
+                        //activ.setPerc_of_TargetAchieved_qtr2(activ.getPerc_of_TargetAchieved_qtr1());
                         activ.setCum_achievements_qtr2(activ.getCum_achievements_qtr1());
                         activ.setExpl_of_variations_qtr2(activ.getExpl_of_variations_qtr1());
+                        activ.setPerc_of_TargetAchieved_qtr21(activ.getPerc_of_TargetAchieved_qtr11());
                     } else if (qtr == 3) {
-                        activ.setPerc_of_TargetAchieved_qtr3(activ.getPerc_of_TargetAchieved_qtr2());
+                        //activ.setPerc_of_TargetAchieved_qtr3(activ.getPerc_of_TargetAchieved_qtr2());
                         activ.setCum_achievements_qtr3(activ.getCum_achievements_qtr2());
                         activ.setExpl_of_variations_qtr3(activ.getExpl_of_variations_qtr2());
+                        activ.setPerc_of_TargetAchieved_qtr31(activ.getPerc_of_TargetAchieved_qtr21());
                     } else if (qtr == 4) {
-                        activ.setPerc_of_TargetAchieved_qtr4(activ.getPerc_of_TargetAchieved_qtr3());
+                        //activ.setPerc_of_TargetAchieved_qtr4(activ.getPerc_of_TargetAchieved_qtr3());
                         activ.setCum_achievements_qtr4(activ.getCum_achievements_qtr3());
                         activ.setExpl_of_variations_qtr4(activ.getExpl_of_variations_qtr3());
+                        activ.setPerc_of_TargetAchieved_qtr41(activ.getPerc_of_TargetAchieved_qtr31());
                     }
                     tempActs.add(activ);
                 }
@@ -915,91 +915,133 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                 .setHeader("Key Performance Indicator");
 
         physicalGrid.addColumn(Urc_Activities::getAnnualTarget)
-                .setHeader("Annual Target");
+                .setHeader("Annual Target").setWidth("30px");
 
-        physicalGrid.addColumn(area -> {
-            String getCum_achievements = "";
-            if (chosenDsection != null && chosenBudget != null && qtr != 0) {
-                switch (qtr) {
-                    case 1:
-                        getCum_achievements = area.getPerc_of_TargetAchieved_qtr1();
-                        break;
-                    case 2:
-                        getCum_achievements = area.getPerc_of_TargetAchieved_qtr2();
-                        break;
-                    case 3:
-                        getCum_achievements = area.getPerc_of_TargetAchieved_qtr3();
-                        break;
-                    case 4:
-                        getCum_achievements = area.getPerc_of_TargetAchieved_qtr4();
-                        break;
-                    default:
-                        break;
+        physicalGrid.addColumn(new ComponentRenderer<>(activity -> {
+            BigDecimalField field = new BigDecimalField();
+            field.setWidthFull();
+            field.setPlaceholder("0");
+            field.setSuffixComponent(new Span("%"));
+
+            Double pct = getPct(activity);
+            field.setValue(pct != null ? BigDecimal.valueOf(pct.doubleValue()) : null);
+
+            field.addValueChangeListener(e -> {
+                if (!e.isFromClient()) {
+                    return;
                 }
-            }
 
-            return getCum_achievements;
-        }).setHeader("% Target Achieved");
+                BigDecimal value = e.getValue();
 
-        physicalGrid.addColumn(area -> {
-            String getCum_achievements = "";
-            if (chosenDsection != null && chosenBudget != null && qtr != 0) {
-                switch (qtr) {
-                    case 1:
-                        getCum_achievements = area.getCum_achievements_qtr1();
-                        break;
-                    case 2:
-                        getCum_achievements = area.getCum_achievements_qtr2();
-                        break;
-                    case 3:
-                        getCum_achievements = area.getCum_achievements_qtr3();
-                        break;
-                    case 4:
-                        getCum_achievements = area.getCum_achievements_qtr4();
-                        break;
-                    default:
-                        break;
+                if (value != null
+                        && (value.compareTo(BigDecimal.ZERO) < 0 || value.compareTo(new BigDecimal("100")) > 0)) {
+                    field.setInvalid(true);
+                    field.setErrorMessage("Enter a value between 0 and 100");
+                    return;
                 }
-            }
 
-            return getCum_achievements;
-        }).setHeader("Cumulative Achievements");
+                field.setInvalid(false);
+                setPct(activity, value != null ? value.doubleValue() : null);
+                savePhysicalRow(activity);
+            });
 
-        physicalGrid.addColumn(new ComponentRenderer<>(area -> {
-            String getCum_achievements = "-";
-            Span span = new Span();
-            if (chosenDsection != null && chosenBudget != null && qtr != 0) {
-                switch (qtr) {
-                    case 1:
-                        getCum_achievements = area.getExpl_of_variations_qtr1();
-                        break;
-                    case 2:
-                        getCum_achievements = area.getExpl_of_variations_qtr2();
-                        break;
-                    case 3:
-                        getCum_achievements = area.getExpl_of_variations_qtr3();
-                        break;
-                    case 4:
-                        getCum_achievements = area.getExpl_of_variations_qtr4();
-                        break;
-                    default:
-                        break;
+            return field;
+        })).setHeader("% Target Achieved").setWidth("60px");
+
+        physicalGrid.addColumn(new ComponentRenderer<>(activity -> {
+            TextArea field = new TextArea();
+            field.setWidthFull();
+            field.setMaxLength(1000);
+            field.setMinHeight("120px");
+            field.setValue(getCumAchievements(activity));
+            field.setPlaceholder("Enter cumulative achievements");
+
+            field.addValueChangeListener(e -> {
+                if (!e.isFromClient()) {
+                    return;
                 }
-            }
-            if (getCum_achievements == null) {
-                getCum_achievements = "-";
-            }
-            span.setText(getCum_achievements);
-            ContextMenu contextMenu = new ContextMenu(span);
-            contextMenu.setOpenOnClick(true); //
-            contextMenu.addItem("Edit Quarter Physical Data", e -> {
-                openPerformanceDialog(physicalGrid, activities, area, qtr);
-            }
+                setCumAchievements(activity, e.getValue());
+                savePhysicalRow(activity);
+            });
+
+            return field;
+        })).setHeader("Cumulative Achievements").setFlexGrow(2);
+
+        /*        physicalGrid.addColumn(new ComponentRenderer<>(area -> {
+        String getCum_achievements = "-";
+        Span span = new Span();
+        if (chosenDsection != null && chosenBudget != null && qtr != 0) {
+        switch (qtr) {
+        case 1:
+        getCum_achievements = area.getExpl_of_variations_qtr1();
+        break;
+        case 2:
+        getCum_achievements = area.getExpl_of_variations_qtr2();
+        break;
+        case 3:
+        getCum_achievements = area.getExpl_of_variations_qtr3();
+        break;
+        case 4:
+        getCum_achievements = area.getExpl_of_variations_qtr4();
+        break;
+        default:
+        break;
+        }
+        }
+        if (getCum_achievements == null) {
+        getCum_achievements = "-";
+        }
+        span.setText(getCum_achievements);
+        ContextMenu contextMenu = new ContextMenu(span);
+        contextMenu.setOpenOnClick(true); //
+        contextMenu.addItem("Edit Quarter Physical Data", e -> {
+        openPerformanceDialog(physicalGrid, activities, area, qtr);
+        }
+        );
+        
+        return span;
+        })).setHeader("Explanation for variations");*/
+        physicalGrid.addColumn(new ComponentRenderer<>(activity -> {
+            TextArea area = new TextArea();
+            area.setWidthFull();
+            area.setValue(getVariation(activity));
+            area.setPlaceholder("Enter explanation for variations");
+            area.setMaxLength(1000);
+            area.setMinHeight("120px");
+
+            area.addValueChangeListener(e -> {
+                if (!e.isFromClient()) {
+                    return;
+                }
+                setVariation(activity, e.getValue());
+                savePhysicalRow(activity);
+            });
+
+            return area;
+        })).setHeader("Explanation for variations").setFlexGrow(2);
+
+        physicalGrid.addComponentColumn(activity -> {
+            Button editButton = new Button(getPctFormatted(activity), new Icon(VaadinIcon.PENCIL));
+            editButton.addThemeVariants(
+                    ButtonVariant.LUMO_TERTIARY_INLINE,
+                    ButtonVariant.LUMO_ICON,
+                    ButtonVariant.LUMO_SMALL
             );
+            editButton.getElement().setProperty("title", "Align Expenditure to this Activity");
+            editButton.getStyle().set("border-radius", "999px");
+            editButton.addClickListener(e -> {
+                if (activity != null && qtr != 0) {
+                    openPerformanceDialog(physicalGrid, activities, activity, qtr);
+                }
+            });
+            return editButton;
+        }).setHeader("Actions").setWidth("120px").setFlexGrow(0);
 
-            return span;
-        })).setHeader("Explanation for variations");
+    }
 
+    private void savePhysicalRow(Urc_Activities activity) {
+        sampleUrc_ActivitiesService.update(activity);
+        physicalGrid.getDataProvider().refreshItem(activity);
     }
 
     private String calculateReleaseSpent(BigDecimal totalReleased, BigDecimal releaseSpent) {
@@ -1014,6 +1056,137 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                 .multiply(BigDecimal.valueOf(100));
 
         return percentage.setScale(2, RoundingMode.HALF_UP).toPlainString() + "%";
+    }
+
+    private Double getPct(Urc_Activities a) {
+        if (a == null || chosenDsection == null || chosenBudget == null || qtr == 0) {
+            return null;
+        }
+        return switch (qtr) {
+            case 1 ->
+                a.getPerc_of_TargetAchieved_qtr11() != null ? Math.abs(a.getPerc_of_TargetAchieved_qtr11()) : 0.0;
+            case 2 ->
+                a.getPerc_of_TargetAchieved_qtr21() != null ? Math.abs(a.getPerc_of_TargetAchieved_qtr21()) : 0.0;
+            case 3 ->
+                a.getPerc_of_TargetAchieved_qtr31() != null ? Math.abs(a.getPerc_of_TargetAchieved_qtr31()) : 0.0;
+            case 4 ->
+                a.getPerc_of_TargetAchieved_qtr41() != null ? Math.abs(a.getPerc_of_TargetAchieved_qtr41()) : 0.0;
+            default ->
+                null;
+        };
+    }
+
+    private BigDecimal getActivityQuarterExpenditure(Urc_Activities a) {
+        if (a == null || chosenDsection == null || chosenBudget == null || qtr == 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return switch (qtr) {
+            case 1 ->
+                a.getQtr1A() != null ? a.getQtr1A().abs() : BigDecimal.ZERO;
+            case 2 ->
+                a.getQtr2A() != null ? a.getQtr2A().abs() : BigDecimal.ZERO;
+            case 3 ->
+                a.getQtr3A() != null ? a.getQtr3A().abs() : BigDecimal.ZERO;
+            case 4 ->
+                a.getQtr4A() != null ? a.getQtr4A().abs() : BigDecimal.ZERO;
+            default ->
+                BigDecimal.ZERO;
+        };
+    }
+
+    private String getPctFormatted(Urc_Activities a) {
+        BigDecimal value = getActivityQuarterExpenditure(a);
+
+        if (value == null) {
+            return "";
+        }
+
+        return String.format("%,.2f", value);
+    }
+
+    private void setPct(Urc_Activities a, Double value) {
+        if (a == null) {
+            return;
+        }
+        switch (qtr) {
+            case 1 ->
+                a.setPerc_of_TargetAchieved_qtr11(value);
+            case 2 ->
+                a.setPerc_of_TargetAchieved_qtr21(value);
+            case 3 ->
+                a.setPerc_of_TargetAchieved_qtr31(value);
+            case 4 ->
+                a.setPerc_of_TargetAchieved_qtr41(value);
+        }
+    }
+
+    private String getCumAchievements(Urc_Activities a) {
+        if (a == null || chosenDsection == null || chosenBudget == null || qtr == 0) {
+            return "";
+        }
+        return switch (qtr) {
+            case 1 ->
+                nvl(a.getCum_achievements_qtr1(), "");
+            case 2 ->
+                nvl(a.getCum_achievements_qtr2(), "");
+            case 3 ->
+                nvl(a.getCum_achievements_qtr3(), "");
+            case 4 ->
+                nvl(a.getCum_achievements_qtr4(), "");
+            default ->
+                "";
+        };
+    }
+
+    private String nvl(String value, String defaultValue) {
+        return value != null ? value : defaultValue;
+    }
+
+    private void setCumAchievements(Urc_Activities a, String value) {
+        String v = value == null ? "" : value;
+        switch (qtr) {
+            case 1 ->
+                a.setCum_achievements_qtr1(v);
+            case 2 ->
+                a.setCum_achievements_qtr2(v);
+            case 3 ->
+                a.setCum_achievements_qtr3(v);
+            case 4 ->
+                a.setCum_achievements_qtr4(v);
+        }
+    }
+
+    private String getVariation(Urc_Activities a) {
+        if (a == null || chosenDsection == null || chosenBudget == null || qtr == 0) {
+            return "";
+        }
+        return switch (qtr) {
+            case 1 ->
+                nvl(a.getExpl_of_variations_qtr1(), "");
+            case 2 ->
+                nvl(a.getExpl_of_variations_qtr2(), "");
+            case 3 ->
+                nvl(a.getExpl_of_variations_qtr3(), "");
+            case 4 ->
+                nvl(a.getExpl_of_variations_qtr4(), "");
+            default ->
+                "";
+        };
+    }
+
+    private void setVariation(Urc_Activities a, String value) {
+        String v = value == null ? "" : value;
+        switch (qtr) {
+            case 1 ->
+                a.setExpl_of_variations_qtr1(v);
+            case 2 ->
+                a.setExpl_of_variations_qtr2(v);
+            case 3 ->
+                a.setExpl_of_variations_qtr3(v);
+            case 4 ->
+                a.setExpl_of_variations_qtr4(v);
+        }
     }
 
     // Method to open dialog
@@ -1519,6 +1692,15 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         TextField perc_of_release_SpentSpan = new TextField("% Target Achieved");
         perc_of_release_SpentSpan.setPlaceholder("90%");
 
+        NumberField perc_of_release_SpentSpan2 = new NumberField("% Target Achieved");
+        Span suffix = new Span("%");
+        perc_of_release_SpentSpan2.setSuffixComponent(suffix);
+        perc_of_release_SpentSpan2.setPlaceholder("90");
+        perc_of_release_SpentSpan2.setSuffixComponent(new Span("%"));
+        perc_of_release_SpentSpan2.setMin(0);
+        perc_of_release_SpentSpan2.setMax(100);
+        perc_of_release_SpentSpan2.setStep(0.1);
+
         TextArea expl_of_variationField = new TextArea("Explanation for Variations");
         expl_of_variationField.setPlaceholder("Delayed supplier delivery");
         //expl_of_variationField.setWidth("400px");
@@ -1527,30 +1709,36 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             case 1:
                 cumAchievementsSpan.setValue(activity.getCum_achievements_qtr1() != null ? activity.getCum_achievements_qtr1() : "");
                 perc_of_release_SpentSpan.setValue(activity.getPerc_of_TargetAchieved_qtr1() != null ? activity.getPerc_of_TargetAchieved_qtr1() : "");
+                Double pct = activity.getPerc_of_TargetAchieved_qtr11();
+                perc_of_release_SpentSpan2.setValue(pct != null ? pct : null);
                 expl_of_variationField.setValue(activity.getExpl_of_variations_qtr1() != null ? activity.getExpl_of_variations_qtr1() : "");
                 break;
 
             case 2:
                 cumAchievementsSpan.setValue(activity.getCum_achievements_qtr2() != null ? activity.getCum_achievements_qtr2() : "");
                 perc_of_release_SpentSpan.setValue(activity.getPerc_of_TargetAchieved_qtr2() != null ? activity.getPerc_of_TargetAchieved_qtr2() : "");
+                perc_of_release_SpentSpan2.setValue(activity.getPerc_of_TargetAchieved_qtr21() != null ? activity.getPerc_of_TargetAchieved_qtr21() : 0.0);
                 expl_of_variationField.setValue(activity.getExpl_of_variations_qtr2() != null ? activity.getExpl_of_variations_qtr2() : "");
                 break;
 
             case 3:
                 cumAchievementsSpan.setValue(activity.getCum_achievements_qtr3() != null ? activity.getCum_achievements_qtr3() : "");
                 perc_of_release_SpentSpan.setValue(activity.getPerc_of_TargetAchieved_qtr3() != null ? activity.getPerc_of_TargetAchieved_qtr3() : "");
+                perc_of_release_SpentSpan2.setValue(activity.getPerc_of_TargetAchieved_qtr31() != null ? activity.getPerc_of_TargetAchieved_qtr31() : 0.0);
                 expl_of_variationField.setValue(activity.getExpl_of_variations_qtr3() != null ? activity.getExpl_of_variations_qtr3() : "");
                 break;
 
             case 4:
                 cumAchievementsSpan.setValue(activity.getCum_achievements_qtr4() != null ? activity.getCum_achievements_qtr4() : "");
                 perc_of_release_SpentSpan.setValue(activity.getPerc_of_TargetAchieved_qtr4() != null ? activity.getPerc_of_TargetAchieved_qtr4() : "");
+                perc_of_release_SpentSpan2.setValue(activity.getPerc_of_TargetAchieved_qtr41() != null ? activity.getPerc_of_TargetAchieved_qtr41() : 0.0);
                 expl_of_variationField.setValue(activity.getExpl_of_variations_qtr4() != null ? activity.getExpl_of_variations_qtr4() : "");
                 break;
 
             default:
                 cumAchievementsSpan.setValue("");
                 perc_of_release_SpentSpan.setValue("");
+                perc_of_release_SpentSpan2.setValue(0.0);
                 expl_of_variationField.setValue("");
                 break;
         }
@@ -1576,7 +1764,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                     field.setRequiredIndicatorVisible(true);
 
                 });
-        deliverableLayout.add(lay, annualTargetSpan, perc_of_release_SpentSpan, cumAchievementsSpan, expl_of_variationField);
+        deliverableLayout.add(lay, annualTargetSpan, perc_of_release_SpentSpan, perc_of_release_SpentSpan2, cumAchievementsSpan, expl_of_variationField);
         deliverableLayout.setResponsiveSteps(
                 new FormLayout.ResponsiveStep("0", 1, FormLayout.ResponsiveStep.LabelsPosition.ASIDE),
                 new FormLayout.ResponsiveStep("100px", 3, FormLayout.ResponsiveStep.LabelsPosition.ASIDE)
@@ -1634,27 +1822,28 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             switch (qtr) {
                 case 1:
                     activity.setQtr1A(sumOfQtr(activity.getQuarterlyActuals()));
-                    activity.setCum_achievements_qtr1(cumAchievementsSpan.getValue());
-                    activity.setPerc_of_TargetAchieved_qtr1(perc_of_release_SpentSpan.getValue());
-                    activity.setExpl_of_variations_qtr1(expl_of_variationField.getValue());
+                    // activity.setCum_achievements_qtr1(cumAchievementsSpan.getValue());
+                    // activity.setPerc_of_TargetAchieved_qtr1(perc_of_release_SpentSpan.getValue());
+                    // activity.setPerc_of_TargetAchieved_qtr11(perc_of_release_SpentSpan2.getValue());
+                    // activity.setExpl_of_variations_qtr1(expl_of_variationField.getValue());
                     break;
                 case 2:
                     activity.setQtr2A(sumOfQtr(activity.getQuarterlyActuals()));
-                    activity.setCum_achievements_qtr2(cumAchievementsSpan.getValue());
-                    activity.setPerc_of_TargetAchieved_qtr2(perc_of_release_SpentSpan.getValue());
-                    activity.setExpl_of_variations_qtr2(expl_of_variationField.getValue());
+                    // activity.setCum_achievements_qtr2(cumAchievementsSpan.getValue());
+                    // activity.setPerc_of_TargetAchieved_qtr2(perc_of_release_SpentSpan.getValue());
+                    // activity.setExpl_of_variations_qtr2(expl_of_variationField.getValue());
                     break;
                 case 3:
                     activity.setQtr3A(sumOfQtr(activity.getQuarterlyActuals()));
-                    activity.setCum_achievements_qtr3(cumAchievementsSpan.getValue());
-                    activity.setPerc_of_TargetAchieved_qtr3(perc_of_release_SpentSpan.getValue());
-                    activity.setExpl_of_variations_qtr2(expl_of_variationField.getValue());
+                    // activity.setCum_achievements_qtr3(cumAchievementsSpan.getValue());
+                    // activity.setPerc_of_TargetAchieved_qtr3(perc_of_release_SpentSpan.getValue());
+                    //activity.setExpl_of_variations_qtr2(expl_of_variationField.getValue());
                     break;
                 case 4:
                     activity.setQtr4A(sumOfQtr(activity.getQuarterlyActuals()));
-                    activity.setCum_achievements_qtr4(cumAchievementsSpan.getValue());
-                    activity.setPerc_of_TargetAchieved_qtr4(perc_of_release_SpentSpan.getValue());
-                    activity.setExpl_of_variations_qtr2(expl_of_variationField.getValue());
+                    // activity.setCum_achievements_qtr4(cumAchievementsSpan.getValue());
+                    // activity.setPerc_of_TargetAchieved_qtr4(perc_of_release_SpentSpan.getValue());
+                    // activity.setExpl_of_variations_qtr2(expl_of_variationField.getValue());
                     break;
                 default:
                     break;
@@ -1685,14 +1874,22 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         gridsLayout.setSpacing(true);
         gridsLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
 
+        /*        VerticalLayout content = new VerticalLayout(
+        new H3("Quarterly Financial Performance for QTR " + qtr),
+        new Span("Drag items between tables to assign or unassign quarterly actuals."),
+        searchLayout, // 👈 Add this line
+        gridsLayout,
+        new Hr(),
+        new H4("Quarterly Physical Performance for QTR " + qtr),
+        deliverableLayout,
+        footer
+        );*/
         VerticalLayout content = new VerticalLayout(
                 new H3("Quarterly Financial Performance for QTR " + qtr),
                 new Span("Drag items between tables to assign or unassign quarterly actuals."),
                 searchLayout, // 👈 Add this line
                 gridsLayout,
                 new Hr(),
-                new H4("Quarterly Physical Performance for QTR " + qtr),
-                deliverableLayout,
                 footer
         );
 

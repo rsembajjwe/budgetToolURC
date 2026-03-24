@@ -10,6 +10,7 @@ import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.BudgetItemsActuals;
 import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.DepartmentBudget;
+import com.methaltech.application.data.entity.bgtool.DepartmentGeneralPhysicalPerformance;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import com.methaltech.application.data.livedata.service.SALFLDGService;
@@ -602,42 +603,48 @@ public class DepartmentOverview extends VerticalLayout {
         quarterBox.setWidth("200px");
 
         QuillEditorField editor = new QuillEditorField();
-        editor.setWidthFull();
+        editor.setWidth("100%");
         editor.setHeight("300px");
         editor.addClassName("rich-editor");
         editor.getStyle().set("border", "1px solid var(--lumo-contrast-20pct)");
         editor.setPlaceholder("Write the general budget physical performance narrative for the selected quarter...");
-        editor.setValue("""
-<h3>Summary</h3>
-<p></p>
 
-<h3>Key Achievements</h3>
-<ul><li></li></ul>
-
-<h3>Challenges</h3>
-<ul><li></li></ul>
-
-<h3>Way Forward</h3>
-<ul><li></li></ul>
-""");
-
-        Div preview = new Div();
+        /*        Div preview = new Div();
         preview.setWidthFull();
         preview.getStyle()
-                .set("border", "1px solid var(--lumo-contrast-20pct)")
-                .set("border-radius", "8px")
-                .set("padding", "12px")
-                .set("min-height", "120px")
-                .set("background", "var(--lumo-base-color)");
+        .set("border", "1px solid var(--lumo-contrast-20pct)")
+        .set("border-radius", "8px")
+        .set("padding", "12px")
+        .set("min-height", "120px")
+        .set("background", "var(--lumo-base-color)");*/
 
-        String initialHtml = departmentGeneralPhysicalPerformanceService.getQuarterHtml(deptCode, "qtr1");
-        editor.setValue(initialHtml == null ? "" : initialHtml);
+        String template = """
+        <h3>Summary</h3>
+        <p></p>
+
+        <h3>Key Achievements</h3>
+        <ul><li></li></ul>
+
+        <h3>Challenges</h3>
+        <ul><li></li></ul>
+
+        <h3>Way Forward</h3>
+        <ul><li></li></ul>
+        """;
+
+        String initialHtml = departmentGeneralPhysicalPerformanceService.getQuarterHtml(deptCode, "qtr1", budget);
+        String initialContent = (initialHtml == null || initialHtml.isBlank()) ? template : initialHtml;
+
+        editor.setValue(initialContent);
+        //preview.getElement().setProperty("innerHTML", initialContent);
 
         quarterBox.addValueChangeListener(event -> {
             String quarter = event.getValue();
-            String html = departmentGeneralPhysicalPerformanceService.getQuarterHtml(deptCode, quarter);
-            editor.setValue(html == null ? "" : html);
-            preview.getElement().setProperty("innerHTML", html == null ? "" : html);
+            String html = departmentGeneralPhysicalPerformanceService.getQuarterHtml(deptCode, quarter, budget);
+            String content = (html == null || html.isBlank()) ? template : html;
+
+            editor.setValue(content);
+           // preview.getElement().setProperty("innerHTML", content);
         });
 
         Button saveButton = new Button("Save");
@@ -646,22 +653,28 @@ public class DepartmentOverview extends VerticalLayout {
         Button previewButton = new Button("Preview");
 
         saveButton.addClickListener(e -> {
-            String quarter = quarterBox.getValue();
-            String html = editor.getValue() == null ? "" : editor.getValue();
+            editor.getElement().executeJs("return this.value").then(String.class, html -> {
+                String content = (html == null || html.isBlank()) ? "" : html;
+                String quarter = quarterBox.getValue();
 
-            departmentGeneralPhysicalPerformanceService.saveQuarter(
-                    deptCode,
-                    deptName,
-                    quarter,
-                    html
-            );
+                departmentGeneralPhysicalPerformanceService.saveQuarter(
+                        deptCode,
+                        deptName,
+                        quarter,
+                        content,
+                        budget
+                );
 
-            Notification.show("Narrative saved for " + quarter.toUpperCase());
+                //preview.getElement().setProperty("innerHTML", content);
+                Notification.show("Narrative saved");
+            });
         });
 
         previewButton.addClickListener(e -> {
-            String html = editor.getValue() == null ? "" : editor.getValue();
-            preview.getElement().setProperty("innerHTML", html);
+            editor.getElement().executeJs("return this.value").then(String.class, html -> {
+                String content = html == null ? "" : html;
+               // preview.getElement().setProperty("innerHTML", content);
+            });
         });
 
         HorizontalLayout actions = new HorizontalLayout(quarterBox, saveButton, previewButton);
@@ -669,7 +682,7 @@ public class DepartmentOverview extends VerticalLayout {
         actions.setSpacing(true);
         actions.setPadding(false);
 
-        layout.add(title, deptInfo, actions, editor, preview);
+        layout.add(title, deptInfo, actions, editor);
         return layout;
     }
 

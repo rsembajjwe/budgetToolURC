@@ -534,7 +534,8 @@ public class PeriodExtractor {
         LocalDate requestedMonth = LocalDate.of(monthYear, month, 1);
 
         if (requestedMonth.isBefore(start) || requestedMonth.isAfter(end)) {
-            throw new IllegalArgumentException("Month is outside the budget financial year");
+            periodIndex=Month.JULY.getValue();
+           // throw new IllegalArgumentException("Month is outside the budget financial year");
         }
 
         return fyEndYear * 1000 + periodIndex;

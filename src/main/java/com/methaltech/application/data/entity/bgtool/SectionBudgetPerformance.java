@@ -79,6 +79,15 @@ public class SectionBudgetPerformance implements Serializable {
     private String percentageSpent3;
     @Column(name = "percentage_spent4", length = 500)
     private String percentageSpent4;
+    
+    @Column(name = "percentage_spent11", precision = 18, scale = 2)
+    private BigDecimal percentageSpent11;
+    @Column(name = "percentage_spent21", precision = 18, scale = 2)
+    private BigDecimal percentageSpent21;
+    @Column(name = "percentage_spent31", precision = 18, scale = 2)
+    private BigDecimal percentageSpent31;
+    @Column(name = "percentage_spent41", precision = 18, scale = 2)
+    private BigDecimal percentageSpent41;    
  
     @Column(name = "reasons_for_under_over1", length = 500)
     private String reasonsForUnderOver1;

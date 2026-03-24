@@ -10,10 +10,13 @@ import java.io.Serializable;
 
 @Entity
 @Table(
-        name = "department_general_physical_performance",
-        uniqueConstraints = {
-            @UniqueConstraint(name = "uk_dept_general_perf_code", columnNames = {"code"})
-        }
+    name = "department_general_physical_performance",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_dept_general_perf_code_budget",
+            columnNames = {"code", "budget_id"}
+        )
+    }
 )
 @NoArgsConstructor
 @Data
@@ -48,4 +51,8 @@ public class DepartmentGeneralPhysicalPerformance implements Serializable {
     @Lob
     @Column(name = "qtr4", columnDefinition = "nvarchar(max)")
     private String qtr4;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "budget_id")
+    private Budget budget;
 }
