@@ -31,6 +31,7 @@ import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
+import com.vaadin.flow.component.grid.FooterRow;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -70,6 +71,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -123,6 +125,8 @@ public class ActualView extends Div {
     private DecimalFormat decimalFormat = new DecimalFormat("#,###.##");
     PeriodExtractor extra = new PeriodExtractor();
 
+    List<BudgetItemsActuals> items = new ArrayList();
+
     Span julSpan = new Span();
     Span julActualSpan = new Span();
     Span augSpan = new Span();
@@ -162,6 +166,8 @@ public class ActualView extends Div {
     Span totalQtrSpan = new Span();
     Span totalQtrActualSpan = new Span();
 
+    Grid.Column<BudgetItemsActuals> codeColumn;
+    Grid.Column<BudgetItemsActuals> descriptionColumn;
     Column<BudgetItemsActuals> julColumn;
     Column<BudgetItemsActuals> julAColumn;
     Column<BudgetItemsActuals> augColumn;
@@ -200,6 +206,33 @@ public class ActualView extends Div {
     Column<BudgetItemsActuals> qtr4AColumn;
     Column<BudgetItemsActuals> totalQtrColumn;
     Column<BudgetItemsActuals> totalAQtrColumn;
+
+    Span footerJul = new Span();
+    Span footerJulA = new Span();
+    Span footerAug = new Span();
+    Span footerAugA = new Span();
+    Span footerSep = new Span();
+    Span footerSepA = new Span();
+    Span footerOct = new Span();
+    Span footerOctA = new Span();
+    Span footerNov = new Span();
+    Span footerNovA = new Span();
+    Span footerDec = new Span();
+    Span footerDecA = new Span();
+    Span footerJan = new Span();
+    Span footerJanA = new Span();
+    Span footerFeb = new Span();
+    Span footerFebA = new Span();
+    Span footerMar = new Span();
+    Span footerMarA = new Span();
+    Span footerApr = new Span();
+    Span footerAprA = new Span();
+    Span footerMay = new Span();
+    Span footerMayA = new Span();
+    Span footerJun = new Span();
+    Span footerJunA = new Span();
+    Span footerTotalA = new Span();
+    Span footerBalance = new Span();
 
     Button downloadWorkplan = new Button("Download Annual", new Icon(VaadinIcon.DOWNLOAD));
     Button downloadWorkplan2 = new Button("Download Qtr", new Icon(VaadinIcon.DOWNLOAD));
@@ -320,9 +353,12 @@ public class ActualView extends Div {
             }
         });
         view.addSingleClickListener(v -> {
-            if (!comboBoxD_Section.isEmpty() || !budget.isEmpty()) {
-                gridBudgetItems.setItems(budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems()));
-                gridBudgetItemsQuarterlyGrid.setItems(budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems()));
+            if (!comboBoxD_Section.isEmpty() && !budget.isEmpty()) {
+                items = budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems());
+                gridBudgetItems.setItems(items);
+                gridBudgetItemsQuarterlyGrid.setItems(items);
+
+               // refreshMonthlyFooter(items);
             }
         });
 
@@ -343,7 +379,7 @@ public class ActualView extends Div {
         div.setSizeFull();
         div.setSizeFull();
         gridBudgetItems.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
-        gridBudgetItems.addColumn(budgetItem -> {
+        codeColumn = gridBudgetItems.addColumn(budgetItem -> {
             COA coacode = budgetItem.getCoacode();
             Text label = new Text(coacode != null ? coacode.getCode() : "");
             return label.getText(); // Get the text content
@@ -356,7 +392,7 @@ public class ActualView extends Div {
                     String name2 = budgetItem2.getCoacode() != null ? budgetItem2.getCoacode().getName() : "";
                     return name1.compareTo(name2);
                 });
-        gridBudgetItems.addColumn(BudgetItemsActuals::getItem).setHeader("Description");
+        descriptionColumn = gridBudgetItems.addColumn(BudgetItemsActuals::getItem).setHeader("Description");
         //gridBudgetItems.addColumn(BudgetItemsActuals::getJul).setHeader("July");
 
         julColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
@@ -371,7 +407,7 @@ public class ActualView extends Div {
 
         })).setHeader(julSpan).setWidth("150px");
         julAColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
-      
+
             BigDecimal value = urcActivity.getJulA();
             Span span = createSpan(value);
             if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
@@ -381,7 +417,7 @@ public class ActualView extends Div {
             ContextMenu contextMenu = new ContextMenu(span);
             /*contextMenu.addItem(yearString2(setFY(urcActivity.getBudget()), "Jul Actual ") + "Transactions", e -> {*/
             contextMenu.addItem("Jul Actual (" + urcActivity.getBudget().getStartDate().getYear() + ") Transactions", e -> {
-                createTransactionsDialog(urcActivity, "July",Month.JULY);
+                createTransactionsDialog(urcActivity, "July", Month.JULY);
             });
             return span;
 
@@ -417,7 +453,7 @@ public class ActualView extends Div {
             span.getElement().getThemeList().add("badge");
             ContextMenu contextMenu = new ContextMenu(span);
             contextMenu.addItem("Aug Actual (" + urcActivity.getBudget().getStartDate().getYear() + ") Transactions", e -> {
-                createTransactionsDialog(urcActivity, "August",Month.AUGUST);
+                createTransactionsDialog(urcActivity, "August", Month.AUGUST);
             });
             return span;
 
@@ -443,7 +479,7 @@ public class ActualView extends Div {
             span.getElement().getThemeList().add("badge");
             ContextMenu contextMenu = new ContextMenu(span);
             contextMenu.addItem("Sep Actual (" + urcActivity.getBudget().getStartDate().getYear() + ") Transactions", e -> {
-                createTransactionsDialog(urcActivity, "September",Month.SEPTEMBER);
+                createTransactionsDialog(urcActivity, "September", Month.SEPTEMBER);
             });
             return span;
 
@@ -469,7 +505,7 @@ public class ActualView extends Div {
             span.getElement().getThemeList().add("badge");
             ContextMenu contextMenu = new ContextMenu(span);
             contextMenu.addItem("Oct Actual (" + urcActivity.getBudget().getStartDate().getYear() + ") Transactions", e -> {
-                createTransactionsDialog(urcActivity, "October",Month.OCTOBER);
+                createTransactionsDialog(urcActivity, "October", Month.OCTOBER);
             });
             return span;
 
@@ -496,7 +532,7 @@ public class ActualView extends Div {
             span.getElement().getThemeList().add("badge");
             ContextMenu contextMenu = new ContextMenu(span);
             contextMenu.addItem("Nov Actual (" + urcActivity.getBudget().getStartDate().getYear() + ") Transactions", e -> {
-                createTransactionsDialog(urcActivity, "November",Month.NOVEMBER);
+                createTransactionsDialog(urcActivity, "November", Month.NOVEMBER);
             });
             return span;
 
@@ -523,7 +559,7 @@ public class ActualView extends Div {
             span.getElement().getThemeList().add("badge");
             ContextMenu contextMenu = new ContextMenu(span);
             contextMenu.addItem("Dec Actual (" + urcActivity.getBudget().getStartDate().getYear() + ") Transactions", e -> {
-                createTransactionsDialog(urcActivity, "December",Month.DECEMBER);
+                createTransactionsDialog(urcActivity, "December", Month.DECEMBER);
             });
             return span;
 
@@ -550,7 +586,7 @@ public class ActualView extends Div {
             span.getElement().getThemeList().add("badge");
             ContextMenu contextMenu = new ContextMenu(span);
             contextMenu.addItem("Jan Actual (" + urcActivity.getBudget().getCloseDate().getYear() + ") Transactions", e -> {
-                createTransactionsDialog(urcActivity, "January",Month.JANUARY);
+                createTransactionsDialog(urcActivity, "January", Month.JANUARY);
             });
             return span;
 
@@ -577,7 +613,7 @@ public class ActualView extends Div {
             span.getElement().getThemeList().add("badge");
             ContextMenu contextMenu = new ContextMenu(span);
             contextMenu.addItem("Feb Actual (" + urcActivity.getBudget().getCloseDate().getYear() + ") Transactions", e -> {
-                createTransactionsDialog(urcActivity, "Febuary",Month.FEBRUARY);
+                createTransactionsDialog(urcActivity, "Febuary", Month.FEBRUARY);
             });
             return span;
 
@@ -658,7 +694,7 @@ public class ActualView extends Div {
             span.getElement().getThemeList().add("badge");
             ContextMenu contextMenu = new ContextMenu(span);
             contextMenu.addItem("May Actual (" + urcActivity.getBudget().getCloseDate().getYear() + ") Transactions", e -> {
-                createTransactionsDialog(urcActivity, "May",Month.MAY);
+                createTransactionsDialog(urcActivity, "May", Month.MAY);
             });
             return span;
 
@@ -685,7 +721,7 @@ public class ActualView extends Div {
             span.getElement().getThemeList().add("badge");
             ContextMenu contextMenu = new ContextMenu(span);
             contextMenu.addItem("Jun Actual (" + urcActivity.getBudget().getCloseDate().getYear() + ") Transactions", e -> {
-                createTransactionsDialog(urcActivity, "June",Month.JUNE);
+                createTransactionsDialog(urcActivity, "June", Month.JUNE);
             });
             return span;
 
@@ -735,6 +771,53 @@ public class ActualView extends Div {
         })).setHeader("Balance").setFlexGrow(0).setWidth("150px");
 
         gridBudgetItems.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
+        /*FooterRow footerRow = gridBudgetItems.appendFooterRow();
+        
+        footerRow.getCell(codeColumn).setComponent(footerText(""));
+        footerRow.getCell(descriptionColumn).setComponent(footerText("TOTAL"));
+        
+        footerRow.getCell(julColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getJul)));
+        footerRow.getCell(julAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getJulA)));
+        
+        footerRow.getCell(augColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getAug)));
+        footerRow.getCell(augAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getAugA)));
+        
+        footerRow.getCell(sepColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getSep)));
+        footerRow.getCell(sepAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getSepA)));
+        
+        footerRow.getCell(octColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getOct)));
+        footerRow.getCell(octAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getOctA)));
+        
+        footerRow.getCell(novColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getNov)));
+        footerRow.getCell(novAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getNovA)));
+        
+        footerRow.getCell(decColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getDec)));
+        footerRow.getCell(decAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getDecA)));
+        
+        footerRow.getCell(janColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getJan)));
+        footerRow.getCell(janAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getJanA)));
+        
+        footerRow.getCell(febColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getFeb)));
+        footerRow.getCell(febAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getFebA)));
+        
+        footerRow.getCell(marColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getMar)));
+        footerRow.getCell(marAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getMarA)));
+        
+        footerRow.getCell(aprColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getApr)));
+        footerRow.getCell(aprAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getAprA)));
+        
+        footerRow.getCell(mayColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getMay)));
+        footerRow.getCell(mayAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getMayA)));
+        
+        footerRow.getCell(junColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getJun)));
+        footerRow.getCell(junAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getJunA)));
+        
+        BigDecimal grandBudget = sum(items, BudgetItemsActuals::getTotal);
+        BigDecimal grandActual = sum(items, BudgetItemsActuals::getTotalA);
+        
+        footerRow.getCell(totalColumn).setComponent(footerNumber(grandBudget));
+        footerRow.getCell(totalAColumn).setComponent(footerActualNumber(grandActual));
+        footerRow.getCell(balanceColumn).setComponent(footerNumber(grandBudget.subtract(grandActual)));*/
         //gridBudgetItems.setHeight("900px");
         div.add(gridBudgetItems);
         return div;
@@ -877,6 +960,47 @@ public class ActualView extends Div {
         //gridBudgetItems.setHeight("900px");
         div.add(gridBudgetItemsQuarterlyGrid);
         return div;
+    }
+
+    private BigDecimal nz(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private BigDecimal sum(List<BudgetItemsActuals> items,
+            Function<BudgetItemsActuals, BigDecimal> extractor) {
+        return items.stream()
+                .map(extractor)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private Component footerText(String text) {
+        Span span = new Span(text);
+        span.getStyle()
+                .set("font-weight", "700")
+                .set("display", "block")
+                .set("text-align", "left")
+                .set("width", "100%");
+        return span;
+    }
+
+    private Component footerNumber(BigDecimal value) {
+        Span span = createSpan(value);
+        span.getStyle()
+                .set("font-weight", "700")
+                .set("display", "block")
+                .set("width", "100%");
+        return span;
+    }
+
+    private Component footerActualNumber(BigDecimal value) {
+        Span span = createSpan(value);
+        span.getStyle()
+                .set("font-weight", "700")
+                .set("color", "#1565c0")
+                .set("display", "block")
+                .set("width", "100%");
+        return span;
     }
 
     private Span createSpan(BigDecimal value) {
@@ -2050,18 +2174,18 @@ public class ActualView extends Div {
         List<SALFLDGProjection> lis = new ArrayList<>();
 
         if (comboBoxD_Section.getValue().contains(freightAnlDimbgt) && (coa.getDisplay() == Display.FREIGHT || coa.getCode().contains("111109") || coa.getCode().contains("111110"))) {
-            lis = sampleSALFLDGService.findByPeriodAndAccntCode(extra.getFinancialYearPeriodByMonth(bgt,month), coacode.trim());
+            lis = sampleSALFLDGService.findByPeriodAndAccntCode(extra.getFinancialYearPeriodByMonth(bgt, month), coacode.trim());
         } else if (comboBoxD_Section.getValue().contains(propertymgt) && (coa.getCode().contains("111401") || coa.getCode().contains("111402") || coa.getCode().contains("111403") || coa.getCode().contains("111404") || coa.getCode().contains("111406") || coa.getCode().contains("111407"))) {
-            lis = sampleSALFLDGService.findByPeriodAndAccntCode(extra.getFinancialYearPeriodByMonth(bgt,month), coacode.trim());
+            lis = sampleSALFLDGService.findByPeriodAndAccntCode(extra.getFinancialYearPeriodByMonth(bgt, month), coacode.trim());
         } else {
-            if(selectedAnlCodes.contains("#")){
-                System.out.println("contains # "+selectedAnlCodes);
-                lis = sampleSALFLDGService.findByPeriodAndAccntCodeAndAnalT1InOrUnAnalyzed(extra.getFinancialYearPeriodByMonth(bgt,month), coacode.trim(), selectedAnlCodes);
-            }else{
-                System.out.println("Doesn`t contain # "+selectedAnlCodes);
-               lis = sampleSALFLDGService.findByPeriodAndAccntCodeAndAnalT1InAllS(extra.getFinancialYearPeriodByMonth(bgt,month), coacode.trim(), selectedAnlCodes); 
+            if (selectedAnlCodes.contains("#")) {
+                System.out.println("contains # " + selectedAnlCodes);
+                lis = sampleSALFLDGService.findByPeriodAndAccntCodeAndAnalT1InOrUnAnalyzed(extra.getFinancialYearPeriodByMonth(bgt, month), coacode.trim(), selectedAnlCodes);
+            } else {
+                System.out.println("Doesn`t contain # " + selectedAnlCodes);
+                lis = sampleSALFLDGService.findByPeriodAndAccntCodeAndAnalT1InAllS(extra.getFinancialYearPeriodByMonth(bgt, month), coacode.trim(), selectedAnlCodes);
             }
-            
+
         }
 
         return lis;
@@ -4199,6 +4323,83 @@ return v == null ? 0d : v.doubleValue();
         }
 
         return periods;
+    }
+
+    private void refreshMonthlyFooter(List<BudgetItemsActuals> items) {
+        footerJul.setText(formatFooter(sum(items, BudgetItemsActuals::getJul)));
+        footerJulA.setText(formatFooter(sum(items, BudgetItemsActuals::getJulA)));
+        footerAug.setText(formatFooter(sum(items, BudgetItemsActuals::getAug)));
+        footerAugA.setText(formatFooter(sum(items, BudgetItemsActuals::getAugA)));
+        footerSep.setText(formatFooter(sum(items, BudgetItemsActuals::getSep)));
+        footerSepA.setText(formatFooter(sum(items, BudgetItemsActuals::getSepA)));
+        footerOct.setText(formatFooter(sum(items, BudgetItemsActuals::getOct)));
+        footerOctA.setText(formatFooter(sum(items, BudgetItemsActuals::getOctA)));
+        footerNov.setText(formatFooter(sum(items, BudgetItemsActuals::getNov)));
+        footerNovA.setText(formatFooter(sum(items, BudgetItemsActuals::getNovA)));
+        footerDec.setText(formatFooter(sum(items, BudgetItemsActuals::getDec)));
+        footerDecA.setText(formatFooter(sum(items, BudgetItemsActuals::getDecA)));
+        footerJan.setText(formatFooter(sum(items, BudgetItemsActuals::getJan)));
+        footerJanA.setText(formatFooter(sum(items, BudgetItemsActuals::getJanA)));
+        footerFeb.setText(formatFooter(sum(items, BudgetItemsActuals::getFeb)));
+        footerFebA.setText(formatFooter(sum(items, BudgetItemsActuals::getFebA)));
+        footerMar.setText(formatFooter(sum(items, BudgetItemsActuals::getMar)));
+        footerMarA.setText(formatFooter(sum(items, BudgetItemsActuals::getMarA)));
+        footerApr.setText(formatFooter(sum(items, BudgetItemsActuals::getApr)));
+        footerAprA.setText(formatFooter(sum(items, BudgetItemsActuals::getAprA)));
+        footerMay.setText(formatFooter(sum(items, BudgetItemsActuals::getMay)));
+        footerMayA.setText(formatFooter(sum(items, BudgetItemsActuals::getMayA)));
+        footerJun.setText(formatFooter(sum(items, BudgetItemsActuals::getJun)));
+        footerJunA.setText(formatFooter(sum(items, BudgetItemsActuals::getJunA)));
+
+        BigDecimal grandBudget = sum(items, BudgetItemsActuals::getTotal);
+        BigDecimal grandActual = sum(items, BudgetItemsActuals::getTotalA);
+
+        footerTotal.setText(formatFooter(grandBudget));
+        footerTotalA.setText(formatFooter(grandActual));
+        footerBalance.setText(formatFooter(grandBudget.subtract(grandActual)));
+
+        makeFooterBold(footerJul, false);
+        makeFooterBold(footerJulA, true);
+        makeFooterBold(footerAug, false);
+        makeFooterBold(footerAugA, true);
+        makeFooterBold(footerSep, false);
+        makeFooterBold(footerSepA, true);
+        makeFooterBold(footerOct, false);
+        makeFooterBold(footerOctA, true);
+        makeFooterBold(footerNov, false);
+        makeFooterBold(footerNovA, true);
+        makeFooterBold(footerDec, false);
+        makeFooterBold(footerDecA, true);
+        makeFooterBold(footerJan, false);
+        makeFooterBold(footerJanA, true);
+        makeFooterBold(footerFeb, false);
+        makeFooterBold(footerFebA, true);
+        makeFooterBold(footerMar, false);
+        makeFooterBold(footerMarA, true);
+        makeFooterBold(footerApr, false);
+        makeFooterBold(footerAprA, true);
+        makeFooterBold(footerMay, false);
+        makeFooterBold(footerMayA, true);
+        makeFooterBold(footerJun, false);
+        makeFooterBold(footerJunA, true);
+        makeFooterBold(footerTotal, false);
+        makeFooterBold(footerTotalA, true);
+        makeFooterBold(footerBalance, false);
+    }
+
+    private String formatFooter(BigDecimal value) {
+        return value == null ? "0.00" : new DecimalFormat("#,##0.00").format(value);
+    }
+
+    private void makeFooterBold(Span span, boolean actual) {
+        span.getStyle().set("font-weight", "700");
+        span.getStyle().set("display", "block");
+        span.getStyle().set("width", "100%");
+        if (actual) {
+            span.getStyle().set("color", "#1565c0");
+        } else {
+            span.getStyle().remove("color");
+        }
     }
 
 }

@@ -39,25 +39,34 @@ import com.methaltech.application.data.bgtool.service.BudgetService;
 import com.methaltech.application.data.bgtool.service.CoaService;
 import com.methaltech.application.data.bgtool.service.DepartmentGeneralPhysicalPerformanceService;
 import com.methaltech.application.data.bgtool.service.DeptSectionMergerService;
+import com.methaltech.application.data.bgtool.service.OverallGeneralPhysicalPerformanceService;
 import com.methaltech.application.data.bgtool.service.UrcDeptSectionAnlDimbgtService;
 import com.methaltech.application.data.bgtool.service.Urc_ActivitiesService;
 import com.methaltech.application.data.bgtool.service.UserService;
 import com.methaltech.application.data.entity.bgtool.Budget;
+import com.methaltech.application.data.entity.bgtool.BudgetItemsActuals;
 import com.methaltech.application.data.entity.bgtool.BudgetSummary;
 import com.methaltech.application.data.entity.bgtool.BudgetSummaryCards;
+import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.DepartmentBudget;
 import com.methaltech.application.data.entity.bgtool.RevenueBreakdown;
 import com.methaltech.application.data.entity.bgtool.RevenueSource;
+import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.User;
 import com.methaltech.application.data.livedata.service.SALFLDGService;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.MainLayout;
+import com.methaltech.application.views.budget.Component.QuillEditorField;
 import com.methaltech.application.views.structure.DepartmentOverview;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.Uses;
+import com.vaadin.flow.component.grid.FooterRow;
+import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
@@ -77,18 +86,23 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.RolesAllowed;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTPageMar;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSectPr;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -118,6 +132,7 @@ public class DashboardView extends VerticalLayout {
     private final BudgetItemsService budgetItemsService;
     private final Urc_ActivitiesService sampleUrc_ActivitiesService;
     private final DepartmentGeneralPhysicalPerformanceService departmentGeneralPhysicalPerformanceService;
+    private final OverallGeneralPhysicalPerformanceService overallGeneralPhysicalPerformanceService;
 
     private static final PageSize REPORT_PAGE_SIZE = PageSize.A4;
     private static final float PAGE_MARGIN_TOP = 48f;
@@ -144,7 +159,8 @@ public class DashboardView extends VerticalLayout {
     @Autowired
     public DashboardView(BudgetService budgetService, AuthenticatedUser authenticatedUser, UserService userService, CoaService sampleCoaService,
             UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, SALFLDGService sampleSALFLDGService, DeptSectionMergerService sampleDeptSectionMergerService,
-            BudgetItemsService budgetItemsService,Urc_ActivitiesService sampleUrc_ActivitiesService,DepartmentGeneralPhysicalPerformanceService departmentGeneralPhysicalPerformanceService) {
+            BudgetItemsService budgetItemsService, Urc_ActivitiesService sampleUrc_ActivitiesService, DepartmentGeneralPhysicalPerformanceService departmentGeneralPhysicalPerformanceService,
+            OverallGeneralPhysicalPerformanceService overallGeneralPhysicalPerformanceService) {
         this.budgetService = budgetService;
         this.authenticatedUser = authenticatedUser;
         this.userService = userService;
@@ -152,9 +168,10 @@ public class DashboardView extends VerticalLayout {
         this.sampleCoaService = sampleCoaService;
         this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
         this.sampleSALFLDGService = sampleSALFLDGService;
-        this.budgetItemsService=budgetItemsService;
-        this.sampleUrc_ActivitiesService=sampleUrc_ActivitiesService;
-        this.departmentGeneralPhysicalPerformanceService=departmentGeneralPhysicalPerformanceService;
+        this.budgetItemsService = budgetItemsService;
+        this.sampleUrc_ActivitiesService = sampleUrc_ActivitiesService;
+        this.departmentGeneralPhysicalPerformanceService = departmentGeneralPhysicalPerformanceService;
+        this.overallGeneralPhysicalPerformanceService = overallGeneralPhysicalPerformanceService;
         setWidthFull();
         setHeightFull();
         setPadding(false);
@@ -491,8 +508,37 @@ public class DashboardView extends VerticalLayout {
                     budgetSummary.getRevenueSources()
             );
             revenueBreakdown.addClassName("revenue-breakdown");
+            Set<UrcDeptSectionAnlDimbgt> deptSections = new HashSet<>();
+            java.util.List<DepartmentBudget> departmentBudgets = budgetSummary.getDepartmentBudgets();
+            departmentBudgets.forEach(r -> {
+                deptSections.addAll(r.getSections());
+            });
 
-            VerticalLayout overviewPage = new VerticalLayout(summaryCards, visualCards);
+            Tab overviewSummaryTab = new Tab("Summary Expenditure By Account Code");
+            Tab generalSummaryPhysicalTab = new Tab("General Budget Physical Performance");
+
+            Tabs tabsSummary = new Tabs(overviewSummaryTab, generalSummaryPhysicalTab);
+            tabsSummary.setWidthFull();
+            tabsSummary.addClassName("summary-tabs");
+
+            Component summaryExpenditurePage = budgetCoaQtrGeneral(currentBudget, deptSections);
+            Component generalPhysicalPage = createOverallGeneralPhysicalPerformanceContent(currentBudget);
+
+            summaryExpenditurePage.setVisible(true);
+            generalPhysicalPage.setVisible(false);
+
+            Div summaryTabContent = new Div();
+            summaryTabContent.setWidthFull();
+            summaryTabContent.addClassName("summary-tab-content");
+            summaryTabContent.add(summaryExpenditurePage, generalPhysicalPage);
+
+            tabsSummary.addSelectedChangeListener(event -> {
+                Tab selected = event.getSelectedTab();
+                summaryExpenditurePage.setVisible(selected == overviewSummaryTab);
+                generalPhysicalPage.setVisible(selected == generalSummaryPhysicalTab);
+            });
+
+            VerticalLayout overviewPage = new VerticalLayout(summaryCards, visualCards, tabsSummary, summaryTabContent);
             overviewPage.setWidthFull();
             overviewPage.setPadding(false);
             overviewPage.setSpacing(true);
@@ -1471,6 +1517,654 @@ public class DashboardView extends VerticalLayout {
             return "FFF5D2";
         }
         return "FFDCE6";
+    }
+
+    private Component budgetCoaQtrGeneral(Budget bdgt, Set<UrcDeptSectionAnlDimbgt> deptSections) {
+        VerticalLayout wrapper = new VerticalLayout();
+        wrapper.setWidthFull();
+        wrapper.setPadding(false);
+        wrapper.setSpacing(true);
+
+        Grid<BudgetItemsActuals> gridBudgetItemsQuarterlyGrid = new Grid<>(BudgetItemsActuals.class, false);
+        gridBudgetItemsQuarterlyGrid.setWidthFull();
+        gridBudgetItemsQuarterlyGrid.addThemeVariants(
+                GridVariant.LUMO_WRAP_CELL_CONTENT,
+                GridVariant.LUMO_ROW_STRIPES
+        );
+
+        Grid.Column<BudgetItemsActuals> codeColumn;
+        Grid.Column<BudgetItemsActuals> descColumn;
+        Grid.Column<BudgetItemsActuals> qtr1Column;
+        Grid.Column<BudgetItemsActuals> qtr1AColumn;
+        Grid.Column<BudgetItemsActuals> qtr2Column;
+        Grid.Column<BudgetItemsActuals> qtr2AColumn;
+        Grid.Column<BudgetItemsActuals> qtr3Column;
+        Grid.Column<BudgetItemsActuals> qtr3AColumn;
+        Grid.Column<BudgetItemsActuals> qtr4Column;
+        Grid.Column<BudgetItemsActuals> qtr4AColumn;
+        Grid.Column<BudgetItemsActuals> totalQtrColumn;
+        Grid.Column<BudgetItemsActuals> totalAQtrColumn;
+        Grid.Column<BudgetItemsActuals> balanceColumn;
+        Grid.Column<BudgetItemsActuals> statusColumn;
+
+        codeColumn = gridBudgetItemsQuarterlyGrid.addColumn(item -> {
+            COA coa = item.getCoacode();
+            return coa != null ? coa.getCode() : "";
+        }).setHeader("Code").setWidth("100px").setFlexGrow(0);
+
+        descColumn = gridBudgetItemsQuarterlyGrid.addColumn(BudgetItemsActuals::getItem)
+                .setHeader("Description")
+                .setWidth("250px");
+
+        qtr1Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createSpan(item.getQtr1())))
+                .setHeader("Qtr1").setWidth("150px");
+
+        qtr1AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+            Span span = createSpan(item.getQtr1A());
+            span.getElement().getThemeList().add("badge");
+            return span;
+        })).setHeader("Qtr1 Actual").setWidth("150px");
+
+        qtr2Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createSpan(item.getQtr2())))
+                .setHeader("Qtr2").setWidth("150px");
+
+        qtr2AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+            Span span = createSpan(item.getQtr2A());
+            span.getElement().getThemeList().add("badge");
+            return span;
+        })).setHeader("Qtr2 Actual").setWidth("150px");
+
+        qtr3Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createSpan(item.getQtr3())))
+                .setHeader("Qtr3").setWidth("150px");
+
+        qtr3AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+            Span span = createSpan(item.getQtr3A());
+            span.getElement().getThemeList().add("badge");
+            return span;
+        })).setHeader("Qtr3 Actual").setWidth("150px");
+
+        qtr4Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createSpan(item.getQtr4())))
+                .setHeader("Qtr4").setWidth("150px");
+
+        qtr4AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+            Span span = createSpan(item.getQtr4A());
+            span.getElement().getThemeList().add("badge");
+            return span;
+        })).setHeader("Qtr4 Actual").setWidth("150px");
+
+        totalQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createSpan(item.getTotal())))
+                .setHeader("Total").setWidth("150px");
+
+        totalAQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+            Span span = createSpan(item.getTotalA());
+            span.getElement().getThemeList().add("badge");
+            return span;
+        })).setHeader("Total Actual").setWidth("150px");
+
+        balanceColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+            BigDecimal balance = nz(item.getTotal()).subtract(nz(item.getTotalA()));
+            Span span = createSpan(balance);
+            span.getStyle().set("font-weight", "600");
+            if (balance.compareTo(BigDecimal.ZERO) < 0) {
+                span.getStyle().set("color", "var(--lumo-error-text-color)");
+            } else {
+                span.getStyle().set("color", "var(--lumo-success-text-color)");
+            }
+            return span;
+        })).setHeader("Variance").setWidth("150px");
+
+        statusColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(this::createStatusBadge))
+                .setHeader("Status")
+                .setWidth("130px")
+                .setFlexGrow(0);
+
+        codeColumn.setFrozen(true);
+        descColumn.setFrozen(true);
+
+        FooterRow footerRow = gridBudgetItemsQuarterlyGrid.appendFooterRow();
+
+        footerRow.getCell(codeColumn).setComponent(footerText(""));
+        footerRow.getCell(descColumn).setComponent(footerText("TOTAL"));
+        footerRow.getCell(qtr1Column).setComponent(footerText(""));
+        footerRow.getCell(qtr1AColumn).setComponent(footerActualText(""));
+        footerRow.getCell(qtr2Column).setComponent(footerText(""));
+        footerRow.getCell(qtr2AColumn).setComponent(footerActualText(""));
+        footerRow.getCell(qtr3Column).setComponent(footerText(""));
+        footerRow.getCell(qtr3AColumn).setComponent(footerActualText(""));
+        footerRow.getCell(qtr4Column).setComponent(footerText(""));
+        footerRow.getCell(qtr4AColumn).setComponent(footerActualText(""));
+        footerRow.getCell(totalQtrColumn).setComponent(footerText(""));
+        footerRow.getCell(totalAQtrColumn).setComponent(footerActualText(""));
+        footerRow.getCell(balanceColumn).setComponent(footerBalanceText(""));
+        footerRow.getCell(statusColumn).setComponent(new Span(""));
+
+        Button loadButton = new Button("Load Quarterly Performance", new Icon(VaadinIcon.REFRESH));
+        loadButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Span info = new Span("Click to load or refresh quarterly figures.");
+        info.getStyle().set("color", "var(--lumo-secondary-text-color)");
+
+        HorizontalLayout topBar = new HorizontalLayout(loadButton, info);
+        topBar.setWidthFull();
+        topBar.setAlignItems(FlexComponent.Alignment.CENTER);
+        topBar.setPadding(false); 
+        topBar.setSpacing(true);
+
+        loadButton.addClickListener(e -> {
+            java.util.List<BudgetItemsActuals> items = budgetItemsService.findDistinctBudgetItemsesExp(bdgt, deptSections);
+            gridBudgetItemsQuarterlyGrid.setItems(items);
+            refreshQuarterlyFooter(
+                    footerRow,
+                    items,
+                    qtr1Column, qtr1AColumn,
+                    qtr2Column, qtr2AColumn,
+                    qtr3Column, qtr3AColumn,
+                    qtr4Column, qtr4AColumn,
+                    totalQtrColumn, totalAQtrColumn,
+                    balanceColumn, statusColumn
+            );
+            Notification.show("Quarterly performance loaded");
+        });
+
+        wrapper.add(topBar, gridBudgetItemsQuarterlyGrid);
+        return wrapper;
+    }
+
+    private void refreshQuarterlyFooter(
+            FooterRow footerRow,
+            java.util.List<BudgetItemsActuals> items,
+            Grid.Column<BudgetItemsActuals> qtr1Column,
+            Grid.Column<BudgetItemsActuals> qtr1AColumn,
+            Grid.Column<BudgetItemsActuals> qtr2Column,
+            Grid.Column<BudgetItemsActuals> qtr2AColumn,
+            Grid.Column<BudgetItemsActuals> qtr3Column,
+            Grid.Column<BudgetItemsActuals> qtr3AColumn,
+            Grid.Column<BudgetItemsActuals> qtr4Column,
+            Grid.Column<BudgetItemsActuals> qtr4AColumn,
+            Grid.Column<BudgetItemsActuals> totalQtrColumn,
+            Grid.Column<BudgetItemsActuals> totalAQtrColumn,
+            Grid.Column<BudgetItemsActuals> balanceColumn,
+            Grid.Column<BudgetItemsActuals> statusColumn
+    ) {
+        BigDecimal qtr1Total = sum(items, BudgetItemsActuals::getQtr1);
+        BigDecimal qtr1ATotal = sum(items, BudgetItemsActuals::getQtr1A);
+        BigDecimal qtr2Total = sum(items, BudgetItemsActuals::getQtr2);
+        BigDecimal qtr2ATotal = sum(items, BudgetItemsActuals::getQtr2A);
+        BigDecimal qtr3Total = sum(items, BudgetItemsActuals::getQtr3);
+        BigDecimal qtr3ATotal = sum(items, BudgetItemsActuals::getQtr3A);
+        BigDecimal qtr4Total = sum(items, BudgetItemsActuals::getQtr4);
+        BigDecimal qtr4ATotal = sum(items, BudgetItemsActuals::getQtr4A);
+        BigDecimal grandBudget = sum(items, BudgetItemsActuals::getTotal);
+        BigDecimal grandActual = sum(items, BudgetItemsActuals::getTotalA);
+        BigDecimal grandBalance = grandBudget.subtract(grandActual);
+
+        footerRow.getCell(qtr1Column).setComponent(footerText(formatAmount(qtr1Total)));
+        footerRow.getCell(qtr1AColumn).setComponent(footerActualText(formatAmount(qtr1ATotal)));
+
+        footerRow.getCell(qtr2Column).setComponent(footerText(formatAmount(qtr2Total)));
+        footerRow.getCell(qtr2AColumn).setComponent(footerActualText(formatAmount(qtr2ATotal)));
+
+        footerRow.getCell(qtr3Column).setComponent(footerText(formatAmount(qtr3Total)));
+        footerRow.getCell(qtr3AColumn).setComponent(footerActualText(formatAmount(qtr3ATotal)));
+
+        footerRow.getCell(qtr4Column).setComponent(footerText(formatAmount(qtr4Total)));
+        footerRow.getCell(qtr4AColumn).setComponent(footerActualText(formatAmount(qtr4ATotal)));
+
+        footerRow.getCell(totalQtrColumn).setComponent(footerText(formatAmount(grandBudget)));
+        footerRow.getCell(totalAQtrColumn).setComponent(footerActualText(formatAmount(grandActual)));
+
+        footerRow.getCell(balanceColumn).setComponent(footerBalanceText(formatAmount(grandBalance)));
+        footerRow.getCell(statusColumn).setComponent(createFooterStatusBadge(grandBudget, grandActual, grandBalance));
+    }
+
+    private Div budgetCoaQtrView(Budget bdgt, Set<UrcDeptSectionAnlDimbgt> deptSections) {
+        Div div = new Div();
+        div.setSizeFull();
+        deptSections.forEach(e -> {
+            System.out.println(e.getANL_CODE() + " " + e.getNAME());
+        });
+        Grid<BudgetItemsActuals> gridBudgetItemsQuarterlyGrid = new Grid<>(BudgetItemsActuals.class, false);
+        gridBudgetItemsQuarterlyGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
+        java.util.List<BudgetItemsActuals> items = budgetItemsService.findDistinctBudgetItemsesExp(bdgt, deptSections);
+        BigDecimal grandBudget = sum(items, BudgetItemsActuals::getTotal);
+        BigDecimal grandActual = sum(items, BudgetItemsActuals::getTotalA);
+
+        BigDecimal grandBalance = grandBudget.subtract(grandActual);
+
+        Grid.Column<BudgetItemsActuals> codeColumn;
+        Grid.Column<BudgetItemsActuals> descColumn;
+        Grid.Column<BudgetItemsActuals> qtr1Column;
+        Grid.Column<BudgetItemsActuals> qtr1AColumn;
+        Grid.Column<BudgetItemsActuals> qtr2Column;
+        Grid.Column<BudgetItemsActuals> qtr2AColumn;
+        Grid.Column<BudgetItemsActuals> qtr3Column;
+        Grid.Column<BudgetItemsActuals> qtr3AColumn;
+        Grid.Column<BudgetItemsActuals> qtr4Column;
+        Grid.Column<BudgetItemsActuals> qtr4AColumn;
+        Grid.Column<BudgetItemsActuals> totalQtrColumn;
+        Grid.Column<BudgetItemsActuals> totalAQtrColumn;
+        Grid.Column<BudgetItemsActuals> balanceColumn;
+        Grid.Column<BudgetItemsActuals> statusColumn;
+
+        codeColumn = gridBudgetItemsQuarterlyGrid.addColumn(budgetItem -> {
+            COA coacode = budgetItem.getCoacode();
+            com.vaadin.flow.component.Text label = new com.vaadin.flow.component.Text(coacode != null ? coacode.getCode() : "");
+            return label.getText(); // Get the text content
+        })
+                .setHeader("Code").setWidth("80px").setFlexGrow(0)
+                .setSortable(true) // Make the column sortable
+                .setComparator((budgetItem1, budgetItem2) -> {
+                    // Implement your custom comparator logic here
+                    String name1 = budgetItem1.getCoacode() != null ? budgetItem1.getCoacode().getName() : "";
+                    String name2 = budgetItem2.getCoacode() != null ? budgetItem2.getCoacode().getName() : "";
+                    return name1.compareTo(name2);
+                });
+        descColumn = gridBudgetItemsQuarterlyGrid.addColumn(BudgetItemsActuals::getItem).setHeader("Description").setWidth("250px");
+        //gridBudgetItems.addColumn(BudgetItemsActuals::getJul).setHeader("July");
+
+        qtr1Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
+
+            BigDecimal value = urcActivity.getQtr1();
+            Span span = createSpan(value);
+
+            return span;
+
+        })).setHeader("Qtr1").setWidth("150px");
+        qtr1AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
+
+            BigDecimal value = urcActivity.getQtr1A();
+            Span span = createSpan(value);
+            if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
+                span = createSpan(value);
+            }
+            span.getElement().getThemeList().add("badge");
+
+            return span;
+
+        })).setHeader("Qtr1 Actual").setWidth("150px");
+// Apply the orange-column class to the cells of the "Jul Actuals" column
+        qtr1AColumn.setClassNameGenerator(item -> {
+            // Check if the value is not null and greater than zero to apply the class
+            if (item != null && item.getJulA() != null && item.getJulA().compareTo(BigDecimal.ZERO) > 0) {
+                return "orange-column";
+            }
+            return "orange-column"; // No class applied if condition is not met
+        });
+
+        qtr2Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
+
+            BigDecimal value = urcActivity.getQtr2();
+            Span span = createSpan(value);
+
+            return span;
+
+        })).setHeader("Qtr2").setWidth("150px");
+
+        qtr2AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
+
+            BigDecimal value = urcActivity.getQtr2A();
+            Span span = createSpan(value);
+            if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
+                span = createSpan(value);
+            }
+            span.getElement().getThemeList().add("badge");
+
+            return span;
+
+        })).setHeader("Qtr2 Actual").setWidth("150px");
+        qtr3Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
+
+            BigDecimal value = urcActivity.getQtr3();
+            Span span = createSpan(value);
+
+            return span;
+
+        })).setHeader("Qtr3").setWidth("150px");
+        qtr3AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
+
+            BigDecimal value = urcActivity.getQtr3A();
+            Span span = createSpan(value);
+            if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
+                span = createSpan(value);
+            }
+            span.getElement().getThemeList().add("badge");
+
+            return span;
+
+        })).setHeader("Qtr3 Actual").setWidth("150px");
+        qtr4Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
+
+            BigDecimal value = urcActivity.getQtr4();
+            Span span = createSpan(value);
+
+            return span;
+
+        })).setHeader("Qtr4").setWidth("150px");
+        qtr4AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
+
+            BigDecimal value = urcActivity.getQtr4A();
+            Span span = createSpan(value);
+            if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
+                span = createSpan(value);
+            }
+            span.getElement().getThemeList().add("badge");
+
+            return span;
+
+        })).setHeader("Qtr4 Actual").setWidth("150px");
+        totalQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
+
+            BigDecimal value = urcActivity.getTotal();
+            Span span = createSpan(value);
+
+            return span;
+
+        })).setHeader("Total").setWidth("150px");
+
+        totalAQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
+
+            BigDecimal value = urcActivity.getTotalA();
+            Span span = createSpan(value);
+            if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
+                span = createSpan(value);
+            }
+            span.getElement().getThemeList().add("badge");
+
+            return span;
+
+        })).setHeader("Total Actual").setWidth("150px");
+
+        balanceColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+            BigDecimal budget = item.getTotal();
+            BigDecimal actual = item.getTotalA();
+            BigDecimal balance = budget.subtract(actual);
+
+            Span span = createSpan(balance);
+            span.getStyle().set("font-weight", "600");
+
+            if (balance.compareTo(BigDecimal.ZERO) < 0) {
+                span.getStyle().set("color", "var(--lumo-error-text-color)");
+            } else {
+                span.getStyle().set("color", "var(--lumo-success-text-color)");
+            }
+            return span;
+        })).setHeader("Variance").setWidth("150px");
+
+        statusColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createStatusBadge(item)))
+                .setHeader("Status")
+                .setWidth("130px")
+                .setFlexGrow(0);
+
+        codeColumn.setFrozen(true);
+        descColumn.setFrozen(true);
+
+        gridBudgetItemsQuarterlyGrid.setItems(items);
+
+        gridBudgetItemsQuarterlyGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
+        //gridBudgetItemsQuarterlyGrid.setItems(budgetItemsService.findDistinctBudgetItemsesExp(budget, deptSections));
+
+        // ===== Footer totals =====
+        FooterRow footerRow = gridBudgetItemsQuarterlyGrid.appendFooterRow();
+
+        footerRow.getCell(codeColumn).setComponent(footerText(""));
+        footerRow.getCell(descColumn).setComponent(footerText("TOTAL"));
+
+        footerRow.getCell(qtr1Column)
+                .setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr1))));
+        footerRow.getCell(qtr1AColumn)
+                .setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr1A))));
+
+        footerRow.getCell(qtr2Column)
+                .setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr2))));
+        footerRow.getCell(qtr2AColumn)
+                .setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr2A))));
+
+        footerRow.getCell(qtr3Column)
+                .setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr3))));
+        footerRow.getCell(qtr3AColumn)
+                .setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr3A))));
+
+        footerRow.getCell(qtr4Column)
+                .setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr4))));
+        footerRow.getCell(qtr4AColumn)
+                .setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr4A))));
+
+        footerRow.getCell(totalQtrColumn)
+                .setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getTotal))));
+        footerRow.getCell(totalAQtrColumn)
+                .setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getTotalA))));
+
+        footerRow.getCell(codeColumn).setComponent(footerText(""));
+        footerRow.getCell(descColumn).setComponent(footerText("TOTAL"));
+
+        footerRow.getCell(qtr1Column).setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr1))));
+        footerRow.getCell(qtr1AColumn).setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr1A))));
+
+        footerRow.getCell(qtr2Column).setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr2))));
+        footerRow.getCell(qtr2AColumn).setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr2A))));
+
+        footerRow.getCell(qtr3Column).setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr3))));
+        footerRow.getCell(qtr3AColumn).setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr3A))));
+
+        footerRow.getCell(qtr4Column).setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr4))));
+        footerRow.getCell(qtr4AColumn).setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr4A))));
+
+        footerRow.getCell(totalQtrColumn).setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getTotal))));
+        footerRow.getCell(totalAQtrColumn).setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getTotalA))));
+
+        footerRow.getCell(balanceColumn).setComponent(footerBalanceText(formatAmount(grandBalance)));
+        footerRow.getCell(statusColumn).setComponent(createFooterStatusBadge(grandBudget, grandActual, grandBalance));
+
+        div.add(gridBudgetItemsQuarterlyGrid);
+        return div;
+    }
+
+    private Component createOverallGeneralPhysicalPerformanceContent(Budget budget) {
+        VerticalLayout layout = new VerticalLayout();
+        layout.setWidthFull();
+        layout.setPadding(false);
+        layout.setSpacing(true);
+
+        String scopeCode = "GENERAL";
+        String scopeName = "All Departments";
+
+        Span title = new Span("General Budget Physical Performance Narrative");
+        title.getStyle()
+                .set("font-weight", "700")
+                .set("font-size", "1rem");
+
+        Span info = new Span("Scope: All Departments");
+        info.getStyle().set("color", "var(--lumo-secondary-text-color)");
+
+        ComboBox<String> quarterBox = new ComboBox<>("Quarter");
+        quarterBox.setItems("qtr1", "qtr2", "qtr3", "qtr4");
+        quarterBox.setValue("qtr1");
+        quarterBox.setWidth("200px");
+
+        QuillEditorField editor = new QuillEditorField();
+        editor.setWidth("100%");
+        editor.setHeight("300px");
+        editor.addClassName("rich-editor");
+        editor.getStyle().set("border", "1px solid var(--lumo-contrast-20pct)");
+        editor.setPlaceholder("Write the overall general budget physical performance narrative for the selected quarter...");
+
+        String template = """
+        <h3>Summary</h3>
+        <p></p>
+
+        <h3>Key Achievements</h3>
+        <ul><li></li></ul>
+
+        <h3>Challenges</h3>
+        <ul><li></li></ul>
+
+        <h3>Way Forward</h3>
+        <ul><li></li></ul>
+        """;
+
+        String initialHtml = overallGeneralPhysicalPerformanceService.getQuarterHtml(scopeCode, "qtr1", budget);
+        String initialContent = (initialHtml == null || initialHtml.isBlank()) ? template : initialHtml;
+
+        editor.setValue(initialContent);
+
+        quarterBox.addValueChangeListener(event -> {
+            String quarter = event.getValue();
+            String html = overallGeneralPhysicalPerformanceService.getQuarterHtml(scopeCode, quarter, budget);
+            String content = (html == null || html.isBlank()) ? template : html;
+
+            editor.setValue(content);
+        });
+
+        Button saveButton = new Button("Save");
+        saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        saveButton.addClickListener(e -> {
+            editor.getElement().executeJs("return this.value").then(String.class, html -> {
+                String content = (html == null || html.isBlank()) ? "" : html;
+                String quarter = quarterBox.getValue();
+
+                overallGeneralPhysicalPerformanceService.saveQuarter(
+                        scopeCode,
+                        scopeName,
+                        quarter,
+                        content,
+                        budget
+                );
+
+                Notification.show("Overall narrative saved");
+            });
+        });
+
+        HorizontalLayout actions = new HorizontalLayout(quarterBox, saveButton);
+        actions.setAlignItems(FlexComponent.Alignment.END);
+        actions.setSpacing(true);
+        actions.setPadding(false);
+
+        layout.add(title, info, actions, editor);
+        return layout;
+    }
+
+    private Span createSpan(BigDecimal value) {
+        Span span;
+        if (value != null) {
+            DecimalFormat decimalFormat = new DecimalFormat("#,##0.00");
+            span = new Span(decimalFormat.format(value));
+        } else {
+            span = new Span("-");
+        }
+        return span;
+    }
+
+    private BigDecimal sum(java.util.List<BudgetItemsActuals> items,
+            java.util.function.Function<BudgetItemsActuals, BigDecimal> extractor) {
+        return items.stream()
+                .map(extractor)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private String formatAmount(BigDecimal value) {
+        if (value == null) {
+            return "0";
+        }
+        return NumberFormat.getNumberInstance(Locale.US).format(value);
+    }
+
+    private Component footerText(String text) {
+        Span span = new Span(text);
+        span.getStyle()
+                .set("font-weight", "700")
+                .set("display", "block")
+                .set("text-align", "left")
+                .set("width", "100%");
+        return span;
+    }
+
+    private Component footerActualText(String text) {
+        Span span = new Span(text);
+        span.getStyle()
+                .set("font-weight", "700")
+                .set("color", "#1565c0")
+                .set("display", "block")
+                .set("text-align", "left")
+                .set("width", "100%");
+        return span;
+    }
+
+    private Component createStatusBadge(BudgetItemsActuals item) {
+        BigDecimal total = nz(item.getTotal());
+        BigDecimal actual = nz(item.getTotalA());
+        BigDecimal balance = total.subtract(actual);
+
+        Span badge = new Span();
+        badge.getStyle()
+                .set("font-weight", "700")
+                .set("padding", "4px 10px")
+                .set("border-radius", "999px")
+                .set("font-size", "12px")
+                .set("display", "inline-block");
+
+        if (total.compareTo(BigDecimal.ZERO) == 0 && actual.compareTo(BigDecimal.ZERO) > 0) {
+            badge.setText("UNBUDGETED");
+            badge.getStyle()
+                    .set("background-color", "var(--lumo-error-color-10pct)")
+                    .set("color", "var(--lumo-error-text-color)");
+        } else if (balance.compareTo(BigDecimal.ZERO) < 0) {
+            badge.setText("OVER");
+            badge.getStyle()
+                    .set("background-color", "var(--lumo-error-color-10pct)")
+                    .set("color", "var(--lumo-error-text-color)");
+        } else {
+            badge.setText("FINE");
+            badge.getStyle()
+                    .set("background-color", "var(--lumo-success-color-10pct)")
+                    .set("color", "var(--lumo-success-text-color)");
+        }
+
+        return badge;
+    }
+
+    private Component createFooterStatusBadge(BigDecimal total, BigDecimal actual, BigDecimal balance) {
+        Span badge = new Span();
+        badge.getStyle()
+                .set("font-weight", "700")
+                .set("padding", "4px 10px")
+                .set("border-radius", "999px")
+                .set("font-size", "12px")
+                .set("display", "inline-block");
+
+        if (total.compareTo(BigDecimal.ZERO) == 0 && actual.compareTo(BigDecimal.ZERO) > 0) {
+            badge.setText("UNBUDGETED");
+            badge.getStyle()
+                    .set("background-color", "var(--lumo-error-color-10pct)")
+                    .set("color", "var(--lumo-error-text-color)");
+        } else if (balance.compareTo(BigDecimal.ZERO) < 0) {
+            badge.setText("OVER");
+            badge.getStyle()
+                    .set("background-color", "var(--lumo-error-color-10pct)")
+                    .set("color", "var(--lumo-error-text-color)");
+        } else {
+            badge.setText("FINE");
+            badge.getStyle()
+                    .set("background-color", "var(--lumo-success-color-10pct)")
+                    .set("color", "var(--lumo-success-text-color)");
+        }
+
+        return badge;
+    }
+
+    private Component footerBalanceText(String text) {
+        Span span = new Span(text);
+        span.getStyle()
+                .set("font-weight", "700")
+                .set("display", "block")
+                .set("text-align", "right")
+                .set("width", "100%");
+        return span;
+    }
+
+    private BigDecimal nz(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 
 }

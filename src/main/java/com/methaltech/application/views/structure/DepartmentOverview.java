@@ -45,6 +45,7 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 
 import java.text.NumberFormat;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -617,7 +618,6 @@ public class DepartmentOverview extends VerticalLayout {
         .set("padding", "12px")
         .set("min-height", "120px")
         .set("background", "var(--lumo-base-color)");*/
-
         String template = """
         <h3>Summary</h3>
         <p></p>
@@ -644,7 +644,7 @@ public class DepartmentOverview extends VerticalLayout {
             String content = (html == null || html.isBlank()) ? template : html;
 
             editor.setValue(content);
-           // preview.getElement().setProperty("innerHTML", content);
+            // preview.getElement().setProperty("innerHTML", content);
         });
 
         Button saveButton = new Button("Save");
@@ -673,7 +673,7 @@ public class DepartmentOverview extends VerticalLayout {
         previewButton.addClickListener(e -> {
             editor.getElement().executeJs("return this.value").then(String.class, html -> {
                 String content = html == null ? "" : html;
-               // preview.getElement().setProperty("innerHTML", content);
+                // preview.getElement().setProperty("innerHTML", content);
             });
         });
 
@@ -1130,17 +1130,18 @@ public class DepartmentOverview extends VerticalLayout {
         return clamp01(pct.doubleValue() / 100.0);
     }
 
-    private Div budgetCoaQtrView(Set<UrcDeptSectionAnlDimbgt> deptSections) {
-        Div div = new Div();
-        div.setSizeFull();
+    private Component budgetCoaQtrView(Set<UrcDeptSectionAnlDimbgt> deptSections) {
+        VerticalLayout wrapper = new VerticalLayout();
+        wrapper.setWidthFull();
+        wrapper.setPadding(false);
+        wrapper.setSpacing(true);
 
         Grid<BudgetItemsActuals> gridBudgetItemsQuarterlyGrid = new Grid<>(BudgetItemsActuals.class, false);
-        gridBudgetItemsQuarterlyGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
-        List<BudgetItemsActuals> items = budgetItemsService.findDistinctBudgetItemsesExp(budget, deptSections);
-        BigDecimal grandBudget = sum(items, BudgetItemsActuals::getTotal);
-        BigDecimal grandActual = sum(items, BudgetItemsActuals::getTotalA);
-
-        BigDecimal grandBalance = grandBudget.subtract(grandActual);
+        gridBudgetItemsQuarterlyGrid.setWidthFull();
+        gridBudgetItemsQuarterlyGrid.addThemeVariants(
+                GridVariant.LUMO_WRAP_CELL_CONTENT,
+                GridVariant.LUMO_ROW_STRIPES
+        );
 
         Grid.Column<BudgetItemsActuals> codeColumn;
         Grid.Column<BudgetItemsActuals> descColumn;
@@ -1157,138 +1158,78 @@ public class DepartmentOverview extends VerticalLayout {
         Grid.Column<BudgetItemsActuals> balanceColumn;
         Grid.Column<BudgetItemsActuals> statusColumn;
 
-        codeColumn = gridBudgetItemsQuarterlyGrid.addColumn(budgetItem -> {
-            COA coacode = budgetItem.getCoacode();
-            Text label = new Text(coacode != null ? coacode.getCode() : "");
-            return label.getText(); // Get the text content
+        codeColumn = gridBudgetItemsQuarterlyGrid.addColumn(item -> {
+            COA coacode = item.getCoacode();
+            return coacode != null ? coacode.getCode() : "";
         })
-                .setHeader("Code").setWidth("80px").setFlexGrow(0)
-                .setSortable(true) // Make the column sortable
-                .setComparator((budgetItem1, budgetItem2) -> {
-                    // Implement your custom comparator logic here
-                    String name1 = budgetItem1.getCoacode() != null ? budgetItem1.getCoacode().getName() : "";
-                    String name2 = budgetItem2.getCoacode() != null ? budgetItem2.getCoacode().getName() : "";
-                    return name1.compareTo(name2);
+                .setHeader("Code")
+                .setWidth("80px")
+                .setFlexGrow(0)
+                .setSortable(true)
+                .setComparator((a, b) -> {
+                    String code1 = a.getCoacode() != null ? a.getCoacode().getCode() : "";
+                    String code2 = b.getCoacode() != null ? b.getCoacode().getCode() : "";
+                    return code1.compareTo(code2);
                 });
-        descColumn = gridBudgetItemsQuarterlyGrid.addColumn(BudgetItemsActuals::getItem).setHeader("Description").setWidth("250px");
-        //gridBudgetItems.addColumn(BudgetItemsActuals::getJul).setHeader("July");
 
-        qtr1Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
+        descColumn = gridBudgetItemsQuarterlyGrid.addColumn(BudgetItemsActuals::getItem)
+                .setHeader("Description")
+                .setWidth("250px");
 
-            BigDecimal value = urcActivity.getQtr1();
-            Span span = createSpan(value);
+        qtr1Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item
+                -> createSpan(item.getQtr1())
+        )).setHeader("Qtr1").setWidth("150px");
 
-            return span;
-
-        })).setHeader("Qtr1").setWidth("150px");
-        qtr1AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
-
-            BigDecimal value = urcActivity.getQtr1A();
-            Span span = createSpan(value);
-            if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
-                span = createSpan(value);
-            }
+        qtr1AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+            Span span = createSpan(item.getQtr1A());
             span.getElement().getThemeList().add("badge");
-
             return span;
-
         })).setHeader("Qtr1 Actual").setWidth("150px");
-// Apply the orange-column class to the cells of the "Jul Actuals" column
-        qtr1AColumn.setClassNameGenerator(item -> {
-            // Check if the value is not null and greater than zero to apply the class
-            if (item != null && item.getJulA() != null && item.getJulA().compareTo(BigDecimal.ZERO) > 0) {
-                return "orange-column";
-            }
-            return "orange-column"; // No class applied if condition is not met
-        });
 
-        qtr2Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
+        qtr2Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item
+                -> createSpan(item.getQtr2())
+        )).setHeader("Qtr2").setWidth("150px");
 
-            BigDecimal value = urcActivity.getQtr2();
-            Span span = createSpan(value);
-
-            return span;
-
-        })).setHeader("Qtr2").setWidth("150px");
-
-        qtr2AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
-
-            BigDecimal value = urcActivity.getQtr2A();
-            Span span = createSpan(value);
-            if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
-                span = createSpan(value);
-            }
+        qtr2AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+            Span span = createSpan(item.getQtr2A());
             span.getElement().getThemeList().add("badge");
-
             return span;
-
         })).setHeader("Qtr2 Actual").setWidth("150px");
-        qtr3Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
 
-            BigDecimal value = urcActivity.getQtr3();
-            Span span = createSpan(value);
+        qtr3Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item
+                -> createSpan(item.getQtr3())
+        )).setHeader("Qtr3").setWidth("150px");
 
-            return span;
-
-        })).setHeader("Qtr3").setWidth("150px");
-        qtr3AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
-
-            BigDecimal value = urcActivity.getQtr3A();
-            Span span = createSpan(value);
-            if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
-                span = createSpan(value);
-            }
+        qtr3AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+            Span span = createSpan(item.getQtr3A());
             span.getElement().getThemeList().add("badge");
-
             return span;
-
         })).setHeader("Qtr3 Actual").setWidth("150px");
-        qtr4Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
 
-            BigDecimal value = urcActivity.getQtr4();
-            Span span = createSpan(value);
+        qtr4Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item
+                -> createSpan(item.getQtr4())
+        )).setHeader("Qtr4").setWidth("150px");
 
-            return span;
-
-        })).setHeader("Qtr4").setWidth("150px");
-        qtr4AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
-
-            BigDecimal value = urcActivity.getQtr4A();
-            Span span = createSpan(value);
-            if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
-                span = createSpan(value);
-            }
+        qtr4AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+            Span span = createSpan(item.getQtr4A());
             span.getElement().getThemeList().add("badge");
-
             return span;
-
         })).setHeader("Qtr4 Actual").setWidth("150px");
-        totalQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
 
-            BigDecimal value = urcActivity.getTotal();
-            Span span = createSpan(value);
+        totalQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item
+                -> createSpan(item.getTotal())
+        )).setHeader("Total").setWidth("150px");
 
-            return span;
-
-        })).setHeader("Total").setWidth("150px");
-
-        totalAQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
-
-            BigDecimal value = urcActivity.getTotalA();
-            Span span = createSpan(value);
-            if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
-                span = createSpan(value);
-            }
+        totalAQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+            Span span = createSpan(item.getTotalA());
             span.getElement().getThemeList().add("badge");
-
             return span;
-
         })).setHeader("Total Actual").setWidth("150px");
 
         balanceColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
-            BigDecimal budget = item.getTotal();
-            BigDecimal actual = item.getTotalA();
-            BigDecimal balance = budget.subtract(actual);
+            BigDecimal budgetVal = nz(item.getTotal());
+            BigDecimal actualVal = nz(item.getTotalA());
+            BigDecimal balance = budgetVal.subtract(actualVal);
 
             Span span = createSpan(balance);
             span.getStyle().set("font-weight", "600");
@@ -1301,7 +1242,7 @@ public class DepartmentOverview extends VerticalLayout {
             return span;
         })).setHeader("Variance").setWidth("150px");
 
-        statusColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createStatusBadge(item)))
+        statusColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(this::createStatusBadge))
                 .setHeader("Status")
                 .setWidth("130px")
                 .setFlexGrow(0);
@@ -1309,65 +1250,102 @@ public class DepartmentOverview extends VerticalLayout {
         codeColumn.setFrozen(true);
         descColumn.setFrozen(true);
 
-        gridBudgetItemsQuarterlyGrid.setItems(items);
+        gridBudgetItemsQuarterlyGrid.setItems(Collections.emptyList());
 
-        gridBudgetItemsQuarterlyGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
-        //gridBudgetItemsQuarterlyGrid.setItems(budgetItemsService.findDistinctBudgetItemsesExp(budget, deptSections));
-
-        // ===== Footer totals =====
         FooterRow footerRow = gridBudgetItemsQuarterlyGrid.appendFooterRow();
-
         footerRow.getCell(codeColumn).setComponent(footerText(""));
         footerRow.getCell(descColumn).setComponent(footerText("TOTAL"));
+        footerRow.getCell(qtr1Column).setComponent(footerText(""));
+        footerRow.getCell(qtr1AColumn).setComponent(footerActualText(""));
+        footerRow.getCell(qtr2Column).setComponent(footerText(""));
+        footerRow.getCell(qtr2AColumn).setComponent(footerActualText(""));
+        footerRow.getCell(qtr3Column).setComponent(footerText(""));
+        footerRow.getCell(qtr3AColumn).setComponent(footerActualText(""));
+        footerRow.getCell(qtr4Column).setComponent(footerText(""));
+        footerRow.getCell(qtr4AColumn).setComponent(footerActualText(""));
+        footerRow.getCell(totalQtrColumn).setComponent(footerText(""));
+        footerRow.getCell(totalAQtrColumn).setComponent(footerActualText(""));
+        footerRow.getCell(balanceColumn).setComponent(footerBalanceText(""));
+        footerRow.getCell(statusColumn).setComponent(new Span(""));
 
-        footerRow.getCell(qtr1Column)
-                .setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr1))));
-        footerRow.getCell(qtr1AColumn)
-                .setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr1A))));
+        Button loadButton = new Button("Load Quarterly Performance", new Icon(VaadinIcon.REFRESH));
+        loadButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        footerRow.getCell(qtr2Column)
-                .setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr2))));
-        footerRow.getCell(qtr2AColumn)
-                .setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr2A))));
+        Span hint = new Span("Loads or refreshes the grid and totals.");
+        hint.getStyle().set("color", "var(--lumo-secondary-text-color)");
 
-        footerRow.getCell(qtr3Column)
-                .setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr3))));
-        footerRow.getCell(qtr3AColumn)
-                .setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr3A))));
+        HorizontalLayout topBar = new HorizontalLayout(loadButton, hint);
+        topBar.setWidthFull();
+        topBar.setPadding(false);
+        topBar.setSpacing(true);
+        topBar.setAlignItems(FlexComponent.Alignment.CENTER);
 
-        footerRow.getCell(qtr4Column)
-                .setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr4))));
-        footerRow.getCell(qtr4AColumn)
-                .setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr4A))));
+        loadButton.addClickListener(e -> {
+            List<BudgetItemsActuals> items = budgetItemsService.findDistinctBudgetItemsesExp(budget, deptSections);
+            gridBudgetItemsQuarterlyGrid.setItems(items);
 
-        footerRow.getCell(totalQtrColumn)
-                .setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getTotal))));
-        footerRow.getCell(totalAQtrColumn)
-                .setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getTotalA))));
+            refreshQuarterlyFooter(
+                    footerRow,
+                    items,
+                    qtr1Column, qtr1AColumn,
+                    qtr2Column, qtr2AColumn,
+                    qtr3Column, qtr3AColumn,
+                    qtr4Column, qtr4AColumn,
+                    totalQtrColumn, totalAQtrColumn,
+                    balanceColumn, statusColumn
+            );
 
-        footerRow.getCell(codeColumn).setComponent(footerText(""));
-        footerRow.getCell(descColumn).setComponent(footerText("TOTAL"));
+            loadButton.setText("Refresh Quarterly Performance");
+        });
 
-        footerRow.getCell(qtr1Column).setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr1))));
-        footerRow.getCell(qtr1AColumn).setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr1A))));
+        wrapper.add(topBar, gridBudgetItemsQuarterlyGrid);
+        return wrapper;
+    }
 
-        footerRow.getCell(qtr2Column).setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr2))));
-        footerRow.getCell(qtr2AColumn).setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr2A))));
+    private void refreshQuarterlyFooter(
+            FooterRow footerRow,
+            List<BudgetItemsActuals> items,
+            Grid.Column<BudgetItemsActuals> qtr1Column,
+            Grid.Column<BudgetItemsActuals> qtr1AColumn,
+            Grid.Column<BudgetItemsActuals> qtr2Column,
+            Grid.Column<BudgetItemsActuals> qtr2AColumn,
+            Grid.Column<BudgetItemsActuals> qtr3Column,
+            Grid.Column<BudgetItemsActuals> qtr3AColumn,
+            Grid.Column<BudgetItemsActuals> qtr4Column,
+            Grid.Column<BudgetItemsActuals> qtr4AColumn,
+            Grid.Column<BudgetItemsActuals> totalQtrColumn,
+            Grid.Column<BudgetItemsActuals> totalAQtrColumn,
+            Grid.Column<BudgetItemsActuals> balanceColumn,
+            Grid.Column<BudgetItemsActuals> statusColumn
+    ) {
+        BigDecimal qtr1Total = sum(items, BudgetItemsActuals::getQtr1);
+        BigDecimal qtr1ATotal = sum(items, BudgetItemsActuals::getQtr1A);
+        BigDecimal qtr2Total = sum(items, BudgetItemsActuals::getQtr2);
+        BigDecimal qtr2ATotal = sum(items, BudgetItemsActuals::getQtr2A);
+        BigDecimal qtr3Total = sum(items, BudgetItemsActuals::getQtr3);
+        BigDecimal qtr3ATotal = sum(items, BudgetItemsActuals::getQtr3A);
+        BigDecimal qtr4Total = sum(items, BudgetItemsActuals::getQtr4);
+        BigDecimal qtr4ATotal = sum(items, BudgetItemsActuals::getQtr4A);
+        BigDecimal grandBudget = sum(items, BudgetItemsActuals::getTotal);
+        BigDecimal grandActual = sum(items, BudgetItemsActuals::getTotalA);
+        BigDecimal grandBalance = grandBudget.subtract(grandActual);
 
-        footerRow.getCell(qtr3Column).setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr3))));
-        footerRow.getCell(qtr3AColumn).setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr3A))));
+        footerRow.getCell(qtr1Column).setComponent(footerText(formatAmount(qtr1Total)));
+        footerRow.getCell(qtr1AColumn).setComponent(footerActualText(formatAmount(qtr1ATotal)));
 
-        footerRow.getCell(qtr4Column).setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getQtr4))));
-        footerRow.getCell(qtr4AColumn).setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getQtr4A))));
+        footerRow.getCell(qtr2Column).setComponent(footerText(formatAmount(qtr2Total)));
+        footerRow.getCell(qtr2AColumn).setComponent(footerActualText(formatAmount(qtr2ATotal)));
 
-        footerRow.getCell(totalQtrColumn).setComponent(footerText(formatAmount(sum(items, BudgetItemsActuals::getTotal))));
-        footerRow.getCell(totalAQtrColumn).setComponent(footerActualText(formatAmount(sum(items, BudgetItemsActuals::getTotalA))));
+        footerRow.getCell(qtr3Column).setComponent(footerText(formatAmount(qtr3Total)));
+        footerRow.getCell(qtr3AColumn).setComponent(footerActualText(formatAmount(qtr3ATotal)));
 
+        footerRow.getCell(qtr4Column).setComponent(footerText(formatAmount(qtr4Total)));
+        footerRow.getCell(qtr4AColumn).setComponent(footerActualText(formatAmount(qtr4ATotal)));
+
+        footerRow.getCell(totalQtrColumn).setComponent(footerText(formatAmount(grandBudget)));
+        footerRow.getCell(totalAQtrColumn).setComponent(footerActualText(formatAmount(grandActual)));
         footerRow.getCell(balanceColumn).setComponent(footerBalanceText(formatAmount(grandBalance)));
         footerRow.getCell(statusColumn).setComponent(createFooterStatusBadge(grandBudget, grandActual, grandBalance));
-
-        div.add(gridBudgetItemsQuarterlyGrid);
-        return div;
     }
 
     private Component footerBalanceText(String text) {

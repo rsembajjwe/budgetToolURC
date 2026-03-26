@@ -202,11 +202,6 @@ public class DeptSectionMergerService {
             dept = "Legal";
         }
         Set<UrcDeptSectionAnlDimbgt> sections = sectrepository.findByCustomANL_CODE2(sectionCodes2);
-        System.out.println("Cost Centre: " + dept);
-        sections.forEach(sect -> {
-            System.out.println(sect);
-        });
-        System.out.println("......................................................................................");
         return sections;
     }
     

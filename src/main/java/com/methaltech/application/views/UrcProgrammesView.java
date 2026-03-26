@@ -959,7 +959,6 @@ public class UrcProgrammesView extends Div {
 
     public void refreshActGrid2(Budget budget, URC_Priority_Areas urcPriorityAreas, List<UrcDeptSectionAnlDimbgt> deptSections, String keyword) {
         List<Urc_Activities> list = sampleUrc_ActivitiesService.customSearchByFields(budget, urcPriorityAreas, deptSections, keyword);
-        System.out.println(list.size() + " ?");
         gridUrc_Activities.setItems(list);
     }
 

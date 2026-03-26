@@ -37,7 +37,6 @@ public class SectionBudgetPerformanceService {
     }
 
     public List<SectionBudgetPerformance> findByBudget(Budget budget) {
-        System.out.println(budget);
         return repository.findByBudget(budget);
     }
 

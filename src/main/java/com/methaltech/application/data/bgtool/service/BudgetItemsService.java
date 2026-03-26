@@ -1524,7 +1524,7 @@ public class BudgetItemsService {
         item.setQtr4A(sum(item.getAprA(), item.getMayA(), item.getJunA()));
 
         item.setTotalA(sum(item.getQtr1A(), item.getQtr2A(), item.getQtr3A(), item.getQtr4A()));
-        System.out.println(item.getTotalA()+"..... "+item.getTotalA().abs());
+
     }
 
     private void setActualValuesForAllMonths(

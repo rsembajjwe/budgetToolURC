@@ -39,18 +39,18 @@ public class BudgetSummary {
     private BigDecimal extRevenueQtr2Budget;
     private BigDecimal extRevenueQtr3Budget;
     private BigDecimal extRevenueQtr4Budget;
-    
+
     private BigDecimal projectedRevenueQtr1Budget;
     private BigDecimal projectedRevenueQtr2Budget;
     private BigDecimal projectedRevenueQtr3Budget;
     private BigDecimal projectedRevenueQtr4Budget;
-    
-        private BigDecimal revenueQtr1Actual;
+
+    private BigDecimal revenueQtr1Actual;
     private BigDecimal revenueQtr2Actual;
     private BigDecimal revenueQtr3Actual;
     private BigDecimal revenueQtr4Actual;
     private BigDecimal revenueActual;
-    
+
     private BigDecimal opexBudget;
     private BigDecimal capexBudget;
     private BigDecimal opexActual;
@@ -428,17 +428,13 @@ public class BudgetSummary {
     }
 
     public BigDecimal getRevenuePerformancePercentage() {
-        System.out.println(getTotalRevenueSafe()+": Actual Revenue "+getProjectedRevenueSafe()+" Budget Revenue");
-        // Revenue Performance (%) = Actual Revenue Collected / Planned (Projected) Revenue for the period * 100
         return percentage(getTotalRevenueSafe(), getProjectedRevenueSafe());
     }
 
-        public BigDecimal getBudgetPerformancePercentage() {
-        System.out.println(getTotalRevenueSafe()+": Actual Revenue "+getProjectedRevenueSafe()+" Budget Revenue");
-        // Revenue Performance (%) = Actual Revenue Collected / Planned (Projected) Revenue for the period * 100
+    public BigDecimal getBudgetPerformancePercentage() {
         return percentage(getTotalSpentSafe(), getTotalBudgetSafe());
     }
-        
+
     public BigDecimal getAbsorptionRatePercentage() {
         // Absorption Rate (%) = Total Expenditure / Total Funds Available (Revenue collected for the period) * 100
         // If you consider "available funding" to be releases only, swap denominator accordingly.
@@ -454,15 +450,18 @@ public class BudgetSummary {
     }
 
 // ---- small null-safe helpers ----
-        private BigDecimal getTotalBudgetSafe() {
+    private BigDecimal getTotalBudgetSafe() {
         return totalBudget != null ? totalBudget : BigDecimal.ZERO;
     }
+
     private BigDecimal getTotalRevenueSafe() {
         return totalActualRevenue != null ? totalActualRevenue : BigDecimal.ZERO;
     }
+
     private BigDecimal getActualRevenueSafe() {
         return revenueActual != null ? revenueActual : BigDecimal.ZERO;
     }
+
     private BigDecimal getProjectedRevenueSafe() {
         return budgetedRevenue != null ? budgetedRevenue : BigDecimal.ZERO;
     }
@@ -570,8 +569,6 @@ public class BudgetSummary {
     public void setCapexActual(BigDecimal capexActual) {
         this.capexActual = capexActual;
     }
-    
-    
 
     // Legacy methods for backward compatibility
     @Deprecated
@@ -658,10 +655,5 @@ public class BudgetSummary {
         this.igrTotalActualRevenue = igrTotalActualRevenue;
         this.gouTotalActualRevenue = gouTotalActualRevenue;
     }
-    
 
-
-
-
-    
 }
