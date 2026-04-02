@@ -98,7 +98,7 @@ public class DepartmentSectionCards extends VerticalLayout {
         title.addClassName("section-cards-title");
 
         Span subtitle = new Span(
-                "Detailed section breakdown for " + nvl(department.getDepartmentName(), "Department")
+                "Detailed Cost centre breakdown for " + nvl(department.getDepartmentName(), "Department")
         );
         subtitle.addClassName("section-cards-subtitle");
 
@@ -125,109 +125,118 @@ public class DepartmentSectionCards extends VerticalLayout {
         add(header);
     }
 
-    private void createOverviewCard(List<SectionBudget> sections) {
-        Div overviewCard = new Div();
-        overviewCard.addClassName("section-overview-card");
-        overviewCard.setWidthFull();
+private void createOverviewCard(List<SectionBudget> sections) {
+    Div overviewCard = new Div();
+    overviewCard.addClassName("section-overview-card");
+    overviewCard.setWidthFull();
 
-        VerticalLayout overviewContent = new VerticalLayout();
-        overviewContent.setSpacing(true);
-        overviewContent.setPadding(false);
-        overviewContent.setWidthFull();
+    VerticalLayout overviewContent = new VerticalLayout();
+    overviewContent.setSpacing(true);
+    overviewContent.setPadding(false);
+    overviewContent.setWidthFull();
+    overviewContent.addClassName("section-overview-content");
 
-        H4 overviewTitle = new H4("Department Overview");
-        overviewTitle.addClassName("overview-title");
+    H4 overviewTitle = new H4("Department Overview");
+    overviewTitle.addClassName("overview-title");
 
-        BigDecimal totalAllocated = BigDecimal.ZERO;
-        BigDecimal totalSpent = BigDecimal.ZERO;
-        //BigDecimal totalCommitted = BigDecimal.ZERO;
-        BigDecimal totalAvailable = BigDecimal.ZERO;
-        int overBudgetCount = 0;
+    BigDecimal totalAllocated = BigDecimal.ZERO;
+    BigDecimal totalSpent = BigDecimal.ZERO;
+    BigDecimal totalAvailable = BigDecimal.ZERO;
+    int overBudgetCount = 0;
 
-        for (SectionBudget section : sections) {
-            totalAllocated = totalAllocated.add(nz(section.getAllocatedBudget()));
-            totalSpent = totalSpent.add(nz(section.getSpentAmount())).abs();
-            //totalCommitted = totalCommitted.add(nz(section.getCommittedAmount()));
-            totalAvailable = totalAvailable.add(nz(section.getAvailableAmount()));
+    for (SectionBudget section : sections) {
+        totalAllocated = totalAllocated.add(nz(section.getAllocatedBudget()));
+        totalSpent = totalSpent.add(nz(section.getSpentAmount())).abs();
+        totalAvailable = totalAvailable.add(nz(section.getAvailableAmount()));
 
-            if (section.isOverBudget()) {
-                overBudgetCount++;
-            }
+        if (section.isOverBudget()) {
+            overBudgetCount++;
         }
-
-        BigDecimal utilization = percentage(totalSpent, totalAllocated);
-
-        HorizontalLayout metricsGrid = new HorizontalLayout();
-        metricsGrid.setWidthFull();
-        metricsGrid.setSpacing(true);
-        metricsGrid.setPadding(false);
-        metricsGrid.getStyle().set("display", "flex");
-        metricsGrid.getStyle().set("gap", "1rem");
-        metricsGrid.addClassName("overview-metrics");
-
-        metricsGrid.add(
-                createMetricItem("Total Sections", String.valueOf(sections.size()), VaadinIcon.BUILDING, "metric-sections"),
-                createMetricItem("Allocated Budget", formatCurrency(totalAllocated), VaadinIcon.WALLET, "metric-allocated"),
-                createMetricItem("Total Spent", formatCurrency(totalSpent), VaadinIcon.TRENDING_DOWN, "metric-spent"),
-                createMetricItem("Utilization", utilization.setScale(1, RoundingMode.HALF_UP) + "%", VaadinIcon.CHART_LINE, "metric-utilization"),
-                createMetricItem("Over Budget", String.valueOf(overBudgetCount), VaadinIcon.WARNING, "metric-status")
-        );
-
-        VerticalLayout progressSection = new VerticalLayout();
-        progressSection.setSpacing(false);
-        progressSection.setPadding(false);
-        progressSection.setWidthFull();
-        progressSection.addClassName("overview-progress");
-
-        HorizontalLayout progressHeader = new HorizontalLayout();
-        progressHeader.setWidthFull();
-        progressHeader.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
-        progressHeader.setAlignItems(FlexComponent.Alignment.CENTER);
-        progressHeader.setPadding(false);
-        progressHeader.setSpacing(false);
-
-        Span progressLabel = new Span("Department Budget Progress");
-        progressLabel.addClassName("progress-label");
-
-        Span progressValue = new Span(String.format(Locale.US, "%.1f%% utilized", utilization.doubleValue()));
-        progressValue.addClassName("progress-value");
-
-        progressHeader.add(progressLabel, progressValue);
-
-        ProgressBar departmentProgress = new ProgressBar();
-        departmentProgress.setWidthFull();
-        departmentProgress.setMin(0);
-        departmentProgress.setMax(1);
-        departmentProgress.setValue(pctToFraction(utilization));
-        departmentProgress.addClassName("department-progress-bar");
-        departmentProgress.addClassName(getDepartmentProgressClass(utilization.doubleValue()));
-
-        overviewContent.add(overviewTitle, metricsGrid, progressSection);
-        progressSection.add(progressHeader, departmentProgress);
-        overviewCard.add(overviewContent);
-        add(overviewCard);
     }
 
-    private VerticalLayout createMetricItem(String label, String value, VaadinIcon iconType, String className) {
-        VerticalLayout item = new VerticalLayout();
-        item.setSpacing(false);
-        item.setPadding(false);
-        item.addClassName("metric-item");
-        item.addClassName(className);
-        item.setAlignItems(FlexComponent.Alignment.CENTER);
+    BigDecimal utilization = percentage(totalSpent, totalAllocated);
 
-        Icon icon = new Icon(iconType);
-        icon.addClassName("metric-icon");
+    HorizontalLayout metricsGrid = new HorizontalLayout();
+    metricsGrid.setWidthFull();
+    metricsGrid.setSpacing(true);
+    metricsGrid.setPadding(false);
+    metricsGrid.setAlignItems(FlexComponent.Alignment.STRETCH);
+    metricsGrid.addClassName("overview-metrics");
 
-        Span valueSpan = new Span(value);
-        valueSpan.addClassName("metric-value");
+    VerticalLayout sectionsMetric = createMetricItem(
+            "Total Sections", String.valueOf(sections.size()), VaadinIcon.CLUSTER, "metric-sections");
+    VerticalLayout allocatedMetric = createMetricItem(
+            "Allocated Budget", formatCurrency(totalAllocated), VaadinIcon.WALLET, "metric-allocated");
+    VerticalLayout spentMetric = createMetricItem(
+            "Total Spent", formatCurrency(totalSpent), VaadinIcon.TRENDING_DOWN, "metric-spent");
+    VerticalLayout utilizationMetric = createMetricItem(
+            "Utilization", utilization.setScale(1, RoundingMode.HALF_UP) + "%", VaadinIcon.CHART_LINE, "metric-utilization");
+    VerticalLayout overBudgetMetric = createMetricItem(
+            "Over Budget", String.valueOf(overBudgetCount), VaadinIcon.WARNING, "metric-status");
 
-        Span labelSpan = new Span(label);
-        labelSpan.addClassName("metric-label");
+    metricsGrid.add(sectionsMetric, allocatedMetric, spentMetric, utilizationMetric, overBudgetMetric);
+    metricsGrid.setFlexGrow(1, sectionsMetric);
+    metricsGrid.setFlexGrow(1, allocatedMetric);
+    metricsGrid.setFlexGrow(1, spentMetric);
+    metricsGrid.setFlexGrow(1, utilizationMetric);
+    metricsGrid.setFlexGrow(1, overBudgetMetric);
 
-        item.add(icon, valueSpan, labelSpan);
-        return item;
-    }
+    VerticalLayout progressSection = new VerticalLayout();
+    progressSection.setSpacing(false);
+    progressSection.setPadding(false);
+    progressSection.setWidthFull();
+    progressSection.addClassName("overview-progress");
+
+    HorizontalLayout progressHeader = new HorizontalLayout();
+    progressHeader.setWidthFull();
+    progressHeader.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+    progressHeader.setAlignItems(FlexComponent.Alignment.CENTER);
+    progressHeader.setPadding(false);
+    progressHeader.setSpacing(false);
+
+    Span progressLabel = new Span("Department Budget Progress");
+    progressLabel.addClassName("progress-label");
+
+    Span progressValue = new Span(String.format(Locale.US, "%.1f%% utilized", utilization.doubleValue()));
+    progressValue.addClassName("progress-value");
+
+    progressHeader.add(progressLabel, progressValue);
+
+    ProgressBar departmentProgress = new ProgressBar();
+    departmentProgress.setWidthFull();
+    departmentProgress.setMin(0);
+    departmentProgress.setMax(1);
+    departmentProgress.setValue(pctToFraction(utilization));
+    departmentProgress.addClassName("department-progress-bar");
+    departmentProgress.addClassName(getDepartmentProgressClass(utilization.doubleValue()));
+
+    progressSection.add(progressHeader, departmentProgress);
+    overviewContent.add(overviewTitle, metricsGrid, progressSection);
+    overviewCard.add(overviewContent);
+    add(overviewCard);
+}
+
+private VerticalLayout createMetricItem(String label, String value, VaadinIcon iconType, String className) {
+    VerticalLayout item = new VerticalLayout();
+    item.setSpacing(false);
+    item.setPadding(false);
+    item.setWidthFull();
+    item.addClassNames("metric-item", className);
+    item.setAlignItems(FlexComponent.Alignment.CENTER);
+    item.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+
+    Icon icon = new Icon(iconType);
+    icon.addClassName("metric-icon");
+
+    Span valueSpan = new Span(value);
+    valueSpan.addClassName("metric-value");
+
+    Span labelSpan = new Span(label);
+    labelSpan.addClassName("metric-label");
+
+    item.add(icon, valueSpan, labelSpan);
+    return item;
+}
 
     private void createSectionCharts(List<SectionBudget> sections) {
         Div chartsRow = new Div();
@@ -277,110 +286,120 @@ public class DepartmentSectionCards extends VerticalLayout {
         add(cardsContainer);
     }
 
-    private Div createSectionCard(SectionBudget section) {
-        Div card = new Div();
-        card.addClassName("section-card");
-        card.setWidthFull();
+private Div createSectionCard(SectionBudget section) {
+    Div card = new Div();
+    card.addClassName("section-card");
+    card.setWidthFull();
 
-        HorizontalLayout cardHeader = new HorizontalLayout();
-        cardHeader.setWidthFull();
-        cardHeader.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
-        cardHeader.setAlignItems(FlexComponent.Alignment.CENTER);
-        cardHeader.setPadding(false);
-        cardHeader.setSpacing(false);
-        cardHeader.addClassName("section-card-header");
+    VerticalLayout cardContent = new VerticalLayout();
+    cardContent.setWidthFull();
+    cardContent.setPadding(false);
+    cardContent.setSpacing(true);
+    cardContent.addClassName("section-card-content");
 
-        HorizontalLayout sectionInfo = new HorizontalLayout();
-        sectionInfo.setAlignItems(FlexComponent.Alignment.CENTER);
-        sectionInfo.setSpacing(false);
-        sectionInfo.setPadding(false);
-        sectionInfo.setFlexGrow(1);
-        sectionInfo.addClassName("section-info");
+    HorizontalLayout cardHeader = new HorizontalLayout();
+    cardHeader.setWidthFull();
+    cardHeader.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+    cardHeader.setAlignItems(FlexComponent.Alignment.START);
+    cardHeader.setPadding(false);
+    cardHeader.setSpacing(true);
+    cardHeader.addClassName("section-card-header");
 
-        Icon sectionIcon = getSectionIcon(nvl(section.getSectionName(), ""));
-        sectionIcon.addClassName("section-icon");
+    HorizontalLayout sectionInfo = new HorizontalLayout();
+    sectionInfo.setAlignItems(FlexComponent.Alignment.START);
+    sectionInfo.setSpacing(true);
+    sectionInfo.setPadding(false);
+    sectionInfo.setFlexGrow(1);
+    sectionInfo.addClassName("section-info");
 
-        VerticalLayout sectionDetails = new VerticalLayout();
-        sectionDetails.setSpacing(false);
-        sectionDetails.setPadding(false);
+    Icon sectionIcon = getSectionIcon(nvl(section.getSectionName(), ""));
+    sectionIcon.addClassName("section-icon");
 
-        H5 sectionName = new H5(nvl(section.getSectionName(), "Unknown Section"));
-        sectionName.addClassName("section-name");
+    VerticalLayout sectionDetails = new VerticalLayout();
+    sectionDetails.setSpacing(false);
+    sectionDetails.setPadding(false);
+    sectionDetails.addClassName("section-details");
 
-        HorizontalLayout sectionMeta = new HorizontalLayout();
-        sectionMeta.setAlignItems(FlexComponent.Alignment.CENTER);
-        sectionMeta.setSpacing(true);
-        sectionMeta.setPadding(false);
-        sectionMeta.addClassName("section-meta");
+    H5 sectionName = new H5(nvl(section.getSectionName(), "Unknown Section"));
+    sectionName.addClassName("section-name");
 
-        Span sectionCode = new Span(nvl(section.getSectionCode(), "N/A"));
-        sectionCode.addClassName("section-code");
+    HorizontalLayout sectionMeta = new HorizontalLayout();
+    sectionMeta.setAlignItems(FlexComponent.Alignment.CENTER);
+    sectionMeta.setSpacing(true);
+    sectionMeta.setPadding(false);
+    sectionMeta.addClassName("section-meta");
 
-        Div separator = new Div();
-        separator.addClassName("meta-separator");
+    Span sectionCode = new Span(nvl(section.getSectionCode(), "N/A"));
+    sectionCode.addClassName("section-code");
 
-        Span categoryInfo = new Span("Category: " + nvl(section.getCategoryId(), "N/A"));
-        categoryInfo.addClassName("category-info");
+    Div separator = new Div();
+    separator.addClassName("meta-separator");
 
-        sectionMeta.add(sectionCode, separator, categoryInfo);
+    Span categoryInfo = new Span("Category: " + nvl(section.getCategoryId(), "N/A"));
+    categoryInfo.addClassName("category-info");
 
-        if (section.getDescription() != null && !section.getDescription().isEmpty()) {
-            Span sectionDesc = new Span(section.getDescription());
-            sectionDesc.addClassName("section-description");
-            sectionDetails.add(sectionName, sectionMeta, sectionDesc);
-        } else {
-            sectionDetails.add(sectionName, sectionMeta);
-        }
+    sectionMeta.add(sectionCode, separator, categoryInfo);
 
-        sectionInfo.add(sectionIcon, sectionDetails);
+    sectionDetails.add(sectionName, sectionMeta);
 
-        Div statusIndicator = createEnhancedStatusIndicator(section);
-
-        cardHeader.add(sectionInfo, statusIndicator);
-
-        HorizontalLayout budgetGrid = new HorizontalLayout();
-        budgetGrid.setWidthFull();
-        budgetGrid.setSpacing(true);
-        budgetGrid.setPadding(false);
-        budgetGrid.getStyle().set("display", "flex");
-        budgetGrid.getStyle().set("gap", "1rem");
-        budgetGrid.addClassName("section-budget-grid");
-
-        VerticalLayout spentLayoutCard = createEnhancedBudgetItem(
-                "Spent",
-                nz(section.getSpentAmount()),
-                VaadinIcon.TRENDING_DOWN,
-                "budget-spent"
-        );
-
-        spentLayoutCard.addDoubleClickListener(e -> {
-            String sectcode = section.getSectionCode();
-            Set<String> sectionCodes = new HashSet<>();
-            sectionCodes.add(sectcode);
-
-            utils = new utilityActuals(
-                    budget,
-                    sampleCoaService,
-                    sampleUrcDeptSectionAnlDimbgtService,
-                    sampleSALFLDGService,
-                    sectionCodes
-            );
-            utils.createTransactionsDialog2(budgetGrid);
-        });
-
-        budgetGrid.add(
-                createEnhancedBudgetItem("Allocated", nz(section.getAllocatedBudget()), VaadinIcon.WALLET, "budget-allocated"),
-                spentLayoutCard,
-                //createEnhancedBudgetItem("Committed", nz(section.getCommittedAmount()), VaadinIcon.CLOCK, "budget-committed"),
-                createEnhancedBudgetItem("Available", nz(section.getAvailableAmount()), VaadinIcon.MONEY_DEPOSIT, "budget-available")
-        );
-
-        VerticalLayout progressSection = createEnhancedProgressSection(section);
-        HorizontalLayout actionButtons = createSectionActions(section);
-
-        card.add(cardHeader, budgetGrid, progressSection, actionButtons);
-        return card;
+    if (section.getDescription() != null && !section.getDescription().isBlank()) {
+        Span sectionDesc = new Span(section.getDescription());
+        sectionDesc.addClassName("section-description");
+        sectionDetails.add(sectionDesc);
     }
+
+    sectionInfo.add(sectionIcon, sectionDetails);
+
+    Div statusIndicator = createEnhancedStatusIndicator(section);
+    cardHeader.add(sectionInfo, statusIndicator);
+
+    HorizontalLayout budgetGrid = new HorizontalLayout();
+    budgetGrid.setWidthFull();
+    budgetGrid.setSpacing(true);
+    budgetGrid.setPadding(false);
+    budgetGrid.setAlignItems(FlexComponent.Alignment.STRETCH);
+    budgetGrid.addClassName("section-budget-grid");
+
+    VerticalLayout allocatedCard = createEnhancedBudgetItem(
+            "Allocated", nz(section.getAllocatedBudget()), VaadinIcon.WALLET, "budget-allocated");
+
+    VerticalLayout spentCard = createEnhancedBudgetItem(
+            "Spent", nz(section.getSpentAmount()), VaadinIcon.TRENDING_DOWN, "budget-spent");
+
+    VerticalLayout availableCard = createEnhancedBudgetItem(
+            "Available", nz(section.getAvailableAmount()), VaadinIcon.MONEY_DEPOSIT, "budget-available");
+
+    allocatedCard.setWidthFull();
+    spentCard.setWidthFull();
+    availableCard.setWidthFull();
+
+    budgetGrid.add(allocatedCard, spentCard, availableCard);
+    budgetGrid.setFlexGrow(1, allocatedCard);
+    budgetGrid.setFlexGrow(1, spentCard);
+    budgetGrid.setFlexGrow(1, availableCard);
+
+    spentCard.addDoubleClickListener(e -> {
+        String sectcode = section.getSectionCode();
+        Set<String> sectionCodes = new HashSet<>();
+        sectionCodes.add(sectcode);
+
+        utils = new utilityActuals(
+                budget,
+                sampleCoaService,
+                sampleUrcDeptSectionAnlDimbgtService,
+                sampleSALFLDGService,
+                sectionCodes
+        );
+        utils.createTransactionsDialog2(budgetGrid);
+    });
+
+    VerticalLayout progressSection = createEnhancedProgressSection(section);
+    HorizontalLayout actionButtons = createSectionActions(section);
+
+    cardContent.add(cardHeader, budgetGrid, progressSection, actionButtons);
+    card.add(cardContent);
+    return card;
+}
 
     private Icon getSectionIcon(String sectionName) {
         String name = sectionName.toLowerCase(Locale.ROOT);

@@ -12,6 +12,7 @@ import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.events.Event;
 import com.itextpdf.kernel.events.IEventHandler;
 import com.itextpdf.kernel.events.PdfDocumentEvent;
@@ -39,6 +40,7 @@ import com.methaltech.application.data.bgtool.service.BudgetService;
 import com.methaltech.application.data.bgtool.service.CoaService;
 import com.methaltech.application.data.bgtool.service.DepartmentGeneralPhysicalPerformanceService;
 import com.methaltech.application.data.bgtool.service.DeptSectionMergerService;
+import com.methaltech.application.data.bgtool.service.OrganisationService;
 import com.methaltech.application.data.bgtool.service.OverallGeneralPhysicalPerformanceService;
 import com.methaltech.application.data.bgtool.service.UrcDeptSectionAnlDimbgtService;
 import com.methaltech.application.data.bgtool.service.Urc_ActivitiesService;
@@ -49,6 +51,7 @@ import com.methaltech.application.data.entity.bgtool.BudgetSummary;
 import com.methaltech.application.data.entity.bgtool.BudgetSummaryCards;
 import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.DepartmentBudget;
+import com.methaltech.application.data.entity.bgtool.Organisation;
 import com.methaltech.application.data.entity.bgtool.RevenueBreakdown;
 import com.methaltech.application.data.entity.bgtool.RevenueSource;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
@@ -57,9 +60,11 @@ import com.methaltech.application.data.livedata.service.SALFLDGService;
 import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.MainLayout;
 import com.methaltech.application.views.budget.Component.QuillEditorField;
+import com.methaltech.application.views.budget.charts.DepartmentChartBuilder;
 import com.methaltech.application.views.structure.DepartmentOverview;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -96,6 +101,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -150,17 +156,24 @@ public class DashboardView extends VerticalLayout {
     private final Tab overviewTab = new Tab("Overview");
     private final Tab departmentTab = new Tab("Department Analysis");
     private final Tab revenueTab = new Tab("Revenue Analysis");
-
+    private final OrganisationService organisationService;
     private final Tabs dashboardTabs = new Tabs(overviewTab, departmentTab, revenueTab);
     private final Div tabContent = new Div();
 
     private final Map<Tab, Component> tabsToPages = new LinkedHashMap<>();
+    Set<UrcDeptSectionAnlDimbgt> deptSections = new HashSet<>();
+
+    private ComboBox<Organisation> comboBoxOrganisation = new ComboBox<>();
+    private ComboBox<String> comboBoxQuarter = new ComboBox<>();
+
+    private Organisation selectedOrganisation;
+    private String selectedQuarter;
 
     @Autowired
     public DashboardView(BudgetService budgetService, AuthenticatedUser authenticatedUser, UserService userService, CoaService sampleCoaService,
             UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService, SALFLDGService sampleSALFLDGService, DeptSectionMergerService sampleDeptSectionMergerService,
             BudgetItemsService budgetItemsService, Urc_ActivitiesService sampleUrc_ActivitiesService, DepartmentGeneralPhysicalPerformanceService departmentGeneralPhysicalPerformanceService,
-            OverallGeneralPhysicalPerformanceService overallGeneralPhysicalPerformanceService) {
+            OverallGeneralPhysicalPerformanceService overallGeneralPhysicalPerformanceService, OrganisationService organisationService) {
         this.budgetService = budgetService;
         this.authenticatedUser = authenticatedUser;
         this.userService = userService;
@@ -172,8 +185,9 @@ public class DashboardView extends VerticalLayout {
         this.sampleUrc_ActivitiesService = sampleUrc_ActivitiesService;
         this.departmentGeneralPhysicalPerformanceService = departmentGeneralPhysicalPerformanceService;
         this.overallGeneralPhysicalPerformanceService = overallGeneralPhysicalPerformanceService;
-        setWidthFull();
-        setHeightFull();
+        this.organisationService = organisationService;
+
+        setSizeFull();
         setPadding(false);
         setSpacing(false);
         setMargin(false);
@@ -188,6 +202,7 @@ public class DashboardView extends VerticalLayout {
         Div header = new Div();
         header.addClassName("dashboard-header");
         header.setWidthFull();
+        header.setHeight("72px"); // optional fixed height
 
         HorizontalLayout headerContent = new HorizontalLayout();
         headerContent.setWidthFull();
@@ -196,9 +211,8 @@ public class DashboardView extends VerticalLayout {
         headerContent.setPadding(false);
         headerContent.setSpacing(false);
         headerContent.setMargin(false);
-        headerContent.setHeight("72px"); // Professional height
+        headerContent.setHeight("72px");
 
-        // Left side - Logo and Title
         HorizontalLayout leftSide = new HorizontalLayout();
         leftSide.setAlignItems(FlexComponent.Alignment.CENTER);
         leftSide.setSpacing(true);
@@ -206,7 +220,6 @@ public class DashboardView extends VerticalLayout {
         leftSide.setMargin(false);
         leftSide.setFlexGrow(1);
 
-        // Logo section
         HorizontalLayout logoSection = new HorizontalLayout();
         logoSection.setAlignItems(FlexComponent.Alignment.CENTER);
         logoSection.setSpacing(true);
@@ -257,19 +270,88 @@ public class DashboardView extends VerticalLayout {
         fiscalYear.addValueChangeListener(e -> {
             if (e.getValue() != null) {
                 selectedBudget = e.getValue();
+                comboBoxOrganisation.clear();
+                comboBoxOrganisation.setItems(organisationService.findByBudget(selectedBudget));
                 loadDashboardData();
                 updateStatusIndicator();
-                //  Budget currentBudget = selectedBudget != null ? selectedBudget : fiscalYear.getValue();
-
             }
         });
 
         fiscalInfo.add(fiscalLabel, fiscalYear);
         fiscalYearLayout.add(calendarIcon, fiscalInfo);
 
-        leftSide.add(logoSection, fiscalYearLayout);
+        // Organisation layout
+        HorizontalLayout organisationLayout = new HorizontalLayout();
+        organisationLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+        organisationLayout.addClassName("fiscal-year");
+        organisationLayout.setSpacing(true);
+        organisationLayout.setPadding(false);
+        organisationLayout.setMargin(false);
 
-        // Right side - Status and Action buttons
+        Icon organisationIcon = new Icon(VaadinIcon.OFFICE);
+        organisationIcon.addClassName("calendar-icon");
+
+        VerticalLayout organisationInfo = new VerticalLayout();
+        organisationInfo.setSpacing(false);
+        organisationInfo.setPadding(false);
+        organisationInfo.setMargin(false);
+
+        Span organisationLabel = new Span("Fund Source");
+        organisationLabel.addClassName("fiscal-label");
+
+        comboBoxOrganisation.addClassName("fiscal-year-selector");
+        comboBoxOrganisation.setPlaceholder("Select Fund Source");
+        comboBoxOrganisation.setItemLabelGenerator(org
+                -> org != null ? org.getName() : ""
+        );
+        comboBoxOrganisation.setClearButtonVisible(true);
+
+        // Example loading; replace with your actual source
+        comboBoxOrganisation.setItems(organisationService.findByBudget(selectedBudget));
+
+        comboBoxOrganisation.addValueChangeListener(e -> {
+            selectedOrganisation = e.getValue();
+            loadDashboardData();
+            updateStatusIndicator();
+        });
+
+        organisationInfo.add(organisationLabel, comboBoxOrganisation);
+        organisationLayout.add(organisationIcon, organisationInfo);
+
+        // Quarter layout
+        HorizontalLayout quarterLayout = new HorizontalLayout();
+        quarterLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+        quarterLayout.addClassName("fiscal-year");
+        quarterLayout.setSpacing(true);
+        quarterLayout.setPadding(false);
+        quarterLayout.setMargin(false);
+
+        Icon quarterIcon = new Icon(VaadinIcon.CLIPBOARD_CHECK);
+        quarterIcon.addClassName("calendar-icon");
+
+        VerticalLayout quarterInfo = new VerticalLayout();
+        quarterInfo.setSpacing(false);
+        quarterInfo.setPadding(false);
+        quarterInfo.setMargin(false);
+
+        Span quarterLabel = new Span("Quarter");
+        quarterLabel.addClassName("fiscal-label");
+
+        comboBoxQuarter.addClassName("fiscal-year-selector");
+        comboBoxQuarter.setItems("qtr1", "qtr2", "qtr3", "qtr4");
+        comboBoxQuarter.setPlaceholder("Select quarter");//comboBoxQuarter.setValue("qtr1");
+
+        comboBoxQuarter.addValueChangeListener(e -> {
+            selectedQuarter = e.getValue();
+            loadDashboardData();
+            updateStatusIndicator();
+        });
+
+        quarterInfo.add(quarterLabel, comboBoxQuarter);
+        quarterLayout.add(quarterIcon, quarterInfo);
+
+        leftSide.add(logoSection, fiscalYearLayout, organisationLayout, quarterLayout);
+
         HorizontalLayout rightSide = new HorizontalLayout();
         rightSide.setAlignItems(FlexComponent.Alignment.CENTER);
         rightSide.setSpacing(true);
@@ -277,23 +359,6 @@ public class DashboardView extends VerticalLayout {
         rightSide.setMargin(false);
         rightSide.addClassName("header-actions");
 
-        Div statusDot = new Div();
-        statusDot.addClassName("status-dot");
-
-        VerticalLayout statusInfo = new VerticalLayout();
-        statusInfo.setSpacing(false);
-        statusInfo.setPadding(false);
-        statusInfo.setMargin(false);
-
-        statusIndicator = new Span("System Online");
-        statusIndicator.addClassName("status-indicator");
-
-        lastUpdated = new Span("Last updated: Just now");
-        lastUpdated.addClassName("last-updated");
-
-        //statusInfo.add(statusIndicator, lastUpdated);
-        //statusLayout.add(statusDot, statusInfo);
-        // Notification button
         Button notificationButton = new Button(new Icon(VaadinIcon.BELL));
         notificationButton.addClassName("notification-button");
         notificationButton.addClickListener(e -> {
@@ -305,7 +370,6 @@ public class DashboardView extends VerticalLayout {
         notificationBadge.setText("3");
         notificationButton.getElement().appendChild(notificationBadge.getElement());
 
-        // Refresh button with enhanced styling
         Button refreshButton = new Button("Refresh", new Icon(VaadinIcon.REFRESH));
         refreshButton.addClassName("primary-action");
         refreshButton.addClickListener(e -> {
@@ -313,33 +377,19 @@ public class DashboardView extends VerticalLayout {
             showNotification("Dashboard refreshed successfully!", NotificationVariant.LUMO_SUCCESS);
         });
 
-        // Export button with enhanced styling
         Button exportButton = new Button("Export Pdf", new Icon(VaadinIcon.DOWNLOAD));
         exportButton.addClassName("secondary-action");
-        exportButton.addClickListener(e -> {
-            generatePDFReport();
-            //showNotification("Export functionality coming soon!", NotificationVariant.LUMO_PRIMARY);
-        });
+        exportButton.addClickListener(e -> generatePDFReport());
+
         Button exportwordButton = new Button("Export Word", new Icon(VaadinIcon.DOWNLOAD));
         exportwordButton.addClassName("secondary-action");
-        exportwordButton.addClickListener(e -> {
-            generateWordReport();
-            //showNotification("Export functionality coming soon!", NotificationVariant.LUMO_PRIMARY);
-        });
+        exportwordButton.addClickListener(e -> generateWordReport());
 
-        // Settings button
         Button settingsButton = new Button(new Icon(VaadinIcon.COG));
         settingsButton.addClassName("tertiary-action");
-        settingsButton.addClickListener(e -> {
-            showNotification("Settings panel coming soon!", NotificationVariant.LUMO_CONTRAST);
-        });
 
-        // User profile button
         Button userButton = new Button(new Icon(VaadinIcon.USER));
         userButton.addClassName("tertiary-action");
-        userButton.addClickListener(e -> {
-            showNotification("User profile coming soon!", NotificationVariant.LUMO_CONTRAST);
-        });
 
         rightSide.add(notificationButton, refreshButton, exportButton, exportwordButton, settingsButton, userButton);
 
@@ -348,98 +398,29 @@ public class DashboardView extends VerticalLayout {
         add(header);
     }
 
-    private HorizontalLayout buildLeftHeader() {
-        HorizontalLayout leftSide = new HorizontalLayout();
-        leftSide.setPadding(false);
-        leftSide.setSpacing(true);
-        leftSide.setAlignItems(FlexComponent.Alignment.CENTER);
-        leftSide.addClassName("dashboard-header-left");
-
-        VerticalLayout titleBlock = new VerticalLayout();
-        titleBlock.setPadding(false);
-        titleBlock.setSpacing(false);
-        titleBlock.setMargin(false);
-
-        H2 title = new H2("Budget Dashboard");
-        title.addClassName("dashboard-title");
-
-        Span subtitle = new Span("Executive overview, departmental analysis, and revenue performance.");
-        subtitle.addClassName("dashboard-subtitle");
-
-        titleBlock.add(title, subtitle);
-
-        Div fiscalWrap = new Div();
-        fiscalWrap.addClassName("fiscal-year-wrap");
-
-        Span fiscalLabel = new Span("Fiscal Year");
-        fiscalLabel.addClassName("fiscal-label");
-
-        fiscalYear.setWidth("260px");
-        fiscalYear.setPlaceholder("Select fiscal year");
-        fiscalYear.addClassName("fiscal-year-selector");
-        fiscalYear.setItemLabelGenerator(Budget::getFinancialYear);
-        fiscalYear.addValueChangeListener(e -> {
-            if (e.getValue() != null) {
-                selectedBudget = e.getValue();
-                loadDashboardData();
-                updateStatusIndicator();
-            }
-        });
-
-        fiscalWrap.add(fiscalLabel, fiscalYear);
-        leftSide.add(titleBlock, fiscalWrap);
-
-        return leftSide;
-    }
-
-    private HorizontalLayout buildRightHeader() {
-        HorizontalLayout rightSide = new HorizontalLayout();
-        rightSide.setPadding(false);
-        rightSide.setSpacing(true);
-        rightSide.setAlignItems(FlexComponent.Alignment.CENTER);
-        rightSide.addClassName("dashboard-header-right");
-
-        VerticalLayout statusBlock = new VerticalLayout();
-        statusBlock.setPadding(false);
-        statusBlock.setSpacing(false);
-        statusBlock.setMargin(false);
-        statusBlock.addClassName("status-block");
-
-        statusIndicator = new Span("System Online");
-        statusIndicator.addClassName("status-indicator");
-
-        lastUpdated = new Span("Last updated: --");
-        lastUpdated.addClassName("last-updated");
-
-        statusBlock.add(statusIndicator, lastUpdated);
-
-        Button refreshButton = new Button("Refresh", new Icon(VaadinIcon.REFRESH));
-        refreshButton.addClassName("primary-action");
-        refreshButton.addClickListener(e -> refreshDashboard());
-
-        Button exportPdfButton = new Button("Export PDF", new Icon(VaadinIcon.DOWNLOAD));
-        exportPdfButton.addClassName("secondary-action");
-        exportPdfButton.addClickListener(e -> generatePDFReport());
-
-        rightSide.add(statusBlock, refreshButton, exportPdfButton);
-        return rightSide;
-    }
-
     private void createMainContent() {
-        contentContainer.setWidthFull();
+        contentContainer.setSizeFull();
         contentContainer.setSpacing(true);
         contentContainer.setPadding(false);
         contentContainer.setMargin(false);
         contentContainer.addClassName("content-container");
+        contentContainer.getStyle()
+                .set("overflow", "hidden")
+                .set("min-height", "0");
 
         dashboardTabs.setWidthFull();
         dashboardTabs.addClassName("dashboard-tabs");
         dashboardTabs.addSelectedChangeListener(event -> showSelectedTab(event.getSelectedTab()));
 
-        tabContent.setWidthFull();
+        tabContent.setSizeFull();
         tabContent.addClassName("dashboard-tab-content");
+        tabContent.getStyle()
+                .set("overflow", "auto")
+                .set("min-height", "0");
 
         contentContainer.add(dashboardTabs, tabContent);
+        contentContainer.expand(tabContent);
+
         add(contentContainer);
         expand(contentContainer);
     }
@@ -468,11 +449,12 @@ public class DashboardView extends VerticalLayout {
     }
 
     private void loadDashboardData() {
+
         try {
             Budget currentBudget = selectedBudget != null ? selectedBudget : fiscalYear.getValue();
-
-            if (currentBudget == null) {
+            if (currentBudget == null || selectedOrganisation == null || selectedQuarter == null) {
                 showEmptyState();
+                showNotification("Please select fiscal year, fund source, and quarter.", NotificationVariant.LUMO_CONTRAST);
                 return;
             }
 
@@ -508,11 +490,10 @@ public class DashboardView extends VerticalLayout {
                     budgetSummary.getRevenueSources()
             );
             revenueBreakdown.addClassName("revenue-breakdown");
-            Set<UrcDeptSectionAnlDimbgt> deptSections = new HashSet<>();
+
             java.util.List<DepartmentBudget> departmentBudgets = budgetSummary.getDepartmentBudgets();
-            departmentBudgets.forEach(r -> {
-                deptSections.addAll(r.getSections());
-            });
+            deptSections.clear();
+            departmentBudgets.forEach(r -> deptSections.addAll(r.getSections()));
 
             Tab overviewSummaryTab = new Tab("Summary Expenditure By Account Code");
             Tab generalSummaryPhysicalTab = new Tab("General Budget Physical Performance");
@@ -578,13 +559,13 @@ public class DashboardView extends VerticalLayout {
     }
 
     private void showEmptyState() {
-        contentContainer.removeAll();
+        tabContent.removeAll();
 
         VerticalLayout emptyState = new VerticalLayout();
+        emptyState.setSizeFull();
         emptyState.setAlignItems(FlexComponent.Alignment.CENTER);
         emptyState.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         emptyState.addClassName("empty-state");
-        emptyState.setHeightFull();
 
         Icon emptyIcon = new Icon(VaadinIcon.CHART);
         emptyIcon.addClassName("empty-state-icon");
@@ -592,11 +573,11 @@ public class DashboardView extends VerticalLayout {
         H2 emptyTitle = new H2("No Budget Data Available");
         emptyTitle.addClassName("empty-state-title");
 
-        Span emptyMessage = new Span("Please select a fiscal year to view budget dashboard data.");
+        Span emptyMessage = new Span("Please select a fiscal year, fund source, and quarter to view dashboard data.");
         emptyMessage.addClassName("empty-state-message");
 
         emptyState.add(emptyIcon, emptyTitle, emptyMessage);
-        contentContainer.add(emptyState);
+        tabContent.add(emptyState);
     }
 
     private void updateStatusIndicator() {
@@ -608,19 +589,17 @@ public class DashboardView extends VerticalLayout {
     }
 
     private void refreshDashboard() {
-        // Add loading state
-        contentContainer.removeAll();
+        tabContent.removeAll();
 
         Div loadingIndicator = new Div();
         loadingIndicator.addClassName("loading-indicator");
         loadingIndicator.setText("Refreshing dashboard data...");
 
-        contentContainer.add(loadingIndicator);
+        tabContent.add(loadingIndicator);
 
-        // Simulate loading delay for better UX
         getUI().ifPresent(ui -> ui.access(() -> {
             try {
-                Thread.sleep(500); // Brief delay for visual feedback
+                Thread.sleep(500);
                 loadDashboardData();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -749,11 +728,11 @@ public class DashboardView extends VerticalLayout {
                 doc.add(summaryTable);
 
                 // DEPARTMENT ANALYSIS
-                doc.add(sectionTitle("DEPARTMENT BUDGET ANALYSIS", fontBold));
+                doc.add(sectionTitle("COST CENTRE BUDGET ANALYSIS", fontBold));
 
                 Table deptTable = baseTable(new float[]{2.8f, 1.5f, 1.5f, 1.5f, 1.0f, 0.9f});
                 addHeader(deptTable, fontBold,
-                        "Department", "Total Budget", "Total Spent", "Available", "Utilization", "Status");
+                        "Cost Centre", "Total Budget", "Total Spent", "Available", "Utilization", "Status");
 
                 boolean alt = false;
                 for (DepartmentBudget d : safeList(summary.getDepartmentBudgets())) {
@@ -770,29 +749,102 @@ public class DashboardView extends VerticalLayout {
                 }
                 doc.add(deptTable);
 
-                // REVENUE SOURCES
-                doc.add(sectionTitle("REVENUE SOURCES ANALYSIS", fontBold));
+                Image chart = DepartmentChartBuilder.buildDepartmentBarChart(summary.getDepartmentBudgets());
+                chart.setAutoScale(true);
 
+                doc.add(chart);
+
+                doc.add(new Paragraph("\n"));
+                doc.add(sectionTitle("PERFORMANCE BY ACCOUNT CODE", fontBold));
+
+                int qtr = mapQuarter(selectedQuarter);
+                String quarterLabel = getQuarterLabel(qtr);
+
+                java.util.List<BudgetItemsActuals> accountItems
+                        = budgetItemsService.findDistinctBudgetItemsesExp(budget, deptSections);
+
+                java.util.List<BudgetItemsActuals> operatingItems = accountItems.stream()
+                        .filter(i -> i.getCoacode() != null
+                        && i.getCoacode().getCode() != null
+                        && i.getCoacode().getCode().startsWith("2"))
+                        .toList();
+
+                java.util.List<BudgetItemsActuals> capitalItems = accountItems.stream()
+                        .filter(i -> i.getCoacode() != null
+                        && i.getCoacode().getCode() != null
+                        && i.getCoacode().getCode().startsWith("3"))
+                        .toList();
+
+                doc.add(buildAccountPerformanceSectionForQuarter(
+                        "OPERATING COST",
+                        operatingItems,
+                        qtr,
+                        quarterLabel,
+                        fontBold,
+                        fontRegular
+                ));
+
+                doc.add(new Paragraph("\n"));
+
+                doc.add(buildAccountPerformanceSectionForQuarter(
+                        "CAPITAL EXPENDITURE",
+                        capitalItems,
+                        qtr,
+                        quarterLabel,
+                        fontBold,
+                        fontRegular
+                ));
+
+                doc.add(new Paragraph("\n"));
+
+                doc.add(buildOverallAccountPerformanceTotalForQuarter(
+                        accountItems,
+                        qtr,
+                        quarterLabel,
+                        fontBold,
+                        fontRegular
+                ));
+
+                doc.add(new Paragraph("\n"));
+                doc.add(sectionTitle("GENERAL BUDGET PHYSICAL PERFORMANCE", fontBold));
+
+                String quarterKey = selectedQuarter != null ? selectedQuarter : "qtr1";
+
+                String physicalHtml = overallGeneralPhysicalPerformanceService.getQuarterHtml("GENERAL", quarterKey, budget);
+
+                doc.add(new Paragraph("Quarter: " + quarterLabel)
+                        .setFont(fontBold)
+                        .setFontSize(10)
+                        .setMarginBottom(6));
+
+                doc.add(buildPhysicalPerformanceBlock(
+                        physicalHtml,
+                        fontRegular,
+                        fontBold
+                ));
+                // REVENUE SOURCES
+                /*                doc.add(sectionTitle("REVENUE SOURCES ANALYSIS", fontBold));
+                
                 Table revenueTable = baseTable(new float[]{2.8f, 1.1f, 1.6f, 1.6f, 0.9f});
                 addHeader(revenueTable, fontBold, "Revenue Source", "Category", "Collected", "Projected", "Achievement");
-
+                
                 alt = false;
                 for (RevenueSource r : safeList(summary.getRevenueSources())) {
-                    Color bg = alt ? COLOR_ALT_ROW : ColorConstants.WHITE;
-                    alt = !alt;
-
-                    addBodyCell(revenueTable, fontRegular, safe(r.getName()), bg, TextAlignment.LEFT);
-                    addBodyCell(revenueTable, fontRegular, safeUpper(r.getCategory()), bg, TextAlignment.CENTER);
-                    addBodyCell(revenueTable, fontRegular, formatUGX(r.getAmount()), bg, TextAlignment.RIGHT);
-                    addBodyCell(revenueTable, fontRegular, formatUGX(r.getProjected()), bg, TextAlignment.RIGHT);
-
-                    revenueTable.addCell(statusCell(
-                            fontRegular,
-                            pct(r.getProjectedPercentage()),
-                            achievementColor(r.getProjectedPercentage())
-                    ));
+                Color bg = alt ? COLOR_ALT_ROW : ColorConstants.WHITE;
+                alt = !alt;
+                
+                addBodyCell(revenueTable, fontRegular, safe(r.getName()), bg, TextAlignment.LEFT);
+                addBodyCell(revenueTable, fontRegular, safeUpper(r.getCategory()), bg, TextAlignment.CENTER);
+                addBodyCell(revenueTable, fontRegular, formatUGX(r.getAmount()), bg, TextAlignment.RIGHT);
+                addBodyCell(revenueTable, fontRegular, formatUGX(r.getProjected()), bg, TextAlignment.RIGHT);
+                
+                revenueTable.addCell(statusCell(
+                fontRegular,
+                pct(r.getProjectedPercentage()),
+                achievementColor(r.getProjectedPercentage())
+                ));
                 }
-                doc.add(revenueTable);
+                doc.add(revenueTable);*/
 
                 // KPI
                 doc.add(sectionTitle("KEY PERFORMANCE INDICATORS", fontBold));
@@ -834,6 +886,630 @@ public class DashboardView extends VerticalLayout {
 
             return baos.toByteArray();
         }
+    }
+
+    private void addHtmlSectionToPdf(com.itextpdf.layout.element.Div wrapper, String title, String bodyHtml, PdfFont fontRegular, PdfFont fontBold) {
+        wrapper.add(new Paragraph(title)
+                .setFont(fontBold)
+                .setFontSize(10)
+                .setMarginTop(8)
+                .setMarginBottom(4));
+
+        String plainText = htmlToPlainText(bodyHtml);
+
+        wrapper.add(new Paragraph(plainText.isBlank() ? "Not provided." : plainText)
+                .setFont(fontRegular)
+                .setFontSize(9)
+                .setMarginTop(0)
+                .setMarginBottom(6));
+    }
+
+    private String extractHtmlSection(String html, String heading) {
+        if (html == null || html.isBlank()) {
+            return "";
+        }
+
+        String escapedHeading = java.util.regex.Pattern.quote(heading);
+
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "(?is)<h3[^>]*>\\s*(?:<[^>]+>\\s*)*" + escapedHeading + "\\s*(?:</[^>]+>\\s*)*</h3>(.*?)(?=<h3[^>]*>|$)"
+        );
+
+        java.util.regex.Matcher matcher = pattern.matcher(html);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+
+        return "";
+    }
+
+    private String htmlToPlainText(String html) {
+        if (html == null || html.isBlank()) {
+            return "";
+        }
+
+        String text = html;
+
+        // remove Quill helper spans
+        text = text.replaceAll("(?is)<span[^>]*class=\"ql-ui\"[^>]*>.*?</span>", "");
+
+        // bullets / lists
+        text = text.replaceAll("(?i)<li[^>]*>", "• ");
+        text = text.replaceAll("(?i)</li>", "\n");
+        text = text.replaceAll("(?i)</ol>", "\n");
+        text = text.replaceAll("(?i)</ul>", "\n");
+
+        // paragraphs / breaks
+        text = text.replaceAll("(?i)<br\\s*/?>", "\n");
+        text = text.replaceAll("(?i)</p>", "\n");
+        text = text.replaceAll("(?i)<p[^>]*>", "");
+
+        // remove remaining tags
+        text = text.replaceAll("(?is)<[^>]+>", "");
+
+        // html entities
+        text = text.replace("&nbsp;", " ");
+        text = text.replace("&amp;", "&");
+        text = text.replace("&lt;", "<");
+        text = text.replace("&gt;", ">");
+
+        // whitespace cleanup
+        text = text.replaceAll("[ \\t\\x0B\\f\\r]+", " ");
+        text = text.replaceAll("\\n\\s*\\n\\s*\\n+", "\n\n");
+
+        return text.trim();
+    }
+
+    private com.itextpdf.layout.element.Div buildPhysicalPerformanceBlock(String html, PdfFont fontRegular, PdfFont fontBold) {
+        com.itextpdf.layout.element.Div wrapper = new com.itextpdf.layout.element.Div();
+        System.out.println(html);
+        String content = html == null ? "" : html.trim();
+        System.out.println(content);
+        if (content.isBlank()) {
+            content = """
+                <h3>Summary</h3>
+                <p>No narrative provided.</p>
+
+                <h3>Key Achievements</h3>
+                <p>No achievements recorded.</p>
+
+                <h3>Challenges</h3>
+                <p>No challenges recorded.</p>
+
+                <h3>Way Forward</h3>
+                <p>No way forward recorded.</p>
+                """;
+        }
+
+        addHtmlSectionToPdf(wrapper, "Summary", extractHtmlSection(content, "Summary"), fontRegular, fontBold);
+        addHtmlSectionToPdf(wrapper, "Key Achievements", extractHtmlSection(content, "Key Achievements"), fontRegular, fontBold);
+        addHtmlSectionToPdf(wrapper, "Challenges", extractHtmlSection(content, "Challenges"), fontRegular, fontBold);
+        addHtmlSectionToPdf(wrapper, "Way Forward", extractHtmlSection(content, "Way Forward"), fontRegular, fontBold);
+
+        return wrapper;
+    }
+
+    private com.itextpdf.layout.element.Div buildAccountPerformanceSectionForQuarter(
+            String title,
+            java.util.List<BudgetItemsActuals> items,
+            int qtr,
+            String quarterLabel,
+            PdfFont fontBold,
+            PdfFont fontNormal
+    ) {
+        com.itextpdf.layout.element.Div section = new com.itextpdf.layout.element.Div();
+
+        Paragraph heading = new Paragraph(title)
+                .setFont(fontBold)
+                .setFontSize(11)
+                .setMarginBottom(6);
+
+        Table table = new Table(UnitValue.createPercentArray(
+                new float[]{50f, 150f, 90f, 90f, 90f, 90f, 90f, 75f}
+        )).useAllAvailableWidth().setFixedLayout();
+
+        addHeaderCell(table, "Code", fontBold);
+        addHeaderCell(table, "Description", fontBold);
+        addHeaderCell(table, "Cum. Budget (" + quarterLabel + ")", fontBold);
+        addHeaderCell(table, "Cum. Actual (" + quarterLabel + ")", fontBold);
+        addHeaderCell(table, "Total Budget", fontBold);
+        addHeaderCell(table, "Total Actual", fontBold);
+        addHeaderCell(table, "Variance", fontBold);
+        addHeaderCell(table, "Status", fontBold);
+
+        BigDecimal selectedBudgetTotal = BigDecimal.ZERO;
+        BigDecimal selectedActualTotal = BigDecimal.ZERO;
+        BigDecimal totalBudget = BigDecimal.ZERO;
+        BigDecimal totalActual = BigDecimal.ZERO;
+        BigDecimal totalVariance = BigDecimal.ZERO;
+
+        for (BudgetItemsActuals item : safeList(items)) {
+            COA coa = item.getCoacode();
+
+            BigDecimal selectedBudget = getQuarterBudget(item, qtr);
+            BigDecimal selectedActual = getQuarterActual(item, qtr);
+            BigDecimal budgetVal = nz(item.getTotal());
+            BigDecimal actualVal = nz(item.getTotalA());
+
+            BigDecimal variance = budgetVal.subtract(selectedActual);
+
+            selectedBudgetTotal = selectedBudgetTotal.add(selectedBudget);
+            selectedActualTotal = selectedActualTotal.add(selectedActual);
+            totalBudget = totalBudget.add(budgetVal);
+            totalActual = totalActual.add(actualVal);
+            totalVariance = totalVariance.add(variance);
+
+            addBodyCell(table, coa != null ? nvl(coa.getCode(), "") : "", fontNormal);
+            addBodyCell(table, nvl(item.getItem(), ""), fontNormal);
+            addAmountCell(table, selectedBudget, fontNormal, false);
+            addAmountCell(table, selectedActual, fontNormal, true);
+            addAmountCell(table, budgetVal, fontNormal, false);
+            addAmountCell(table, actualVal, fontNormal, true);
+            addVarianceCell(table, variance, fontNormal);
+            addStatusCell(table, budgetVal, selectedActual, variance, fontNormal);
+        }
+
+        addFooterCell(table, "SECTION TOTAL", fontBold, 2);
+        addAmountFooterCell(table, selectedBudgetTotal, fontBold, false);
+        addAmountFooterCell(table, selectedActualTotal, fontBold, true);
+        addAmountFooterCell(table, totalBudget, fontBold, false);
+        addAmountFooterCell(table, totalActual, fontBold, true);
+        addVarianceFooterCell(table, totalVariance, fontBold);
+        addStatusFooterCell(table, totalBudget, selectedActualTotal, totalVariance, fontBold);
+
+        section.add(heading);
+        section.add(table);
+        return section;
+    }
+
+    private Table buildOverallAccountPerformanceTotalForQuarter2(
+            java.util.List<BudgetItemsActuals> items,
+            int qtr,
+            String quarterLabel,
+            PdfFont fontBold,
+            PdfFont fontNormal
+    ) {
+        Table table = new Table(UnitValue.createPercentArray(
+                new float[]{55f, 150f, 90f, 90f, 90f, 90f, 75f, 65f}
+        )).useAllAvailableWidth().setFixedLayout();
+
+        addHeaderCell(table, "OVERALL TOTAL", fontBold);
+        addHeaderCell(table, "Cum. Budget (" + quarterLabel + ")", fontBold);
+        addHeaderCell(table, "Cum. Actual (" + quarterLabel + ")", fontBold);
+        addHeaderCell(table, "Total Budget", fontBold);
+        addHeaderCell(table, "Total Actual", fontBold);
+        addHeaderCell(table, "Variance", fontBold);
+        addHeaderCell(table, "Status", fontBold);
+
+        BigDecimal selectedBudgetTotal = BigDecimal.ZERO;
+        BigDecimal selectedActualTotal = BigDecimal.ZERO;
+        BigDecimal totalBudget = BigDecimal.ZERO;
+        BigDecimal totalActual = BigDecimal.ZERO;
+        BigDecimal totalVariance = BigDecimal.ZERO;
+
+        for (BudgetItemsActuals item : safeList(items)) {
+            String code = item.getCoacode() != null ? item.getCoacode().getCode() : null;
+            if (code == null || (!code.startsWith("2") && !code.startsWith("3"))) {
+                continue;
+            }
+
+            BigDecimal selectedBudget = getQuarterBudget(item, qtr);
+            BigDecimal selectedActual = getQuarterActual(item, qtr);
+            BigDecimal budgetVal = nz(item.getTotal());
+            BigDecimal actualVal = nz(item.getTotalA());
+
+            BigDecimal variance = budgetVal.subtract(selectedActual);
+
+            selectedBudgetTotal = selectedBudgetTotal.add(selectedBudget);
+            selectedActualTotal = selectedActualTotal.add(selectedActual);
+            totalBudget = totalBudget.add(budgetVal);
+            totalActual = totalActual.add(actualVal);
+            totalVariance = totalVariance.add(variance);
+        }
+
+        table.addCell(
+                new Cell().add(new Paragraph("Operating Cost + Capital Expenditure")
+                        .setFont(fontBold)
+                        .setFontSize(9))
+                        .setPadding(5)
+        );
+
+        addAmountFooterCell(table, selectedBudgetTotal, fontBold, false);
+        addAmountFooterCell(table, selectedActualTotal, fontBold, true);
+        addAmountFooterCell(table, totalBudget, fontBold, false);
+        addAmountFooterCell(table, totalActual, fontBold, true);
+        addVarianceFooterCell(table, totalVariance, fontBold);
+        addStatusFooterCell(table, totalBudget, selectedActualTotal, totalVariance, fontBold);
+
+        return table;
+    }
+
+    private Table buildOverallAccountPerformanceTotalForQuarter(
+            java.util.List<BudgetItemsActuals> items,
+            int qtr,
+            String quarterLabel,
+            PdfFont fontBold,
+            PdfFont fontNormal
+    ) {
+        Table table = new Table(UnitValue.createPercentArray(
+                new float[]{170f, 85f, 85f, 85f, 85f, 75f, 65f}
+        )).useAllAvailableWidth().setFixedLayout();
+
+        addHeaderCell(table, "OVERALL TOTAL", fontBold);
+        addHeaderCell(table, "Budget (" + quarterLabel + ")", fontBold);
+        addHeaderCell(table, "Actual (" + quarterLabel + ")", fontBold);
+        addHeaderCell(table, "Total Budget", fontBold);
+        addHeaderCell(table, "Total Actual", fontBold);
+        addHeaderCell(table, "Variance", fontBold);
+        addHeaderCell(table, "Status", fontBold);
+
+        BigDecimal selectedBudgetTotal = BigDecimal.ZERO;
+        BigDecimal selectedActualTotal = BigDecimal.ZERO;
+        BigDecimal totalBudget = BigDecimal.ZERO;
+        BigDecimal totalActual = BigDecimal.ZERO;
+        BigDecimal totalVariance = BigDecimal.ZERO;
+
+        for (BudgetItemsActuals item : safeList(items)) {
+            String code = item.getCoacode() != null ? item.getCoacode().getCode() : null;
+            if (code == null || (!code.startsWith("2") && !code.startsWith("3"))) {
+                continue;
+            }
+
+            BigDecimal selectedBudget = getQuarterBudget(item, qtr);
+            BigDecimal selectedActual = getQuarterActual(item, qtr);
+            BigDecimal budgetVal = nz(item.getTotal());
+            BigDecimal actualVal = nz(item.getTotalA());
+
+            BigDecimal variance = budgetVal.subtract(selectedActual);
+
+            selectedBudgetTotal = selectedBudgetTotal.add(selectedBudget);
+            selectedActualTotal = selectedActualTotal.add(selectedActual);
+            totalBudget = totalBudget.add(budgetVal);
+            totalActual = totalActual.add(actualVal);
+            totalVariance = totalVariance.add(variance);
+        }
+
+        table.addCell(
+                new Cell().add(new Paragraph("Operating Cost + Capital Expenditure")
+                        .setFont(fontBold)
+                        .setFontSize(8))
+                        .setPadding(3)
+        );
+
+        addAmountFooterCell(table, selectedBudgetTotal, fontBold, false);
+        addAmountFooterCell(table, selectedActualTotal, fontBold, true);
+        addAmountFooterCell(table, totalBudget, fontBold, false);
+        addAmountFooterCell(table, totalActual, fontBold, true);
+        addVarianceFooterCell(table, totalVariance, fontBold);
+        addStatusFooterCell(table, totalBudget, selectedActualTotal, totalVariance, fontBold);
+
+        return table;
+    }
+
+    private com.itextpdf.layout.element.Div buildAccountPerformanceSection(
+            String title,
+            java.util.List<BudgetItemsActuals> items,
+            PdfFont fontBold,
+            PdfFont fontNormal
+    ) {
+        com.itextpdf.layout.element.Div section = new com.itextpdf.layout.element.Div();
+
+        Paragraph heading = new Paragraph(title)
+                .setFont(fontBold)
+                .setFontSize(11)
+                .setMarginBottom(6);
+
+        Table table = new Table(UnitValue.createPercentArray(
+                new float[]{50f, 150f, 90f, 90f, 90f, 90f, 90f, 75f}
+        )).useAllAvailableWidth().setFixedLayout();
+
+        addHeaderCell(table, "Code", fontBold);
+        addHeaderCell(table, "Description", fontBold);
+        addHeaderCell(table, "Total Budget", fontBold);
+        addHeaderCell(table, "Total Actual", fontBold);
+        addHeaderCell(table, "Variance", fontBold);
+        addHeaderCell(table, "Status", fontBold);
+
+        BigDecimal totalBudget = BigDecimal.ZERO;
+        BigDecimal totalActual = BigDecimal.ZERO;
+        BigDecimal totalVariance = BigDecimal.ZERO;
+
+        for (BudgetItemsActuals item : safeList(items)) {
+            COA coa = item.getCoacode();
+
+            BigDecimal budget = nz(item.getTotal());
+            BigDecimal actual = nz(item.getTotalA());
+            BigDecimal variance = budget.subtract(actual);
+
+            totalBudget = totalBudget.add(budget);
+            totalActual = totalActual.add(actual);
+            totalVariance = totalVariance.add(variance);
+
+            addBodyCell(table, coa != null ? nvl(coa.getCode(), "") : "", fontNormal);
+            addBodyCell(table, nvl(item.getItem(), ""), fontNormal);
+            addAmountCell(table, budget, fontNormal, false);
+            addAmountCell(table, actual, fontNormal, true);
+            addVarianceCell(table, variance, fontNormal);
+            addStatusCell(table, budget, actual, variance, fontNormal);
+        }
+
+        addFooterCell(table, "SECTION TOTAL", fontBold, 2);
+        addAmountFooterCell(table, totalBudget, fontBold, false);
+        addAmountFooterCell(table, totalActual, fontBold, true);
+        addVarianceFooterCell(table, totalVariance, fontBold);
+        addStatusFooterCell(table, totalBudget, totalActual, totalVariance, fontBold);
+
+        section.add(heading);
+        section.add(table);
+        return section;
+    }
+
+    private Table buildOverallAccountPerformanceTotal(
+            java.util.List<BudgetItemsActuals> items,
+            PdfFont fontBold,
+            PdfFont fontNormal
+    ) {
+        Table table = new Table(UnitValue.createPercentArray(new float[]{290f, 90f, 90f, 90f, 80f}))
+                .useAllAvailableWidth();
+
+        addHeaderCell(table, "OVERALL TOTAL", fontBold);
+        addHeaderCell(table, "Total Budget", fontBold);
+        addHeaderCell(table, "Total Actual", fontBold);
+        addHeaderCell(table, "Variance", fontBold);
+        addHeaderCell(table, "Status", fontBold);
+
+        BigDecimal totalBudget = BigDecimal.ZERO;
+        BigDecimal totalActual = BigDecimal.ZERO;
+        BigDecimal totalVariance = BigDecimal.ZERO;
+
+        for (BudgetItemsActuals item : safeList(items)) {
+            String code = item.getCoacode() != null ? item.getCoacode().getCode() : null;
+            if (code == null || (!code.startsWith("2") && !code.startsWith("3"))) {
+                continue;
+            }
+
+            BigDecimal budget = nz(item.getTotal());
+            BigDecimal actual = nz(item.getTotalA());
+            BigDecimal variance = budget.subtract(actual);
+
+            totalBudget = totalBudget.add(budget);
+            totalActual = totalActual.add(actual);
+            totalVariance = totalVariance.add(variance);
+        }
+
+        table.addCell(
+                new Cell().add(new Paragraph("Operating Cost + Capital Expenditure")
+                        .setFont(fontBold)
+                        .setFontSize(9))
+                        .setPadding(5)
+        );
+
+        addAmountFooterCell(table, totalBudget, fontBold, false);
+        addAmountFooterCell(table, totalActual, fontBold, true);
+        addVarianceFooterCell(table, totalVariance, fontBold);
+        addStatusFooterCell(table, totalBudget, totalActual, totalVariance, fontBold);
+
+        return table;
+    }
+
+    private Table buildAccountPerformanceTable(
+            java.util.List<BudgetItemsActuals> items,
+            PdfFont fontBold,
+            PdfFont fontNormal
+    ) {
+        float[] widths = {70f, 220f, 90f, 90f, 90f, 80f};
+        Table table = new Table(UnitValue.createPercentArray(widths)).useAllAvailableWidth();
+
+        addHeaderCell(table, "Code", fontBold);
+        addHeaderCell(table, "Description", fontBold);
+        addHeaderCell(table, "Total Budget", fontBold);
+        addHeaderCell(table, "Total Actual", fontBold);
+        addHeaderCell(table, "Variance", fontBold);
+        addHeaderCell(table, "Status", fontBold);
+
+        BigDecimal totalBudget = BigDecimal.ZERO;
+        BigDecimal totalActual = BigDecimal.ZERO;
+        BigDecimal totalVariance = BigDecimal.ZERO;
+
+        for (BudgetItemsActuals item : safeList(items)) {
+            COA coa = item.getCoacode();
+
+            BigDecimal budget = nz(item.getTotal());
+            BigDecimal actual = nz(item.getTotalA());
+            BigDecimal variance = budget.subtract(actual);
+
+            totalBudget = totalBudget.add(budget);
+            totalActual = totalActual.add(actual);
+            totalVariance = totalVariance.add(variance);
+
+            addBodyCell(table, coa != null ? nvl(coa.getCode(), "") : "", fontNormal);
+            addBodyCell(table, nvl(item.getItem(), ""), fontNormal);
+            addAmountCell(table, budget, fontNormal, false);
+            addAmountCell(table, actual, fontNormal, true);
+            addVarianceCell(table, variance, fontNormal);
+            addStatusCell(table, budget, actual, variance, fontNormal);
+        }
+
+        addFooterCell(table, "TOTAL", fontBold, 2);
+        addAmountFooterCell(table, totalBudget, fontBold, false);
+        addAmountFooterCell(table, totalActual, fontBold, true);
+        addVarianceFooterCell(table, totalVariance, fontBold);
+        addStatusFooterCell(table, totalBudget, totalActual, totalVariance, fontBold);
+
+        return table;
+    }
+
+    private void addVarianceCell(Table table, BigDecimal value, PdfFont font) {
+        Paragraph p = new Paragraph(formatCurrencyCompact(value))
+                .setFont(font)
+                .setFontSize(8);
+
+        if (value.compareTo(BigDecimal.ZERO) < 0) {
+            p.setFontColor(new DeviceRgb(200, 0, 0));
+        } else {
+            p.setFontColor(new DeviceRgb(34, 139, 34));
+        }
+
+        table.addCell(
+                new Cell()
+                        .add(p)
+                        .setTextAlignment(TextAlignment.RIGHT)
+                        .setPadding(4)
+        );
+    }
+
+    private void addStatusCell(Table table, BigDecimal budget, BigDecimal actual, BigDecimal variance, PdfFont font) {
+        String status;
+        DeviceRgb color;
+
+        if (budget.compareTo(BigDecimal.ZERO) == 0 && actual.compareTo(BigDecimal.ZERO) > 0) {
+            status = "UNBUDGETED";
+            color = new DeviceRgb(200, 0, 0);
+        } else if (variance.compareTo(BigDecimal.ZERO) < 0) {
+            status = "OVER";
+            color = new DeviceRgb(200, 0, 0);
+        } else {
+            status = "FINE";
+            color = new DeviceRgb(34, 139, 34);
+        }
+
+        Paragraph p = new Paragraph(status)
+                .setFont(font)
+                .setFontSize(8)
+                .setFontColor(color);
+
+        table.addCell(
+                new Cell()
+                        .add(p)
+                        .setTextAlignment(TextAlignment.CENTER)
+                        .setPadding(4)
+        );
+    }
+
+    private void addVarianceFooterCell(Table table, BigDecimal value, PdfFont font) {
+        Paragraph p = new Paragraph(formatCurrencyCompact(value))
+                .setFont(font)
+                .setFontSize(9);
+
+        if (value.compareTo(BigDecimal.ZERO) < 0) {
+            p.setFontColor(new DeviceRgb(200, 0, 0));
+        } else {
+            p.setFontColor(new DeviceRgb(34, 139, 34));
+        }
+
+        table.addCell(
+                new Cell()
+                        .add(p)
+                        .setBackgroundColor(new DeviceRgb(245, 245, 245))
+                        .setTextAlignment(TextAlignment.RIGHT)
+                        .setPadding(5)
+        );
+    }
+
+    private void addStatusFooterCell(Table table, BigDecimal budget, BigDecimal actual, BigDecimal variance, PdfFont font) {
+        String status;
+        DeviceRgb color;
+
+        if (budget.compareTo(BigDecimal.ZERO) == 0 && actual.compareTo(BigDecimal.ZERO) > 0) {
+            status = "UNBUDGETED";
+            color = new DeviceRgb(200, 0, 0);
+        } else if (variance.compareTo(BigDecimal.ZERO) < 0) {
+            status = "OVER";
+            color = new DeviceRgb(200, 0, 0);
+        } else {
+            status = "FINE";
+            color = new DeviceRgb(34, 139, 34);
+        }
+
+        Paragraph p = new Paragraph(status)
+                .setFont(font)
+                .setFontSize(9)
+                .setFontColor(color);
+
+        table.addCell(
+                new Cell()
+                        .add(p)
+                        .setBackgroundColor(new DeviceRgb(245, 245, 245))
+                        .setTextAlignment(TextAlignment.CENTER)
+                        .setPadding(5)
+        );
+    }
+
+    private void addHeaderCell(Table table, String text, PdfFont font) {
+        table.addHeaderCell(
+                new Cell()
+                        .add(new Paragraph(text).setFont(font).setFontSize(9))
+                        .setBackgroundColor(new DeviceRgb(230, 230, 230))
+                        .setPadding(5)
+        );
+    }
+
+    private void addBodyCell(Table table, String text, PdfFont font) {
+        table.addCell(
+                new Cell()
+                        .add(new Paragraph(text).setFont(font).setFontSize(8))
+                        .setPadding(4)
+        );
+    }
+
+    private void addAmountCell(Table table, BigDecimal value, PdfFont font, boolean actual) {
+        Paragraph p = new Paragraph(formatCurrencyCompact(value))
+                .setFont(font)
+                .setFontSize(8);
+
+        if (actual) {
+            p.setFontColor(new DeviceRgb(21, 101, 192));
+        }
+
+        table.addCell(
+                new Cell()
+                        .add(p)
+                        .setTextAlignment(TextAlignment.RIGHT)
+                        .setPadding(4)
+        );
+    }
+
+    private void addFooterCell(Table table, String text, PdfFont font, int colspan) {
+        table.addCell(
+                new Cell(1, colspan)
+                        .add(new Paragraph(text).setFont(font).setFontSize(9))
+                        .setBackgroundColor(new DeviceRgb(245, 245, 245))
+                        .setPadding(5)
+        );
+    }
+
+    private void addAmountFooterCell(Table table, BigDecimal value, PdfFont font, boolean actual) {
+        Paragraph p = new Paragraph(formatCurrencyCompact(value))
+                .setFont(font)
+                .setFontSize(9);
+
+        if (actual) {
+            p.setFontColor(new DeviceRgb(21, 101, 192));
+        }
+
+        table.addCell(
+                new Cell()
+                        .add(p)
+                        .setBackgroundColor(new DeviceRgb(245, 245, 245))
+                        .setTextAlignment(TextAlignment.RIGHT)
+                        .setPadding(5)
+        );
+    }
+
+    private String formatCurrencyCompact(BigDecimal value) {
+        return value == null ? "0.0" : new DecimalFormat("#,##0.0").format(value);
+    }
+
+    private BigDecimal nz(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private <T> java.util.List<T> safeList(java.util.List<T> list) {
+        return list == null ? Collections.emptyList() : list;
+    }
+
+    private String nvl(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
     }
 
     /* =========================
@@ -1158,10 +1834,6 @@ public class DashboardView extends VerticalLayout {
 
     private BigDecimal safe(BigDecimal v) {
         return v == null ? BigDecimal.ZERO : v;
-    }
-
-    private <T> java.util.List<T> safeList(java.util.List<T> list) {
-        return list == null ? java.util.Collections.emptyList() : list;
     }
 
     private String formatCurrency(BigDecimal amount) {
@@ -1534,14 +2206,9 @@ public class DashboardView extends VerticalLayout {
 
         Grid.Column<BudgetItemsActuals> codeColumn;
         Grid.Column<BudgetItemsActuals> descColumn;
-        Grid.Column<BudgetItemsActuals> qtr1Column;
-        Grid.Column<BudgetItemsActuals> qtr1AColumn;
-        Grid.Column<BudgetItemsActuals> qtr2Column;
-        Grid.Column<BudgetItemsActuals> qtr2AColumn;
-        Grid.Column<BudgetItemsActuals> qtr3Column;
-        Grid.Column<BudgetItemsActuals> qtr3AColumn;
-        Grid.Column<BudgetItemsActuals> qtr4Column;
-        Grid.Column<BudgetItemsActuals> qtr4AColumn;
+        Grid.Column<BudgetItemsActuals> selectedQtrColumn;
+        Grid.Column<BudgetItemsActuals> selectedQtrAColumn;
+
         Grid.Column<BudgetItemsActuals> totalQtrColumn;
         Grid.Column<BudgetItemsActuals> totalAQtrColumn;
         Grid.Column<BudgetItemsActuals> balanceColumn;
@@ -1555,45 +2222,60 @@ public class DashboardView extends VerticalLayout {
         descColumn = gridBudgetItemsQuarterlyGrid.addColumn(BudgetItemsActuals::getItem)
                 .setHeader("Description")
                 .setWidth("250px");
+        int qtr = mapQuarter(selectedQuarter);
 
-        qtr1Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createSpan(item.getQtr1())))
-                .setHeader("Qtr1").setWidth("150px");
+        selectedQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item
+                -> createSpan(getQuarterBudget(item, qtr))
+        ))
+                .setHeader("Cum. Budget (" + getQuarterLabel(qtr) + ")")
+                .setWidth("150px");
 
+        selectedQtrAColumn
+                = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+                    Span span = createSpan(getQuarterActual(item, qtr));
+                    span.getElement().getThemeList().add("badge");
+                    return span;
+                }))
+                        .setHeader("Cum. Actual (" + getQuarterLabel(qtr) + ")")
+                        .setWidth("150px");
+
+        /*        qtr1Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createSpan(item.getQtr1())))
+        .setHeader("Qtr1").setWidth("150px");
+        
         qtr1AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
-            Span span = createSpan(item.getQtr1A());
-            span.getElement().getThemeList().add("badge");
-            return span;
+        Span span = createSpan(item.getQtr1A());
+        span.getElement().getThemeList().add("badge");
+        return span;
         })).setHeader("Qtr1 Actual").setWidth("150px");
-
-        qtr2Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createSpan(item.getQtr2())))
-                .setHeader("Qtr2").setWidth("150px");
-
+        
+        qtr2Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createSpan(item.getQtr2().add(item.getQtr1()))))
+        .setHeader("Cum. Qtr2").setWidth("150px");
+        
         qtr2AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
-            Span span = createSpan(item.getQtr2A());
-            span.getElement().getThemeList().add("badge");
-            return span;
-        })).setHeader("Qtr2 Actual").setWidth("150px");
-
-        qtr3Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createSpan(item.getQtr3())))
-                .setHeader("Qtr3").setWidth("150px");
-
+        Span span = createSpan(item.getQtr2A().add(item.getQtr1A()));
+        span.getElement().getThemeList().add("badge");
+        return span;
+        })).setHeader("Cum. Qtr2 Actual").setWidth("150px");
+        
+        qtr3Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createSpan(item.getQtr3().add(item.getQtr2()).add(item.getQtr1()))))
+        .setHeader("Cum. Qtr3").setWidth("150px");
+        
         qtr3AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
-            Span span = createSpan(item.getQtr3A());
-            span.getElement().getThemeList().add("badge");
-            return span;
-        })).setHeader("Qtr3 Actual").setWidth("150px");
-
-        qtr4Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createSpan(item.getQtr4())))
-                .setHeader("Qtr4").setWidth("150px");
-
+        Span span = createSpan(item.getQtr3A().add(item.getQtr2A()).add(item.getQtr1A()));
+        span.getElement().getThemeList().add("badge");
+        return span;
+        })).setHeader("Cum. Qtr3 Actual").setWidth("150px");
+        
+        qtr4Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createSpan(item.getQtr4().add(item.getQtr3()).add(item.getQtr2()).add(item.getQtr1()))))
+        .setHeader("Cum. Qtr4").setWidth("150px");
+        
         qtr4AColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
-            Span span = createSpan(item.getQtr4A());
-            span.getElement().getThemeList().add("badge");
-            return span;
-        })).setHeader("Qtr4 Actual").setWidth("150px");
-
+        Span span = createSpan(item.getQtr4A().add(item.getQtr3A().add(item.getQtr2A()).add(item.getQtr1A())));
+        span.getElement().getThemeList().add("badge");
+        return span;
+        })).setHeader("Cum. Qtr4 Actual").setWidth("150px");*/
         totalQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createSpan(item.getTotal())))
-                .setHeader("Total").setWidth("150px");
+                .setHeader("Total Budget").setWidth("150px");
 
         totalAQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
             Span span = createSpan(item.getTotalA());
@@ -1602,7 +2284,7 @@ public class DashboardView extends VerticalLayout {
         })).setHeader("Total Actual").setWidth("150px");
 
         balanceColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
-            BigDecimal balance = nz(item.getTotal()).subtract(nz(item.getTotalA()));
+            BigDecimal balance = nz(item.getTotal()).subtract(nz(getQuarterActual(item, qtr)));
             Span span = createSpan(balance);
             span.getStyle().set("font-weight", "600");
             if (balance.compareTo(BigDecimal.ZERO) < 0) {
@@ -1625,14 +2307,16 @@ public class DashboardView extends VerticalLayout {
 
         footerRow.getCell(codeColumn).setComponent(footerText(""));
         footerRow.getCell(descColumn).setComponent(footerText("TOTAL"));
-        footerRow.getCell(qtr1Column).setComponent(footerText(""));
+        footerRow.getCell(selectedQtrColumn).setComponent(footerText(""));
+        footerRow.getCell(selectedQtrAColumn).setComponent(footerActualText(""));
+        /*        footerRow.getCell(qtr1Column).setComponent(footerText(""));
         footerRow.getCell(qtr1AColumn).setComponent(footerActualText(""));
         footerRow.getCell(qtr2Column).setComponent(footerText(""));
         footerRow.getCell(qtr2AColumn).setComponent(footerActualText(""));
         footerRow.getCell(qtr3Column).setComponent(footerText(""));
         footerRow.getCell(qtr3AColumn).setComponent(footerActualText(""));
         footerRow.getCell(qtr4Column).setComponent(footerText(""));
-        footerRow.getCell(qtr4AColumn).setComponent(footerActualText(""));
+        footerRow.getCell(qtr4AColumn).setComponent(footerActualText(""));*/
         footerRow.getCell(totalQtrColumn).setComponent(footerText(""));
         footerRow.getCell(totalAQtrColumn).setComponent(footerActualText(""));
         footerRow.getCell(balanceColumn).setComponent(footerBalanceText(""));
@@ -1647,27 +2331,100 @@ public class DashboardView extends VerticalLayout {
         HorizontalLayout topBar = new HorizontalLayout(loadButton, info);
         topBar.setWidthFull();
         topBar.setAlignItems(FlexComponent.Alignment.CENTER);
-        topBar.setPadding(false); 
+        topBar.setPadding(false);
         topBar.setSpacing(true);
 
         loadButton.addClickListener(e -> {
             java.util.List<BudgetItemsActuals> items = budgetItemsService.findDistinctBudgetItemsesExp(bdgt, deptSections);
             gridBudgetItemsQuarterlyGrid.setItems(items);
-            refreshQuarterlyFooter(
+            refreshFooter(
                     footerRow,
                     items,
-                    qtr1Column, qtr1AColumn,
-                    qtr2Column, qtr2AColumn,
-                    qtr3Column, qtr3AColumn,
-                    qtr4Column, qtr4AColumn,
+                    selectedQtrColumn, selectedQtrAColumn,
                     totalQtrColumn, totalAQtrColumn,
-                    balanceColumn, statusColumn
+                    balanceColumn, statusColumn, qtr
             );
             Notification.show("Quarterly performance loaded");
         });
 
         wrapper.add(topBar, gridBudgetItemsQuarterlyGrid);
         return wrapper;
+    }
+
+    private String getQuarterLabel(int qtr) {
+        return switch (qtr) {
+            case 1 ->
+                "Q1";
+            case 2 ->
+                "Q2";
+            case 3 ->
+                "Q3";
+            case 4 ->
+                "Q4";
+            default ->
+                "";
+        };
+    }
+
+    private int mapQuarter(String qtr) {
+        if (qtr == null) {
+            return 0;
+        }
+
+        return switch (qtr.toLowerCase()) {
+            case "qtr1" ->
+                1;
+            case "qtr2" ->
+                2;
+            case "qtr3" ->
+                3;
+            case "qtr4" ->
+                4;
+            default ->
+                0;
+        };
+    }
+
+    private BigDecimal getQuarterBudget(BudgetItemsActuals item, int qtr) {
+        if (item == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return switch (qtr) {
+            case 1 ->
+                nz(item.getQtr1());
+            case 2 ->
+                nz(item.getQtr1()).add(nz(item.getQtr2()));
+            case 3 ->
+                nz(item.getQtr1()).add(nz(item.getQtr2())).add(nz(item.getQtr3()));
+            case 4 ->
+                nz(item.getQtr1()).add(nz(item.getQtr2()))
+                .add(nz(item.getQtr3()))
+                .add(nz(item.getQtr4()));
+            default ->
+                BigDecimal.ZERO;
+        };
+    }
+
+    private BigDecimal getQuarterActual(BudgetItemsActuals item, int qtr) {
+        if (item == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return switch (qtr) {
+            case 1 ->
+                nz(item.getQtr1A());
+            case 2 ->
+                nz(item.getQtr1A()).add(nz(item.getQtr2A()));
+            case 3 ->
+                nz(item.getQtr1A()).add(nz(item.getQtr2A())).add(nz(item.getQtr3A()));
+            case 4 ->
+                nz(item.getQtr1A()).add(nz(item.getQtr2A()))
+                .add(nz(item.getQtr3A()))
+                .add(nz(item.getQtr4A()));
+            default ->
+                BigDecimal.ZERO;
+        };
     }
 
     private void refreshQuarterlyFooter(
@@ -1715,6 +2472,63 @@ public class DashboardView extends VerticalLayout {
 
         footerRow.getCell(balanceColumn).setComponent(footerBalanceText(formatAmount(grandBalance)));
         footerRow.getCell(statusColumn).setComponent(createFooterStatusBadge(grandBudget, grandActual, grandBalance));
+    }
+
+    private void refreshFooter(
+            FooterRow footerRow,
+            java.util.List<BudgetItemsActuals> items,
+            Grid.Column<BudgetItemsActuals> selectedQtrColumn,
+            Grid.Column<BudgetItemsActuals> selectedQtrAColumn,
+            Grid.Column<BudgetItemsActuals> totalQtrColumn,
+            Grid.Column<BudgetItemsActuals> totalAQtrColumn,
+            Grid.Column<BudgetItemsActuals> balanceColumn,
+            Grid.Column<BudgetItemsActuals> statusColumn,
+            int qtr
+    ) {
+        BigDecimal qtr1Total = sum(items, BudgetItemsActuals::getQtr1);
+        BigDecimal qtr1ATotal = sum(items, BudgetItemsActuals::getQtr1A);
+        BigDecimal qtr2Total = sum(items, BudgetItemsActuals::getQtr2);
+        BigDecimal qtr2ATotal = sum(items, BudgetItemsActuals::getQtr2A);
+        BigDecimal qtr3Total = sum(items, BudgetItemsActuals::getQtr3);
+        BigDecimal qtr3ATotal = sum(items, BudgetItemsActuals::getQtr3A);
+        BigDecimal qtr4Total = sum(items, BudgetItemsActuals::getQtr4);
+        BigDecimal qtr4ATotal = sum(items, BudgetItemsActuals::getQtr4A);
+        BigDecimal grandBudget = sum(items, BudgetItemsActuals::getTotal);
+        BigDecimal grandActual = sum(items, BudgetItemsActuals::getTotalA);
+        BigDecimal grandBalance = grandBudget.subtract(grandActual);
+
+        BigDecimal selectdQtrTotal = BigDecimal.ZERO;
+        BigDecimal selectdQtrATotal = BigDecimal.ZERO;
+
+        switch (qtr) {
+            case 1:
+                selectdQtrTotal = qtr1Total;
+                selectdQtrATotal = qtr1ATotal;
+                break;
+            case 2:
+                selectdQtrTotal = qtr1Total.add(qtr2Total);
+                selectdQtrATotal = qtr1ATotal.add(qtr2ATotal);
+                break;
+            case 3:
+                selectdQtrTotal = qtr1Total.add(qtr2Total).add(qtr3Total);
+                selectdQtrATotal = qtr1ATotal.add(qtr2ATotal).add(qtr3ATotal);
+                break;
+            case 4:
+                selectdQtrTotal = qtr1Total.add(qtr2Total).add(qtr3Total).add(qtr4Total);
+                selectdQtrATotal = qtr1ATotal.add(qtr2ATotal).add(qtr3ATotal).add(qtr4ATotal);
+                break;
+            default:
+                break;
+        }
+
+        footerRow.getCell(selectedQtrColumn).setComponent(footerText(formatAmount(selectdQtrTotal)));
+        footerRow.getCell(selectedQtrAColumn).setComponent(footerActualText(formatAmount(selectdQtrATotal)));
+
+        footerRow.getCell(totalQtrColumn).setComponent(footerText(formatAmount(grandBudget)));
+        footerRow.getCell(totalAQtrColumn).setComponent(footerActualText(formatAmount(grandActual)));
+
+        footerRow.getCell(balanceColumn).setComponent(footerBalanceText(formatAmount(grandBalance)));
+        footerRow.getCell(statusColumn).setComponent(createFooterStatusBadge(grandBudget, selectdQtrATotal, grandBalance));
     }
 
     private Div budgetCoaQtrView(Budget bdgt, Set<UrcDeptSectionAnlDimbgt> deptSections) {
@@ -2161,10 +2975,6 @@ public class DashboardView extends VerticalLayout {
                 .set("text-align", "right")
                 .set("width", "100%");
         return span;
-    }
-
-    private BigDecimal nz(BigDecimal value) {
-        return value == null ? BigDecimal.ZERO : value;
     }
 
 }

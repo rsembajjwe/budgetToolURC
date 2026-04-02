@@ -35,38 +35,38 @@ public class DepartmentBudget {
     private BigDecimal cumQtr4Actual;
     Set<UrcDeptSectionAnlDimbgt> sections;
 
-public BigDecimal getSpentPercentage() {
+    public BigDecimal getSpentPercentage() {
 
-    if (totalBudget == null || totalBudget.compareTo(BigDecimal.ZERO) <= 0) {
-        return BigDecimal.ZERO;
+        if (totalBudget == null || totalBudget.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return totalSpent
+                .divide(totalBudget, 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
-    return totalSpent
-            .divide(totalBudget, 6, RoundingMode.HALF_UP)
-            .multiply(BigDecimal.valueOf(100))
-            .setScale(2, RoundingMode.HALF_UP);
-}
+    public BigDecimal getRemainingBudget() {
 
- public BigDecimal getRemainingBudget() {
+        BigDecimal budget = totalBudget != null ? totalBudget : BigDecimal.ZERO;
+        BigDecimal spent = totalSpent != null ? totalSpent : BigDecimal.ZERO;
 
-    BigDecimal budget = totalBudget != null ? totalBudget : BigDecimal.ZERO;
-    BigDecimal spent = totalSpent != null ? totalSpent : BigDecimal.ZERO;
+        return budget
+                .subtract(spent)
+                .setScale(2, RoundingMode.HALF_UP);
+    }
 
-    return budget
-            .subtract(spent)
-            .setScale(2, RoundingMode.HALF_UP);
-}
+    public BigDecimal getAvailableBudget() {
 
-public BigDecimal getAvailableBudget() {
+        BigDecimal budget = totalBudget != null ? totalBudget : BigDecimal.ZERO;
+        BigDecimal spent = totalSpent != null ? totalSpent : BigDecimal.ZERO;
+        BigDecimal committed = totalCommitted != null ? totalCommitted : BigDecimal.ZERO;
 
-    BigDecimal budget = totalBudget != null ? totalBudget : BigDecimal.ZERO;
-    BigDecimal spent = totalSpent != null ? totalSpent : BigDecimal.ZERO;
-    BigDecimal committed = totalCommitted != null ? totalCommitted : BigDecimal.ZERO;
-
-    return budget
-            .subtract(spent.add(committed))
-            .setScale(2, RoundingMode.HALF_UP);
-}
+        return budget
+                .subtract(spent.add(committed))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
 
     public String getStatusText() {
         double spentPercentage = getSpentPercentage().doubleValue();
@@ -93,5 +93,5 @@ public BigDecimal getAvailableBudget() {
             return "status-good";
         }
     }
-    
+
 }

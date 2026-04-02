@@ -771,54 +771,7 @@ public class ActualView extends Div {
         })).setHeader("Balance").setFlexGrow(0).setWidth("150px");
 
         gridBudgetItems.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
-        /*FooterRow footerRow = gridBudgetItems.appendFooterRow();
-        
-        footerRow.getCell(codeColumn).setComponent(footerText(""));
-        footerRow.getCell(descriptionColumn).setComponent(footerText("TOTAL"));
-        
-        footerRow.getCell(julColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getJul)));
-        footerRow.getCell(julAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getJulA)));
-        
-        footerRow.getCell(augColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getAug)));
-        footerRow.getCell(augAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getAugA)));
-        
-        footerRow.getCell(sepColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getSep)));
-        footerRow.getCell(sepAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getSepA)));
-        
-        footerRow.getCell(octColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getOct)));
-        footerRow.getCell(octAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getOctA)));
-        
-        footerRow.getCell(novColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getNov)));
-        footerRow.getCell(novAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getNovA)));
-        
-        footerRow.getCell(decColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getDec)));
-        footerRow.getCell(decAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getDecA)));
-        
-        footerRow.getCell(janColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getJan)));
-        footerRow.getCell(janAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getJanA)));
-        
-        footerRow.getCell(febColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getFeb)));
-        footerRow.getCell(febAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getFebA)));
-        
-        footerRow.getCell(marColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getMar)));
-        footerRow.getCell(marAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getMarA)));
-        
-        footerRow.getCell(aprColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getApr)));
-        footerRow.getCell(aprAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getAprA)));
-        
-        footerRow.getCell(mayColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getMay)));
-        footerRow.getCell(mayAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getMayA)));
-        
-        footerRow.getCell(junColumn).setComponent(footerNumber(sum(items, BudgetItemsActuals::getJun)));
-        footerRow.getCell(junAColumn).setComponent(footerActualNumber(sum(items, BudgetItemsActuals::getJunA)));
-        
-        BigDecimal grandBudget = sum(items, BudgetItemsActuals::getTotal);
-        BigDecimal grandActual = sum(items, BudgetItemsActuals::getTotalA);
-        
-        footerRow.getCell(totalColumn).setComponent(footerNumber(grandBudget));
-        footerRow.getCell(totalAColumn).setComponent(footerActualNumber(grandActual));
-        footerRow.getCell(balanceColumn).setComponent(footerNumber(grandBudget.subtract(grandActual)));*/
-        //gridBudgetItems.setHeight("900px");
+
         div.add(gridBudgetItems);
         return div;
     }

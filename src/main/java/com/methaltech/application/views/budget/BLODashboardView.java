@@ -76,7 +76,11 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.*;
+import com.methaltech.application.data.bgtool.service.DepartmentGeneralPhysicalPerformanceService;
+import com.methaltech.application.data.bgtool.service.Urc_ActivitiesService;
+import com.methaltech.application.views.structure.DepartmentOverview;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.server.StreamRegistration;
 import com.vaadin.flow.server.StreamResource;
@@ -117,6 +121,7 @@ public class BLODashboardView extends VerticalLayout {
     private final BudgetControlService controlService;
     private final UserService userService;
     private final DeptSectionMergerService sampleDeptSectionMergerService;
+    private final Urc_ActivitiesService sampleUrc_ActivitiesService;
     private final BudgetItemsService budgetItemsService;
     private AuthenticatedUser authenticatedUser;
     private final NumberFormat currencyFormat;
@@ -130,9 +135,9 @@ public class BLODashboardView extends VerticalLayout {
     // Navigation tabs
     private Tabs navigationTabs;
     private Tab budgetTab;
-    private Tab approvalsTab;
-    private Tab requestsTab;
-    private Tab analyticsTab;
+    private Tab physicalPerformanceTab;
+    private Tab financialPerformanceTab;
+    private Tab generalPhysicalPerformanceTab;
 
     // Approval components
     private ApprovalDashboardCards approvalCards;
@@ -147,12 +152,13 @@ public class BLODashboardView extends VerticalLayout {
     private final CoaService sampleCoaService;
     private final UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService;
     private final SALFLDGService sampleSALFLDGService;
+    private final DepartmentGeneralPhysicalPerformanceService departmentGeneralPhysicalPerformanceService;
 
     @Autowired
     public BLODashboardView(BudgetService budgetService, BudgetApprovalsService approvalsService, BudgetControlService controlService,
             AuthenticatedUser authenticatedUser, UserService userService, DeptSectionMergerService sampleDeptSectionMergerService,
             BudgetItemsService budgetItemsService, CoaService sampleCoaService, UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService,
-            SALFLDGService sampleSALFLDGService) {
+            SALFLDGService sampleSALFLDGService, Urc_ActivitiesService sampleUrc_ActivitiesService, DepartmentGeneralPhysicalPerformanceService departmentGeneralPhysicalPerformanceService) {
         this.budgetService = budgetService;
         this.approvalsService = approvalsService;
         this.authenticatedUser = authenticatedUser;
@@ -165,6 +171,8 @@ public class BLODashboardView extends VerticalLayout {
         this.sampleCoaService = sampleCoaService;
         this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
         this.sampleSALFLDGService = sampleSALFLDGService;
+        this.sampleUrc_ActivitiesService = sampleUrc_ActivitiesService;
+        this.departmentGeneralPhysicalPerformanceService = departmentGeneralPhysicalPerformanceService;
 
         setWidthFull();
         setHeightFull();
@@ -264,11 +272,10 @@ public class BLODashboardView extends VerticalLayout {
         rightSide.setPadding(false);
         rightSide.addClassName("blo-actions");
 
-        Button newRequestButton = new Button("New Request", new Icon(VaadinIcon.PLUS));
+        /*        Button newRequestButton = new Button("New Request", new Icon(VaadinIcon.PLUS));
         newRequestButton.addClassName("blo-new-request-button");
         newRequestButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        newRequestButton.addClickListener(e -> showNewRequestForm());
-
+        newRequestButton.addClickListener(e -> showNewRequestForm());*/
         Button refreshButton = new Button("Refresh", new Icon(VaadinIcon.REFRESH));
         refreshButton.addClassName("blo-refresh-button");
         refreshButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
@@ -300,7 +307,7 @@ public class BLODashboardView extends VerticalLayout {
             showNotification("Budget alerts panel coming soon", NotificationVariant.LUMO_CONTRAST);
         });
 
-        rightSide.add(newRequestButton, refreshButton, exportButton, exportWordButton, alertsButton);
+        rightSide.add(refreshButton, exportButton, exportWordButton, alertsButton);
 
         headerContent.add(leftSide, rightSide);
         header.add(headerContent);
@@ -313,28 +320,34 @@ public class BLODashboardView extends VerticalLayout {
         navigationTabs.setWidthFull();
 
         budgetTab = new Tab(new Icon(VaadinIcon.DASHBOARD), new Span("Budget Overview"));
-        approvalsTab = new Tab(new Icon(VaadinIcon.FILE_PROCESS), new Span("Approvals"));
-        requestsTab = new Tab(new Icon(VaadinIcon.FILE_TEXT), new Span("My Requests"));
-        analyticsTab = new Tab(new Icon(VaadinIcon.CHART), new Span("Analytics"));
+        physicalPerformanceTab = new Tab(new Icon(VaadinIcon.CLIPBOARD_TEXT), new Span("Physical Performance"));
+        financialPerformanceTab = new Tab(new Icon(VaadinIcon.CHART_LINE), new Span("Financial Performance"));
+        generalPhysicalPerformanceTab = new Tab(new Icon(VaadinIcon.CHART_GRID), new Span("General Physical Performance"));
 
         budgetTab.addClassName("nav-tab");
-        approvalsTab.addClassName("nav-tab");
-        requestsTab.addClassName("nav-tab");
-        analyticsTab.addClassName("nav-tab");
+        physicalPerformanceTab.addClassName("nav-tab");
+        financialPerformanceTab.addClassName("nav-tab");
+        generalPhysicalPerformanceTab.addClassName("nav-tab");
 
-        navigationTabs.add(budgetTab, approvalsTab, requestsTab, analyticsTab);
+        navigationTabs.add(
+                budgetTab,
+                financialPerformanceTab,
+                physicalPerformanceTab,
+                generalPhysicalPerformanceTab
+        );
         navigationTabs.setSelectedTab(budgetTab);
 
         navigationTabs.addSelectedChangeListener(e -> {
             Tab selectedTab = e.getSelectedTab();
+
             if (selectedTab == budgetTab) {
                 showBudgetOverview();
-            } else if (selectedTab == approvalsTab) {
-                showApprovalsView();
-            } else if (selectedTab == requestsTab) {
-                showMyRequestsView();
-            } else if (selectedTab == analyticsTab) {
-                showAnalyticsView();
+            } else if (selectedTab == physicalPerformanceTab) {
+                showPhysicalPerformanceView();
+            } else if (selectedTab == financialPerformanceTab) {
+                showFinancialPerformanceView();
+            } else if (selectedTab == generalPhysicalPerformanceTab) {
+                showGeneralPhysicalPerformanceView();
             }
         });
 
@@ -399,18 +412,28 @@ public class BLODashboardView extends VerticalLayout {
             BudgetSummary budgetSummary = budgetService.getBudgetSummary(selectedBudget);
 
             List<DepartmentBudget> departments = budgetSummary.getDepartmentBudgets();
-            if (user.getRoles().contains(Role.ADMIN)) {
+            List<DepartmentBudget> departmentsFiltered = new ArrayList();
+            //System.out.println(departments);
+            if (user.getRoles().contains(Role.BLO) && !user.getRoles().contains(Role.ADMIN)) {
 
-            } else {
                 Set<UrcDeptSectionAnlDimbgt> deptsection = user.getDeptsection();
                 List<String> deptcodes = new ArrayList();
                 for (UrcDeptSectionAnlDimbgt dep : deptsection) {
-                    String getDeptCodeBySectionCode = sampleDeptSectionMergerService.getDeptCodeBySectionCode(dep.getANL_CODE());
-                    deptcodes.add(getDeptCodeBySectionCode);
-                }
-                deptcodes = deptcodes.stream().distinct().collect(Collectors.toList());
+                    // String getDeptCodeBySectionCode = sampleDeptSectionMergerService.getDeptCodeBySectionCode(dep.getANL_CODE());
+                    //deptcodes.add(getDeptCodeBySectionCode);
 
-                departments = filterBudgets(departments, deptcodes);
+                    departments.forEach(r -> {
+                        if (r.getDepartmentCode().trim().equalsIgnoreCase(dep.getANL_CODE().trim()) || r.getSections().contains(dep)) {
+                            departmentsFiltered.add(r);
+                        }
+                    });
+
+                }
+                departments = departmentsFiltered;
+                departments = departments.stream().distinct().collect(Collectors.toList());
+
+            } else if (user.getRoles().contains(Role.ADMIN)) {
+                departments = budgetSummary.getDepartmentBudgets();
             }
 
             departmentSelector.setItems(departments);
@@ -432,7 +455,7 @@ public class BLODashboardView extends VerticalLayout {
 
         try {
             contentContainer.removeAll();
-            createDepartmentOverview();
+            //createDepartmentOverview();
 
             HorizontalLayout dashboardGrid = new HorizontalLayout();
             dashboardGrid.setWidthFull();
@@ -481,109 +504,6 @@ public class BLODashboardView extends VerticalLayout {
         }
     }
 
-    private void showApprovalsView() {
-        if (selectedBudget == null) {
-            showNotification("Please select a fiscal year first", NotificationVariant.LUMO_WARNING);
-            return;
-        }
-
-        contentContainer.removeAll();
-
-        // Approval dashboard cards
-        approvalCards = new ApprovalDashboardCards(approvalsService, currentUserRole);
-        approvalCards.addClassName("blo-approval-cards");
-
-        // Pending approvals section
-        VerticalLayout approvalsSection = new VerticalLayout();
-        approvalsSection.setSpacing(true);
-        approvalsSection.setPadding(false);
-        approvalsSection.addClassName("blo-approvals-section");
-
-        H3 approvalsTitle = new H3("Pending Approvals - BLO Review");
-        approvalsTitle.addClassName("section-title");
-
-        List<BudgetApprovals> pendingApprovals = approvalsService.getPendingApprovalsByRole(currentUserRole)
-                .stream()
-                .filter(approval -> approval.getBudget().getId().equals(selectedBudget.getId()))
-                .toList();
-
-        approvalGrid = new ApprovalWorkflowGrid(pendingApprovals, currentUserRole, approvalsService);
-        approvalGrid.addClassName("blo-approval-grid");
-
-        approvalsSection.add(approvalsTitle, approvalGrid);
-        contentContainer.add(approvalCards, approvalsSection);
-    }
-
-    private void showMyRequestsView() {
-        if (selectedBudget == null) {
-            showNotification("Please select a fiscal year first", NotificationVariant.LUMO_WARNING);
-            return;
-        }
-
-        contentContainer.removeAll();
-
-        H3 requestsTitle = new H3("My Budget Requests");
-        requestsTitle.addClassName("section-title");
-
-        List<BudgetApprovals> myRequests = approvalsService.getApprovalsByRequester(currentUserName)
-                .stream()
-                .filter(approval -> approval.getBudget().getId().equals(selectedBudget.getId()))
-                .toList();
-
-        ApprovalWorkflowGrid myRequestsGrid = new ApprovalWorkflowGrid(myRequests, currentUserRole, approvalsService);
-        myRequestsGrid.addClassName("blo-requests-grid");
-
-        contentContainer.add(requestsTitle, myRequestsGrid);
-    }
-
-    private void showAnalyticsView() {
-        if (selectedBudget == null || selectedDepartment == null) {
-            createEmptyState();
-            return;
-        }
-
-        contentContainer.removeAll();
-
-        H3 analyticsTitle = new H3("Budget Analytics & Insights");
-        analyticsTitle.addClassName("section-title");
-
-        // Analytics grid
-        HorizontalLayout analyticsGrid = new HorizontalLayout();
-        analyticsGrid.setWidthFull();
-        analyticsGrid.setSpacing(true);
-        analyticsGrid.setPadding(false);
-        analyticsGrid.addClassName("blo-analytics-grid");
-
-        // Left side - Charts
-        VerticalLayout chartsColumn = new VerticalLayout();
-        chartsColumn.setSpacing(true);
-        chartsColumn.setPadding(false);
-        chartsColumn.setFlexGrow(2);
-
-        SectionBudgetChart budgetChart = new SectionBudgetChart(selectedDepartment);
-        budgetChart.addClassName("analytics-chart");
-
-        chartsColumn.add(budgetChart);
-
-        // Right side - Insights and alerts
-        VerticalLayout insightsColumn = new VerticalLayout();
-        insightsColumn.setSpacing(true);
-        insightsColumn.setPadding(false);
-        insightsColumn.setFlexGrow(1);
-
-        BudgetAlerts budgetAlerts = new BudgetAlerts(selectedDepartment);
-        budgetAlerts.addClassName("analytics-alerts");
-
-        // Approval statistics
-        ApprovalDashboardCards analyticsCards = new ApprovalDashboardCards(approvalsService, currentUserRole);
-        analyticsCards.addClassName("analytics-approval-cards");
-
-        insightsColumn.add(analyticsCards, budgetAlerts);
-
-        analyticsGrid.add(chartsColumn, insightsColumn);
-        contentContainer.add(analyticsTitle, analyticsGrid);
-    }
-
     private void showNewRequestForm() {
         if (selectedBudget == null) {
             showNotification("Please select a fiscal year first", NotificationVariant.LUMO_ERROR);
@@ -610,99 +530,314 @@ public class BLODashboardView extends VerticalLayout {
 
     private void refreshCurrentTab() {
         Tab selectedTab = navigationTabs.getSelectedTab();
+
         if (selectedTab == budgetTab) {
             showBudgetOverview();
-        } else if (selectedTab == approvalsTab) {
-            showApprovalsView();
-        } else if (selectedTab == requestsTab) {
-            showMyRequestsView();
-        } else if (selectedTab == analyticsTab) {
-            showAnalyticsView();
+        } else if (selectedTab == physicalPerformanceTab) {
+            showPhysicalPerformanceView();
+        } else if (selectedTab == financialPerformanceTab) {
+            showFinancialPerformanceView();
+        } else if (selectedTab == generalPhysicalPerformanceTab) {
+            showGeneralPhysicalPerformanceView();
         }
+    }
+
+    private void showPhysicalPerformanceView() {
+        if (selectedDepartment == null) {
+            createEmptyState();
+            return;
+        }
+
+        contentContainer.removeAll();
+        createDepartmentOverview();
+
+        VerticalLayout wrapper = new VerticalLayout();
+        wrapper.setWidthFull();
+        wrapper.setPadding(false);
+        wrapper.setSpacing(true);
+        wrapper.addClassName("blo-tab-view");
+
+        H3 title = new H3("Physical Performance");
+        title.addClassName("section-title");
+
+        Span subtitle = new Span(
+                "Department: " + selectedDepartment.getDepartmentName()
+                + " | Fiscal Year: " + (selectedBudget != null ? selectedBudget.getFinancialYear() : "N/A")
+        );
+        subtitle.addClassName("blo-tab-subtitle");
+
+        Grid<SectionBudget> grid = new Grid<>(SectionBudget.class, false);
+        grid.setWidthFull();
+        grid.addClassName("blo-performance-grid");
+
+        List<SectionBudget> sections = budgetService.getDepartmentSections(
+                selectedDepartment.getDepartmentCode(),
+                selectedBudget
+        );
+
+        grid.addColumn(SectionBudget::getSectionCode).setHeader("Section Code").setAutoWidth(true);
+        grid.addColumn(SectionBudget::getSectionName).setHeader("Section Name").setFlexGrow(1);
+        grid.addColumn(s -> derivePhysicalStatus(s)).setHeader("Physical Status").setAutoWidth(true);
+        grid.addColumn(s -> derivePhysicalRemarks(s)).setHeader("Remarks").setFlexGrow(1);
+
+        grid.setItems(sections);
+
+        wrapper.add(title, subtitle, grid);
+        contentContainer.add(wrapper);
+    }
+
+    private void showFinancialPerformanceView() {
+        if (selectedDepartment == null) {
+            createEmptyState();
+            return;
+        }
+
+        contentContainer.removeAll();
+
+        VerticalLayout wrapper = new VerticalLayout();
+        wrapper.setWidthFull();
+        wrapper.setPadding(false);
+        wrapper.setSpacing(true);
+        wrapper.addClassName("blo-tab-view");
+
+        H3 title = new H3("Financial Performance");
+        title.addClassName("section-title");
+
+        Span subtitle = new Span(
+                "Department: " + selectedDepartment.getDepartmentName()
+                + " | Fiscal Year: " + (selectedBudget != null ? selectedBudget.getFinancialYear() : "N/A")
+        );
+        subtitle.addClassName("blo-tab-subtitle");
+
+        List<DepartmentBudget> departmentBudgets = new ArrayList();
+        departmentBudgets.add(selectedDepartment);
+
+        DepartmentOverview departmentOverview = new DepartmentOverview(
+                departmentBudgets,
+                sampleCoaService,
+                sampleUrcDeptSectionAnlDimbgtService,
+                sampleSALFLDGService,
+                sampleDeptSectionMergerService,
+                selectedBudget,
+                budgetItemsService,
+                sampleUrc_ActivitiesService,
+                departmentGeneralPhysicalPerformanceService
+        );
+
+        wrapper.add(departmentOverview);
+        contentContainer.add(wrapper);
+    }
+
+    private void showGeneralPhysicalPerformanceView() {
+        if (selectedDepartment == null) {
+            createEmptyState();
+            return;
+        }
+
+        contentContainer.removeAll();
+        createDepartmentOverview();
+
+        VerticalLayout wrapper = new VerticalLayout();
+        wrapper.setWidthFull();
+        wrapper.setPadding(false);
+        wrapper.setSpacing(true);
+        wrapper.addClassName("blo-tab-view");
+
+        H3 title = new H3("General Physical Performance");
+        title.addClassName("section-title");
+
+        Span subtitle = new Span(
+                "Department-wide physical progress summary for "
+                + selectedDepartment.getDepartmentName()
+        );
+        subtitle.addClassName("blo-tab-subtitle");
+
+        List<SectionBudget> sections = budgetService.getDepartmentSections(
+                selectedDepartment.getDepartmentCode(),
+                selectedBudget
+        );
+
+        BigDecimal totalAllocated = BigDecimal.ZERO;
+        BigDecimal totalSpent = BigDecimal.ZERO;
+        int completedLike = 0;
+        int inProgress = 0;
+        int notStarted = 0;
+
+        for (SectionBudget section : sections) {
+            totalAllocated = totalAllocated.add(nvl(section.getAllocatedBudget()));
+            totalSpent = totalSpent.add(nvl(section.getSpentAmount()).abs());
+
+            String status = derivePhysicalStatus(section);
+            if ("Completed / Overrun".equals(status) || "Advanced".equals(status)) {
+                completedLike++;
+            } else if ("In Progress".equals(status) || "Started".equals(status)) {
+                inProgress++;
+            } else {
+                notStarted++;
+            }
+        }
+
+        HorizontalLayout metrics = new HorizontalLayout();
+        metrics.setWidthFull();
+        metrics.setSpacing(true);
+        metrics.setPadding(false);
+        metrics.addClassName("blo-general-performance-metrics");
+
+        VerticalLayout allocatedCard = createBudgetSummaryItem("Total Budget", totalAllocated, "summary-budget");
+        VerticalLayout spentCard = createBudgetSummaryItem("Total Spent", totalSpent, "summary-spent");
+        VerticalLayout progressCard = createTextMetricCard("Sections In Progress", String.valueOf(inProgress), "summary-available");
+        VerticalLayout completedCard = createTextMetricCard("Advanced / Completed", String.valueOf(completedLike), "summary-budget");
+        VerticalLayout pendingCard = createTextMetricCard("Not Started", String.valueOf(notStarted), "summary-spent");
+
+        metrics.add(allocatedCard, spentCard, progressCard, completedCard, pendingCard);
+        metrics.setFlexGrow(1, allocatedCard);
+        metrics.setFlexGrow(1, spentCard);
+        metrics.setFlexGrow(1, progressCard);
+        metrics.setFlexGrow(1, completedCard);
+        metrics.setFlexGrow(1, pendingCard);
+
+        wrapper.add(title, subtitle, metrics);
+        contentContainer.add(wrapper);
     }
 
     private void createDepartmentOverview() {
         Div overviewCard = new Div();
         overviewCard.addClassName("blo-department-overview");
+        overviewCard.setWidthFull();
 
         HorizontalLayout overviewContent = new HorizontalLayout();
         overviewContent.setWidthFull();
-        overviewContent.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
-        overviewContent.setAlignItems(FlexComponent.Alignment.CENTER);
         overviewContent.setPadding(false);
-        overviewContent.setSpacing(false);
+        overviewContent.setSpacing(true);
+        overviewContent.setAlignItems(FlexComponent.Alignment.CENTER);
+        overviewContent.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+        overviewContent.addClassName("blo-department-overview-content");
 
-        // Department Info
+        // LEFT SIDE: Department info
         HorizontalLayout deptInfo = new HorizontalLayout();
-        deptInfo.setAlignItems(FlexComponent.Alignment.CENTER);
-        deptInfo.setSpacing(true);
         deptInfo.setPadding(false);
+        deptInfo.setSpacing(true);
+        deptInfo.setAlignItems(FlexComponent.Alignment.CENTER);
+        deptInfo.addClassName("blo-dept-info");
+        deptInfo.getStyle().set("min-width", "0");
 
         Div colorIndicator = new Div();
         colorIndicator.addClassName("dept-color-indicator");
-        colorIndicator.getStyle().set("background-color", selectedDepartment.getColor());
+        colorIndicator.getStyle().set("background-color",
+                selectedDepartment.getColor() != null ? selectedDepartment.getColor() : "#7c3aed");
 
         VerticalLayout deptDetails = new VerticalLayout();
         deptDetails.setSpacing(false);
         deptDetails.setPadding(false);
+        deptDetails.addClassName("blo-dept-details");
 
         H2 deptName = new H2(selectedDepartment.getDepartmentName());
         deptName.addClassName("dept-overview-name");
 
-        Span deptCode = new Span("Code: " + selectedDepartment.getDepartmentCode()
-                + " | Category: " + selectedDepartment.getCategoryId()
-                + " | Sections: " + selectedDepartment.getSectionCount());
+        Span deptCode = new Span(
+                "Code: " + selectedDepartment.getDepartmentCode()
+                + " | Sections: " + selectedDepartment.getSectionCount()
+        );
         deptCode.addClassName("dept-overview-details");
 
         deptDetails.add(deptName, deptCode);
         deptInfo.add(colorIndicator, deptDetails);
 
-        // Budget Summary
+        // RIGHT SIDE: Budget summary cards
         HorizontalLayout budgetSummary = new HorizontalLayout();
+        budgetSummary.setWidthFull(); // 🔥 critical
         budgetSummary.setSpacing(true);
         budgetSummary.setPadding(false);
+        budgetSummary.setAlignItems(FlexComponent.Alignment.STRETCH);
         budgetSummary.addClassName("dept-budget-summary");
-        VerticalLayout totalSpan = createBudgetSummaryItem("Total Budget", selectedDepartment.getTotalBudget(), "summary-budget");
-        VerticalLayout totalSpentSpan = createBudgetSummaryItem("Total Spent", selectedDepartment.getTotalSpent().abs(), "summary-spent");
-        //VerticalLayout totalCommittedSpan = createBudgetSummaryItem("Committed", selectedDepartment.getTotalCommitted(), "summary-committed");
-        VerticalLayout availableSpan = createBudgetSummaryItem("Available", selectedDepartment.getAvailableBudget(), "summary-available");
+        budgetSummary.getStyle().set("min-width", "0");
+
+        VerticalLayout totalSpan = createBudgetSummaryItem(
+                "Total Budget",
+                selectedDepartment.getTotalBudget(),
+                "summary-budget"
+        );
+
+        VerticalLayout totalSpentSpan = createBudgetSummaryItem(
+                "Total Spent",
+                selectedDepartment.getTotalSpent() != null
+                ? selectedDepartment.getTotalSpent().abs()
+                : BigDecimal.ZERO,
+                "summary-spent"
+        );
+
+        VerticalLayout availableSpan = createBudgetSummaryItem(
+                "Available",
+                selectedDepartment.getAvailableBudget(),
+                "summary-available"
+        );
+
+        totalSpan.addClassName("summary-card");
+        totalSpentSpan.addClassName("summary-card");
+        availableSpan.addClassName("summary-card");
+
         totalSpentSpan.addDoubleClickListener(e -> {
             String deptcode = selectedDepartment.getDepartmentCode();
             Set<String> sectionCodes = sampleDeptSectionMergerService.extractSectionAnlCodes(deptcode);
 
-            utils = new utilityActuals(selectedBudget, sampleCoaService, sampleUrcDeptSectionAnlDimbgtService, sampleSALFLDGService, sectionCodes);
+            utils = new utilityActuals(
+                    selectedBudget,
+                    sampleCoaService,
+                    sampleUrcDeptSectionAnlDimbgtService,
+                    sampleSALFLDGService,
+                    sectionCodes
+            );
             utils.createTransactionsDialog2(overviewContent);
         });
 
         budgetSummary.add(totalSpan, totalSpentSpan, availableSpan);
 
+// 🔥 make them equally stretch
+        budgetSummary.setFlexGrow(1, totalSpan);
+        budgetSummary.setFlexGrow(1, totalSpentSpan);
+        budgetSummary.setFlexGrow(1, availableSpan);
+
+// optional but safer
+        budgetSummary.setWidthFull();
+        totalSpan.setWidthFull();
+        totalSpentSpan.setWidthFull();
+        availableSpan.setWidthFull();
+
         overviewContent.add(deptInfo, budgetSummary);
+        overviewContent.setFlexGrow(0, deptInfo);
+        overviewContent.setFlexGrow(2, budgetSummary);
+
         overviewCard.add(overviewContent);
         contentContainer.add(overviewCard);
     }
 
     private VerticalLayout createBudgetSummaryItem(String label, BigDecimal amount, String className) {
+        BigDecimal safeAmount = amount != null ? amount : BigDecimal.ZERO;
+
         VerticalLayout item = new VerticalLayout();
         item.setSpacing(false);
         item.setPadding(false);
-        item.addClassName(className);
+        item.addClassNames("blo-summary-item", className);
         item.setAlignItems(FlexComponent.Alignment.CENTER);
+        item.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+        item.setWidthFull();
 
         Span labelSpan = new Span(label);
         labelSpan.addClassName("summary-label");
 
-        Span amountSpan = new Span(formatCurrency(amount));
+        Span amountSpan = new Span(formatCurrency(safeAmount));
         amountSpan.addClassName("summary-amount");
 
-        // Add status indicators
-        if ("Available".equals(label)) {
-            if (amount.doubleValue() < 0) {
+        if ("Available".equalsIgnoreCase(label)) {
+            if (safeAmount.compareTo(BigDecimal.ZERO) < 0) {
                 amountSpan.addClassName("amount-negative");
+
                 Icon warningIcon = new Icon(VaadinIcon.WARNING);
                 warningIcon.addClassName("amount-warning-icon");
+
                 item.add(labelSpan, amountSpan, warningIcon);
                 return item;
-            } else if (amount.doubleValue() < 50000000) { // Less than 50M UGX
+            } else if (safeAmount.compareTo(BigDecimal.valueOf(50_000_000)) < 0) {
                 amountSpan.addClassName("amount-low");
             }
         }
@@ -715,6 +850,59 @@ public class BLODashboardView extends VerticalLayout {
         NumberFormat formatter = NumberFormat.getInstance(Locale.US);
         formatter.setMaximumFractionDigits(1);
         return "UGX " + formatter.format(amount);
+    }
+
+    private BigDecimal nvl(BigDecimal value) {
+        return value != null ? value : BigDecimal.ZERO;
+    }
+
+    private String derivePhysicalStatus(SectionBudget section) {
+        BigDecimal pct = nvl(section.getSpentPercentage());
+
+        if (pct.compareTo(BigDecimal.valueOf(100)) > 0) {
+            return "Completed / Overrun";
+        } else if (pct.compareTo(BigDecimal.valueOf(75)) >= 0) {
+            return "Advanced";
+        } else if (pct.compareTo(BigDecimal.valueOf(40)) >= 0) {
+            return "In Progress";
+        } else if (pct.compareTo(BigDecimal.ZERO) > 0) {
+            return "Started";
+        }
+        return "Not Started";
+    }
+
+    private VerticalLayout createTextMetricCard(String label, String value, String className) {
+        VerticalLayout item = new VerticalLayout();
+        item.setSpacing(false);
+        item.setPadding(false);
+        item.addClassNames("blo-summary-item", className);
+        item.setAlignItems(FlexComponent.Alignment.CENTER);
+        item.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+        item.setWidthFull();
+
+        Span labelSpan = new Span(label);
+        labelSpan.addClassName("summary-label");
+
+        Span valueSpan = new Span(value);
+        valueSpan.addClassName("summary-amount");
+
+        item.add(labelSpan, valueSpan);
+        return item;
+    }
+
+    private String derivePhysicalRemarks(SectionBudget section) {
+        BigDecimal pct = nvl(section.getSpentPercentage());
+
+        if (section.isOverBudget()) {
+            return "Review expenditure and scope alignment";
+        } else if (pct.compareTo(BigDecimal.valueOf(75)) >= 0) {
+            return "Near completion";
+        } else if (pct.compareTo(BigDecimal.valueOf(40)) >= 0) {
+            return "Progressing normally";
+        } else if (pct.compareTo(BigDecimal.ZERO) > 0) {
+            return "Early implementation stage";
+        }
+        return "No notable physical progress recorded";
     }
 
     private void showNotification(String message, NotificationVariant variant) {
@@ -1399,7 +1587,7 @@ public class BLODashboardView extends VerticalLayout {
         return budgets.stream()
                 .filter(budget -> filterStrings.stream()
                 .anyMatch(filter
-                        -> budget.getDepartmentCode().equalsIgnoreCase(filter)
+                        -> budget.getDepartmentCode().trim().equalsIgnoreCase(filter.trim())
                 || budget.getDepartmentName().equalsIgnoreCase(filter)
                 )
                 )

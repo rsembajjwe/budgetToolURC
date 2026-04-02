@@ -117,7 +117,7 @@
     align-items: center;     /* Vertical center */
     padding-left: 15px;
     padding-right: 15px;
-  
+
 }
 
 .dashboard-view::before {
@@ -536,6 +536,33 @@
 .content-container {
     gap: 0.75rem !important;
 }
+:host {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Your content container */
+.content-container {
+    flex: 1;
+    min-height: 0; /* CRITICAL FIX */
+    overflow: auto;
+}
+.dashboard-view {
+    height: 100%;
+    min-height: 0;
+}
+
+.content-container {
+    min-height: 0;
+    overflow: auto;
+}
+
+.dashboard-tab-content {
+    min-height: 0;
+    overflow: auto;
+}
+
 
 /* ===================================================================
    BUDGET SUMMARY CARDS - PREMIUM DESIGN
@@ -1276,6 +1303,12 @@
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+}
+.fiscal-year {
+    min-width: 170px;
+}
+.fiscal-year-selector {
+    min-width: 150px;
 }
 
 /* ===================================================================

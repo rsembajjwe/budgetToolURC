@@ -482,7 +482,6 @@ public class BudgetService {
         List<UrcDepartmentAnlDim> departments = findActiveDepartments();
         return departments.stream().map(dept -> {
             Set<UrcDeptSectionAnlDimbgt> sections = deptSectionMergerService.getSectionsByDeptCode2(dept.getANL_CODE());
-            
 
             BigDecimal baseBudget = BigDecimal.ZERO; // 50M to 500M UGX
             baseBudget = budgetItemsService.calculateTotalDeptExpenditure(budget, sections.stream().toList());
@@ -571,31 +570,42 @@ public class BudgetService {
         }).collect(Collectors.toList());
     }
 
+    public DepartmentBudget findByDepartmentCode(List<DepartmentBudget> list, String code) {
+        return list.stream()
+                .filter(d -> d.getDepartmentCode() != null
+                && d.getDepartmentCode().equalsIgnoreCase(code))
+                .findFirst()
+                .orElse(null);
+    }
+
     public List<SectionBudget> getDepartmentSections(String departmentCode, Budget budget) {
+        List<DepartmentBudget> departments = getDepartmentBudgets(budget);
+        DepartmentBudget depts = findByDepartmentCode(departments, departmentCode);
         // Find the department first to get its category
         UrcDepartmentAnlDim department = urcDepartmentAnlDimRepository.findByANL_CODE(departmentCode);
         List<UrcDeptSectionAnlDimbgt> sections = new ArrayList<>();
         if (department == null) {
             return new ArrayList<>();
         }
-
+        /*
         if (department != null) {
-            String anlCode = department.getANL_CODE();
-            if (anlCode != null && !anlCode.isEmpty()) {
-                Optional<DeptSectionMerger> merger = sampleDeptSectionMergerService.findByDeptcodeCustom(anlCode);
-                if (merger.isPresent()) {
-                    DeptSectionMerger deptSectionMerger = merger.get();
-                    Set<String> sects = deptSectionMerger.getSectioncodes();
-                    for (String result : sects) {
-                        UrcDeptSectionAnlDimbgt section = sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE(result);
-                        if (section != null) {
-                            sections.add(section);
-                        }
-                    }
-                }
-            }
+        String anlCode = department.getANL_CODE();
+        if (anlCode != null && !anlCode.isEmpty()) {
+        Optional<DeptSectionMerger> merger = sampleDeptSectionMergerService.findByDeptcodeCustom(anlCode);
+        if (merger.isPresent()) {
+        DeptSectionMerger deptSectionMerger = merger.get();
+        Set<String> sects = deptSectionMerger.getSectioncodes();
+        for (String result : sects) {
+        UrcDeptSectionAnlDimbgt section = sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE(result);
+        if (section != null) {
+        sections.add(section);
         }
+        }
+        }
+        }
+        }*/
 
+        sections = depts.getSections().stream().toList();
         Random random = new Random();
 
         return sections.stream().map(section -> {
