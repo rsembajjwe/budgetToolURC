@@ -150,6 +150,22 @@ class Urc_Activities implements Serializable {
     @Column(name = "perc_of_TargetAchieved_qtr41")
     private Double perc_of_TargetAchieved_qtr41;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "programme_annual_budget_id")
+    private URC_Programme_Annual_Budget programmeAnnualBudget;
+
+    @OneToMany(mappedBy = "activity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<QuarterlyActuals> quarterlyActuals = new HashSet<>();
+
+    @OneToMany(mappedBy = "activity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<URC_Activity_Output_Link> outputLinks = new HashSet<>();
+
+    @OneToMany(mappedBy = "activity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<URC_Activity_KPI_Link> kpiLinks = new HashSet<>();
+
+    @OneToMany(mappedBy = "activity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<URC_Activity_Outcome_Link> outcomeLinks = new HashSet<>();
+
     // Helper methods
     public String getDisplayName() {
         return activityCode + " - " + name;
@@ -167,7 +183,5 @@ class Urc_Activities implements Serializable {
         return activity_budget != null && activity_budget.compareTo(BigDecimal.ZERO) > 0;
     }
 
-    @OneToMany(mappedBy = "activity", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<QuarterlyActuals> quarterlyActuals = new HashSet<>();
 
 }

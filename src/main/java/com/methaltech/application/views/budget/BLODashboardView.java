@@ -63,6 +63,7 @@ import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.events.PdfDocumentEvent;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
@@ -78,6 +79,8 @@ import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.*;
 import com.methaltech.application.data.bgtool.service.DepartmentGeneralPhysicalPerformanceService;
 import com.methaltech.application.data.bgtool.service.Urc_ActivitiesService;
+import com.methaltech.application.data.entity.bgtool.BudgetItemsActuals;
+import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import com.methaltech.application.views.structure.DepartmentOverview;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.Grid;
@@ -135,9 +138,7 @@ public class BLODashboardView extends VerticalLayout {
     // Navigation tabs
     private Tabs navigationTabs;
     private Tab budgetTab;
-    private Tab physicalPerformanceTab;
     private Tab financialPerformanceTab;
-    private Tab generalPhysicalPerformanceTab;
 
     // Approval components
     private ApprovalDashboardCards approvalCards;
@@ -320,20 +321,18 @@ public class BLODashboardView extends VerticalLayout {
         navigationTabs.setWidthFull();
 
         budgetTab = new Tab(new Icon(VaadinIcon.DASHBOARD), new Span("Budget Overview"));
-        physicalPerformanceTab = new Tab(new Icon(VaadinIcon.CLIPBOARD_TEXT), new Span("Physical Performance"));
+        //physicalPerformanceTab = new Tab(new Icon(VaadinIcon.CLIPBOARD_TEXT), new Span("Physical Performance"));
         financialPerformanceTab = new Tab(new Icon(VaadinIcon.CHART_LINE), new Span("Financial Performance"));
-        generalPhysicalPerformanceTab = new Tab(new Icon(VaadinIcon.CHART_GRID), new Span("General Physical Performance"));
+        //generalPhysicalPerformanceTab = new Tab(new Icon(VaadinIcon.CHART_GRID), new Span("General Physical Performance"));
 
         budgetTab.addClassName("nav-tab");
-        physicalPerformanceTab.addClassName("nav-tab");
+        //physicalPerformanceTab.addClassName("nav-tab");
         financialPerformanceTab.addClassName("nav-tab");
-        generalPhysicalPerformanceTab.addClassName("nav-tab");
+        //generalPhysicalPerformanceTab.addClassName("nav-tab");
 
         navigationTabs.add(
                 budgetTab,
-                financialPerformanceTab,
-                physicalPerformanceTab,
-                generalPhysicalPerformanceTab
+                financialPerformanceTab
         );
         navigationTabs.setSelectedTab(budgetTab);
 
@@ -342,12 +341,8 @@ public class BLODashboardView extends VerticalLayout {
 
             if (selectedTab == budgetTab) {
                 showBudgetOverview();
-            } else if (selectedTab == physicalPerformanceTab) {
-                showPhysicalPerformanceView();
             } else if (selectedTab == financialPerformanceTab) {
                 showFinancialPerformanceView();
-            } else if (selectedTab == generalPhysicalPerformanceTab) {
-                showGeneralPhysicalPerformanceView();
             }
         });
 
@@ -533,12 +528,8 @@ public class BLODashboardView extends VerticalLayout {
 
         if (selectedTab == budgetTab) {
             showBudgetOverview();
-        } else if (selectedTab == physicalPerformanceTab) {
-            showPhysicalPerformanceView();
         } else if (selectedTab == financialPerformanceTab) {
             showFinancialPerformanceView();
-        } else if (selectedTab == generalPhysicalPerformanceTab) {
-            showGeneralPhysicalPerformanceView();
         }
     }
 
@@ -1009,10 +1000,8 @@ public class BLODashboardView extends VerticalLayout {
 
                 addRow(summary, fontRegular, false, "Department Name", safe(dept.getDepartmentName()), false);
                 addRow(summary, fontRegular, true, "Department Code", safe(dept.getDepartmentCode()), false);
-                addRow(summary, fontRegular, false, "Category ID", safe(dept.getCategoryId()), false);
                 addRow(summary, fontRegular, true, "Total Budget", formatUGX(dept.getTotalBudget()), true);
                 addRow(summary, fontRegular, false, "Total Spent", formatUGX(dept.getTotalSpent()), true);
-                addRow(summary, fontRegular, true, "Total Committed", formatUGX(dept.getTotalCommitted()), true);
                 addRow(summary, fontRegular, false, "Available Budget", formatUGX(dept.getAvailableBudget()), true);
                 addRow(summary, fontRegular, true, "Budget Utilization", pct(dept.getSpentPercentage()), true);
                 addRow(summary, fontRegular, false, "Department Status", safe(dept.getStatusText()), false);
@@ -1055,19 +1044,12 @@ public class BLODashboardView extends VerticalLayout {
                             .setMarginBottom(10));
                 }
 
-                // CONTROLS
-                doc.add(sectionTitle("Budget Controls Analysis", fontBold));
+// Financial / Physical / General Performance
+                addFinancialBudgetPerformanceSection(doc, fontBold, fontRegular, budget, dept);
+                addPhysicalBudgetPerformanceSection(doc, fontBold, fontRegular, budget, dept);
+                addGeneralBudgetPhysicalPerformanceSection(doc, fontBold, fontRegular, budget, dept);
 
-                Table controls = baseTable(new float[]{3, 2});
-                addHeader(controls, fontBold, "Control Type", "Status");
-
-                addRow(controls, fontRegular, false, "Budget Check Control", dept.isBudgetCheckEnabled() ? "ENABLED" : "DISABLED", false);
-                addRow(controls, fontRegular, true, "Budget Stop Control", dept.isBudgetStopEnabled() ? "ENABLED" : "DISABLED", false);
-                addRow(controls, fontRegular, false, "Posting Prohibited", dept.isPostingProhibited() ? "ENABLED" : "DISABLED", false);
-
-                doc.add(controls);
-
-                // KPI
+// KPI
                 doc.add(sectionTitle("Department Key Performance Indicators", fontBold));
 
                 BigDecimal spentPct = percentage(dept.getTotalSpent(), dept.getTotalBudget());
@@ -1086,9 +1068,6 @@ public class BLODashboardView extends VerticalLayout {
                 addKpiRow(kpi, fontRegular, "Available Budget Ratio", pct(availablePct),
                         availablePct.doubleValue() >= 15 ? "Healthy" : availablePct.doubleValue() >= 5 ? "Low" : "Critical");
 
-                addKpiRow(kpi, fontRegular, "Commitment Ratio", pct(commitmentPct),
-                        commitmentPct.doubleValue() <= 20 ? "Good" : commitmentPct.doubleValue() <= 30 ? "Moderate" : "High");
-
                 addKpiRow(kpi, fontRegular, "Budget Efficiency",
                         String.format(Locale.US, "%.1f%%", Math.min(efficiency.doubleValue(), 200)),
                         efficiency.doubleValue() >= 100 ? "Excellent" : efficiency.doubleValue() >= 80 ? "Good" : "Below Target");
@@ -1100,45 +1079,9 @@ public class BLODashboardView extends VerticalLayout {
 
                 doc.add(kpi);
 
-                // CONTROL STATUS
-                doc.add(sectionTitle("Budget Control Status", fontBold));
-
-                Table controlStatus = baseTable(new float[]{2.2f, 1.1f, 2.7f});
-                addHeader(controlStatus, fontBold, "Control Type", "Status", "Description");
-
-                addControlStatusRow(controlStatus, fontRegular, "Budget Check",
-                        dept.isBudgetCheckEnabled(), "Validates transactions against budget limits before processing",
-                        dept.isBudgetCheckEnabled() ? softGreen() : COLOR_HEADER_BG);
-
-                addControlStatusRow(controlStatus, fontRegular, "Budget Stop",
-                        dept.isBudgetStopEnabled(), "Automatically prevents transactions when budget limits are exceeded",
-                        dept.isBudgetStopEnabled() ? softPink() : COLOR_HEADER_BG);
-
-                addControlStatusRow(controlStatus, fontRegular, "Posting Prohibited",
-                        dept.isPostingProhibited(), "Completely blocks all financial postings and transactions",
-                        dept.isPostingProhibited() ? softYellow() : COLOR_HEADER_BG);
-
-                doc.add(controlStatus);
-
                 // RECOMMENDATIONS
                 doc.add(sectionTitle("Recommendations & Action Items", fontBold));
                 doc.add(recommendationsBlock(dept, spentPct, fontRegular));
-
-                // BLO INFO
-                doc.add(sectionTitle("BLO Dashboard Information", fontBold));
-
-                Table bloInfo = baseTable(new float[]{3, 2});
-                addHeader(bloInfo, fontBold, "Information", "Details");
-
-                addRow(bloInfo, fontRegular, false, "Report Generated By", safe(currentUserName), false);
-                addRow(bloInfo, fontRegular, true, "Dashboard Access Level", "Budget Liaison Officer", false);
-                addRow(bloInfo, fontRegular, false, "Fiscal Year", safe(budget.getFinancialYear()), false);
-                addRow(bloInfo, fontRegular, true, "Department Focus", safe(dept.getDepartmentName()), false);
-                addRow(bloInfo, fontRegular, false, "Report Type", "Departmental Budget Analysis", false);
-                addRow(bloInfo, fontRegular, true, "Data Currency", "Uganda Shillings (UGX)", false);
-                addRow(bloInfo, fontRegular, false, "Report Scope", "Department-level budget performance and controls", false);
-
-                doc.add(bloInfo);
 
                 // PENDING APPROVALS (best-effort)
                 addPendingApprovalsSection(doc, pdf, fontBold, fontRegular, budget);
@@ -1158,6 +1101,385 @@ public class BLODashboardView extends VerticalLayout {
 
             return baos.toByteArray();
         }
+    }
+
+    private void addFinancialBudgetPerformanceSection(
+            Document doc,
+            PdfFont fontBold,
+            PdfFont fontRegular,
+            Budget budget,
+            DepartmentBudget dept
+    ) {
+        doc.add(sectionTitle("Financial Budget Performance", fontBold));
+
+        List<BudgetItemsActuals> items = safeList(
+                budgetItemsService.findDistinctBudgetItemsesExp(budget, dept.getSections())
+        );
+
+        if (items.isEmpty()) {
+            doc.add(new Paragraph("No financial budget performance data available.")
+                    .setFont(fontRegular)
+                    .setFontSize(10)
+                    .setFontColor(ColorConstants.DARK_GRAY)
+                    .setMarginBottom(10));
+            return;
+        }
+
+        Table t = baseTable(new float[]{1.0f, 2.6f, 1.3f, 1.3f, 1.3f, 1.1f});
+        addHeader(t, fontBold, "Code", "Description", "Budget", "Actual", "Variance", "Status");
+
+        boolean alt = false;
+        BigDecimal totalBudget = BigDecimal.ZERO;
+        BigDecimal totalActual = BigDecimal.ZERO;
+        BigDecimal totalVariance = BigDecimal.ZERO;
+
+        for (BudgetItemsActuals item : items) {
+            Color bg = alt ? COLOR_ALT_ROW : ColorConstants.WHITE;
+            alt = !alt;
+
+            BigDecimal budgetVal = nz(item.getTotal());
+            BigDecimal actualVal = nz(item.getTotalA());
+            BigDecimal variance = budgetVal.subtract(actualVal);
+
+            totalBudget = totalBudget.add(budgetVal);
+            totalActual = totalActual.add(actualVal);
+            totalVariance = totalVariance.add(variance);
+
+            addBodyCell(t, fontRegular,
+                    item.getCoacode() != null ? safe(item.getCoacode().getCode()) : "",
+                    bg, TextAlignment.LEFT);
+
+            addBodyCell(t, fontRegular, safe(item.getItem()), bg, TextAlignment.LEFT);
+            addBodyCell(t, fontRegular, formatUGX(budgetVal), bg, TextAlignment.RIGHT);
+            addBodyCell(t, fontRegular, formatUGX(actualVal), bg, TextAlignment.RIGHT);
+            addBodyCell(t, fontRegular, formatUGX(variance), bg, TextAlignment.RIGHT);
+
+            t.addCell(statusCell(
+                    fontRegular,
+                    financialStatusText(budgetVal, actualVal, variance),
+                    financialStatusColor(budgetVal, actualVal, variance)
+            ));
+        }
+
+        addFinancialFooterRow(t, fontBold, totalBudget, totalActual, totalVariance);
+        doc.add(t);
+    }
+
+    private void addPhysicalBudgetPerformanceSection(
+            Document doc,
+            PdfFont fontBold,
+            PdfFont fontRegular,
+            Budget budget,
+            DepartmentBudget dept
+    ) {
+        doc.add(sectionTitle("Physical Budget Performance", fontBold));
+
+        List<Urc_Activities> activities = safeList(
+                sampleUrc_ActivitiesService.findByDeptSectionAndBudget(dept.getSections(), budget)
+        );
+
+        if (activities.isEmpty()) {
+            doc.add(new Paragraph("No physical budget performance data available.")
+                    .setFont(fontRegular)
+                    .setFontSize(10)
+                    .setFontColor(ColorConstants.DARK_GRAY)
+                    .setMarginBottom(10));
+            return;
+        }
+
+        // UPDATED TABLE STRUCTURE (removed Code, Budget, Actual)
+        Table t = baseTable(new float[]{2.8f, 2.2f, 1.4f, 1.4f});
+        addHeader(t, fontBold,
+                "Activity",
+                "Latest Achievement",
+                "% Achieved",
+                "Status"
+        );
+
+        boolean alt = false;
+
+        for (Urc_Activities a : activities) {
+            Color bg = alt ? COLOR_ALT_ROW : ColorConstants.WHITE;
+            alt = !alt;
+
+            double pct = getLatestPhysicalPct(a);
+
+            addBodyCell(t, fontRegular, safe(a.getName()), bg, TextAlignment.LEFT);
+            addBodyCell(t, fontRegular, safe(getLatestAchievement(a)), bg, TextAlignment.LEFT);
+            addBodyCell(t, fontRegular, formatPercentage(pct), bg, TextAlignment.RIGHT);
+
+            t.addCell(statusCell(
+                    fontRegular,
+                    physicalStatusText(pct),
+                    physicalStatusColor(pct)
+            ));
+        }
+
+        doc.add(t);
+    }
+
+    private String physicalStatusText(double pct) {
+        if (pct >= 100.0) {
+            return "ACHIEVED";
+        }
+        if (pct >= 75.0) {
+            return "ON TRACK";
+        }
+        if (pct > 0.0) {
+            return "DELAYED";
+        }
+        return "NOT STARTED";
+    }
+
+    private Color physicalStatusColor(double pct) {
+        if (pct >= 100.0) {
+            return softGreen();
+        }
+        if (pct >= 75.0) {
+            return softBlue();
+        }
+        if (pct > 0.0) {
+            return softOrange();
+        }
+        return ColorConstants.LIGHT_GRAY;
+    }
+
+    private Color softBlue() {
+        return new DeviceRgb(219, 234, 254); // light blue
+    }
+
+    private Color softOrange() {
+        return new DeviceRgb(255, 237, 213); // light orange
+    }
+
+    private Color textBlue() {
+        return new DeviceRgb(30, 64, 175);
+    }
+
+    private Color textOrange() {
+        return new DeviceRgb(180, 83, 9);
+    }
+
+    private String formatPercentage(BigDecimal value) {
+        if (value == null) {
+            return "0.0%";
+        }
+        return String.format(Locale.US, "%.1f%%", value.doubleValue());
+    }
+
+    private String formatPercentage(double value) {
+        return String.format(Locale.US, "%.1f%%", value);
+    }
+
+    private String getLatestAchievement(Urc_Activities activity) {
+        if (!isBlank(activity.getCum_achievements_qtr4())) {
+            return activity.getCum_achievements_qtr4();
+        }
+        if (!isBlank(activity.getCum_achievements_qtr3())) {
+            return activity.getCum_achievements_qtr3();
+        }
+        if (!isBlank(activity.getCum_achievements_qtr2())) {
+            return activity.getCum_achievements_qtr2();
+        }
+        return activity.getCum_achievements_qtr1();
+    }
+
+    private double getLatestPhysicalPct(Urc_Activities activity) {
+        double q4 = parsePercentage(activity.getPerc_of_TargetAchieved_qtr4());
+        double q3 = parsePercentage(activity.getPerc_of_TargetAchieved_qtr3());
+        double q2 = parsePercentage(activity.getPerc_of_TargetAchieved_qtr2());
+        double q1 = parsePercentage(activity.getPerc_of_TargetAchieved_qtr1());
+
+        if (q4 > 0) {
+            return q4;
+        }
+        if (q3 > 0) {
+            return q3;
+        }
+        if (q2 > 0) {
+            return q2;
+        }
+        return q1;
+    }
+
+    private double parsePercentage(String value) {
+        if (value == null || value.isBlank()) {
+            return 0.0;
+        }
+
+        try {
+            String cleaned = value.replace("%", "").replace(",", "").trim();
+            return Double.parseDouble(cleaned);
+        } catch (Exception e) {
+            return 0.0;
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private void addGeneralBudgetPhysicalPerformanceSection(
+            Document doc,
+            PdfFont fontBold,
+            PdfFont fontRegular,
+            Budget budget,
+            DepartmentBudget dept
+    ) {
+        doc.add(sectionTitle("General Budget Physical Performance", fontBold));
+
+        String deptCode = safe(dept.getDepartmentCode());
+        String quarterKey = "qtr1"; // use selected quarter later if you add it in BLO view
+
+        String html = departmentGeneralPhysicalPerformanceService.getQuarterHtml(deptCode, quarterKey, budget);
+
+        if (html == null || html.isBlank()) {
+            doc.add(new Paragraph("No general budget physical performance narrative has been recorded.")
+                    .setFont(fontRegular)
+                    .setFontSize(10)
+                    .setFontColor(ColorConstants.DARK_GRAY)
+                    .setMarginBottom(10));
+            return;
+        }
+
+        doc.add(buildPhysicalNarrativeBlock(html, fontBold, fontRegular));
+    }
+
+    private com.itextpdf.layout.element.Div buildPhysicalNarrativeBlock(String html, PdfFont fontBold, PdfFont fontRegular) {
+        com.itextpdf.layout.element.Div wrapper = new com.itextpdf.layout.element.Div();
+
+        addNarrativeSection(wrapper, "Summary", extractHtmlSection(html, "Summary"), fontBold, fontRegular);
+        addNarrativeSection(wrapper, "Key Achievements", extractHtmlSection(html, "Key Achievements"), fontBold, fontRegular);
+        addNarrativeSection(wrapper, "Challenges", extractHtmlSection(html, "Challenges"), fontBold, fontRegular);
+        addNarrativeSection(wrapper, "Way Forward", extractHtmlSection(html, "Way Forward"), fontBold, fontRegular);
+
+        return wrapper;
+    }
+
+    private void addNarrativeSection(
+            com.itextpdf.layout.element.Div wrapper,
+            String heading,
+            String bodyHtml,
+            PdfFont fontBold,
+            PdfFont fontRegular
+    ) {
+        wrapper.add(new Paragraph(heading)
+                .setFont(fontBold)
+                .setFontSize(10)
+                .setMarginTop(8)
+                .setMarginBottom(4));
+
+        String plain = htmlToPlainText(bodyHtml);
+        wrapper.add(new Paragraph(plain.isBlank() ? "Not provided." : plain)
+                .setFont(fontRegular)
+                .setFontSize(9)
+                .setMarginTop(0)
+                .setMarginBottom(6));
+    }
+
+    private String extractHtmlSection(String html, String heading) {
+        if (html == null || html.isBlank()) {
+            return "";
+        }
+
+        String escapedHeading = java.util.regex.Pattern.quote(heading);
+
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "(?is)<h3[^>]*>\\s*(?:<[^>]+>\\s*)*" + escapedHeading + "\\s*(?:</[^>]+>\\s*)*</h3>(.*?)(?=<h3[^>]*>|$)"
+        );
+
+        java.util.regex.Matcher matcher = pattern.matcher(html);
+        return matcher.find() ? matcher.group(1).trim() : "";
+    }
+
+    private String htmlToPlainText(String html) {
+        if (html == null || html.isBlank()) {
+            return "";
+        }
+
+        String text = html;
+        text = text.replaceAll("(?is)<span[^>]*class=\"ql-ui\"[^>]*>.*?</span>", "");
+        text = text.replaceAll("(?i)<li[^>]*>", "• ");
+        text = text.replaceAll("(?i)</li>", "\n");
+        text = text.replaceAll("(?i)</ol>", "\n");
+        text = text.replaceAll("(?i)</ul>", "\n");
+        text = text.replaceAll("(?i)<br\\s*/?>", "\n");
+        text = text.replaceAll("(?i)</p>", "\n");
+        text = text.replaceAll("(?i)<p[^>]*>", "");
+        text = text.replaceAll("(?is)<[^>]+>", "");
+        text = text.replace("&nbsp;", " ");
+        text = text.replace("&amp;", "&");
+        text = text.replace("&lt;", "<");
+        text = text.replace("&gt;", ">");
+        text = text.replaceAll("[ \\t\\x0B\\f\\r]+", " ");
+        text = text.replaceAll("\\n\\s*\\n\\s*\\n+", "\n\n");
+        return text.trim();
+    }
+
+    private BigDecimal nz(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private String financialStatusText(BigDecimal budget, BigDecimal actual, BigDecimal variance) {
+        if (budget.compareTo(BigDecimal.ZERO) == 0 && actual.compareTo(BigDecimal.ZERO) > 0) {
+            return "UNBUDGETED";
+        }
+        if (variance.compareTo(BigDecimal.ZERO) < 0) {
+            return "OVER";
+        }
+        return "FINE";
+    }
+
+    private Color financialStatusColor(BigDecimal budget, BigDecimal actual, BigDecimal variance) {
+        if (budget.compareTo(BigDecimal.ZERO) == 0 && actual.compareTo(BigDecimal.ZERO) > 0) {
+            return softPink();
+        }
+        if (variance.compareTo(BigDecimal.ZERO) < 0) {
+            return softPink();
+        }
+        return softGreen();
+    }
+
+    private void addFinancialFooterRow(
+            Table t,
+            PdfFont fontBold,
+            BigDecimal totalBudget,
+            BigDecimal totalActual,
+            BigDecimal totalVariance
+    ) {
+        t.addCell(new Cell(1, 2)
+                .add(new Paragraph("TOTAL").setFont(fontBold).setFontSize(9))
+                .setBackgroundColor(COLOR_HEADER_BG)
+                .setBorder(new SolidBorder(COLOR_GRID, 0.6f))
+                .setPadding(4)
+                .setTextAlignment(TextAlignment.LEFT));
+
+        t.addCell(new Cell()
+                .add(new Paragraph(formatUGX(totalBudget)).setFont(fontBold).setFontSize(9))
+                .setBackgroundColor(COLOR_HEADER_BG)
+                .setBorder(new SolidBorder(COLOR_GRID, 0.6f))
+                .setPadding(4)
+                .setTextAlignment(TextAlignment.RIGHT));
+
+        t.addCell(new Cell()
+                .add(new Paragraph(formatUGX(totalActual)).setFont(fontBold).setFontSize(9))
+                .setBackgroundColor(COLOR_HEADER_BG)
+                .setBorder(new SolidBorder(COLOR_GRID, 0.6f))
+                .setPadding(4)
+                .setTextAlignment(TextAlignment.RIGHT));
+
+        t.addCell(new Cell()
+                .add(new Paragraph(formatUGX(totalVariance)).setFont(fontBold).setFontSize(9))
+                .setBackgroundColor(COLOR_HEADER_BG)
+                .setBorder(new SolidBorder(COLOR_GRID, 0.6f))
+                .setPadding(4)
+                .setTextAlignment(TextAlignment.RIGHT));
+
+        t.addCell(statusCell(
+                fontBold,
+                financialStatusText(totalBudget, totalActual, totalVariance),
+                financialStatusColor(totalBudget, totalActual, totalVariance)
+        ));
     }
 
     /* =========================
@@ -1682,10 +2004,8 @@ public class BLODashboardView extends VerticalLayout {
 
             addRow(summary, "Department Name", safe(dept.getDepartmentName()));
             addRow(summary, "Department Code", safe(dept.getDepartmentCode()));
-            addRow(summary, "Category ID", safe(dept.getCategoryId()));
             addRow(summary, "Total Budget", formatUGX(dept.getTotalBudget()));
             addRow(summary, "Total Spent", formatUGX(dept.getTotalSpent()));
-            addRow(summary, "Total Committed", formatUGX(dept.getTotalCommitted()));
             addRow(summary, "Available Budget", formatUGX(dept.getAvailableBudget()));
             addRow(summary, "Budget Utilization", pct(dept.getSpentPercentage()));
             addRow(summary, "Department Status", safe(dept.getStatusText()));
@@ -1721,15 +2041,10 @@ public class BLODashboardView extends VerticalLayout {
 
             addSpacer(doc, 1);
 
-            // ---- 3) Budget Controls Analysis
-            addSectionHeader(doc, "BUDGET CONTROLS ANALYSIS");
-            XWPFTable controls = doc.createTable(1, 2);
-            styleTable(controls);
-            setHeaderRow(controls.getRow(0), "Control Type", "Status");
-
-            addRow(controls, "Budget Check Control", dept.isBudgetCheckEnabled() ? "ENABLED" : "DISABLED");
-            addRow(controls, "Budget Stop Control", dept.isBudgetStopEnabled() ? "ENABLED" : "DISABLED");
-            addRow(controls, "Posting Prohibited", dept.isPostingProhibited() ? "ENABLED" : "DISABLED");
+// ---- 3) Financial / Physical / General Performance
+            addFinancialBudgetPerformanceDocx(doc, budget, dept);
+            addPhysicalBudgetPerformanceDocx(doc, budget, dept);
+            addGeneralBudgetPhysicalPerformanceDocx(doc, budget, dept);
 
             addSpacer(doc, 1);
 
@@ -1769,45 +2084,10 @@ public class BLODashboardView extends VerticalLayout {
 
             addSpacer(doc, 1);
 
-            // ---- 5) Budget Control Status
-            addSectionHeader(doc, "BUDGET CONTROL STATUS");
-            XWPFTable cs = doc.createTable(1, 3);
-            styleTable(cs);
-            setHeaderRow(cs.getRow(0), "Control Type", "Status", "Description");
-
-            addControlStatusRow(cs, "Budget Check", dept.isBudgetCheckEnabled(),
-                    "Validates transactions against budget limits before processing",
-                    dept.isBudgetCheckEnabled() ? "DCF5E6" : "F2F2F2");
-
-            addControlStatusRow(cs, "Budget Stop", dept.isBudgetStopEnabled(),
-                    "Automatically prevents transactions when budget limits are exceeded",
-                    dept.isBudgetStopEnabled() ? "FFDCE6" : "F2F2F2");
-
-            addControlStatusRow(cs, "Posting Prohibited", dept.isPostingProhibited(),
-                    "Completely blocks all financial postings and transactions",
-                    dept.isPostingProhibited() ? "FFF5D2" : "F2F2F2");
-
-            addSpacer(doc, 1);
 
             // ---- 6) Recommendations
             addSectionHeader(doc, "RECOMMENDATIONS & ACTION ITEMS");
             addRecommendationsBox(doc, buildDeptRecommendations(dept, spentPct));
-
-            addSpacer(doc, 1);
-
-            // ---- 7) BLO Info
-            addSectionHeader(doc, "BLO DASHBOARD INFORMATION");
-            XWPFTable info = doc.createTable(1, 2);
-            styleTable(info);
-            setHeaderRow(info.getRow(0), "Information", "Details");
-
-            addRow(info, "Report Generated By", safe(currentUserName) + " (" + safe(currentUserRole) + ")");
-            addRow(info, "Dashboard Access Level", "Budget Liaison Officer");
-            addRow(info, "Fiscal Year", safe(budget.getFinancialYear()));
-            addRow(info, "Department Focus", safe(dept.getDepartmentName()));
-            addRow(info, "Report Type", "Departmental Budget Analysis");
-            addRow(info, "Data Currency", "Uganda Shillings (UGX)");
-            addRow(info, "Report Scope", "Department-level budget performance and controls");
 
             addSpacer(doc, 1);
 
@@ -1829,6 +2109,158 @@ public class BLODashboardView extends VerticalLayout {
         }
     }
 // ---------- First page header only ----------
+
+    private void addFinancialBudgetPerformanceDocx(XWPFDocument doc, Budget budget, DepartmentBudget dept) {
+        addSectionHeader(doc, "FINANCIAL BUDGET PERFORMANCE");
+
+        List<BudgetItemsActuals> items = safeList(
+                budgetItemsService.findDistinctBudgetItemsesExp(budget, dept.getSections())
+        );
+
+        if (items.isEmpty()) {
+            addMutedParagraph(doc, "No financial budget performance data available.");
+            return;
+        }
+
+        XWPFTable table = doc.createTable(1, 6);
+        styleTable(table);
+        setHeaderRow(table.getRow(0), "Code", "Description", "Budget", "Actual", "Variance", "Status");
+
+        BigDecimal totalBudget = BigDecimal.ZERO;
+        BigDecimal totalActual = BigDecimal.ZERO;
+        BigDecimal totalVariance = BigDecimal.ZERO;
+
+        for (BudgetItemsActuals item : items) {
+            BigDecimal budgetVal = nz(item.getTotal());
+            BigDecimal actualVal = nz(item.getTotalA());
+            BigDecimal variance = budgetVal.subtract(actualVal);
+
+            totalBudget = totalBudget.add(budgetVal);
+            totalActual = totalActual.add(actualVal);
+            totalVariance = totalVariance.add(variance);
+
+            XWPFTableRow r = table.createRow();
+            setCell(r.getCell(0), item.getCoacode() != null ? safe(item.getCoacode().getCode()) : "", false, ParagraphAlignment.LEFT);
+            setCell(r.getCell(1), safe(item.getItem()), false, ParagraphAlignment.LEFT);
+            setCell(r.getCell(2), formatUGX(budgetVal), false, ParagraphAlignment.RIGHT);
+            setCell(r.getCell(3), formatUGX(actualVal), false, ParagraphAlignment.RIGHT);
+            setCell(r.getCell(4), formatUGX(variance), false, ParagraphAlignment.RIGHT);
+
+            String status = financialStatusText(budgetVal, actualVal, variance);
+            setCell(r.getCell(5), status, true, ParagraphAlignment.CENTER);
+            shadeCell(r.getCell(5), financialStatusHex(budgetVal, actualVal, variance));
+        }
+
+        XWPFTableRow totalRow = table.createRow();
+        setCell(totalRow.getCell(0), "TOTAL", true, ParagraphAlignment.LEFT);
+        setCell(totalRow.getCell(1), "", true, ParagraphAlignment.LEFT);
+        setCell(totalRow.getCell(2), formatUGX(totalBudget), true, ParagraphAlignment.RIGHT);
+        setCell(totalRow.getCell(3), formatUGX(totalActual), true, ParagraphAlignment.RIGHT);
+        setCell(totalRow.getCell(4), formatUGX(totalVariance), true, ParagraphAlignment.RIGHT);
+        setCell(totalRow.getCell(5),
+                financialStatusText(totalBudget, totalActual, totalVariance),
+                true,
+                ParagraphAlignment.CENTER);
+        shadeCell(totalRow.getCell(5), financialStatusHex(totalBudget, totalActual, totalVariance));
+
+        addSpacer(doc, 1);
+    }
+
+    private void addPhysicalBudgetPerformanceDocx(XWPFDocument doc, Budget budget, DepartmentBudget dept) {
+        addSectionHeader(doc, "PHYSICAL BUDGET PERFORMANCE");
+
+        List<Urc_Activities> activities = safeList(
+                sampleUrc_ActivitiesService.findByDeptSectionAndBudget(dept.getSections(), budget)
+        );
+
+        if (activities.isEmpty()) {
+            addMutedParagraph(doc, "No physical budget performance data available.");
+            return;
+        }
+
+        XWPFTable table = doc.createTable(1, 4);
+        styleTable(table);
+        setHeaderRow(table.getRow(0), "Activity", "Latest Achievement", "% Achieved", "Status");
+
+        for (Urc_Activities a : activities) {
+            double pct = getLatestPhysicalPct(a);
+            String status = physicalStatusText(pct);
+
+            XWPFTableRow r = table.createRow();
+            setCell(r.getCell(0), safe(a.getName()), false, ParagraphAlignment.LEFT);
+            setCell(r.getCell(1), safe(getLatestAchievement(a)), false, ParagraphAlignment.LEFT);
+            setCell(r.getCell(2), formatPercentage(pct), false, ParagraphAlignment.RIGHT);
+            setCell(r.getCell(3), status, true, ParagraphAlignment.CENTER);
+            shadeCell(r.getCell(3), physicalStatusHex(pct));
+        }
+
+        addSpacer(doc, 1);
+    }
+
+    private String financialStatusHex(BigDecimal budget, BigDecimal actual, BigDecimal variance) {
+        if (budget.compareTo(BigDecimal.ZERO) == 0 && actual.compareTo(BigDecimal.ZERO) > 0) {
+            return "FFDCE6";
+        }
+        if (variance.compareTo(BigDecimal.ZERO) < 0) {
+            return "FFDCE6";
+        }
+        return "DCF5E6";
+    }
+
+    private String physicalStatusHex(double pct) {
+        if (pct >= 100.0) {
+            return "DCF5E6";
+        }
+        if (pct >= 75.0) {
+            return "DBEAFE";
+        }
+        if (pct > 0.0) {
+            return "FFEDD5";
+        }
+        return "F2F2F2";
+    }
+
+    private void addGeneralBudgetPhysicalPerformanceDocx(XWPFDocument doc, Budget budget, DepartmentBudget dept) {
+        addSectionHeader(doc, "GENERAL BUDGET PHYSICAL PERFORMANCE");
+
+        String html = departmentGeneralPhysicalPerformanceService.getQuarterHtml(
+                safe(dept.getDepartmentCode()),
+                "qtr1",
+                budget
+        );
+
+        if (html == null || html.isBlank()) {
+            addMutedParagraph(doc, "No general budget physical performance narrative has been recorded.");
+            return;
+        }
+
+        addNarrativeParagraphDocx(doc, "Summary", extractHtmlSection(html, "Summary"));
+        addNarrativeParagraphDocx(doc, "Key Achievements", extractHtmlSection(html, "Key Achievements"));
+        addNarrativeParagraphDocx(doc, "Challenges", extractHtmlSection(html, "Challenges"));
+        addNarrativeParagraphDocx(doc, "Way Forward", extractHtmlSection(html, "Way Forward"));
+
+        addSpacer(doc, 1);
+    }
+
+    private void addNarrativeParagraphDocx(XWPFDocument doc, String heading, String bodyHtml) {
+        XWPFParagraph headingP = doc.createParagraph();
+        headingP.setSpacingBefore(80);
+        headingP.setSpacingAfter(40);
+
+        XWPFRun hr = headingP.createRun();
+        hr.setFontFamily("Calibri");
+        hr.setFontSize(11);
+        hr.setBold(true);
+        hr.setText(heading);
+
+        XWPFParagraph bodyP = doc.createParagraph();
+        bodyP.setSpacingAfter(100);
+
+        XWPFRun br = bodyP.createRun();
+        br.setFontFamily("Calibri");
+        br.setFontSize(10);
+        br.setText(htmlToPlainText(bodyHtml).isBlank() ? "Not provided." : htmlToPlainText(bodyHtml));
+    }
 
     private void addFirstPageHeader(XWPFDocument doc,
             String logoClasspath,

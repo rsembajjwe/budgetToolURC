@@ -323,23 +323,23 @@ public class UrcProgrammesView extends Div {
                 if (entity == null) {
                     entity = new URC_Priority_Areas();
                     entity.setName(name.getValue());
-                    entity.setBudget(budgetComboBox.getValue());
+                  //  entity.setBudget(budgetComboBox.getValue());
                 } else {
                     entity.setName(name.getValue());
-                    entity.setBudget(entity.getBudget());
+                   // entity.setBudget(entity.getBudget());
                 }
                 if (isTextAreaEmptyOrBlank(name) == false) {
                     uRC_Priority_AreasService.update(entity);
                 }
 
-                refreshGrid(budgetComboBox.getValue());
+                refreshGrid(budgetComboBox.getValue().getStartDate());
                 name.clear();
             }
 
         });
         budgetComboBox.addValueChangeListener(event -> {
             Budget selectedBudget = event.getValue();
-            refreshGrid(selectedBudget);
+            refreshGrid(selectedBudget.getStartDate());
             selectedPlan = Optional.ofNullable(event)
                     .map(e -> e.getValue())
                     .map(v -> v.getCloseDate())
@@ -433,7 +433,7 @@ public class UrcProgrammesView extends Div {
                             if (cell != null && cell.getCellType() == CellType.STRING) {
                                 String name = cell.getStringCellValue();
                                 urcPriorityArea.setName(name);
-                                urcPriorityArea.setBudget(budgetComboBox.getValue());
+                              //  urcPriorityArea.setBudget(budgetComboBox.getValue());
 
                                 uRC_Priority_AreasService.update(urcPriorityArea);
 
@@ -448,7 +448,7 @@ public class UrcProgrammesView extends Div {
 
             }
 
-            refreshGrid(budgetComboBox.getValue());
+            refreshGrid(budgetComboBox.getValue().getStartDate());
         });
         importProgrammeButton.addSingleClickListener(e -> {
             if (!budgetComboBox.isEmpty()) {
@@ -798,12 +798,12 @@ public class UrcProgrammesView extends Div {
         return false;
     }
 
-    public void refreshGrid(Budget budget) {
+    public void refreshGrid(LocalDate date) {
         gridUrc_Activities.deselectAll();
         gridUrc_Activities.setItems(new ArrayList());
         gridView.deselectAll();
         //gridView.setItems(uRC_Priority_AreasService.findByBudgetWithPriority(budget));
-        gridView.setItems(uRC_Priority_AreasService.getAreasByDate(budget.getCloseDate()));
+        gridView.setItems(uRC_Priority_AreasService.getAreasByDate(date));
     }
 
     public void refreshGrid2(String name, Budget budget) {
@@ -920,7 +920,7 @@ public class UrcProgrammesView extends Div {
             try {
                 uRC_Priority_AreasService.delete(entity.getId());
                 status.setVisible(true);
-                refreshGrid(budget);
+                refreshGrid(budget.getStartDate());
                 setStatus("Saved");
                 dialog.close();
             } catch (Exception e) {
@@ -1257,7 +1257,7 @@ public class UrcProgrammesView extends Div {
                 Set<URC_Priority_Areas> lis = gridProgs.asMultiSelect().getValue();
                 for (URC_Priority_Areas p : lis) {
                     URC_Priority_Areas ar = new URC_Priority_Areas();
-                    ar.setBudget(budgetComboBox.getValue());
+                  //  ar.setBudget(budgetComboBox.getValue());
                     ar.setName(p.getName());
                     ar.setPriorityArea(p.getPriorityArea());
                     // ar.setUrcStrategicPlan(p.getUrcStrategicPlan());
@@ -1364,7 +1364,7 @@ public class UrcProgrammesView extends Div {
         binder.bind(nameField, URC_Priority_Areas::getName, URC_Priority_Areas::setName);
 
         ComboBox<PriorityArea> priorityAreaCombo = new ComboBox<>("Priority Area");
-        priorityAreaCombo.setItems(priorityAreaService.getPriorityAreasActiveOn(item.getBudget().getStartDate()));
+        priorityAreaCombo.setItems(priorityAreaService.getPriorityAreasActiveOn(item.getPriorityArea().getNdpPlan().getStartDate()));
         priorityAreaCombo.setItemLabelGenerator(PriorityArea::getName);
         priorityAreaCombo.setWidthFull();
         binder.bind(priorityAreaCombo, URC_Priority_Areas::getPriorityArea, URC_Priority_Areas::setPriorityArea);
@@ -1375,7 +1375,7 @@ public class UrcProgrammesView extends Div {
                 .stream());
         budgetCombo.setItemLabelGenerator(Budget::getFinancialYear);
         budgetCombo.setWidthFull();
-        binder.bind(budgetCombo, URC_Priority_Areas::getBudget, URC_Priority_Areas::setBudget);
+        //binder.bind(budgetCombo, URC_Priority_Areas::getBudget, URC_Priority_Areas::setBudget);
 
         // === Buttons ===
         Button saveBtn = new Button("Save", e -> {
@@ -1385,7 +1385,7 @@ public class UrcProgrammesView extends Div {
                 uRC_Priority_AreasService.update(item);
                 dialog.close();
                 Notification.show("Programme updated successfully", 3000, Notification.Position.TOP_CENTER);
-                refreshGrid(item.getBudget()); // refresh the Grid after saving
+                refreshGrid(item.getStartDate()); // refresh the Grid after saving
             } catch (ValidationException ex) {
                 Notification.show("Please check required fields", 3000, Notification.Position.MIDDLE);
             }
@@ -1428,7 +1428,7 @@ public class UrcProgrammesView extends Div {
             try {
                 uRC_Priority_AreasService.delete(item.getId());
                 Notification.show("Programme deleted successfully", 3000, Notification.Position.TOP_CENTER);
-                refreshGrid(item.getBudget());
+                refreshGrid(item.getStartDate());
             } catch (Exception ex) {
                 Notification.show("Error deleting programme: " + ex.getMessage(), 4000, Notification.Position.MIDDLE);
             }

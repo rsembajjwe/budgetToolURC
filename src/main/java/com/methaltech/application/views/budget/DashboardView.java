@@ -468,6 +468,7 @@ public class DashboardView extends VerticalLayout {
                     sampleDeptSectionMergerService,
                     currentBudget
             );
+            budgetSummary.getDepartmentBudgets().forEach(e -> System.out.println(e.getDepartmentName()));
             summaryCards.addClassName("budget-summary-cards");
 
             BudgetVisualCards visualCards = new BudgetVisualCards(budgetSummary);
@@ -868,6 +869,14 @@ public class DashboardView extends VerticalLayout {
 
                 doc.add(kpiTable);
 
+                doc.add(new Paragraph("\n"));
+                doc.add(sectionTitle("DEPARTMENT FINANCIAL AND PHYSICAL PERFORMANCE", fontBold));
+
+                for (DepartmentBudget dept : safeList(summary.getDepartmentBudgets())) {
+                    addDepartmentPerformanceSectionPdf(doc, fontBold, fontRegular, budget, dept, quarterKey, quarterLabel);
+                    doc.add(new Paragraph("\n"));
+                }
+
                 // RECOMMENDATIONS
                 doc.add(sectionTitle("RECOMMENDATIONS & INSIGHTS", fontBold));
                 doc.add(recommendationsBlock(summary, fontRegular));
@@ -885,6 +894,267 @@ public class DashboardView extends VerticalLayout {
             }
 
             return baos.toByteArray();
+        }
+    }
+
+    private void addDepartmentPerformanceSectionPdf(
+            Document doc,
+            PdfFont fontBold,
+            PdfFont fontRegular,
+            Budget budget,
+            DepartmentBudget dept,
+            String quarterKey,
+            String quarterLabel
+    ) {
+        doc.add(new Paragraph(
+                safe(dept.getDepartmentName()) + " (" + safe(dept.getDepartmentCode()) + ")"
+        ).setFont(fontBold).setFontSize(11).setMarginBottom(6));
+
+        // =========================
+        // Financial Budget Performance
+        // =========================
+        doc.add(new Paragraph("Financial Budget Performance")
+                .setFont(fontBold)
+                .setFontSize(10)
+                .setMarginBottom(4));
+
+        java.util.List<BudgetItemsActuals> financialItems = safeList(
+                budgetItemsService.findDistinctBudgetItemsesExp(budget, dept.getSections())
+        );
+
+        if (financialItems.isEmpty()) {
+            doc.add(new Paragraph("No financial budget performance data available.")
+                    .setFont(fontRegular)
+                    .setFontSize(9)
+                    .setFontColor(ColorConstants.DARK_GRAY)
+                    .setMarginBottom(8));
+        } else {
+            Table ft = baseTable(new float[]{1.0f, 2.5f, 1.2f, 1.2f, 1.2f, 1.0f});
+            addHeader(ft, fontBold, "Code", "Description", "Budget", "Actual", "Variance", "Status");
+
+            BigDecimal totalBudget = BigDecimal.ZERO;
+            BigDecimal totalActual = BigDecimal.ZERO;
+            BigDecimal totalVariance = BigDecimal.ZERO;
+
+            boolean alt = false;
+            for (BudgetItemsActuals item : financialItems) {
+                Color bg = alt ? COLOR_ALT_ROW : ColorConstants.WHITE;
+                alt = !alt;
+
+                BigDecimal budgetVal = nz(item.getTotal());
+                BigDecimal actualVal = nz(item.getTotalA());
+                BigDecimal variance = budgetVal.subtract(actualVal);
+
+                totalBudget = totalBudget.add(budgetVal);
+                totalActual = totalActual.add(actualVal);
+                totalVariance = totalVariance.add(variance);
+
+                addBodyCell(ft, fontRegular,
+                        item.getCoacode() != null ? safe(item.getCoacode().getCode()) : "",
+                        bg, TextAlignment.LEFT);
+                addBodyCell(ft, fontRegular, safe(item.getItem()), bg, TextAlignment.LEFT);
+                addBodyCell(ft, fontRegular, formatUGX(budgetVal), bg, TextAlignment.RIGHT);
+                addBodyCell(ft, fontRegular, formatUGX(actualVal), bg, TextAlignment.RIGHT);
+                addBodyCell(ft, fontRegular, formatUGX(variance), bg, TextAlignment.RIGHT);
+                ft.addCell(statusCell(
+                        fontRegular,
+                        financialStatusText(budgetVal, actualVal, variance),
+                        financialStatusColor(budgetVal, actualVal, variance)
+                ));
+            }
+
+            ft.addCell(new Cell(1, 2)
+                    .add(new Paragraph("TOTAL").setFont(fontBold).setFontSize(9))
+                    .setBackgroundColor(COLOR_HEADER_BG)
+                    .setBorder(new SolidBorder(COLOR_GRID, 0.6f))
+                    .setPadding(4));
+
+            ft.addCell(new Cell()
+                    .add(new Paragraph(formatUGX(totalBudget)).setFont(fontBold).setFontSize(9))
+                    .setBackgroundColor(COLOR_HEADER_BG)
+                    .setBorder(new SolidBorder(COLOR_GRID, 0.6f))
+                    .setPadding(4)
+                    .setTextAlignment(TextAlignment.RIGHT));
+
+            ft.addCell(new Cell()
+                    .add(new Paragraph(formatUGX(totalActual)).setFont(fontBold).setFontSize(9))
+                    .setBackgroundColor(COLOR_HEADER_BG)
+                    .setBorder(new SolidBorder(COLOR_GRID, 0.6f))
+                    .setPadding(4)
+                    .setTextAlignment(TextAlignment.RIGHT));
+
+            ft.addCell(new Cell()
+                    .add(new Paragraph(formatUGX(totalVariance)).setFont(fontBold).setFontSize(9))
+                    .setBackgroundColor(COLOR_HEADER_BG)
+                    .setBorder(new SolidBorder(COLOR_GRID, 0.6f))
+                    .setPadding(4)
+                    .setTextAlignment(TextAlignment.RIGHT));
+
+            ft.addCell(statusCell(
+                    fontBold,
+                    financialStatusText(totalBudget, totalActual, totalVariance),
+                    financialStatusColor(totalBudget, totalActual, totalVariance)
+            ));
+
+            doc.add(ft);
+        }
+
+        // =========================
+        // Physical Budget Performance
+        // =========================
+        doc.add(new Paragraph("Physical Budget Performance")
+                .setFont(fontBold)
+                .setFontSize(10)
+                .setMarginTop(6)
+                .setMarginBottom(4));
+
+        java.util.List<com.methaltech.application.data.entity.bgtool.Urc_Activities> activities = safeList(
+                sampleUrc_ActivitiesService.findByDeptSectionAndBudget(dept.getSections(), budget)
+        );
+
+        if (activities.isEmpty()) {
+            doc.add(new Paragraph("No physical budget performance data available.")
+                    .setFont(fontRegular)
+                    .setFontSize(9)
+                    .setFontColor(ColorConstants.DARK_GRAY)
+                    .setMarginBottom(8));
+        } else {
+            Table pt = baseTable(new float[]{2.8f, 2.2f, 1.2f, 1.2f});
+            addHeader(pt, fontBold, "Activity", "Latest Achievement", "% Achieved", "Status");
+
+            boolean alt = false;
+            for (com.methaltech.application.data.entity.bgtool.Urc_Activities a : activities) {
+                Color bg = alt ? COLOR_ALT_ROW : ColorConstants.WHITE;
+                alt = !alt;
+
+                double pct = getLatestPhysicalPct(a);
+
+                addBodyCell(pt, fontRegular, safe(a.getName()), bg, TextAlignment.LEFT);
+                addBodyCell(pt, fontRegular, safe(getLatestAchievement(a)), bg, TextAlignment.LEFT);
+                addBodyCell(pt, fontRegular, formatPercentage(pct), bg, TextAlignment.RIGHT);
+                pt.addCell(statusCell(fontRegular, physicalStatusText(pct), physicalStatusColor(pct)));
+            }
+
+            doc.add(pt);
+        }
+
+        // =========================
+        // General Budget Physical Performance
+        // =========================
+        doc.add(new Paragraph("General Budget Physical Performance")
+                .setFont(fontBold)
+                .setFontSize(10)
+                .setMarginTop(6)
+                .setMarginBottom(4));
+
+        String html = departmentGeneralPhysicalPerformanceService.getQuarterHtml(
+                safe(dept.getDepartmentCode()),
+                quarterKey,
+                budget
+        );
+
+        doc.add(new Paragraph("Quarter: " + quarterLabel)
+                .setFont(fontRegular)
+                .setFontSize(9)
+                .setFontColor(ColorConstants.DARK_GRAY)
+                .setMarginBottom(4));
+
+        doc.add(buildPhysicalPerformanceBlock(html, fontRegular, fontBold));
+    }
+
+    private String financialStatusText(BigDecimal budget, BigDecimal actual, BigDecimal variance) {
+        if (budget.compareTo(BigDecimal.ZERO) == 0 && actual.compareTo(BigDecimal.ZERO) > 0) {
+            return "UNBUDGETED";
+        }
+        if (variance.compareTo(BigDecimal.ZERO) < 0) {
+            return "OVER";
+        }
+        return "FINE";
+    }
+
+    private Color financialStatusColor(BigDecimal budget, BigDecimal actual, BigDecimal variance) {
+        if (budget.compareTo(BigDecimal.ZERO) == 0 && actual.compareTo(BigDecimal.ZERO) > 0) {
+            return new DeviceRgb(255, 220, 230);
+        }
+        if (variance.compareTo(BigDecimal.ZERO) < 0) {
+            return new DeviceRgb(255, 220, 230);
+        }
+        return new DeviceRgb(220, 245, 230);
+    }
+
+    private String physicalStatusText(double pct) {
+        if (pct >= 100.0) {
+            return "ACHIEVED";
+        }
+        if (pct >= 75.0) {
+            return "ON TRACK";
+        }
+        if (pct > 0.0) {
+            return "DELAYED";
+        }
+        return "NOT STARTED";
+    }
+
+    private Color physicalStatusColor(double pct) {
+        if (pct >= 100.0) {
+            return new DeviceRgb(220, 245, 230);
+        }
+        if (pct >= 75.0) {
+            return new DeviceRgb(219, 234, 254);
+        }
+        if (pct > 0.0) {
+            return new DeviceRgb(255, 237, 213);
+        }
+        return COLOR_HEADER_BG;
+    }
+
+    private String getLatestAchievement(com.methaltech.application.data.entity.bgtool.Urc_Activities activity) {
+        if (!isBlank(activity.getCum_achievements_qtr4())) {
+            return activity.getCum_achievements_qtr4();
+        }
+        if (!isBlank(activity.getCum_achievements_qtr3())) {
+            return activity.getCum_achievements_qtr3();
+        }
+        if (!isBlank(activity.getCum_achievements_qtr2())) {
+            return activity.getCum_achievements_qtr2();
+        }
+        return activity.getCum_achievements_qtr1();
+    }
+
+    private double getLatestPhysicalPct(com.methaltech.application.data.entity.bgtool.Urc_Activities activity) {
+        double q4 = parsePercentage(activity.getPerc_of_TargetAchieved_qtr4());
+        double q3 = parsePercentage(activity.getPerc_of_TargetAchieved_qtr3());
+        double q2 = parsePercentage(activity.getPerc_of_TargetAchieved_qtr2());
+        double q1 = parsePercentage(activity.getPerc_of_TargetAchieved_qtr1());
+
+        if (q4 > 0) {
+            return q4;
+        }
+        if (q3 > 0) {
+            return q3;
+        }
+        if (q2 > 0) {
+            return q2;
+        }
+        return q1;
+    }
+
+    private String formatPercentage(double value) {
+        return String.format(Locale.US, "%.1f%%", value);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private double parsePercentage(String value) {
+        if (value == null || value.isBlank()) {
+            return 0.0;
+        }
+        try {
+            return Double.parseDouble(value.replace("%", "").replace(",", "").trim());
+        } catch (Exception e) {
+            return 0.0;
         }
     }
 
@@ -1991,6 +2261,15 @@ public class DashboardView extends VerticalLayout {
 
             addSpacer(doc, 1);
 
+            addSectionHeader(doc, "DEPARTMENT FINANCIAL AND PHYSICAL PERFORMANCE");
+            String quarterKey = selectedQuarter != null ? selectedQuarter : "qtr1";
+            String quarterLabel = getQuarterLabel(mapQuarter(quarterKey));
+
+            for (DepartmentBudget dept : safeList(summary.getDepartmentBudgets())) {
+                addDepartmentPerformanceDocx(doc, budget, dept, quarterKey, quarterLabel);
+                addSpacer(doc, 1);
+            }
+
             // Recommendations
             addSectionHeader(doc, "RECOMMENDATIONS & INSIGHTS");
             XWPFParagraph rec = doc.createParagraph();
@@ -2015,6 +2294,175 @@ public class DashboardView extends VerticalLayout {
             doc.write(baos);
             return baos.toByteArray();
         }
+    }
+
+    private void addDepartmentPerformanceDocx(
+            XWPFDocument doc,
+            Budget budget,
+            DepartmentBudget dept,
+            String quarterKey,
+            String quarterLabel
+    ) {
+        addSectionHeader(doc, safe(dept.getDepartmentName()) + " (" + safe(dept.getDepartmentCode()) + ")");
+
+        // Financial Budget Performance
+        XWPFParagraph fp = doc.createParagraph();
+        XWPFRun fpr = fp.createRun();
+        fpr.setFontFamily("Calibri");
+        fpr.setFontSize(11);
+        fpr.setBold(true);
+        fpr.setText("Financial Budget Performance");
+
+        java.util.List<BudgetItemsActuals> financialItems = safeList(
+                budgetItemsService.findDistinctBudgetItemsesExp(budget, dept.getSections())
+        );
+
+        if (financialItems.isEmpty()) {
+            addMutedParagraph(doc, "No financial budget performance data available.");
+        } else {
+            XWPFTable ft = doc.createTable(1, 6);
+            styleTable(ft);
+            setHeaderRow(ft.getRow(0), "Code", "Description", "Budget", "Actual", "Variance", "Status");
+
+            BigDecimal totalBudget = BigDecimal.ZERO;
+            BigDecimal totalActual = BigDecimal.ZERO;
+            BigDecimal totalVariance = BigDecimal.ZERO;
+
+            for (BudgetItemsActuals item : financialItems) {
+                BigDecimal budgetVal = nz(item.getTotal());
+                BigDecimal actualVal = nz(item.getTotalA());
+                BigDecimal variance = budgetVal.subtract(actualVal);
+
+                totalBudget = totalBudget.add(budgetVal);
+                totalActual = totalActual.add(actualVal);
+                totalVariance = totalVariance.add(variance);
+
+                XWPFTableRow r = ft.createRow();
+                setCell(r.getCell(0), item.getCoacode() != null ? safe(item.getCoacode().getCode()) : "", false, ParagraphAlignment.LEFT);
+                setCell(r.getCell(1), safe(item.getItem()), false, ParagraphAlignment.LEFT);
+                setCell(r.getCell(2), formatUGX(budgetVal), false, ParagraphAlignment.RIGHT);
+                setCell(r.getCell(3), formatUGX(actualVal), false, ParagraphAlignment.RIGHT);
+                setCell(r.getCell(4), formatUGX(variance), false, ParagraphAlignment.RIGHT);
+                setCell(r.getCell(5), financialStatusText(budgetVal, actualVal, variance), true, ParagraphAlignment.CENTER);
+                shadeCell(r.getCell(5), financialStatusHex(budgetVal, actualVal, variance));
+            }
+
+            XWPFTableRow tr = ft.createRow();
+            setCell(tr.getCell(0), "TOTAL", true, ParagraphAlignment.LEFT);
+            setCell(tr.getCell(1), "", true, ParagraphAlignment.LEFT);
+            setCell(tr.getCell(2), formatUGX(totalBudget), true, ParagraphAlignment.RIGHT);
+            setCell(tr.getCell(3), formatUGX(totalActual), true, ParagraphAlignment.RIGHT);
+            setCell(tr.getCell(4), formatUGX(totalVariance), true, ParagraphAlignment.RIGHT);
+            setCell(tr.getCell(5), financialStatusText(totalBudget, totalActual, totalVariance), true, ParagraphAlignment.CENTER);
+            shadeCell(tr.getCell(5), financialStatusHex(totalBudget, totalActual, totalVariance));
+        }
+
+        // Physical Budget Performance
+        XWPFParagraph pp = doc.createParagraph();
+        XWPFRun ppr = pp.createRun();
+        ppr.setFontFamily("Calibri");
+        ppr.setFontSize(11);
+        ppr.setBold(true);
+        ppr.setText("Physical Budget Performance");
+
+        java.util.List<com.methaltech.application.data.entity.bgtool.Urc_Activities> activities = safeList(
+                sampleUrc_ActivitiesService.findByDeptSectionAndBudget(dept.getSections(), budget)
+        );
+
+        if (activities.isEmpty()) {
+            addMutedParagraph(doc, "No physical budget performance data available.");
+        } else {
+            XWPFTable pt = doc.createTable(1, 4);
+            styleTable(pt);
+            setHeaderRow(pt.getRow(0), "Activity", "Latest Achievement", "% Achieved", "Status");
+
+            for (com.methaltech.application.data.entity.bgtool.Urc_Activities a : activities) {
+                double pct = getLatestPhysicalPct(a);
+
+                XWPFTableRow r = pt.createRow();
+                setCell(r.getCell(0), safe(a.getName()), false, ParagraphAlignment.LEFT);
+                setCell(r.getCell(1), safe(getLatestAchievement(a)), false, ParagraphAlignment.LEFT);
+                setCell(r.getCell(2), formatPercentage(pct), false, ParagraphAlignment.RIGHT);
+                setCell(r.getCell(3), physicalStatusText(pct), true, ParagraphAlignment.CENTER);
+                shadeCell(r.getCell(3), physicalStatusHex(pct));
+            }
+        }
+
+        // General Budget Physical Performance
+        XWPFParagraph gp = doc.createParagraph();
+        XWPFRun gpr = gp.createRun();
+        gpr.setFontFamily("Calibri");
+        gpr.setFontSize(11);
+        gpr.setBold(true);
+        gpr.setText("General Budget Physical Performance");
+
+        XWPFParagraph q = doc.createParagraph();
+        XWPFRun qr = q.createRun();
+        qr.setFontFamily("Calibri");
+        qr.setFontSize(10);
+        qr.setText("Quarter: " + quarterLabel);
+
+        String html = departmentGeneralPhysicalPerformanceService.getQuarterHtml(
+                safe(dept.getDepartmentCode()),
+                quarterKey,
+                budget
+        );
+
+        addNarrativeParagraphDocx(doc, "Summary", extractHtmlSection(html, "Summary"));
+        addNarrativeParagraphDocx(doc, "Key Achievements", extractHtmlSection(html, "Key Achievements"));
+        addNarrativeParagraphDocx(doc, "Challenges", extractHtmlSection(html, "Challenges"));
+        addNarrativeParagraphDocx(doc, "Way Forward", extractHtmlSection(html, "Way Forward"));
+    }
+
+    private void addMutedParagraph(XWPFDocument doc, String text) {
+        XWPFParagraph paragraph = doc.createParagraph();
+        paragraph.setSpacingAfter(80);
+
+        XWPFRun run = paragraph.createRun();
+        run.setText(text);
+        run.setFontFamily("Calibri");
+        run.setFontSize(10);
+        run.setColor("808080"); // gray (muted)
+        run.setItalic(true);
+    }
+
+    private void addNarrativeParagraphDocx(XWPFDocument doc, String heading, String bodyHtml) {
+        XWPFParagraph hp = doc.createParagraph();
+        XWPFRun hr = hp.createRun();
+        hr.setFontFamily("Calibri");
+        hr.setFontSize(10);
+        hr.setBold(true);
+        hr.setText(heading);
+
+        XWPFParagraph bp = doc.createParagraph();
+        XWPFRun br = bp.createRun();
+        br.setFontFamily("Calibri");
+        br.setFontSize(10);
+        String plain = htmlToPlainText(bodyHtml);
+        br.setText(plain == null || plain.isBlank() ? "Not provided." : plain);
+    }
+
+    private String financialStatusHex(BigDecimal budget, BigDecimal actual, BigDecimal variance) {
+        if (budget.compareTo(BigDecimal.ZERO) == 0 && actual.compareTo(BigDecimal.ZERO) > 0) {
+            return "FFDCE6";
+        }
+        if (variance.compareTo(BigDecimal.ZERO) < 0) {
+            return "FFDCE6";
+        }
+        return "DCF5E6";
+    }
+
+    private String physicalStatusHex(double pct) {
+        if (pct >= 100.0) {
+            return "DCF5E6";
+        }
+        if (pct >= 75.0) {
+            return "DBEAFE";
+        }
+        if (pct > 0.0) {
+            return "FFEDD5";
+        }
+        return "F2F2F2";
     }
     // ===== Paragraph helpers =====
 

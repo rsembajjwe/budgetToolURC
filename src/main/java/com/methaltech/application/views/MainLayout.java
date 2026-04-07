@@ -20,6 +20,8 @@ import com.methaltech.application.views.budget.DashboardView;
 import com.methaltech.application.views.budget.OrganisationCOAManagementView;
 import com.methaltech.application.views.budgetReport.BudgetReportsView;
 import com.methaltech.application.views.budgetReport.PhysicalFinancialPerformanceView;
+import com.methaltech.application.views.budgetReport.URCPhysicalPerformanceDashboardView;
+import com.methaltech.application.views.budgetReport.URCPhysicalPerformanceEntryView;
 import com.methaltech.application.views.budgetcontrol.BudgetControlView;
 import com.methaltech.application.views.currency.currencyView;
 import com.methaltech.application.views.freight.freightVolumeView;
@@ -267,6 +269,17 @@ public class MainLayout extends AppLayout {
             item.addClassName("menu-item");
             nav.addItem(item);
         }
+        
+        if (accessChecker.hasAccess(URCPhysicalPerformanceEntryView.class)) {
+            SideNavItem item = new SideNavItem("Physical Performance Entry", URCPhysicalPerformanceEntryView.class, VaadinIcon.TRENDING_UP.create());
+            item.addClassName("menu-item");
+            nav.addItem(item);
+        }
+        if (accessChecker.hasAccess(URCPhysicalPerformanceDashboardView.class)) {
+            SideNavItem item = new SideNavItem("Physical Performance Dashboard", URCPhysicalPerformanceDashboardView.class, VaadinIcon.TRENDING_UP.create());
+            item.addClassName("menu-item");
+            nav.addItem(item);
+        }        
 
         if (accessChecker.hasAccess(PerformanceView.class)) {
             SideNavItem item = new SideNavItem("Analysis Report", PerformanceView.class, VaadinIcon.CHART.create());
