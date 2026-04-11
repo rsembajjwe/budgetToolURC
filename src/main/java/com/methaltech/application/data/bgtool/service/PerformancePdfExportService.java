@@ -119,7 +119,7 @@ public class PerformancePdfExportService {
             document.add(buildPhysicalTable(ctx, acts));
 
 // --- Next page for next CustomDetailedBudgetReport if needed ---
-          //  document.add(new AreaBreak(AreaBreakType.NEXT_PAGE));
+            //  document.add(new AreaBreak(AreaBreakType.NEXT_PAGE));
         }
 
         document.close();
@@ -178,6 +178,22 @@ public class PerformancePdfExportService {
                         .setPadding(6)
         );
     }
+    
+        private void addHeaderLast(Table table, String text) throws IOException {
+        PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+        table.addHeaderCell(
+                new Cell(1, 2)
+                        .add(new Paragraph(text)
+                                .setFont(fontBold)
+                                .setFontSize(9)
+                                .setFontColor(TEXT))
+                        .setBackgroundColor(HEADER_BG)
+                        .setTextAlignment(TextAlignment.CENTER)
+                        .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                        .setBorder(new SolidBorder(BORDER, 0.5f))
+                        .setPadding(6)
+        );
+    }
 
     private Cell bodyCell(String value, TextAlignment align) throws IOException {
         PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
@@ -198,9 +214,12 @@ public class PerformancePdfExportService {
 
     private Table buildFinancialTable(PerformanceReportContext ctx, CustomDetailedBudgetReport report) throws IOException {
         float[] columnWidths = {
-            4, 3, 3, 3, 3, 2, 4
+            4, 3, 3, 3, 2, 2, 2
         };
-        priorityAreas = sampleURC_Priority_AreasService.getDistinctPriorityAreasByBudget(ctx.getBudget().getStartDate());
+
+        priorityAreas = sampleURC_Priority_AreasService
+                .getDistinctPriorityAreasByBudget(ctx.getBudget().getStartDate());
+
         Table table = new Table(UnitValue.createPercentArray(columnWidths))
                 .useAllAvailableWidth()
                 .setMarginBottom(15)
@@ -209,14 +228,18 @@ public class PerformancePdfExportService {
         addHeader(table, "NDP Programme");
         addHeader(table, "Planned Budget (UGX)");
         addHeader(table, "Approved Budget (UGX)");
-        addHeader(table, "Cumulative Release (UGX)");
         addHeader(table, "Actual Spent (UGX)");
         addHeader(table, "% Release Spent");
-        addHeader(table, "Reasons");
-        BigDecimal[] computeGrandExpenditureTotals = sampleBudgetItemsService.computeGrandExpenditureTotals(ctx.getBudget(), report.getDeptsection());
-        BigDecimal planned = computeGrandExpenditureTotals[0]; // or computed once earlier
+        addHeaderLast(table, "Reasons");
 
-        Tuple totals = qtrReleasesServiceImpl.getCumulativeQuarterReleases(ctx.getBudget().getId(), report.getDeptsection());
+
+        BigDecimal[] computeGrandExpenditureTotals
+                = sampleBudgetItemsService.computeGrandExpenditureTotals(ctx.getBudget(), report.getDeptsection());
+        BigDecimal planned = computeGrandExpenditureTotals[0];
+
+        Tuple totals = qtrReleasesServiceImpl.getCumulativeQuarterReleases(
+                ctx.getBudget().getId(), report.getDeptsection());
+
         BigDecimal cumulativeRelease = switch (ctx.getQuarter()) {
             case 1 ->
                 nvl(totals.get("q1Total", BigDecimal.class));
@@ -234,33 +257,55 @@ public class PerformancePdfExportService {
 
         switch (ctx.getQuarter()) {
             case 1:
-                actualSpent = samopleSALFLDGService.getTotalAmountByPeriods(periods.getFinancialYearPeriods(ctx.getBudget(), 1), samopleSALFLDGService.extractTrimmedAnlCodes(report.getDeptsection()));
+                actualSpent = samopleSALFLDGService.getTotalAmountByPeriods(
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 1),
+                        samopleSALFLDGService.extractTrimmedAnlCodes(report.getDeptsection()));
                 break;
             case 2:
                 Set<Integer> period1 = periods.getFinancialYearPeriods(ctx.getBudget(), 1);
                 Set<Integer> period2 = periods.getFinancialYearPeriods(ctx.getBudget(), 2);
                 period1.addAll(period2);
-                Set<Integer> combinedPeriods = period1;
-                period = combinedPeriods;
-                actualSpent = samopleSALFLDGService.getTotalAmountByPeriods(period, samopleSALFLDGService.extractTrimmedAnlCodes(report.getDeptsection()));
+                period = period1;
+                actualSpent = samopleSALFLDGService.getTotalAmountByPeriods(
+                        period,
+                        samopleSALFLDGService.extractTrimmedAnlCodes(report.getDeptsection()));
                 break;
             case 3:
-                period = Stream.concat(periods.getFinancialYearPeriods(ctx.getBudget(), 1).stream(), periods.getFinancialYearPeriods(ctx.getBudget(), 2).stream()).collect(Collectors.toSet());
-                period = Stream.concat(period.stream(), periods.getFinancialYearPeriods(ctx.getBudget(), 3).stream()).collect(Collectors.toSet());
-                actualSpent = samopleSALFLDGService.getTotalAmountByPeriods(period, samopleSALFLDGService.extractTrimmedAnlCodes(report.getDeptsection()));
+                period = Stream.concat(
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 1).stream(),
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 2).stream()
+                ).collect(Collectors.toSet());
+                period = Stream.concat(
+                        period.stream(),
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 3).stream()
+                ).collect(Collectors.toSet());
+                actualSpent = samopleSALFLDGService.getTotalAmountByPeriods(
+                        period,
+                        samopleSALFLDGService.extractTrimmedAnlCodes(report.getDeptsection()));
                 break;
             case 4:
-                period = Stream.concat(periods.getFinancialYearPeriods(ctx.getBudget(), 1).stream(), periods.getFinancialYearPeriods(ctx.getBudget(), 2).stream()).collect(Collectors.toSet());
-                period = Stream.concat(period.stream(), periods.getFinancialYearPeriods(ctx.getBudget(), 3).stream()).collect(Collectors.toSet());
-                period = Stream.concat(period.stream(), periods.getFinancialYearPeriods(ctx.getBudget(), 4).stream()).collect(Collectors.toSet());
-                actualSpent = samopleSALFLDGService.getTotalAmountByPeriods(period, samopleSALFLDGService.extractTrimmedAnlCodes(report.getDeptsection()));
+                period = Stream.concat(
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 1).stream(),
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 2).stream()
+                ).collect(Collectors.toSet());
+                period = Stream.concat(
+                        period.stream(),
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 3).stream()
+                ).collect(Collectors.toSet());
+                period = Stream.concat(
+                        period.stream(),
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 4).stream()
+                ).collect(Collectors.toSet());
+                actualSpent = samopleSALFLDGService.getTotalAmountByPeriods(
+                        period,
+                        samopleSALFLDGService.extractTrimmedAnlCodes(report.getDeptsection()));
                 break;
             default:
                 actualSpent = BigDecimal.ZERO;
                 break;
         }
 
-        String percentage = calculatePercentage(actualSpent.abs(), cumulativeRelease);
+        String percentage = calculatePercentage(actualSpent.abs(), planned);
 
         List<SectionBudgetPerformance> performances = sectionBudgetPerformanceService.findByBudget(ctx.getBudget());
 
@@ -270,8 +315,9 @@ public class PerformancePdfExportService {
                 .collect(Collectors.toMap(
                         p -> p.getDeptSection().getANL_CODE(),
                         Function.identity(),
-                        (existing, replacement) -> existing // keep first
+                        (existing, replacement) -> existing
                 ));
+
         if (performanceMap.isEmpty()) {
             reasons = "—";
         } else {
@@ -282,14 +328,19 @@ public class PerformancePdfExportService {
                     .filter(s -> s != null && !s.isBlank())
                     .collect(Collectors.joining(", "));
         }
+
         for (PriorityArea p : priorityAreas) {
             table.addCell(bodyCell(p.getName(), TextAlignment.LEFT));
             table.addCell(money(planned));
             table.addCell(money(planned));
-            table.addCell(money(cumulativeRelease));
             table.addCell(money(actualSpent.abs()));
             table.addCell(bodyCell(percentage, TextAlignment.LEFT));
-            table.addCell(bodyCell(reasons, TextAlignment.LEFT));
+
+            Cell reasonsCell = new Cell(1, 2)
+                    .add(new Paragraph(reasons))
+                    .setTextAlignment(TextAlignment.LEFT);
+
+            table.addCell(reasonsCell);
         }
 
         return table;
@@ -435,7 +486,7 @@ public class PerformancePdfExportService {
                 "-";
         };
     }
-    
+
     private String getPerAchievement(Urc_Activities act, int qtr) {
         return switch (qtr) {
             case 1 ->
@@ -449,7 +500,7 @@ public class PerformancePdfExportService {
             default ->
                 "-";
         };
-    }    
+    }
 
     private String getActualAchievement(Urc_Activities act, PerformanceReportContext ctx) {
 

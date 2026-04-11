@@ -779,36 +779,36 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             return span;
         })).setHeader("Approved Budget (UGX)");
 
-        financialGrid.addColumn(new ComponentRenderer<>(area -> {
-            BigDecimal cumRealise = BigDecimal.ZERO;
-            Tuple result = qtrReleasesServiceImpl.getCumulativeQuarterReleases(chosenBudget.getId(), chosenDsection);
-            cumReleasedFund = switch (qtr) {
-                case 1 ->
-                    //result.get("q1Total", BigDecimal.class);
-                    nvl(result.get("q1Total", BigDecimal.class));
-                case 2 ->
-                    nvl(result.get("q2Total", BigDecimal.class));
-                case 3 ->
-                    nvl(result.get("q3Total", BigDecimal.class));
-                case 4 ->
-                    nvl(result.get("q4Total", BigDecimal.class));
-                default ->
-                    BigDecimal.ZERO;
-            };
-            Span span = new Span(formatBigDecimal(cumReleasedFund));
-            span.getStyle()
-                    .set("font-weight", "500")
-                    .set("color", "#2E3A59")
-                    .set("font-size", "var(--lumo-font-size-s)");
-
-            Tooltip tooltip = Tooltip.forComponent(span);
-            tooltip.setText("Cumulative Funds Released: " + formatBigDecimal(cumReleasedFund));
-            tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
-            tooltip.setManual(false); // show on hover
-
-            return span;
+        /*        financialGrid.addColumn(new ComponentRenderer<>(area -> {
+        BigDecimal cumRealise = BigDecimal.ZERO;
+        Tuple result = qtrReleasesServiceImpl.getCumulativeQuarterReleases(chosenBudget.getId(), chosenDsection);
+        cumReleasedFund = switch (qtr) {
+        case 1 ->
+        //result.get("q1Total", BigDecimal.class);
+        nvl(result.get("q1Total", BigDecimal.class));
+        case 2 ->
+        nvl(result.get("q2Total", BigDecimal.class));
+        case 3 ->
+        nvl(result.get("q3Total", BigDecimal.class));
+        case 4 ->
+        nvl(result.get("q4Total", BigDecimal.class));
+        default ->
+        BigDecimal.ZERO;
+        };
+        Span span = new Span(formatBigDecimal(cumReleasedFund));
+        span.getStyle()
+        .set("font-weight", "500")
+        .set("color", "#2E3A59")
+        .set("font-size", "var(--lumo-font-size-s)");
+        
+        Tooltip tooltip = Tooltip.forComponent(span);
+        tooltip.setText("Cumulative Funds Released: " + formatBigDecimal(cumReleasedFund));
+        tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
+        tooltip.setManual(false); // show on hover
+        
+        return span;
         }))
-                .setHeader("Cumulative Funds Released (UGX)");
+        .setHeader("Cumulative Funds Released (UGX)");*/
 
         financialGrid.addColumn(new ComponentRenderer<>(area -> {
             Span label = new Span(formatBigDecimal(totalActualExpenditure.abs()));
@@ -837,7 +837,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             String reason = formatPercentage(totalActualExpenditure, cumReleasedFund);
 
             return reason.isBlank() ? "—" : reason;
-        }).setHeader("% of Release Spent");
+        }).setHeader("% of Budget Spent");
 
         financialGrid.addColumn(area -> {
             String reason = "";
@@ -902,6 +902,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                 GridVariant.LUMO_COLUMN_BORDERS,
                 GridVariant.LUMO_WRAP_CELL_CONTENT
         );
+        physicalGrid.setSelectionMode(Grid.SelectionMode.NONE);
         physicalGrid.addColumn(activity -> {
             URC_Priority_Areas area = activity.getUrcPriorityAreas();
             return (area != null && area.getName() != null) ? area.getName() : "—";
@@ -925,7 +926,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
             Double pct = getPct(activity);
             field.setValue(pct != null ? BigDecimal.valueOf(pct.doubleValue()) : null);
-
+            field.getElement().addEventListener("click", e -> field.focus());
             field.addValueChangeListener(e -> {
                 if (!e.isFromClient()) {
                     return;
@@ -955,7 +956,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             field.setMinHeight("120px");
             field.setValue(getCumAchievements(activity));
             field.setPlaceholder("Enter cumulative achievements");
-
+            field.getElement().addEventListener("click", e -> field.focus());
             field.addValueChangeListener(e -> {
                 if (!e.isFromClient()) {
                     return;
@@ -1008,7 +1009,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             area.setPlaceholder("Enter explanation for variations");
             area.setMaxLength(1000);
             area.setMinHeight("120px");
-
+            area.getElement().addEventListener("click", e -> area.focus());
             area.addValueChangeListener(e -> {
                 if (!e.isFromClient()) {
                     return;
@@ -1793,24 +1794,24 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                     expl_of_variationField
             );
 
-            boolean hasError = false;
+            /*            boolean hasError = false;
             for (Component c : requiredFields) {
-                if (c instanceof TextArea ta && ta.getValue().trim().isEmpty()) {
-                    ta.getStyle().set("border-color", "var(--lumo-error-color)");
-                    hasError = true;
-                } else if (c instanceof TextField tf && tf.getValue().trim().isEmpty()) {
-                    tf.getStyle().set("border-color", "var(--lumo-error-color)");
-                    hasError = true;
-                } else {
-                    c.getElement().getStyle().remove("border-color");
-                }
+            if (c instanceof TextArea ta && ta.getValue().trim().isEmpty()) {
+            ta.getStyle().set("border-color", "var(--lumo-error-color)");
+            hasError = true;
+            } else if (c instanceof TextField tf && tf.getValue().trim().isEmpty()) {
+            tf.getStyle().set("border-color", "var(--lumo-error-color)");
+            hasError = true;
+            } else {
+            c.getElement().getStyle().remove("border-color");
             }
-
+            }
+            
             if (hasError) {
-                Notification.show("Please fill in all required fields before saving.",
-                        3000, Notification.Position.MIDDLE);
-                return;
-            }
+            Notification.show("Please fill in all required fields before saving.",
+            3000, Notification.Position.MIDDLE);
+            return;
+            }*/
             // Clear existing actuals before re-assigning
             activity.getQuarterlyActuals().clear();
 

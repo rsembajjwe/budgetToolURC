@@ -518,7 +518,7 @@ public class BudgetReportsView extends Div {
         });
         HorizontalLayout layout = new HorizontalLayout();
         Button save = new Button("Save");
-        Button delete = new Button("Delete");
+        Button delete = new Button("Delete A");
         save.addClickListener(e -> {
             try {
                 sampleCustomDetailedBudgetReportImp = gridCustomDetailedBudgetReportImp.asSingleSelect().getValue();
@@ -544,7 +544,9 @@ public class BudgetReportsView extends Div {
         });
         delete.addClickListener(e -> {
             if (!gridCustomDetailedBudgetReportImp.asSingleSelect().isEmpty()) {
-                sampleCustomDetailedBudgetReportImpService.deleteReportImp(gridCustomDetailedBudgetReportImp.asSingleSelect().getValue().getId());
+                long t=gridCustomDetailedBudgetReportImp.asSingleSelect().getValue().getId();
+                sampleCustomDetailedBudgetReportImpService.deleteReportImp(t);
+                Notification.show("Print "+t);
                 refreshCustomDetailedBudgetReportImpItems();
             } else {
                 Notificationerror("Select a report");
@@ -673,34 +675,34 @@ public class BudgetReportsView extends Div {
                 return span;
             })).setHeader("Approved Budget (UGX)");
 
-            financialGrid.addColumn(new ComponentRenderer<>(area -> {
-                Tuple totals = qtrReleasesServiceImpl.getCumulativeQuarterReleases(comboBox2.getValue().getId(), e.getDeptsection());
-                cumRealise = switch (qtr) {
-                    case 1 ->
-                        nvl(totals.get("q1Total", BigDecimal.class));
-                    case 2 ->
-                        nvl(totals.get("q2Total", BigDecimal.class));
-                    case 3 ->
-                        nvl(totals.get("q3Total", BigDecimal.class));
-                    case 4 ->
-                        nvl(totals.get("q4Total", BigDecimal.class));
-                    default ->
-                        BigDecimal.ZERO;
-                };
-
-                Span span = new Span(formatBigDecimal(cumRealise));
-                span.getStyle()
-                        .set("font-weight", "500")
-                        .set("color", "#2E3A59")
-                        .set("font-size", "var(--lumo-font-size-s)");
-
-                Tooltip tooltip = Tooltip.forComponent(span);
-                tooltip.setText("Cumulative Funds Released: " + formatBigDecimal(cumRealise));
-                tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
-                tooltip.setManual(false); // show on hover
-
-                return span;
-            })).setHeader("Cumulative Funds Released (UGX)");
+            /*            financialGrid.addColumn(new ComponentRenderer<>(area -> {
+            Tuple totals = qtrReleasesServiceImpl.getCumulativeQuarterReleases(comboBox2.getValue().getId(), e.getDeptsection());
+            cumRealise = switch (qtr) {
+            case 1 ->
+            nvl(totals.get("q1Total", BigDecimal.class));
+            case 2 ->
+            nvl(totals.get("q2Total", BigDecimal.class));
+            case 3 ->
+            nvl(totals.get("q3Total", BigDecimal.class));
+            case 4 ->
+            nvl(totals.get("q4Total", BigDecimal.class));
+            default ->
+            BigDecimal.ZERO;
+            };
+            
+            Span span = new Span(formatBigDecimal(cumRealise));
+            span.getStyle()
+            .set("font-weight", "500")
+            .set("color", "#2E3A59")
+            .set("font-size", "var(--lumo-font-size-s)");
+            
+            Tooltip tooltip = Tooltip.forComponent(span);
+            tooltip.setText("Cumulative Funds Released: " + formatBigDecimal(cumRealise));
+            tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
+            tooltip.setManual(false); // show on hover
+            
+            return span;
+            })).setHeader("Cumulative Funds Released (UGX)");*/
 
             financialGrid.addColumn(new ComponentRenderer<>(area -> {
                 if (comboBox2.getValue() != null) {
@@ -734,12 +736,12 @@ public class BudgetReportsView extends Div {
                 }
 
                 Span label = new Span(formatBigDecimal(actualRealise.abs()));
-                if (actualRealise.abs().doubleValue() > cumRealise.abs().doubleValue()) {
+                if (actualRealise.abs().doubleValue() > computeGrandExpenditureTotals[0].abs().doubleValue()) {
                     label.getStyle().set("color", "red");
                     label.getStyle().set("font-weight", "bold");
                     label.getElement().setProperty("title", "⚠ Warning: Over Spent");
 
-                } else if (actualRealise.abs().doubleValue() < cumRealise.abs().doubleValue()) {
+                } else if (actualRealise.abs().doubleValue() < computeGrandExpenditureTotals[0].abs().doubleValue()) {
                     label.getStyle().set("color", "green");
                     label.getStyle().set("font-weight", "bold");
                     //label.getElement().setProperty("title", "⚠ Warning: Below You Actual Expenditure");
@@ -758,9 +760,9 @@ public class BudgetReportsView extends Div {
             financialGrid.addColumn(area -> {
                 String reason = "";
 
-                reason = calculatePercentage(actualRealise, cumRealise);
+                reason = calculatePercentage(actualRealise, computeGrandExpenditureTotals[0]);
                 return reason.isBlank() ? "—" : reason;
-            }).setHeader("% of Release Spent");
+            }).setHeader("% Spent");
 
             financialGrid.addColumn(area -> {
                 if (performanceMap.isEmpty()) {
@@ -4248,13 +4250,13 @@ public class BudgetReportsView extends Div {
         // Row headerRow = sheet.createRow(0);
         Cell headerCell = headerRow.createCell(1);
         headerCell.setCellValue("UGANDA RAILWAYS CORPORATION");
-        CellRangeAddress cellRange3 = new CellRangeAddress(0, 0, 1, 24);
+        CellRangeAddress cellRange3 = new CellRangeAddress(0, 0, 1, 25);
         sheet.addMergedRegion(cellRange3);
         setBottomBorderForRegion(sheet, cellRange3);
         Row header2 = sheet.createRow(1);
         Cell header2Cell = header2.createCell(0);
         header2Cell.setCellValue(HeaderExcel2("ACCOUNT CODE").toUpperCase());
-        CellRangeAddress cellRange2 = new CellRangeAddress(1, 1, 0, 24);
+        CellRangeAddress cellRange2 = new CellRangeAddress(1, 1, 0, 25);
         sheet.addMergedRegion(cellRange2);
         setBottomBorderForRegion(sheet, cellRange2);
         Row Q2 = sheet.createRow((short) tr);
@@ -4282,7 +4284,8 @@ public class BudgetReportsView extends Div {
         Q2.createCell((short) 21).setCellValue("Target Group");
         Q2.createCell((short) 22).setCellValue("Trainer");
         Q2.createCell((short) 23).setCellValue("Notes");
-        Q2.createCell((short) 24).setCellValue("Unit");
+        Q2.createCell((short) 24).setCellValue("Fund Source");
+        Q2.createCell((short) 25).setCellValue("Cost Centre");
         Coalevel1 coal = sampleCoalevel1Service.findByCode(1);
         List<UrcDeptSectionAnlDimbgt> selectedSections = sect.stream().toList();
         if (isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero2(comboBox2.getValue(), coal, selectedSections) == true) {
@@ -4292,7 +4295,7 @@ public class BudgetReportsView extends Div {
             activityrowIndex.add((int) tr);
             catrowIndex.add((int) tr);
             //sheet.addMergedRegion(new CellRangeAddress(tr, tr, 0, 23));
-            CellRangeAddress cellRange = new CellRangeAddress(tr, tr, 0, 24);
+            CellRangeAddress cellRange = new CellRangeAddress(tr, tr, 0, 25);
             sheet.addMergedRegion(cellRange);
             setBottomBorderForRegion(sheet, cellRange);
             List<COA> findDistinctCoacodeByBudgetCoalevel1AndDeptUnits = sampleBudgetItemsService.findDistinctCoacodeByBudgetCoalevel1AndDeptUnits(comboBox2.getValue(), coal, selectedSections, budgetType2.getSelectedItems());
@@ -4379,6 +4382,7 @@ public class BudgetReportsView extends Div {
                 incometotal2.createCell(22).setCellValue("");
                 incometotal2.createCell(23).setCellValue("");
                 incometotal2.createCell(24).setCellValue("");
+                incometotal2.createCell(25).setCellValue("");
                 // CellRangeAddress cellRangeT3 = new CellRangeAddress(tr, tr, 7, 24);
                 // sheet.addMergedRegion(cellRangeT3);
                 budgetList = sampleBudgetItemsService.findByBudgetCoacodeAndDeptUnits(comboBox2.getValue(), cao, selectedSections, budgetType2.getSelectedItems());
@@ -4472,7 +4476,8 @@ public class BudgetReportsView extends Div {
                     mm.createCell((short) 21).setCellValue(tt.getTarget_group());
                     mm.createCell((short) 22).setCellValue(tt.getExpected_trainer());
                     mm.createCell((short) 23).setCellValue(tt.getNotes());
-                    mm.createCell((short) 24).setCellValue(tt.getDeptUnit().getNAME());
+                    mm.createCell((short) 24).setCellValue(tt.getBudgetType().getName());
+                    mm.createCell((short) 25).setCellValue(tt.getDeptUnit().getNAME());
 
                 }
             }
@@ -4557,6 +4562,7 @@ public class BudgetReportsView extends Div {
             incometotal2.createCell(22).setCellValue("");
             incometotal2.createCell(23).setCellValue("");
             incometotal2.createCell(24).setCellValue("");
+            incometotal2.createCell(25).setCellValue("");
             totalrowIndex.add((int) tr);
         }
         tr++;
@@ -4570,7 +4576,7 @@ public class BudgetReportsView extends Div {
             activityrowIndex.add((int) tr);
             catrowIndex.add((int) tr);
             //sheet.addMergedRegion(new CellRangeAddress(tr, tr, 0, 23));
-            CellRangeAddress cellRange = new CellRangeAddress(tr, tr, 0, 24);
+            CellRangeAddress cellRange = new CellRangeAddress(tr, tr, 0, 25);
             sheet.addMergedRegion(cellRange);
             setBottomBorderForRegion(sheet, cellRange);
 
@@ -4658,6 +4664,7 @@ public class BudgetReportsView extends Div {
                 incometotal2.createCell(22).setCellValue("");
                 incometotal2.createCell(23).setCellValue("");
                 incometotal2.createCell(24).setCellValue("");
+                incometotal2.createCell(25).setCellValue("");
                 budgetList = sampleBudgetItemsService.findByBudgetCoacodeAndDeptUnits(comboBox2.getValue(), cao, selectedSections, budgetType2.getSelectedItems());
 
                 for (BudgetItems tt : budgetList) {
@@ -4750,7 +4757,8 @@ public class BudgetReportsView extends Div {
                     mm.createCell((short) 21).setCellValue(tt.getTarget_group());
                     mm.createCell((short) 22).setCellValue(tt.getExpected_trainer());
                     mm.createCell((short) 23).setCellValue(tt.getNotes());
-                    mm.createCell((short) 24).setCellValue(tt.getDeptUnit().getNAME());
+                    mm.createCell((short) 24).setCellValue(tt.getBudgetType().getName());
+                    mm.createCell((short) 25).setCellValue(tt.getDeptUnit().getNAME());
 
                 }
             }
@@ -4831,6 +4839,7 @@ public class BudgetReportsView extends Div {
             incometotal2.createCell(22).setCellValue("");
             incometotal2.createCell(23).setCellValue("");
             incometotal2.createCell(24).setCellValue("");
+            incometotal2.createCell(25).setCellValue("");
             totalrowIndex.add((int) tr);
         }
         tr++;
@@ -4843,7 +4852,7 @@ public class BudgetReportsView extends Div {
             activityrowIndex.add((int) tr);
             catrowIndex.add((int) tr);
             //sheet.addMergedRegion(new CellRangeAddress(tr, tr, 0, 23));
-            CellRangeAddress cellRange = new CellRangeAddress(tr, tr, 0, 24);
+            CellRangeAddress cellRange = new CellRangeAddress(tr, tr, 0, 25);
             sheet.addMergedRegion(cellRange);
             setBottomBorderForRegion(sheet, cellRange);
             List<COA> findDistinctCoacodeByBudgetCoalevel1AndDeptUnits = sampleBudgetItemsService.findDistinctCoacodeByBudgetCoalevel1AndDeptUnits(comboBox2.getValue(), coal, selectedSections, budgetType2.getSelectedItems());
@@ -4937,6 +4946,7 @@ public class BudgetReportsView extends Div {
                 incometotal2.createCell(22).setCellValue("");
                 incometotal2.createCell(23).setCellValue("");
                 incometotal2.createCell(24).setCellValue("");
+                incometotal2.createCell(25).setCellValue("");
                 budgetList = sampleBudgetItemsService.findByBudgetCoacodeAndDeptUnits(comboBox2.getValue(), cao, selectedSections, budgetType2.getSelectedItems());
 
                 for (BudgetItems tt : budgetList) {
@@ -5029,7 +5039,8 @@ public class BudgetReportsView extends Div {
                     mm.createCell((short) 21).setCellValue(tt.getTarget_group());
                     mm.createCell((short) 22).setCellValue(tt.getExpected_trainer());
                     mm.createCell((short) 23).setCellValue(tt.getNotes());
-                    mm.createCell((short) 24).setCellValue(tt.getDeptUnit().getNAME());
+                    mm.createCell((short) 24).setCellValue(tt.getBudgetType().getName());
+                    mm.createCell((short) 25).setCellValue(tt.getDeptUnit().getNAME());
 
                 }
             }
@@ -5112,6 +5123,7 @@ public class BudgetReportsView extends Div {
             incometotal2.createCell(22).setCellValue("");
             incometotal2.createCell(23).setCellValue("");
             incometotal2.createCell(24).setCellValue("");
+            incometotal2.createCell(25).setCellValue("");
             totalrowIndex.add((int) tr);
 
             tr++;
@@ -5194,6 +5206,7 @@ public class BudgetReportsView extends Div {
             incometotal21.createCell(22).setCellValue("");
             incometotal21.createCell(23).setCellValue("");
             incometotal21.createCell(24).setCellValue("");
+            incometotal21.createCell(25).setCellValue("");
             totalrowIndex.add((int) tr);
         }
         for (Row row : sheet) {

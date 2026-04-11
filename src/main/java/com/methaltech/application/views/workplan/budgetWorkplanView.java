@@ -19,6 +19,7 @@ import com.methaltech.application.data.entity.bgtool.BudgetItems;
 import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.Currency;
+import com.methaltech.application.data.entity.bgtool.DepartmentBudget;
 import com.methaltech.application.data.entity.bgtool.Organisation;
 import com.methaltech.application.data.entity.bgtool.QuarterlyActuals;
 import com.methaltech.application.data.entity.bgtool.RowsWorkplan;
@@ -34,6 +35,7 @@ import com.methaltech.application.views.budgetReport.BudgetReportsView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HtmlComponent;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.accordion.Accordion;
 import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.button.Button;
@@ -76,7 +78,9 @@ import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.StreamRegistration;
 import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.RolesAllowed;
 import java.awt.image.BufferedImage;
@@ -107,6 +111,7 @@ import org.apache.poi.ss.usermodel.BuiltinFormats;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
@@ -119,6 +124,7 @@ import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.RegionUtil;
+import org.apache.poi.ss.util.WorkbookUtil;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.PageRequest;
@@ -161,6 +167,7 @@ public class budgetWorkplanView extends Div {
     private final Coalevel1Service coalevel1Service;
     Button downloadWorkplan = new Button(new Icon(VaadinIcon.DOWNLOAD));
     Button downloadWorkplan2 = new Button("Download Qtr");
+    Button downloadWorkplan3 = new Button("All Download Qtr");
     private List<URC_Priority_Areas> programmes = new ArrayList<>();
     private List<Urc_Activities> programmesActivities = new ArrayList<>();
     private QuarterlyActuals draggedItem = null;
@@ -224,11 +231,13 @@ public class budgetWorkplanView extends Div {
             if (!comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxBudget.isEmpty()) {
                 downloadWorkplan.setEnabled(true);
                 downloadWorkplan2.setEnabled(true);
+                downloadWorkplan3.setEnabled(true);
                 workplanview(accordion);
 
             } else {
                 downloadWorkplan.setEnabled(false);
                 downloadWorkplan2.setEnabled(true);
+                downloadWorkplan3.setEnabled(true);
                 workplanview(accordion);
             }
         });
@@ -236,7 +245,7 @@ public class budgetWorkplanView extends Div {
             if (!comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxBudget.isEmpty()) {
                 downloadWorkplan.setEnabled(true);
                 downloadWorkplan2.setEnabled(true);
-                
+
                 workplanview(accordion);
             } else {
                 downloadWorkplan.setEnabled(false);
@@ -263,6 +272,10 @@ public class budgetWorkplanView extends Div {
         downloadWorkplan2.setAriaLabel("Download");
         downloadWorkplan2.setEnabled(false);
 
+        downloadWorkplan3.addThemeVariants(ButtonVariant.LUMO_ICON);
+        downloadWorkplan3.setAriaLabel("Download");
+        downloadWorkplan3.setEnabled(false);
+
         downloadWorkplan.addClickListener(e -> {
             if (comboBoxD_Section.isEmpty() || comboBoxOrganisation.isEmpty() || comboBoxBudget.isEmpty()) {
                 warningNotification("Ensure that You have filled the form well");
@@ -280,13 +293,529 @@ public class budgetWorkplanView extends Div {
             }
 
         });
-        hmainLay.add(comboBoxBudget, comboBoxOrganisation, comboBoxD_Section, downloadWorkplan, downloadWorkplan2);
+
+        downloadWorkplan3.addClickListener(e -> {
+            if (comboBoxOrganisation.isEmpty() || comboBoxBudget.isEmpty()) {
+                warningNotification("Ensure that You have filled the form well");
+                return;
+            }
+
+            List<DepartmentBudget> departmentBudgets
+                    = sampleBudgetService.getDepartmentBudgets(comboBoxBudget.getValue());
+
+            if (departmentBudgets == null || departmentBudgets.isEmpty()) {
+                warningNotification("No departments found for the selected budget");
+                return;
+            }
+
+            try {
+                byte[] excelBytes = generateDepartmentWorkplansExcel(
+                        comboBoxBudget.getValue(),
+                        comboBoxOrganisation.getSelectedItems(),
+                        departmentBudgets
+                );
+
+                triggerDownload("department-workplans.xlsx", excelBytes);
+
+            } catch (Exception ex) {
+                Logger.getLogger(BudgetReportsView.class.getName()).log(Level.SEVERE, null, ex);
+                warningNotification("Failed to generate Excel file");
+            }
+        });
+        hmainLay.add(comboBoxBudget, comboBoxOrganisation, comboBoxD_Section, downloadWorkplan, downloadWorkplan2, downloadWorkplan3);
         //hmainLay.setAlignSelf(FlexComponent.Alignment.BASELINE, hmainLay);
         hmainLay.setAlignItems(FlexComponent.Alignment.BASELINE);
         //hmainLay.setAlignItems(Alignment.BASELINE);
 
         mainLay.add(hmainLay, workplanview(accordion));
         return mainLay;
+    }
+
+    private void triggerDownload(String fileName, byte[] data) {
+        StreamResource resource = new StreamResource(
+                fileName,
+                () -> new ByteArrayInputStream(data)
+        );
+
+        resource.setContentType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        resource.setCacheTime(0);
+
+        StreamRegistration registration = VaadinSession.getCurrent()
+                .getResourceRegistry()
+                .registerResource(resource);
+
+        String resourceUrl = registration.getResourceUri().toString();
+
+        UI.getCurrent().getPage().executeJs("window.location.href = $0;", resourceUrl);
+    }
+
+    private byte[] generateDepartmentWorkplansExcel(
+            Budget budget,
+            Set<Organisation> selectedOrganisations,
+            List<DepartmentBudget> departmentBudgets
+    ) {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            for (DepartmentBudget department : departmentBudgets) {
+                if (department == null || department.getSections() == null || department.getSections().isEmpty()) {
+                    continue;
+                }
+
+                String rawSheetName = department.getDepartmentName() != null
+                        ? department.getDepartmentName()
+                        : "Department";
+
+                String sheetName = WorkbookUtil.createSafeSheetName(rawSheetName);
+                Sheet sheet = workbook.createSheet(sheetName);
+
+                createHeaderRowWorkplanQtr2ForDepartment(
+                        workbook,
+                        sheet,
+                        budget,
+                        selectedOrganisations,
+                        department
+                );
+            }
+
+            if (workbook.getNumberOfSheets() == 0) {
+                Sheet sheet = workbook.createSheet("Workplan");
+                Row row = sheet.createRow(0);
+                row.createCell(0).setCellValue("No department workplans available");
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+
+        } catch (IOException ex) {
+            throw new RuntimeException("Failed to generate department workplans Excel", ex);
+        }
+    }
+
+    private void createHeaderRowWorkplanQtr2ForDepartment(
+            Workbook workbook,
+            Sheet sheet,
+            Budget budget,
+            Set<Organisation> selectedOrganisations,
+            DepartmentBudget department
+    ) {
+        int tr = 0;
+        final short defaultRowHeight = 500;
+
+        DataFormat dataFormat = workbook.getCreationHelper().createDataFormat();
+
+        Set<UrcDeptSectionAnlDimbgt> selectedSections
+                = department.getSections() != null ? department.getSections() : Collections.emptySet();
+
+        String workplanTitle = "WORKPLAN - " + nzs(department.getDepartmentName());
+
+        // -----------------------------
+        // Fonts
+        // -----------------------------
+        Font titleFont = workbook.createFont();
+        titleFont.setFontName("Calibri");
+        titleFont.setBold(true);
+        titleFont.setFontHeightInPoints((short) 14);
+
+        Font sectionFont = workbook.createFont();
+        sectionFont.setFontName("Calibri");
+        sectionFont.setBold(true);
+        sectionFont.setFontHeightInPoints((short) 11);
+
+        Font headerFont = workbook.createFont();
+        headerFont.setFontName("Calibri");
+        headerFont.setBold(true);
+        headerFont.setFontHeightInPoints((short) 10);
+
+        Font normalFont = workbook.createFont();
+        normalFont.setFontName("Calibri");
+        normalFont.setFontHeightInPoints((short) 10);
+
+        // -----------------------------
+        // Styles
+        // -----------------------------
+        CellStyle titleStyle = workbook.createCellStyle();
+        titleStyle.setFont(titleFont);
+        titleStyle.setAlignment(HorizontalAlignment.CENTER);
+        titleStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        titleStyle.setWrapText(true);
+
+        CellStyle subtitleStyle = workbook.createCellStyle();
+        subtitleStyle.setFont(sectionFont);
+        subtitleStyle.setAlignment(HorizontalAlignment.CENTER);
+        subtitleStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        subtitleStyle.setWrapText(true);
+
+        CellStyle headerStyle = workbook.createCellStyle();
+        headerStyle.setFont(headerFont);
+        headerStyle.setAlignment(HorizontalAlignment.CENTER);
+        headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        headerStyle.setWrapText(true);
+        headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        setAllBorders(headerStyle, IndexedColors.BLACK.getIndex());
+
+        CellStyle quarterHeaderStyle = workbook.createCellStyle();
+        quarterHeaderStyle.cloneStyleFrom(headerStyle);
+        quarterHeaderStyle.setFillForegroundColor(IndexedColors.PALE_BLUE.getIndex());
+        quarterHeaderStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle textStyle = workbook.createCellStyle();
+        textStyle.setFont(normalFont);
+        textStyle.setAlignment(HorizontalAlignment.LEFT);
+        textStyle.setVerticalAlignment(VerticalAlignment.TOP);
+        textStyle.setWrapText(true);
+        setAllBorders(textStyle, IndexedColors.BLACK.getIndex());
+
+        CellStyle amountStyle = workbook.createCellStyle();
+        amountStyle.cloneStyleFrom(textStyle);
+        amountStyle.setAlignment(HorizontalAlignment.RIGHT);
+        amountStyle.setDataFormat(dataFormat.getFormat("#,##0.00"));
+
+        CellStyle centeredTextStyle = workbook.createCellStyle();
+        centeredTextStyle.cloneStyleFrom(textStyle);
+        centeredTextStyle.setAlignment(HorizontalAlignment.CENTER);
+
+        CellStyle quarterValueStyle = workbook.createCellStyle();
+        quarterValueStyle.cloneStyleFrom(amountStyle);
+        quarterValueStyle.setFillForegroundColor(IndexedColors.LEMON_CHIFFON.getIndex());
+        quarterValueStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle totalLabelStyle = workbook.createCellStyle();
+        totalLabelStyle.cloneStyleFrom(headerStyle);
+
+        CellStyle totalAmountStyle = workbook.createCellStyle();
+        totalAmountStyle.cloneStyleFrom(headerStyle);
+        totalAmountStyle.setDataFormat(dataFormat.getFormat("#,##0.00"));
+        totalAmountStyle.setAlignment(HorizontalAlignment.RIGHT);
+
+        CellStyle zebraTextStyle = workbook.createCellStyle();
+        zebraTextStyle.cloneStyleFrom(textStyle);
+        zebraTextStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        zebraTextStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle zebraAmountStyle = workbook.createCellStyle();
+        zebraAmountStyle.cloneStyleFrom(amountStyle);
+        zebraAmountStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        zebraAmountStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle zebraQuarterValueStyle = workbook.createCellStyle();
+        zebraQuarterValueStyle.cloneStyleFrom(quarterValueStyle);
+        zebraQuarterValueStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+        zebraQuarterValueStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        // -----------------------------
+        // Logo / top row
+        // -----------------------------
+        try {
+            Row topRow = sheet.createRow(tr);
+            topRow.setHeight(defaultRowHeight);
+            addImageToHeader(sheet, "/META-INF/resources/images/urclogo.png");
+        } catch (IOException ex) {
+            Logger.getLogger(BudgetReportsView.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        // -----------------------------
+        // Title row
+        // -----------------------------
+        Row titleRow = sheet.getRow(tr);
+        if (titleRow == null) {
+            titleRow = sheet.createRow(tr);
+        }
+        titleRow.setHeight((short) 650);
+
+        Cell titleCell = titleRow.createCell(1);
+        titleCell.setCellValue("UGANDA RAILWAYS CORPORATION");
+        titleCell.setCellStyle(titleStyle);
+        CellRangeAddress titleRegion = new CellRangeAddress(tr, tr, 1, 12);
+        sheet.addMergedRegion(titleRegion);
+
+        tr++;
+
+        // -----------------------------
+        // Workplan row
+        // -----------------------------
+        Row reportRow = sheet.createRow(tr);
+        reportRow.setHeight((short) 900);
+
+        Cell reportCell = reportRow.createCell(0);
+        reportCell.setCellValue(workplanTitle);
+        reportCell.setCellStyle(subtitleStyle);
+
+        CellRangeAddress reportRegion = new CellRangeAddress(tr, tr, 0, 12);
+        sheet.addMergedRegion(reportRegion);
+
+        tr++;
+
+        // -----------------------------
+        // Header row
+        // -----------------------------
+        Row headerRow = sheet.createRow(tr);
+        headerRow.setHeight((short) 950);
+
+        createCell(headerRow, 0, "Programme", headerStyle);
+        createCell(headerRow, 1, "Activities", headerStyle);
+        createCell(headerRow, 2, "Budget", headerStyle);
+        createCell(headerRow, 3, "Account", headerStyle);
+        createCell(headerRow, 4, "Funding", headerStyle);
+        createCell(headerRow, 5, "Time Line Quarterly", headerStyle);
+        createCell(headerRow, 9, "Output", headerStyle);
+        createCell(headerRow, 10, "Performance Indicator", headerStyle);
+        createCell(headerRow, 11, "Outcome", headerStyle);
+        createCell(headerRow, 12, "Strategic Objective", headerStyle);
+
+        tr++;
+
+        // -----------------------------
+        // Quarter row
+        // -----------------------------
+        Row qtrRow = sheet.createRow(tr);
+        qtrRow.setHeight(defaultRowHeight);
+        createCell(qtrRow, 5, "Q1", quarterHeaderStyle);
+        createCell(qtrRow, 6, "Q2", quarterHeaderStyle);
+        createCell(qtrRow, 7, "Q3", quarterHeaderStyle);
+        createCell(qtrRow, 8, "Q4", quarterHeaderStyle);
+
+        // -----------------------------
+        // Merges
+        // -----------------------------
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 0, 0));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 1, 1));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 2, 2));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 3, 3));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 4, 4));
+        sheet.addMergedRegion(new CellRangeAddress(2, 2, 5, 8));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 9, 9));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 10, 10));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 11, 11));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 12, 12));
+
+        short rownum = (short) tr;
+
+        BigDecimal totalExpense = BigDecimal.ZERO;
+        BigDecimal totalQtr1 = BigDecimal.ZERO;
+        BigDecimal totalQtr2 = BigDecimal.ZERO;
+        BigDecimal totalQtr3 = BigDecimal.ZERO;
+        BigDecimal totalQtr4 = BigDecimal.ZERO;
+
+        if (isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero(budget, new ArrayList<>(selectedSections))) {
+            programmes = sampleURC_Priority_Areas.getAreasByDate(budget.getCloseDate());
+            List<RowsWorkplan> rowGroups = new ArrayList<>();
+
+            for (URC_Priority_Areas prog : programmes) {
+                programmesActivities = sampleUrc_ActivitiesService.findActivitiesByBudgetAndPriorityAndDeptUnits(
+                        budget,
+                        prog,
+                        new ArrayList<>(selectedSections)
+                );
+
+                if (programmesActivities == null || programmesActivities.isEmpty()) {
+                    continue;
+                }
+
+                if (!budgetItemsService.isSumProgrammeGreaterThanZero2(
+                        selectedOrganisations,
+                        budget,
+                        programmesActivities,
+                        selectedSections)) {
+                    continue;
+                }
+
+                int currentGroupStart = -1;
+                int currentGroupEnd = -1;
+
+                for (Urc_Activities activity : programmesActivities) {
+                    if (!budgetItemsService.isSumActvityGreaterThanZero(
+                            selectedOrganisations,
+                            budget,
+                            activity,
+                            selectedSections)) {
+                        continue;
+                    }
+
+                    rownum++;
+                    Row dataRow = sheet.createRow(rownum);
+                    dataRow.setHeight((short) 820);
+
+                    boolean zebra = rownum % 2 == 0;
+                    CellStyle rowTextStyle = zebra ? zebraTextStyle : textStyle;
+                    CellStyle rowAmountStyle = zebra ? zebraAmountStyle : amountStyle;
+                    CellStyle rowQuarterStyle = zebra ? zebraQuarterValueStyle : quarterValueStyle;
+
+                    int col = 0;
+
+                    createCell(dataRow, col++, nzs(prog.getName()), rowTextStyle);
+                    createCell(dataRow, col++, nzs(activity.getName()), rowTextStyle);
+
+                    BigDecimal budgetValue = nz(
+                            budgetItemsService.sumActvitySummation(
+                                    selectedOrganisations,
+                                    budget,
+                                    activity,
+                                    selectedSections
+                            )
+                    );
+                    totalExpense = totalExpense.add(budgetValue);
+                    createNumericCell(dataRow, col++, budgetValue, rowAmountStyle);
+
+                    String accounts = budgetItemsService.getCommaSeparatedCoaCodes(
+                            budget,
+                            selectedSections,
+                            activity,
+                            selectedOrganisations
+                    );
+                    createCell(dataRow, col++, nzs(accounts), rowTextStyle);
+
+                    String funding = budgetItemsService.getCommaSeparatedOrganisationNames(
+                            budget,
+                            selectedSections,
+                            activity,
+                            selectedOrganisations
+                    );
+                    createCell(dataRow, col++, nzs(funding), rowTextStyle);
+
+                    BigDecimal jul = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            budget, selectedSections, activity, selectedOrganisations, "jul"));
+                    BigDecimal aug = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            budget, selectedSections, activity, selectedOrganisations, "aug"));
+                    BigDecimal sep = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            budget, selectedSections, activity, selectedOrganisations, "sep"));
+                    BigDecimal q1 = jul.add(aug).add(sep);
+                    totalQtr1 = totalQtr1.add(q1);
+                    createNumericCell(dataRow, col++, q1, q1.compareTo(BigDecimal.ZERO) > 0 ? rowQuarterStyle : rowAmountStyle);
+
+                    BigDecimal oct = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            budget, selectedSections, activity, selectedOrganisations, "oct"));
+                    BigDecimal nov = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            budget, selectedSections, activity, selectedOrganisations, "nov"));
+                    BigDecimal dec = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            budget, selectedSections, activity, selectedOrganisations, "dec"));
+                    BigDecimal q2 = oct.add(nov).add(dec);
+                    totalQtr2 = totalQtr2.add(q2);
+                    createNumericCell(dataRow, col++, q2, q2.compareTo(BigDecimal.ZERO) > 0 ? rowQuarterStyle : rowAmountStyle);
+
+                    BigDecimal jan = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            budget, selectedSections, activity, selectedOrganisations, "jan"));
+                    BigDecimal feb = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            budget, selectedSections, activity, selectedOrganisations, "feb"));
+                    BigDecimal mar = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            budget, selectedSections, activity, selectedOrganisations, "mar"));
+                    BigDecimal q3 = jan.add(feb).add(mar);
+                    totalQtr3 = totalQtr3.add(q3);
+                    createNumericCell(dataRow, col++, q3, q3.compareTo(BigDecimal.ZERO) > 0 ? rowQuarterStyle : rowAmountStyle);
+
+                    BigDecimal apr = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            budget, selectedSections, activity, selectedOrganisations, "apr"));
+                    BigDecimal may = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            budget, selectedSections, activity, selectedOrganisations, "may"));
+                    BigDecimal jun = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            budget, selectedSections, activity, selectedOrganisations, "jun"));
+                    BigDecimal q4 = apr.add(may).add(jun);
+                    totalQtr4 = totalQtr4.add(q4);
+                    createNumericCell(dataRow, col++, q4, q4.compareTo(BigDecimal.ZERO) > 0 ? rowQuarterStyle : rowAmountStyle);
+
+                    createCell(dataRow, col++, nzs(activity.getOutput()), rowTextStyle);
+                    createCell(dataRow, col++, nzs(activity.getPerformanceIndicator()), rowTextStyle);
+                    createCell(dataRow, col++, nzs(activity.getOutcome()), rowTextStyle);
+                    createCell(dataRow, col++, nzs(activity.getObjective()), rowTextStyle);
+
+                    if (currentGroupStart == -1) {
+                        currentGroupStart = rownum;
+                    }
+                    currentGroupEnd = rownum;
+                }
+
+                if (currentGroupStart != -1 && currentGroupEnd != -1 && currentGroupEnd > currentGroupStart) {
+                    rowGroups.add(new RowsWorkplan(currentGroupStart, currentGroupEnd));
+                }
+            }
+
+            for (RowsWorkplan group : rowGroups) {
+                CellRangeAddress merged = new CellRangeAddress(group.getRowStart(), group.getRowEnd(), 0, 0);
+                if (!isOverlappingWithExistingRegions(sheet, merged)) {
+                    addMergedRegion(sheet, merged);
+                }
+            }
+        }
+
+        // -----------------------------
+        // Total row
+        // -----------------------------
+        rownum++;
+        Row totalRow = sheet.createRow(rownum);
+        totalRow.setHeight(defaultRowHeight);
+
+        createCell(totalRow, 0, "TOTAL", totalLabelStyle);
+        sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 0, 1));
+
+        createNumericCell(totalRow, 2, totalExpense, totalAmountStyle);
+        sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 2, 4));
+
+        createNumericCell(totalRow, 5, totalQtr1, totalAmountStyle);
+        createNumericCell(totalRow, 6, totalQtr2, totalAmountStyle);
+        createNumericCell(totalRow, 7, totalQtr3, totalAmountStyle);
+        createNumericCell(totalRow, 8, totalQtr4, totalAmountStyle);
+
+        for (int c = 3; c <= 4; c++) {
+            Cell cell = totalRow.createCell(c);
+            cell.setCellStyle(totalAmountStyle);
+        }
+
+        for (int c = 9; c <= 12; c++) {
+            Cell cell = totalRow.createCell(c);
+            cell.setCellStyle(totalLabelStyle);
+        }
+
+        // -----------------------------
+        // Borders for merged regions
+        // -----------------------------
+        for (int i = 0; i < sheet.getNumMergedRegions(); i++) {
+            applyRegionBorder(sheet, sheet.getMergedRegion(i));
+        }
+
+        // -----------------------------
+        // Print setup
+        // -----------------------------
+        sheet.createFreezePane(0, 4);
+
+        PrintSetup printSetup = sheet.getPrintSetup();
+        printSetup.setLandscape(true);
+        printSetup.setPaperSize(PrintSetup.A4_PAPERSIZE);
+        printSetup.setFitWidth((short) 1);
+        printSetup.setFitHeight((short) 0);
+
+        sheet.setAutobreaks(true);
+        sheet.setFitToPage(true);
+        sheet.setHorizontallyCenter(true);
+
+        sheet.setMargin(Sheet.TopMargin, 0.5);
+        sheet.setMargin(Sheet.BottomMargin, 0.5);
+        sheet.setMargin(Sheet.LeftMargin, 0.3);
+        sheet.setMargin(Sheet.RightMargin, 0.3);
+
+        sheet.setRepeatingRows(CellRangeAddress.valueOf("1:4"));
+        sheet.setZoom(85);
+
+        for (int i = 0; i <= 12; i++) {
+            sheet.autoSizeColumn(i);
+            int currentWidth = sheet.getColumnWidth(i);
+            sheet.setColumnWidth(i, Math.min(currentWidth + 800, 15000));
+        }
+
+        sheet.setColumnWidth(0, 5000);
+        sheet.setColumnWidth(1, 7000);
+        sheet.setColumnWidth(2, 3500);
+        sheet.setColumnWidth(3, 6000);
+        sheet.setColumnWidth(4, 5000);
+        sheet.setColumnWidth(5, 2500);
+        sheet.setColumnWidth(6, 2500);
+        sheet.setColumnWidth(7, 2500);
+        sheet.setColumnWidth(8, 2500);
+        sheet.setColumnWidth(9, 5000);
+        sheet.setColumnWidth(10, 5500);
+        sheet.setColumnWidth(11, 4500);
+        sheet.setColumnWidth(12, 5500);
     }
 
     private VerticalLayout customworkplanPanel() {
@@ -353,7 +882,7 @@ public class budgetWorkplanView extends Div {
             // Set the paper size to A3 Landscape
             sheet.getPrintSetup().setPaperSize(PrintSetup.A3_PAPERSIZE);
             sheet.getPrintSetup().setLandscape(true);
-            createHeaderRowWorkplanQtr(workbook, sheet);
+            createHeaderRowWorkplanQtr2(workbook, sheet);
             //createDataRows(sheet, people);
 
             // Write the workbook to a byte array
@@ -389,7 +918,6 @@ public class budgetWorkplanView extends Div {
                     if (budgetItemsService.isSumProgrammeGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), programmesActivities, comboBoxD_Section.getSelectedItems()) == true) {
 
                         for (Urc_Activities d : programmesActivities) {
-                           
 
                             if (budgetItemsService.isSumActvityGreaterThanZero(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems()) == true) {
                                 listUrc_Activities.add(d);
@@ -1651,7 +2179,7 @@ public class budgetWorkplanView extends Div {
 
         short rownum = tr;
         int rowstart = tr + 1;
-        
+
         int rowend = 0;
         int rowstart2 = 0;
         sheet.addMergedRegion(new CellRangeAddress(2, 4, 0, 0));
@@ -1720,7 +2248,7 @@ public class budgetWorkplanView extends Div {
 
                                 rowx1.getCell(tc).setCellStyle(stylec);
                                 tc++;
-                                BigDecimal adds = budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(),"2");
+                                BigDecimal adds = budgetItemsService.sumActvitySummation(comboBoxOrganisation.getSelectedItems(), comboBoxBudget.getValue(), d, comboBoxD_Section.getSelectedItems(), "2");
                                 totalexpense = totalexpense.add(adds);
                                 rowx1.createCell((short) tc).setCellValue(adds.doubleValue());
                                 rowx1.getCell(tc).setCellStyle(stylec);
@@ -2424,7 +2952,7 @@ public class budgetWorkplanView extends Div {
 
         short rownum = tr;
         int rowstart = tr + 1;
-        
+
         int rowend = 0;
         int rowstart2 = 0;
         sheet.addMergedRegion(new CellRangeAddress(2, 3, 0, 0));
@@ -2844,9 +3372,504 @@ public class budgetWorkplanView extends Div {
         }
     }
 
+    private void createHeaderRowWorkplanQtr2(Workbook workbook, Sheet sheet) {
+        int tr = 0;
+        final short defaultRowHeight = 500;
+
+        DataFormat dataFormat = workbook.getCreationHelper().createDataFormat();
+
+        List<UrcDeptSectionAnlDimbgt> selectedSections
+                = comboBoxD_Section.getSelectedItems().stream().toList();
+
+        String selectedSectionNames = selectedSections.stream()
+                .filter(Objects::nonNull)
+                .map(UrcDeptSectionAnlDimbgt::getNAME)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .distinct()
+                .sorted()
+                .collect(Collectors.joining(", "));
+
+        String workplanTitle = selectedSectionNames.isBlank()
+                ? "WORKPLAN"
+                : "WORKPLAN - " + selectedSectionNames;
+
+        // -----------------------------
+        // Fonts
+        // -----------------------------
+        Font titleFont = workbook.createFont();
+        titleFont.setFontName("Calibri");
+        titleFont.setBold(true);
+        titleFont.setFontHeightInPoints((short) 14);
+
+        Font sectionFont = workbook.createFont();
+        sectionFont.setFontName("Calibri");
+        sectionFont.setBold(true);
+        sectionFont.setFontHeightInPoints((short) 11);
+
+        Font headerFont = workbook.createFont();
+        headerFont.setFontName("Calibri");
+        headerFont.setBold(true);
+        headerFont.setFontHeightInPoints((short) 10);
+
+        Font normalFont = workbook.createFont();
+        normalFont.setFontName("Calibri");
+        normalFont.setFontHeightInPoints((short) 10);
+
+        // -----------------------------
+        // Styles
+        // -----------------------------
+        CellStyle titleStyle = workbook.createCellStyle();
+        titleStyle.setFont(titleFont);
+        titleStyle.setAlignment(HorizontalAlignment.CENTER);
+        titleStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        titleStyle.setWrapText(true);
+
+        CellStyle subtitleStyle = workbook.createCellStyle();
+        subtitleStyle.setFont(sectionFont);
+        subtitleStyle.setAlignment(HorizontalAlignment.CENTER);
+        subtitleStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        subtitleStyle.setWrapText(true);
+
+        CellStyle headerStyle = workbook.createCellStyle();
+        headerStyle.setFont(headerFont);
+        headerStyle.setAlignment(HorizontalAlignment.CENTER);
+        headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        headerStyle.setWrapText(true);
+        headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        setAllBorders(headerStyle, IndexedColors.BLACK.getIndex());
+
+        CellStyle quarterHeaderStyle = workbook.createCellStyle();
+        quarterHeaderStyle.cloneStyleFrom(headerStyle);
+        quarterHeaderStyle.setFillForegroundColor(IndexedColors.PALE_BLUE.getIndex());
+        quarterHeaderStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle textStyle = workbook.createCellStyle();
+        textStyle.setFont(normalFont);
+        textStyle.setAlignment(HorizontalAlignment.LEFT);
+        textStyle.setVerticalAlignment(VerticalAlignment.TOP);
+        textStyle.setWrapText(true);
+        setAllBorders(textStyle, IndexedColors.BLACK.getIndex());
+
+        CellStyle centeredTextStyle = workbook.createCellStyle();
+        centeredTextStyle.setFont(normalFont);
+        centeredTextStyle.setAlignment(HorizontalAlignment.CENTER);
+        centeredTextStyle.setVerticalAlignment(VerticalAlignment.TOP);
+        centeredTextStyle.setWrapText(true);
+        setAllBorders(centeredTextStyle, IndexedColors.BLACK.getIndex());
+
+        CellStyle amountStyle = workbook.createCellStyle();
+        amountStyle.cloneStyleFrom(centeredTextStyle);
+        amountStyle.setDataFormat(dataFormat.getFormat("#,##0.00"));
+
+        CellStyle quarterValueStyle = workbook.createCellStyle();
+        quarterValueStyle.cloneStyleFrom(amountStyle);
+        quarterValueStyle.setFillForegroundColor(IndexedColors.LEMON_CHIFFON.getIndex());
+        quarterValueStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle totalLabelStyle = workbook.createCellStyle();
+        totalLabelStyle.cloneStyleFrom(headerStyle);
+        totalLabelStyle.setAlignment(HorizontalAlignment.CENTER);
+
+        CellStyle totalAmountStyle = workbook.createCellStyle();
+        totalAmountStyle.cloneStyleFrom(headerStyle);
+        totalAmountStyle.setDataFormat(dataFormat.getFormat("#,##0.00"));
+
+        CellStyle zebraTextStyle = workbook.createCellStyle();
+        zebraTextStyle.cloneStyleFrom(textStyle);
+        zebraTextStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        zebraTextStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle zebraCenteredTextStyle = workbook.createCellStyle();
+        zebraCenteredTextStyle.cloneStyleFrom(centeredTextStyle);
+        zebraCenteredTextStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        zebraCenteredTextStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle zebraAmountStyle = workbook.createCellStyle();
+        zebraAmountStyle.cloneStyleFrom(amountStyle);
+        zebraAmountStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        zebraAmountStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle zebraQuarterValueStyle = workbook.createCellStyle();
+        zebraQuarterValueStyle.cloneStyleFrom(quarterValueStyle);
+        zebraQuarterValueStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+        zebraQuarterValueStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        try {
+            Row topRow = sheet.createRow(tr);
+            topRow.setHeight(defaultRowHeight);
+            addImageToHeader(sheet, "/META-INF/resources/images/urclogo.png");
+        } catch (IOException ex) {
+            Logger.getLogger(BudgetReportsView.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        // -----------------------------
+        // Title row
+        // -----------------------------
+        Row titleRow = sheet.getRow(tr);
+        if (titleRow == null) {
+            titleRow = sheet.createRow(tr);
+        }
+        titleRow.setHeight((short) 650);
+
+        Cell titleCell = titleRow.createCell(1);
+        titleCell.setCellValue("UGANDA RAILWAYS CORPORATION");
+        titleCell.setCellStyle(titleStyle);
+        CellRangeAddress titleRegion = new CellRangeAddress(tr, tr, 1, 12);
+        sheet.addMergedRegion(titleRegion);
+
+        tr++;
+
+        // -----------------------------
+        // Report label row
+        // -----------------------------
+        Row reportRow = sheet.createRow(tr);
+        reportRow.setHeight((short) 900);
+        Cell reportCell = reportRow.createCell(0);
+        reportCell.setCellValue(workplanTitle);
+        reportCell.setCellStyle(subtitleStyle);
+        CellRangeAddress reportRegion = new CellRangeAddress(tr, tr, 0, 12);
+        sheet.addMergedRegion(reportRegion);
+
+        tr++;
+
+        // -----------------------------
+        // Main header row
+        // -----------------------------
+        Row headerRow = sheet.createRow(tr);
+        headerRow.setHeight((short) 950);
+
+        createCell(headerRow, 0, "Programme", headerStyle);
+        createCell(headerRow, 1, "Activities", headerStyle);
+        createCell(headerRow, 2, "Budget", headerStyle);
+        createCell(headerRow, 3, "Account", headerStyle);
+        createCell(headerRow, 4, "Funding", headerStyle);
+        createCell(headerRow, 5, "Time Line Quarterly", headerStyle);
+        createCell(headerRow, 9, "Output", headerStyle);
+        createCell(headerRow, 10, "Performance Indicator", headerStyle);
+        createCell(headerRow, 11, "Outcome", headerStyle);
+        createCell(headerRow, 12, "Strategic Objective", headerStyle);
+
+        tr++;
+
+        // -----------------------------
+        // Quarter sub-header row
+        // -----------------------------
+        Row qtrRow = sheet.createRow(tr);
+        qtrRow.setHeight(defaultRowHeight);
+        createCell(qtrRow, 5, "Q1", quarterHeaderStyle);
+        createCell(qtrRow, 6, "Q2", quarterHeaderStyle);
+        createCell(qtrRow, 7, "Q3", quarterHeaderStyle);
+        createCell(qtrRow, 8, "Q4", quarterHeaderStyle);
+
+        // -----------------------------
+        // Merged header regions
+        // -----------------------------
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 0, 0));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 1, 1));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 2, 2));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 3, 3));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 4, 4));
+        sheet.addMergedRegion(new CellRangeAddress(2, 2, 5, 8));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 9, 9));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 10, 10));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 11, 11));
+        sheet.addMergedRegion(new CellRangeAddress(2, 3, 12, 12));
+
+        short rownum = (short) tr;
+
+        BigDecimal totalExpense = BigDecimal.ZERO;
+        BigDecimal totalQtr1 = BigDecimal.ZERO;
+        BigDecimal totalQtr2 = BigDecimal.ZERO;
+        BigDecimal totalQtr3 = BigDecimal.ZERO;
+        BigDecimal totalQtr4 = BigDecimal.ZERO;
+
+        if (isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero(comboBoxBudget.getValue(), selectedSections)) {
+            programmes = sampleURC_Priority_Areas.getAreasByDate(comboBoxBudget.getValue().getCloseDate());
+            List<RowsWorkplan> rowGroups = new ArrayList<>();
+
+            int currentGroupStart = -1;
+            int currentGroupEnd = -1;
+
+            for (URC_Priority_Areas prog : programmes) {
+                programmesActivities = sampleUrc_ActivitiesService.findActivitiesByBudgetAndPriorityAndDeptUnits(
+                        comboBoxBudget.getValue(), prog, selectedSections
+                );
+
+                if (programmesActivities == null || programmesActivities.isEmpty()) {
+                    continue;
+                }
+
+                if (!budgetItemsService.isSumProgrammeGreaterThanZero2(
+                        comboBoxOrganisation.getSelectedItems(),
+                        comboBoxBudget.getValue(),
+                        programmesActivities,
+                        comboBoxD_Section.getSelectedItems())) {
+                    continue;
+                }
+
+                currentGroupStart = -1;
+                currentGroupEnd = -1;
+
+                for (Urc_Activities activity : programmesActivities) {
+                    if (!budgetItemsService.isSumActvityGreaterThanZero(
+                            comboBoxOrganisation.getSelectedItems(),
+                            comboBoxBudget.getValue(),
+                            activity,
+                            comboBoxD_Section.getSelectedItems())) {
+                        continue;
+                    }
+
+                    rownum++;
+                    Row dataRow = sheet.createRow(rownum);
+                    dataRow.setHeight((short) 820);
+
+                    boolean zebra = rownum % 2 == 0;
+
+                    CellStyle rowTextStyle = zebra ? zebraTextStyle : textStyle;
+                    CellStyle rowAmountStyle = zebra ? zebraAmountStyle : amountStyle;
+                    CellStyle rowQuarterStyle = zebra ? zebraQuarterValueStyle : quarterValueStyle;
+
+                    int col = 0;
+
+                    createCell(dataRow, col++, nzs(prog.getName()), rowTextStyle);
+                    createCell(dataRow, col++, nzs(activity.getName()), rowTextStyle);
+
+                    BigDecimal budgetValue = nz(
+                            budgetItemsService.sumActvitySummation(
+                                    comboBoxOrganisation.getSelectedItems(),
+                                    comboBoxBudget.getValue(),
+                                    activity,
+                                    comboBoxD_Section.getSelectedItems()
+                            )
+                    );
+                    totalExpense = totalExpense.add(budgetValue);
+                    createNumericCell(dataRow, col++, budgetValue, rowAmountStyle);
+
+                    String accounts = budgetItemsService.getCommaSeparatedCoaCodes(
+                            comboBoxBudget.getValue(),
+                            comboBoxD_Section.getSelectedItems(),
+                            activity,
+                            comboBoxOrganisation.getSelectedItems()
+                    );
+                    createCell(dataRow, col++, nzs(accounts), rowTextStyle);
+
+                    String funding = budgetItemsService.getCommaSeparatedOrganisationNames(
+                            comboBoxBudget.getValue(),
+                            comboBoxD_Section.getSelectedItems(),
+                            activity,
+                            comboBoxOrganisation.getSelectedItems()
+                    );
+                    createCell(dataRow, col++, nzs(funding), rowTextStyle);
+
+                    BigDecimal jul = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            comboBoxBudget.getValue(), comboBoxD_Section.getSelectedItems(), activity, comboBoxOrganisation.getSelectedItems(), "jul"));
+                    BigDecimal aug = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            comboBoxBudget.getValue(), comboBoxD_Section.getSelectedItems(), activity, comboBoxOrganisation.getSelectedItems(), "aug"));
+                    BigDecimal sep = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            comboBoxBudget.getValue(), comboBoxD_Section.getSelectedItems(), activity, comboBoxOrganisation.getSelectedItems(), "sep"));
+                    BigDecimal q1 = jul.add(aug).add(sep);
+                    totalQtr1 = totalQtr1.add(q1);
+                    createNumericCell(dataRow, col++, q1, q1.compareTo(BigDecimal.ZERO) > 0 ? rowQuarterStyle : rowAmountStyle);
+
+                    BigDecimal oct = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            comboBoxBudget.getValue(), comboBoxD_Section.getSelectedItems(), activity, comboBoxOrganisation.getSelectedItems(), "oct"));
+                    BigDecimal nov = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            comboBoxBudget.getValue(), comboBoxD_Section.getSelectedItems(), activity, comboBoxOrganisation.getSelectedItems(), "nov"));
+                    BigDecimal dec = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            comboBoxBudget.getValue(), comboBoxD_Section.getSelectedItems(), activity, comboBoxOrganisation.getSelectedItems(), "dec"));
+                    BigDecimal q2 = oct.add(nov).add(dec);
+                    totalQtr2 = totalQtr2.add(q2);
+                    createNumericCell(dataRow, col++, q2, q2.compareTo(BigDecimal.ZERO) > 0 ? rowQuarterStyle : rowAmountStyle);
+
+                    BigDecimal jan = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            comboBoxBudget.getValue(), comboBoxD_Section.getSelectedItems(), activity, comboBoxOrganisation.getSelectedItems(), "jan"));
+                    BigDecimal feb = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            comboBoxBudget.getValue(), comboBoxD_Section.getSelectedItems(), activity, comboBoxOrganisation.getSelectedItems(), "feb"));
+                    BigDecimal mar = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            comboBoxBudget.getValue(), comboBoxD_Section.getSelectedItems(), activity, comboBoxOrganisation.getSelectedItems(), "mar"));
+                    BigDecimal q3 = jan.add(feb).add(mar);
+                    totalQtr3 = totalQtr3.add(q3);
+                    createNumericCell(dataRow, col++, q3, q3.compareTo(BigDecimal.ZERO) > 0 ? rowQuarterStyle : rowAmountStyle);
+
+                    BigDecimal apr = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            comboBoxBudget.getValue(), comboBoxD_Section.getSelectedItems(), activity, comboBoxOrganisation.getSelectedItems(), "apr"));
+                    BigDecimal may = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            comboBoxBudget.getValue(), comboBoxD_Section.getSelectedItems(), activity, comboBoxOrganisation.getSelectedItems(), "may"));
+                    BigDecimal jun = nz(budgetItemsService.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                            comboBoxBudget.getValue(), comboBoxD_Section.getSelectedItems(), activity, comboBoxOrganisation.getSelectedItems(), "jun"));
+                    BigDecimal q4 = apr.add(may).add(jun);
+                    totalQtr4 = totalQtr4.add(q4);
+                    createNumericCell(dataRow, col++, q4, q4.compareTo(BigDecimal.ZERO) > 0 ? rowQuarterStyle : rowAmountStyle);
+
+                    createCell(dataRow, col++, nzs(activity.getOutput()), rowTextStyle);
+                    createCell(dataRow, col++, nzs(activity.getPerformanceIndicator()), rowTextStyle);
+                    createCell(dataRow, col++, nzs(activity.getOutcome()), rowTextStyle);
+                    createCell(dataRow, col++, nzs(activity.getObjectives().getObjective()), rowTextStyle);
+
+                    if (currentGroupStart == -1) {
+                        currentGroupStart = rownum;
+                    }
+                    currentGroupEnd = rownum;
+                }
+
+                if (currentGroupStart != -1 && currentGroupEnd != -1) {
+                    rowGroups.add(new RowsWorkplan(currentGroupStart, currentGroupEnd));
+                }
+            }
+
+            for (RowsWorkplan group : rowGroups) {
+                if ((group.getRowEnd() - group.getRowStart()) > 0) {
+                    CellRangeAddress merged = new CellRangeAddress(group.getRowStart(), group.getRowEnd(), 0, 0);
+                    if (!isOverlappingWithExistingRegions(sheet, merged)) {
+                        addMergedRegion(sheet, merged);
+                    }
+                }
+            }
+        }
+
+        // -----------------------------
+        // Total row
+        // -----------------------------
+        rownum++;
+        Row totalRow = sheet.createRow(rownum);
+        totalRow.setHeight(defaultRowHeight);
+
+        createCell(totalRow, 0, "TOTAL", totalLabelStyle);
+        sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 0, 1));
+
+        createNumericCell(totalRow, 2, totalExpense, totalAmountStyle);
+        sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 2, 4));
+
+        createNumericCell(totalRow, 5, totalQtr1, totalAmountStyle);
+        createNumericCell(totalRow, 6, totalQtr2, totalAmountStyle);
+        createNumericCell(totalRow, 7, totalQtr3, totalAmountStyle);
+        createNumericCell(totalRow, 8, totalQtr4, totalAmountStyle);
+
+        for (int c = 3; c <= 4; c++) {
+            Cell cell = totalRow.createCell(c);
+            cell.setCellStyle(totalAmountStyle);
+        }
+
+        for (int c = 9; c <= 12; c++) {
+            Cell cell = totalRow.createCell(c);
+            cell.setCellStyle(totalLabelStyle);
+        }
+
+        // -----------------------------
+        // Fix borders on merged/header areas
+        // -----------------------------
+        applyRegionBorder(sheet, titleRegion);
+        applyRegionBorder(sheet, reportRegion);
+
+        for (int i = 0; i < sheet.getNumMergedRegions(); i++) {
+            applyRegionBorder(sheet, sheet.getMergedRegion(i));
+        }
+
+        // -----------------------------
+        // Freeze header
+        // -----------------------------
+        sheet.createFreezePane(0, 4);
+
+        // -----------------------------
+        // Print setup for A4 landscape
+        // -----------------------------
+        PrintSetup printSetup = sheet.getPrintSetup();
+        printSetup.setLandscape(true);
+        printSetup.setPaperSize(PrintSetup.A4_PAPERSIZE);
+        printSetup.setFitWidth((short) 1);
+        printSetup.setFitHeight((short) 0);
+
+        sheet.setAutobreaks(true);
+        sheet.setFitToPage(true);
+        sheet.setHorizontallyCenter(true);
+        sheet.setVerticallyCenter(false);
+
+        sheet.setMargin(Sheet.TopMargin, 0.5);
+        sheet.setMargin(Sheet.BottomMargin, 0.5);
+        sheet.setMargin(Sheet.LeftMargin, 0.3);
+        sheet.setMargin(Sheet.RightMargin, 0.3);
+
+        sheet.setRepeatingRows(CellRangeAddress.valueOf("1:4"));
+        sheet.setZoom(85);
+
+        // -----------------------------
+        // Column widths
+        // -----------------------------
+        for (int i = 0; i <= 12; i++) {
+            sheet.autoSizeColumn(i);
+            int currentWidth = sheet.getColumnWidth(i);
+            sheet.setColumnWidth(i, Math.min(currentWidth + 800, 15000));
+        }
+
+        sheet.setColumnWidth(0, 5000);
+        sheet.setColumnWidth(1, 7000);
+        sheet.setColumnWidth(2, 3500);
+        sheet.setColumnWidth(3, 6000);
+        sheet.setColumnWidth(4, 5000);
+        sheet.setColumnWidth(5, 2500);
+        sheet.setColumnWidth(6, 2500);
+        sheet.setColumnWidth(7, 2500);
+        sheet.setColumnWidth(8, 2500);
+        sheet.setColumnWidth(9, 5000);
+        sheet.setColumnWidth(10, 5500);
+        sheet.setColumnWidth(11, 4500);
+        sheet.setColumnWidth(12, 5500);
+    }
+
+    private void createCell(Row row, int columnIndex, String value, CellStyle style) {
+        Cell cell = row.createCell(columnIndex);
+        cell.setCellValue(value != null ? value : "");
+        cell.setCellStyle(style);
+    }
+
+    private void createNumericCell(Row row, int columnIndex, BigDecimal value, CellStyle style) {
+        Cell cell = row.createCell(columnIndex);
+        cell.setCellValue(value != null ? value.doubleValue() : 0.0);
+        cell.setCellStyle(style);
+    }
+
+    private void setAllBorders(CellStyle style, short colorIndex) {
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        style.setTopBorderColor(colorIndex);
+        style.setBottomBorderColor(colorIndex);
+        style.setLeftBorderColor(colorIndex);
+        style.setRightBorderColor(colorIndex);
+    }
+
+    private void applyRegionBorder(Sheet sheet, CellRangeAddress region) {
+        RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet);
+        RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);
+        RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet);
+        RegionUtil.setBorderRight(BorderStyle.THIN, region, sheet);
+
+        RegionUtil.setTopBorderColor(IndexedColors.BLACK.getIndex(), region, sheet);
+        RegionUtil.setBottomBorderColor(IndexedColors.BLACK.getIndex(), region, sheet);
+        RegionUtil.setLeftBorderColor(IndexedColors.BLACK.getIndex(), region, sheet);
+        RegionUtil.setRightBorderColor(IndexedColors.BLACK.getIndex(), region, sheet);
+    }
+
+    private BigDecimal nz(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private String nzs(String value) {
+        return value == null ? "" : value;
+    }
+
     public boolean isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero(Budget budget, Coalevel1 coalevel1, List<UrcDeptSectionAnlDimbgt> deptUnits) {
 
         return sampleBudgetItemsService.isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero(budget, coalevel1, deptUnits, comboBoxOrganisation.getSelectedItems());
+    }
+
+    public boolean isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero(Budget budget, List<UrcDeptSectionAnlDimbgt> deptUnits) {
+
+        return sampleBudgetItemsService.isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero(budget, deptUnits, comboBoxOrganisation.getSelectedItems());
     }
 
     public boolean isSumBudgetDeptUnitsGreaterThanZero(Budget budget, List<UrcDeptSectionAnlDimbgt> deptUnits) {

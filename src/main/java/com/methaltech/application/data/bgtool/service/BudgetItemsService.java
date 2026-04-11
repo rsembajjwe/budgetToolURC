@@ -645,6 +645,10 @@ public class BudgetItemsService {
         return repository.isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero(budget, coalevel1, deptUnits, budgetType);
     }
 
+    public boolean isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero(Budget budget, List<UrcDeptSectionAnlDimbgt> deptUnits, Set<Organisation> budgetType) {
+        return repository.isSumBudgetCoalevel1AndDeptUnitsGreaterThanZero(budget, deptUnits, budgetType);
+    }
+
     public boolean isSumBudgetDeptUnitsGreaterThanZero(Budget budget, List<UrcDeptSectionAnlDimbgt> deptUnits, Set<Organisation> budgetType) {
         return repository.isSumBudgetDeptUnitsGreaterThanZero(budget, deptUnits, budgetType);
     }
@@ -1057,6 +1061,15 @@ public class BudgetItemsService {
         return repository.isSumProgrammeGreaterThanZero(budgetTypes, budget, activities, deptUnits, sCode);
     }
 
+    public boolean isSumProgrammeGreaterThanZero2(
+            Set<Organisation> budgetTypes,
+            Budget budget,
+            List<Urc_Activities> activities,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits
+    ) {
+        return repository.isSumProgrammeGreaterThanZero2(budgetTypes, budget, activities, deptUnits);
+    }
+
     public boolean isSumActvityGreaterThanZero(
             Set<Organisation> budgetTypes,
             Budget budget,
@@ -1073,6 +1086,15 @@ public class BudgetItemsService {
             Set<UrcDeptSectionAnlDimbgt> deptUnits, String sCode
     ) {
         return repository.isSumActvityGreaterThanZero(budgetTypes, budget, activities, deptUnits, sCode);
+    }
+
+    public boolean isSumActvityGreaterThanZero2(
+            Set<Organisation> budgetTypes,
+            Budget budget,
+            Urc_Activities activities,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits
+    ) {
+        return repository.isSumActvityGreaterThanZero2(budgetTypes, budget, activities, deptUnits);
     }
 
     public BigDecimal findSumOfIndividualMonthsByBudgetCoalevel1Activity(
@@ -1136,6 +1158,102 @@ public class BudgetItemsService {
 
         return sumOfMonth;
     }
+
+    public BigDecimal findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+            Budget budget,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            Urc_Activities activity,
+            Set<Organisation> budgetTypes,
+            String month) {
+
+        List<BudgetItemsRepository.MonthlySumResult> monthlySumResults
+                = repository.findSumOfIndividualMonthsByBudgetCoalevel1Activity(
+                        budget, deptUnits, activity, budgetTypes);
+
+        // Extract sum of the specified month from the first result (assuming there's only one result)
+        BigDecimal sumOfMonth = BigDecimal.ZERO;
+        if (!monthlySumResults.isEmpty()) {
+            switch (month.toLowerCase()) {
+                case "jul":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getJulSum());
+                    break;
+                case "aug":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getAugSum());
+                    break;
+                case "sep":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getSepSum());
+                    break;
+                case "oct":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getOctSum());
+                    break;
+                case "nov":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getNovSum());
+                    break;
+                case "dec":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getDecSum());
+                    break;
+                case "jan":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getJanSum());
+                    break;
+                case "feb":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getFebSum());
+                    break;
+                case "mar":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getMarSum());
+                    break;
+                case "apr":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getAprSum());
+                    break;
+                case "may":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getMaySum());
+                    break;
+                case "jun":
+                    sumOfMonth = getSafeValue(monthlySumResults.get(0).getJunSum());
+                    break;
+
+                // Default to zero if the specified month is not found
+                default:
+                    sumOfMonth = BigDecimal.ZERO;
+            }
+        }
+
+        return sumOfMonth;
+    }
+
+    public String getCommaSeparatedCoaCodes(
+            Budget budget,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            Urc_Activities activity,
+            Set<Organisation> budgetTypes) {
+
+        List<String> codes = repository.findCoaCodesBySameFilters(
+                budget, deptUnits, activity, budgetTypes);
+
+        return codes.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)  
+                .distinct()
+                .sorted() // optional (good for reporting consistency)
+                .collect(Collectors.joining(","));
+    }
+    
+    public String getCommaSeparatedOrganisationNames(
+        Budget budget,
+        Set<UrcDeptSectionAnlDimbgt> deptUnits,
+        Urc_Activities activity,
+        Set<Organisation> budgetTypes) {
+
+    List<String> names = repository.findOrganisationNamesBySameFilters(
+            budget, deptUnits, activity, budgetTypes);
+
+    return names.stream()
+            .filter(Objects::nonNull)
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .distinct()
+            .sorted() // optional but good for reports
+            .collect(Collectors.joining(", "));
+}
 
     public BigDecimal findSumOfIndividualMonthsByBudgetCoa(
             Budget budget,

@@ -31,13 +31,30 @@ public interface Urc_ActivitiesRepository extends JpaRepository<Urc_Activities, 
     @Query("DELETE FROM Urc_Activities b WHERE b = :activity")
     void deleteActivity(@Param("activity") Urc_Activities activity);
 
-    @Query("""
+    /*    @Query("""
     SELECT DISTINCT a FROM Urc_Activities a
     JOIN FETCH a.urcPriorityAreas pa
-    JOIN FETCH pa.priorityArea pr 
+    JOIN FETCH pa.priorityArea pr
     JOIN FETCH a.deptSection ds
     JOIN FETCH a.budget b
-    LEFT JOIN FETCH a.quarterlyActuals q       
+    LEFT JOIN FETCH a.quarterlyActuals q
+    WHERE a.budget = :budget
+    AND a.urcPriorityAreas = :urcPriorityAreas
+    AND a.deptSection IN :deptSections
+    """)
+    List<Urc_Activities> findWithAllJoins(
+    @Param("budget") Budget budget,
+    @Param("urcPriorityAreas") URC_Priority_Areas urcPriorityAreas,
+    @Param("deptSections") List<UrcDeptSectionAnlDimbgt> deptSections);*/
+    @Query("""
+    SELECT DISTINCT a
+    FROM Urc_Activities a
+    JOIN FETCH a.urcPriorityAreas pa
+    JOIN FETCH pa.priorityArea pr
+    JOIN FETCH a.deptSection ds
+    JOIN FETCH a.budget b
+    LEFT JOIN FETCH a.quarterlyActuals q
+    LEFT JOIN FETCH a.deliverable_outputs d
     WHERE a.budget = :budget
       AND a.urcPriorityAreas = :urcPriorityAreas
       AND a.deptSection IN :deptSections
@@ -112,7 +129,7 @@ public interface Urc_ActivitiesRepository extends JpaRepository<Urc_Activities, 
     List<Urc_Activities> findByDeptSectionAndBudget(
             @Param("deptSection") UrcDeptSectionAnlDimbgt deptSection,
             @Param("budget") Budget budget);
-    
+
     @Query("""
        SELECT a 
        FROM Urc_Activities a 
@@ -122,7 +139,7 @@ public interface Urc_ActivitiesRepository extends JpaRepository<Urc_Activities, 
        """)
     List<Urc_Activities> findByDeptSectionAndBudget(
             @Param("deptSection") Set<UrcDeptSectionAnlDimbgt> deptSection,
-            @Param("budget") Budget budget);    
+            @Param("budget") Budget budget);
 
     @Query("SELECT ua FROM Urc_Activities ua WHERE ua.deptSection = :deptSection "
             + "AND ua.budget = :budget "

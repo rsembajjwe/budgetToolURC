@@ -14,12 +14,14 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -49,6 +51,9 @@ public class PerformanceExcelExportService {
     private final GetPeriods periods = new GetPeriods();
     private final URC_Priority_AreasService sampleURC_Priority_AreasService;
     List<PriorityArea> priorityAreas = new ArrayList<>();
+    
+        private final SALFLDGService samopleSALFLDGService;
+    Set<Integer> period = new HashSet<>();
 
     public PerformanceExcelExportService(
             Urc_ActivitiesService activitiesService,
@@ -56,7 +61,8 @@ public class PerformanceExcelExportService {
             QtrReleasesServiceImpl qtrReleasesService,
             SALFLDGService salfldgService,
             SectionBudgetPerformanceService sectionBudgetPerformanceService,
-            URC_Priority_AreasService sampleURC_Priority_AreasService
+            URC_Priority_AreasService sampleURC_Priority_AreasService,
+            SALFLDGService samopleSALFLDGService
     ) {
         this.activitiesService = activitiesService;
         this.budgetItemsService = budgetItemsService;
@@ -64,6 +70,7 @@ public class PerformanceExcelExportService {
         this.salfldgService = salfldgService;
         this.sectionBudgetPerformanceService = sectionBudgetPerformanceService;
         this.sampleURC_Priority_AreasService = sampleURC_Priority_AreasService;
+        this.samopleSALFLDGService=samopleSALFLDGService;
     }
 
     // =================================================
@@ -91,24 +98,26 @@ public class PerformanceExcelExportService {
 
                 // ===== REPORT HEADER =====
                 row = addReportHeader(sheet, ctx, row);
+                row = addSectionTitle(sheet, report.getSheetname(), row);
                 row = addSectionTitle(sheet, "1. FINANCIAL PERFORMANCE", row);
                 // ===== FINANCIAL SECTION =====
-                row = addSectionTitle(sheet, "1. FINANCIAL PERFORMANCE", row);
+                
+                
                 row = buildFinancialTable(
                         sheet, ctx, report,
                         row, headerStyle, bodyStyle, moneyStyle
                 );
-                row = addSectionTitle(sheet, report.getSheetname(), row);
+                
 
                 row += 2;
 
                 // ===== PHYSICAL SECTION =====
-                
-
                 List<Urc_Activities> activities
                         = activitiesService.findByDeptSectionAndBudget(
                                 report.getDeptsection(), ctx.getBudget()
                         );
+                
+                row = addSectionTitle(sheet, "2. PHYSICAL PERFORMANCE", row);
 
                 buildPhysicalTable(
                         sheet, activities, ctx,
@@ -138,7 +147,6 @@ public class PerformanceExcelExportService {
         row = mergedTitle(sheet, row,
                 ctx.getFinancialYear() + " – Quarter " + ctx.getQuarter(),
                 false, 10);
-        
 
         return row + 1;
     }
@@ -198,25 +206,150 @@ public class PerformanceExcelExportService {
     // =================================================
     // FINANCIAL TABLE
     // =================================================
-    private int buildFinancialTable(
+private int buildFinancialTable(
+        Sheet sheet,
+        PerformanceReportContext ctx,
+        CustomDetailedBudgetReport report,
+        int row,
+        CellStyle header,
+        CellStyle body,
+        CellStyle money
+) {
+    priorityAreas = sampleURC_Priority_AreasService
+            .getDistinctPriorityAreasByBudget(ctx.getBudget().getStartDate());
+
+    String[] headers = {
+        "NDP Programme",
+        "Planned Budget",
+        "Approved Budget",
+        "Actual Spent",
+        "% Release Spent",
+        "Reasons"
+    };
+
+    Row headerRow = sheet.createRow(row);
+
+    for (int i = 0; i < headers.length; i++) {
+        Cell c = headerRow.createCell(i);
+        c.setCellValue(headers[i]);
+        c.setCellStyle(header);
+    }
+
+    // create the extra header cell for the merged span and style it too
+    Cell extraHeaderCell = headerRow.createCell(6);
+    extraHeaderCell.setCellStyle(header);
+
+    // merge "Reasons" header across columns 5 and 6
+    sheet.addMergedRegion(new CellRangeAddress(row, row, 5, 6));
+
+    row++;
+
+    BigDecimal planned = budgetItemsService
+            .computeGrandExpenditureTotals(ctx.getBudget(), report.getDeptsection())[0];
+
+    Tuple totals = qtrReleasesService.getCumulativeQuarterReleases(
+            ctx.getBudget().getId(),
+            report.getDeptsection()
+    );
+
+    BigDecimal release = getQuarterRelease(totals, ctx.getQuarter());
+        BigDecimal actualSpent = BigDecimal.ZERO;
+
+        switch (ctx.getQuarter()) {
+            case 1:
+                actualSpent = samopleSALFLDGService.getTotalAmountByPeriods(
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 1),
+                        samopleSALFLDGService.extractTrimmedAnlCodes(report.getDeptsection()));
+                break;
+            case 2:
+                Set<Integer> period1 = periods.getFinancialYearPeriods(ctx.getBudget(), 1);
+                Set<Integer> period2 = periods.getFinancialYearPeriods(ctx.getBudget(), 2);
+                period1.addAll(period2);
+                period = period1;
+                actualSpent = samopleSALFLDGService.getTotalAmountByPeriods(
+                        period,
+                        samopleSALFLDGService.extractTrimmedAnlCodes(report.getDeptsection()));
+                break;
+            case 3:
+                period = Stream.concat(
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 1).stream(),
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 2).stream()
+                ).collect(Collectors.toSet());
+                period = Stream.concat(
+                        period.stream(),
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 3).stream()
+                ).collect(Collectors.toSet());
+                actualSpent = samopleSALFLDGService.getTotalAmountByPeriods(
+                        period,
+                        samopleSALFLDGService.extractTrimmedAnlCodes(report.getDeptsection()));
+                break;
+            case 4:
+                period = Stream.concat(
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 1).stream(),
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 2).stream()
+                ).collect(Collectors.toSet());
+                period = Stream.concat(
+                        period.stream(),
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 3).stream()
+                ).collect(Collectors.toSet());
+                period = Stream.concat(
+                        period.stream(),
+                        periods.getFinancialYearPeriods(ctx.getBudget(), 4).stream()
+                ).collect(Collectors.toSet());
+                actualSpent = samopleSALFLDGService.getTotalAmountByPeriods(
+                        period,
+                        samopleSALFLDGService.extractTrimmedAnlCodes(report.getDeptsection()));
+                break;
+            default:
+                actualSpent = BigDecimal.ZERO;
+                break;
+        }
+    String reasons = buildReasons(ctx, report);
+
+    for (PriorityArea p : priorityAreas) {
+        Row r = sheet.createRow(row);
+
+        writeCell(r, 0, p.getName(), body);
+        writeMoney(r, 1, planned, money);
+        writeMoney(r, 2, planned, money);
+        writeMoney(r, 3, actualSpent, money);
+        writeCell(r, 4, percentage(actualSpent, planned), body);
+
+        writeCell(r, 5, reasons, body);
+
+        // create styled extra cell before merge
+        Cell extraBodyCell = r.createCell(6);
+        extraBodyCell.setCellStyle(body);
+
+        // merge "Reasons" body across columns 5 and 6
+        sheet.addMergedRegion(new CellRangeAddress(row, row, 5, 6));
+
+        row++;
+    }
+
+    return row;
+}
+
+    // =================================================
+    // PHYSICAL TABLE
+    // =================================================
+    private int buildPhysicalTable(
             Sheet sheet,
+            List<Urc_Activities> activities,
             PerformanceReportContext ctx,
-            CustomDetailedBudgetReport report,
             int row,
             CellStyle header,
-            CellStyle body,
-            CellStyle money
+            CellStyle body
     ) {
-        priorityAreas = sampleURC_Priority_AreasService.getDistinctPriorityAreasByBudget(ctx.getBudget().getStartDate());
-
+        // ================= HEADER =================
         String[] headers = {
-            "NDP Programme",
-            "Planned Budget",
-            "Approved Budget",
-            "Cumulative Release",
-            "Actual Spent",
-            "% Release Spent",
-            "Reasons"
+            "URC Programme",
+            "Activity",
+            "Indicator",
+            "Annual Target",
+            "Cumulative Achievement",
+            "Actual",
+            "Explanation"
         };
 
         Row headerRow = sheet.createRow(row++);
@@ -226,115 +359,60 @@ public class PerformanceExcelExportService {
             c.setCellStyle(header);
         }
 
-        BigDecimal planned
-                = budgetItemsService
-                        .computeGrandExpenditureTotals(
-                                ctx.getBudget(), report.getDeptsection()
-                        )[0];
+        // ================= GROUP BY URC_Priority_Areas =================
+        Map<String, List<Urc_Activities>> grouped = activities.stream()
+                .collect(Collectors.groupingBy(act
+                        -> act.getUrcPriorityAreas() != null
+                ? act.getUrcPriorityAreas().getName() : "—"
+                ));
 
-        Tuple totals
-                = qtrReleasesService.getCumulativeQuarterReleases(
-                        ctx.getBudget().getId(),
-                        report.getDeptsection()
-                );
+        for (Map.Entry<String, List<Urc_Activities>> entry : grouped.entrySet()) {
+            String areaName = entry.getKey();
+            List<Urc_Activities> acts = entry.getValue();
 
-        BigDecimal release = getQuarterRelease(totals, ctx.getQuarter());
-        BigDecimal actual = getActualSpent(ctx, report);
-        String reasons = buildReasons(ctx, report);
-        for (PriorityArea p : priorityAreas) {
-            Row r = sheet.createRow(row++);
-            writeCell(r, 0, p.getName(), body);
-            writeMoney(r, 1, planned, money);
-            writeMoney(r, 2, planned, money);
-            writeMoney(r, 3, release, money);
-            writeMoney(r, 4, actual, money);
-            writeCell(r, 5, percentage(actual, release), body);
-            writeCell(r, 6, reasons, body);
+            int startRow = row;
+
+            for (Urc_Activities act : acts) {
+                Row r = sheet.createRow(row++);
+
+                writeCell(r, 1, act.getName(), body);
+                writeCell(r, 2, act.getPerformanceIndicator(), body);
+                writeCell(r, 3, act.getAnnualTarget(), body);
+                writeCell(r, 4, getCumulativeAchievement(act, ctx.getQuarter()), body);
+                writeCell(r, 5, getActualAchievement(act, ctx), body);
+                writeCell(r, 6, getVariation(act, ctx.getQuarter()), body);
+            }
+
+            // Merge URC Programme cells vertically
+            if (acts.size() > 1) {
+                sheet.addMergedRegion(new CellRangeAddress(
+                        startRow, // first row
+                        row - 1, // last row
+                        0, // first column
+                        0 // last column
+                ));
+
+                // Reapply vertical borders to merged cells
+                for (int rIdx = startRow; rIdx < row; rIdx++) {
+                    Row mergeRow = sheet.getRow(rIdx);
+                    if (mergeRow == null) {
+                        mergeRow = sheet.createRow(rIdx);
+                    }
+                    Cell c = mergeRow.getCell(0);
+                    if (c == null) {
+                        c = mergeRow.createCell(0);
+                    }
+                    c.setCellStyle(body);
+                }
+            }
+
+            // Write area name in the first row of the group
+            Row firstRow = sheet.getRow(startRow);
+            writeCell(firstRow, 0, areaName, body);
         }
 
         return row;
     }
-
-    // =================================================
-    // PHYSICAL TABLE
-    // =================================================
-private int buildPhysicalTable(
-        Sheet sheet,
-        List<Urc_Activities> activities,
-        PerformanceReportContext ctx,
-        int row,
-        CellStyle header,
-        CellStyle body
-) {
-    // ================= HEADER =================
-    String[] headers = {
-        "URC Programme",
-        "Activity",
-        "Indicator",
-        "Annual Target",
-        "Cumulative Achievement",
-        "Actual",
-        "Explanation"
-    };
-
-    Row headerRow = sheet.createRow(row++);
-    for (int i = 0; i < headers.length; i++) {
-        Cell c = headerRow.createCell(i);
-        c.setCellValue(headers[i]);
-        c.setCellStyle(header);
-    }
-
-    // ================= GROUP BY URC_Priority_Areas =================
-    Map<String, List<Urc_Activities>> grouped = activities.stream()
-            .collect(Collectors.groupingBy(act -> 
-                    act.getUrcPriorityAreas() != null 
-                    ? act.getUrcPriorityAreas().getName() : "—"
-            ));
-
-    for (Map.Entry<String, List<Urc_Activities>> entry : grouped.entrySet()) {
-        String areaName = entry.getKey();
-        List<Urc_Activities> acts = entry.getValue();
-
-        int startRow = row;
-
-        for (Urc_Activities act : acts) {
-            Row r = sheet.createRow(row++);
-
-            writeCell(r, 1, act.getName(), body);
-            writeCell(r, 2, act.getPerformanceIndicator(), body);
-            writeCell(r, 3, act.getAnnualTarget(), body);
-            writeCell(r, 4, getCumulativeAchievement(act, ctx.getQuarter()), body);
-            writeCell(r, 5, getActualAchievement(act, ctx), body);
-            writeCell(r, 6, getVariation(act, ctx.getQuarter()), body);
-        }
-
-        // Merge URC Programme cells vertically
-        if (acts.size() > 1) {
-            sheet.addMergedRegion(new CellRangeAddress(
-                    startRow,           // first row
-                    row - 1,            // last row
-                    0,                  // first column
-                    0                   // last column
-            ));
-
-            // Reapply vertical borders to merged cells
-            for (int rIdx = startRow; rIdx < row; rIdx++) {
-                Row mergeRow = sheet.getRow(rIdx);
-                if (mergeRow == null) mergeRow = sheet.createRow(rIdx);
-                Cell c = mergeRow.getCell(0);
-                if (c == null) c = mergeRow.createCell(0);
-                c.setCellStyle(body);
-            }
-        }
-
-        // Write area name in the first row of the group
-        Row firstRow = sheet.getRow(startRow);
-        writeCell(firstRow, 0, areaName, body);
-    }
-
-    return row;
-}
-
 
     // =================================================
     // BUSINESS HELPERS
@@ -475,7 +553,7 @@ private int buildPhysicalTable(
         CellStyle s = wb.createCellStyle();
         s.setFont(f);
         s.setBorderBottom(BorderStyle.THIN);
-        
+
         s.setWrapText(true);
         return s;
     }
