@@ -20,20 +20,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedAttributeNode;
-import jakarta.persistence.NamedEntityGraph;
-import jakarta.persistence.OneToMany;
 import java.io.Serializable;
-import java.util.List;
-import org.hibernate.annotations.BatchSize;
 
 @Entity
 @Table(name = "URC_USER")
 @NoArgsConstructor
 @Data
-
-public class User  implements Serializable{
+public class User implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -85,6 +78,9 @@ public class User  implements Serializable{
     @Column(name = "VERIFYEMAIL")
     private String verifyEmail;
 
+    @Column(name = "ACTIVE", nullable = true)
+    private boolean active = true;
+
     @Lob
     @Column(length = 1000000)
     private byte[] profilePicture;
@@ -108,8 +104,6 @@ public class User  implements Serializable{
     )
     private Set<D_Unit> units;
 
-    /*    @ManyToOne
-    @JoinColumn(name = "department_id")*/
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_department",

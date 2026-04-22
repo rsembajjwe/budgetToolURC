@@ -97,6 +97,7 @@ import jakarta.annotation.security.RolesAllowed;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
@@ -449,7 +450,6 @@ public class DashboardView extends VerticalLayout {
     }
 
     private void loadDashboardData() {
-
         try {
             Budget currentBudget = selectedBudget != null ? selectedBudget : fiscalYear.getValue();
             if (currentBudget == null || selectedOrganisation == null || selectedQuarter == null) {
@@ -466,9 +466,9 @@ public class DashboardView extends VerticalLayout {
                     sampleUrcDeptSectionAnlDimbgtService,
                     sampleSALFLDGService,
                     sampleDeptSectionMergerService,
-                    currentBudget
+                    currentBudget,
+                    selectedQuarter
             );
-            budgetSummary.getDepartmentBudgets().forEach(e -> System.out.println(e.getDepartmentName()));
             summaryCards.addClassName("budget-summary-cards");
 
             BudgetVisualCards visualCards = new BudgetVisualCards(budgetSummary);
@@ -483,7 +483,8 @@ public class DashboardView extends VerticalLayout {
                     currentBudget,
                     budgetItemsService,
                     sampleUrc_ActivitiesService,
-                    departmentGeneralPhysicalPerformanceService
+                    departmentGeneralPhysicalPerformanceService,
+                    selectedQuarter
             );
             departmentOverview.addClassName("department-overview");
 
@@ -550,6 +551,7 @@ public class DashboardView extends VerticalLayout {
                     ? dashboardTabs.getSelectedTab()
                     : overviewTab;
 
+            dashboardTabs.setSelectedTab(selectedTab);
             showSelectedTab(selectedTab);
             updateStatusIndicator();
 
@@ -3423,6 +3425,91 @@ public class DashboardView extends VerticalLayout {
                 .set("text-align", "right")
                 .set("width", "100%");
         return span;
+    }
+
+    private BigDecimal getSelectedDepartmentSpent(DepartmentBudget dept) {
+        if (dept == null) {
+            return BigDecimal.ZERO;
+        }
+
+        if (selectedQuarter == null || selectedQuarter.isBlank()) {
+            return nz(dept.getTotalSpent());
+        }
+
+        return switch (selectedQuarter.toLowerCase()) {
+            case "qtr1" ->
+                nz(dept.getCumQtr1Actual());
+            case "qtr2" ->
+                nz(dept.getCumQtr2Actual());
+            case "qtr3" ->
+                nz(dept.getCumQtr3Actual());
+            case "qtr4" ->
+                nz(dept.getCumQtr4Actual());
+            default ->
+                nz(dept.getTotalSpent());
+        };
+    }
+
+    private BigDecimal getSelectedDepartmentAvailable(DepartmentBudget dept) {
+        if (dept == null) {
+            return BigDecimal.ZERO;
+        }
+        return nz(dept.getTotalBudget()).subtract(getSelectedDepartmentSpent(dept));
+    }
+
+    private BigDecimal getSelectedDepartmentSpentPercentage(DepartmentBudget dept) {
+        BigDecimal totalBudget = nz(dept != null ? dept.getTotalBudget() : BigDecimal.ZERO);
+        if (totalBudget.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return getSelectedDepartmentSpent(dept)
+                .divide(totalBudget, 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal getTotalSpentByQuarter(java.util.List<DepartmentBudget> departments) {
+        return safeList(departments).stream()
+                .map(this::getSelectedDepartmentSpent)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal getTotalBudget(java.util.List<DepartmentBudget> departments) {
+        return safeList(departments).stream()
+                .map(d -> nz(d.getTotalBudget()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal getTotalAvailableByQuarter(java.util.List<DepartmentBudget> departments) {
+        return safeList(departments).stream()
+                .map(this::getSelectedDepartmentAvailable)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal getSpentPercentageByQuarter(java.util.List<DepartmentBudget> departments) {
+        BigDecimal totalBudget = getTotalBudget(departments);
+        if (totalBudget.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return getTotalSpentByQuarter(departments)
+                .divide(totalBudget, 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private String getSelectedDepartmentStatusText(DepartmentBudget dept) {
+        BigDecimal pct = getSelectedDepartmentSpentPercentage(dept);
+
+        if (pct.compareTo(BigDecimal.valueOf(100)) > 0) {
+            return "Over Budget";
+        } else if (pct.compareTo(BigDecimal.valueOf(90)) > 0) {
+            return "Critical";
+        } else if (pct.compareTo(BigDecimal.valueOf(75)) > 0) {
+            return "Near Limit";
+        }
+        return "On Track";
     }
 
 }

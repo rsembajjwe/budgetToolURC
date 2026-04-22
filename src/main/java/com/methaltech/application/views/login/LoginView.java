@@ -32,9 +32,7 @@ import com.vaadin.flow.router.internal.RouteUtil;
 import com.vaadin.flow.server.StreamRegistration;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
-import com.vaadin.flow.server.VaadinServlet;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import jakarta.servlet.ServletContext;
 import java.io.ByteArrayInputStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Random;
@@ -125,13 +123,31 @@ public class LoginView extends LoginOverlay implements BeforeEnterObserver {
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
+
         if (authenticatedUser.get().isPresent()) {
-            // Already logged in
             setOpened(false);
             event.forwardTo("");
+            return;
         }
 
-        setError(event.getLocation().getQueryParameters().getParameters().containsKey("error"));
+        var params = event.getLocation().getQueryParameters().getParameters();
+
+        if (params.containsKey("inactive")) {
+            setError(true);
+
+            Notification notification = Notification.show(
+                    "Your account has been deactivated. Please contact the administrator."
+            );
+            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+        } else if (params.containsKey("error")) {
+            setError(true);
+
+            Notification notification = Notification.show(
+                    "Invalid email or password."
+            );
+            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+        }
     }
 
     private Component NotificationDialogue() {

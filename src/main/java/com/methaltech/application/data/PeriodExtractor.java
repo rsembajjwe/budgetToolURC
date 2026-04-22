@@ -586,4 +586,50 @@ public class PeriodExtractor {
 
         return periods;
     }
+    
+        public Set<Integer> getFinancialYearPeriodsByCumQuarter(Budget budget, int quarter) {
+        Set<Integer> periods = new LinkedHashSet<>();
+        if (budget == null || budget.getStartDate() == null || budget.getCloseDate() == null) {
+            return periods;
+        }
+        if (quarter < 1 || quarter > 4) {
+            throw new IllegalArgumentException("Quarter must be 1..4");
+        }
+
+        LocalDate start = budget.getStartDate().withDayOfMonth(1);
+        LocalDate end = budget.getCloseDate().withDayOfMonth(1);
+
+        int fyEndYear = budget.getCloseDate().getYear();
+
+        Month[] quarterMonths = switch (quarter) {
+            case 1 ->
+                new Month[]{Month.JULY, Month.AUGUST, Month.SEPTEMBER};
+            case 2 ->
+                new Month[]{Month.JULY, Month.AUGUST, Month.SEPTEMBER,Month.OCTOBER, Month.NOVEMBER, Month.DECEMBER};
+            case 3 ->
+                new Month[]{Month.JULY, Month.AUGUST, Month.SEPTEMBER,Month.OCTOBER, Month.NOVEMBER, Month.DECEMBER,Month.JANUARY, Month.FEBRUARY, Month.MARCH};
+            case 4 ->
+                new Month[]{Month.JULY, Month.AUGUST, Month.SEPTEMBER,Month.OCTOBER, Month.NOVEMBER, Month.DECEMBER,Month.JANUARY, Month.FEBRUARY, Month.MARCH,Month.APRIL, Month.MAY, Month.JUNE};
+            default ->
+                throw new IllegalArgumentException("Quarter must be 1..4");
+        };
+
+        for (Month m : quarterMonths) {
+            // July=1 ... June=12
+            int periodIndex = ((m.getValue() - Month.JULY.getValue() + 12) % 12) + 1;
+            int periodCode = fyEndYear * 1000 + periodIndex;
+
+            int monthYear = (m.getValue() >= Month.JULY.getValue())
+                    ? budget.getStartDate().getYear()
+                    : budget.getCloseDate().getYear();
+
+            LocalDate requestedMonth = LocalDate.of(monthYear, m, 1);
+
+            if (!requestedMonth.isBefore(start) && !requestedMonth.isAfter(end)) {
+                periods.add(periodCode);
+            }
+        }
+
+        return periods;
+    }
 }

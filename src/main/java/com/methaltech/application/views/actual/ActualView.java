@@ -760,7 +760,7 @@ public class ActualView extends Div {
 
             BigDecimal value = urcActivity.getTotalA();
             BigDecimal value2 = urcActivity.getTotal();
-            Span span = createSpan(value2.subtract(value));
+            Span span = createSpan(value2.subtract(value.abs()));
             if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
                 span = createSpan(value2.add(value));
             }

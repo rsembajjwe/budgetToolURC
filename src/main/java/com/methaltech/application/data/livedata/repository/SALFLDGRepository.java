@@ -200,16 +200,26 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
     List<SALFLDGProjection> findByPeriodAndTotalExpenditures(
             @Param("period") List<Integer> period);
 
-    @Query(value = "SELECT ACCNT_CODE AS accntCode, JRNAL_NO AS jrnalNo, AMOUNT AS amount, DESCRIPTN AS descriptn, "
-            + "TRANS_DATETIME AS transDatetime, ANAL_T1 AS analT1 "
-            + "FROM URC_A_SALFLDG_View "
-            + "WHERE PERIOD IN :period AND (ACCNT_CODE LIKE '2%' OR ACCNT_CODE LIKE '3%') "
+    @Query(value = "SELECT ACCNT_CODE AS accntCode, "
+            + "JRNAL_NO AS jrnalNo, "
+            + "AMOUNT AS amount, "
+            + "DESCRIPTN AS descriptn, "
+            + "TRANS_DATETIME AS transDatetime, "
+            + "ANAL_T1 AS analT1, "
+            + "PERIOD AS period "
+            + // ✅ ADD THIS
+            "FROM URC_A_SALFLDG_View "
+            + "WHERE PERIOD IN :period "
+            + "AND (ACCNT_CODE LIKE '2%' OR ACCNT_CODE LIKE '3%') "
             + "AND ACCNT_CODE NOT LIKE '321%' "
             + "AND ACCNT_CODE NOT LIKE '314%' "
             + "AND LEN(ACCNT_CODE) <= 6 "
-            + "AND ANAL_T1 IN (:analT1Values) ", nativeQuery = true)
+            + "AND ANAL_T1 IN (:analT1Values)",
+            nativeQuery = true)
     List<SALFLDGProjection> findByPeriodAndDepartmentExpenditures(
-            @Param("period") Set<Integer> period, @Param("analT1Values") Set<String> analT1Values);
+            @Param("period") Set<Integer> period,
+            @Param("analT1Values") Set<String> analT1Values
+    );
 
     @Query(value = "SELECT ACCNT_CODE AS accntCode, JRNAL_NO AS jrnalNo, JRNAL_LINE AS jrnalLine, PERIOD AS period, AMOUNT AS amount, DESCRIPTN AS descriptn, "
             + "TRANS_DATETIME AS transDatetime, ANAL_T1 AS analT1 "
@@ -263,8 +273,8 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
           AND LEN(ACCNT_CODE) <= 6
         """, nativeQuery = true)
     BigDecimal findTotalIncomeByPeriodsAndIGR(@Param("periods") Set<Integer> periods);
-    
-        @Query(value = """
+
+    @Query(value = """
         SELECT COALESCE(SUM(AMOUNT), 0)
         FROM URC_A_SALFLDG_View
         WHERE PERIOD IN (:periods)
@@ -321,7 +331,8 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
            AMOUNT AS amount,
            DESCRIPTN AS descriptn,
            TRANS_DATETIME AS transDatetime,
-           ANAL_T1 AS analT1
+           ANAL_T1 AS analT1,
+           PERIOD AS period
     FROM URC_A_SALFLDG_View
     WHERE PERIOD IN (:period)
       AND (ACCNT_CODE LIKE '2%' OR ACCNT_CODE LIKE '3%')

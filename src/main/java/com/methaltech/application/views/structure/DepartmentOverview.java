@@ -23,6 +23,7 @@ import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.grid.FooterRow;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -50,6 +51,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class DepartmentOverview extends VerticalLayout {
@@ -65,6 +67,7 @@ public class DepartmentOverview extends VerticalLayout {
     private final DepartmentGeneralPhysicalPerformanceService departmentGeneralPhysicalPerformanceService;
 
     private utilityActuals utils;
+    private final String selectedQuarter;
 
     @Autowired
     public DepartmentOverview(
@@ -76,7 +79,8 @@ public class DepartmentOverview extends VerticalLayout {
             Budget budget,
             BudgetItemsService budgetItemsService,
             Urc_ActivitiesService sampleUrc_ActivitiesService,
-            DepartmentGeneralPhysicalPerformanceService departmentGeneralPhysicalPerformanceService
+            DepartmentGeneralPhysicalPerformanceService departmentGeneralPhysicalPerformanceService,
+            String selectedQuarter
     ) {
         this.currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
         this.currencyFormat.setCurrency(java.util.Currency.getInstance("UGX"));
@@ -88,6 +92,7 @@ public class DepartmentOverview extends VerticalLayout {
         this.budgetItemsService = budgetItemsService;
         this.sampleUrc_ActivitiesService = sampleUrc_ActivitiesService;
         this.departmentGeneralPhysicalPerformanceService = departmentGeneralPhysicalPerformanceService;
+        this.selectedQuarter = selectedQuarter;
 
         setWidthFull();
         setPadding(false);
@@ -117,7 +122,9 @@ public class DepartmentOverview extends VerticalLayout {
         H2 title = new H2("Department Overview");
         title.addClassName("section-title");
 
-        Span subtitle = new Span("Budget allocation, utilization, and department performance analysis.");
+        Span subtitle = new Span(
+                "Budget allocation, utilization, and department performance analysis for " + getQuarterLabel() + "."
+        );
         subtitle.addClassName("section-subtitle");
 
         headerText.add(title, subtitle);
@@ -144,18 +151,19 @@ public class DepartmentOverview extends VerticalLayout {
         BigDecimal totalSpent = BigDecimal.ZERO;
         BigDecimal totalAvailable = BigDecimal.ZERO;
         int overBudgetCount = 0;
-        int criticalCount = 0;
 
         for (DepartmentBudget dept : departmentBudgets) {
-            totalBudget = totalBudget.add(nz(dept.getTotalBudget()));
-            totalSpent = totalSpent.add(nz(dept.getTotalSpent()));
-            totalAvailable = totalAvailable.add(nz(dept.getAvailableBudget()));
+            BigDecimal deptBudget = nz(dept.getTotalBudget());
+            BigDecimal deptSpent = getSelectedDepartmentSpent(dept);
+            BigDecimal deptAvailable = getSelectedDepartmentAvailable(dept);
+            BigDecimal deptPct = getSelectedDepartmentSpentPercentage(dept);
 
-            double pct = pctValue(dept.getSpentPercentage());
-            if (pct > 100.0) {
+            totalBudget = totalBudget.add(deptBudget);
+            totalSpent = totalSpent.add(deptSpent);
+            totalAvailable = totalAvailable.add(deptAvailable);
+
+            if (deptPct.compareTo(BigDecimal.valueOf(100)) > 0) {
                 overBudgetCount++;
-            } else if (pct > 90.0) {
-                criticalCount++;
             }
         }
 
@@ -282,7 +290,7 @@ public class DepartmentOverview extends VerticalLayout {
         budgetInfo.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
         budgetInfo.addClassName("budget-info-row");
 
-        VerticalLayout spentItem = createBudgetItem("Spent", nz(department.getTotalSpent()));
+        VerticalLayout spentItem = createBudgetItem("Spent", getSelectedDepartmentSpent(department));
         spentItem.getStyle().set("cursor", "pointer");
         spentItem.addDoubleClickListener(e -> {
             String deptcode = department.getDepartmentCode();
@@ -300,7 +308,7 @@ public class DepartmentOverview extends VerticalLayout {
         budgetInfo.add(
                 createBudgetItem("Budget", nz(department.getTotalBudget())),
                 spentItem,
-                createBudgetItem("Available", nz(department.getAvailableBudget()))
+                createBudgetItem("Available", getSelectedDepartmentAvailable(department))
         );
 
         HorizontalLayout financialLayout = new HorizontalLayout();
@@ -308,9 +316,9 @@ public class DepartmentOverview extends VerticalLayout {
         financialLayout.setSpacing(true);
         financialLayout.setPadding(false);
 
-        financialLayout.add(budgetInfo, budgetCoaQtrView(department.getSections()));
+        financialLayout.add(budgetInfo, budgetCoaQtrGeneral(budget, department.getSections()));
         financialLayout.setFlexGrow(0, budgetInfo);
-        financialLayout.setFlexGrow(1, budgetCoaQtrView(department.getSections()));
+        financialLayout.setFlexGrow(1, budgetCoaQtrGeneral(budget, department.getSections()));
 
         if (hasBudgetControls(department)) {
             HorizontalLayout controlsInfo = createBudgetControls(department);
@@ -370,12 +378,19 @@ public class DepartmentOverview extends VerticalLayout {
         layout.setSpacing(true);
         layout.addClassName("physical-budget-performance");
 
-        List<Urc_Activities> activities = sampleUrc_ActivitiesService.findByDeptSectionAndBudget(department.getSections(), budget);
+        List<Urc_Activities> activities = sampleUrc_ActivitiesService.findByDeptSectionAndBudget(
+                department.getSections(), budget
+        );
+
+        Span title = new Span("Physical Budget Performance - " + getQuarterLabel());
+        title.getStyle()
+                .set("font-weight", "700")
+                .set("font-size", "1rem");
 
         Component summary = createPhysicalSummary(activities);
         Grid<Urc_Activities> grid = createPhysicalActivitiesGrid(activities);
 
-        layout.add(summary, grid);
+        layout.add(title, summary, grid);
         return layout;
     }
 
@@ -383,13 +398,6 @@ public class DepartmentOverview extends VerticalLayout {
         Grid<Urc_Activities> grid = new Grid<>(Urc_Activities.class, false);
         grid.setWidthFull();
         grid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_WRAP_CELL_CONTENT);
-
-        Grid.Column<Urc_Activities> codeColumn = grid.addColumn(a -> nvl(a.getActivityCode(), ""))
-                .setHeader("Code")
-                .setWidth("110px")
-                .setFlexGrow(0)
-                .setFrozen(true)
-                .setSortable(true);
 
         Grid.Column<Urc_Activities> nameColumn = grid.addColumn(a -> nvl(a.getName(), ""))
                 .setHeader("Activity")
@@ -410,12 +418,12 @@ public class DepartmentOverview extends VerticalLayout {
                 .setHeader("Annual Target")
                 .setWidth("160px");
 
-        grid.addColumn(a -> nvl(getLatestAchievement(a), ""))
-                .setHeader("Latest Achievement")
+        grid.addColumn(a -> nvl(getAchievementForSelectedQuarter(a), ""))
+                .setHeader(getQuarterLabel() + " Achievement")
                 .setWidth("180px");
 
-        grid.addColumn(a -> formatPercentage(getLatestPhysicalPct(a)))
-                .setHeader("Latest % Achieved")
+        grid.addColumn(a -> formatPercentage(getPhysicalPctForSelectedQuarter(a)))
+                .setHeader(getQuarterLabel() + " % Achieved")
                 .setWidth("130px");
 
         grid.addColumn(new ComponentRenderer<>(this::createPhysicalStatusBadge))
@@ -427,17 +435,17 @@ public class DepartmentOverview extends VerticalLayout {
                 .setHeader("Budget")
                 .setWidth("140px");
 
-        grid.addColumn(a -> formatCurrency(nz(a.getTotalA())))
-                .setHeader("Actual")
+        grid.addColumn(a -> formatCurrency(getActualForSelectedQuarter(a)))
+                .setHeader(getQuarterLabel() + " Actual")
                 .setWidth("140px");
 
         grid.addColumn(a -> {
-            BigDecimal variance = nz(a.getActivity_budget()).subtract(nz(a.getTotalA()));
+            BigDecimal variance = nz(a.getActivity_budget()).subtract(getActualForSelectedQuarter(a));
             return formatCurrency(variance);
         }).setHeader("Variance").setWidth("140px");
 
-        grid.addColumn(a -> nvl(getLatestVariationExplanation(a), ""))
-                .setHeader("Latest Variation Explanation")
+        grid.addColumn(a -> nvl(getVariationExplanationForSelectedQuarter(a), ""))
+                .setHeader(getQuarterLabel() + " Variation Explanation")
                 .setWidth("260px");
 
         grid.addComponentColumn(activity -> {
@@ -453,15 +461,14 @@ public class DepartmentOverview extends VerticalLayout {
         FooterRow footerRow = grid.appendFooterRow();
 
         BigDecimal totalBudget = sumActivityBudget(activities);
-        BigDecimal totalActual = sumActivityActual(activities);
+        BigDecimal totalActual = sumActivityActualForSelectedQuarter(activities);
         BigDecimal totalVariance = totalBudget.subtract(totalActual);
 
-        footerRow.getCell(codeColumn).setComponent(footerText(""));
         footerRow.getCell(nameColumn).setComponent(footerText("TOTAL"));
 
-        Grid.Column<Urc_Activities> budgetColumn = grid.getColumns().get(8);
-        Grid.Column<Urc_Activities> actualColumn = grid.getColumns().get(9);
-        Grid.Column<Urc_Activities> varianceColumn = grid.getColumns().get(10);
+        Grid.Column<Urc_Activities> budgetColumn = grid.getColumns().get(7);
+        Grid.Column<Urc_Activities> actualColumn = grid.getColumns().get(8);
+        Grid.Column<Urc_Activities> varianceColumn = grid.getColumns().get(9);
 
         footerRow.getCell(budgetColumn).setComponent(footerText(formatCurrency(totalBudget)));
         footerRow.getCell(actualColumn).setComponent(footerActualText(formatCurrency(totalActual)));
@@ -472,29 +479,29 @@ public class DepartmentOverview extends VerticalLayout {
 
     private Component createPhysicalSummary(List<Urc_Activities> activities) {
         long achieved = activities.stream()
-                .filter(a -> getLatestPhysicalPct(a) >= 100.0)
+                .filter(a -> getPhysicalPctForSelectedQuarter(a) >= 100.0)
                 .count();
 
         long onTrack = activities.stream()
                 .filter(a -> {
-                    double pct = getLatestPhysicalPct(a);
-                    return pct >= 75.0 && pct < 100.0;
+                    double pct = getPhysicalPctForSelectedQuarter(a);
+                    return pct >= 50.0 && pct < 100.0;
                 })
                 .count();
 
         long delayed = activities.stream()
                 .filter(a -> {
-                    double pct = getLatestPhysicalPct(a);
-                    return pct > 0.0 && pct < 75.0;
+                    double pct = getPhysicalPctForSelectedQuarter(a);
+                    return pct > 0.0 && pct < 50.0;
                 })
                 .count();
 
         long notStarted = activities.stream()
-                .filter(a -> getLatestPhysicalPct(a) <= 0.0)
+                .filter(a -> getPhysicalPctForSelectedQuarter(a) <= 0.0)
                 .count();
 
         BigDecimal totalBudget = sumActivityBudget(activities);
-        BigDecimal totalActual = sumActivityActual(activities);
+        BigDecimal totalActual = sumActivityActualForSelectedQuarter(activities);
 
         HorizontalLayout row = new HorizontalLayout();
         row.setWidthFull();
@@ -509,7 +516,7 @@ public class DepartmentOverview extends VerticalLayout {
                 createPhysicalMetricCard("Delayed", String.valueOf(delayed)),
                 createPhysicalMetricCard("Not Started", String.valueOf(notStarted)),
                 createPhysicalMetricCard("Budget", formatCurrency(totalBudget)),
-                createPhysicalMetricCard("Actual", formatCurrency(totalActual))
+                createPhysicalMetricCard(getQuarterLabel() + " Actual", formatCurrency(totalActual))
         );
 
         return row;
@@ -541,12 +548,7 @@ public class DepartmentOverview extends VerticalLayout {
     }
 
     private Component createPhysicalStatusBadge(Urc_Activities activity) {
-        double q4 = nz(activity.getPerc_of_TargetAchieved_qtr41());
-        double q3 = nz(activity.getPerc_of_TargetAchieved_qtr31());
-        double q2 = nz(activity.getPerc_of_TargetAchieved_qtr21());
-        double q1 = nz(activity.getPerc_of_TargetAchieved_qtr11());
-
-        double latestPct = q4 > 0 ? q4 : q3 > 0 ? q3 : q2 > 0 ? q2 : q1;
+        double pct = getPhysicalPctForSelectedQuarter(activity);
 
         Span badge = new Span();
         badge.getStyle()
@@ -556,17 +558,17 @@ public class DepartmentOverview extends VerticalLayout {
                 .set("font-size", "12px")
                 .set("display", "inline-block");
 
-        if (latestPct >= 100.0) {
+        if (pct >= 100.0) {
             badge.setText("ACHIEVED");
             badge.getStyle()
                     .set("background-color", "var(--lumo-success-color-10pct)")
                     .set("color", "var(--lumo-success-text-color)");
-        } else if (latestPct >= 75.0) {
+        } else if (pct >= 75.0) {
             badge.setText("ON TRACK");
             badge.getStyle()
                     .set("background-color", "var(--lumo-primary-color-10pct)")
                     .set("color", "var(--lumo-primary-text-color)");
-        } else if (latestPct > 0.0) {
+        } else if (pct > 0.0) {
             badge.setText("DELAYED");
             badge.getStyle()
                     .set("background-color", "var(--lumo-warning-color-10pct)")
@@ -704,24 +706,112 @@ public class DepartmentOverview extends VerticalLayout {
                 .set("border-radius", "8px");
 
         details.add(
+                createDetailLine("Selected Quarter", getQuarterLabel()),
+                createDetailLine("Achievement", nvl(getAchievementForSelectedQuarter(activity), "-")),
+                createDetailLine("% Achieved", formatPercentage(getPhysicalPctForSelectedQuarter(activity))),
+                createDetailLine("Variation", nvl(getVariationExplanationForSelectedQuarter(activity), "-")),
                 createDetailLine("Q1 Achievement", nvl(activity.getCum_achievements_qtr1(), "-")),
                 createDetailLine("Q1 % Achieved", nvl(activity.getPerc_of_TargetAchieved_qtr1(), "-")),
-                createDetailLine("Q1 Variation", nvl(activity.getExpl_of_variations_qtr1(), "-")),
                 createDetailLine("Q2 Achievement", nvl(activity.getCum_achievements_qtr2(), "-")),
                 createDetailLine("Q2 % Achieved", nvl(activity.getPerc_of_TargetAchieved_qtr2(), "-")),
-                createDetailLine("Q2 Variation", nvl(activity.getExpl_of_variations_qtr2(), "-")),
                 createDetailLine("Q3 Achievement", nvl(activity.getCum_achievements_qtr3(), "-")),
                 createDetailLine("Q3 % Achieved", nvl(activity.getPerc_of_TargetAchieved_qtr3(), "-")),
-                createDetailLine("Q3 Variation", nvl(activity.getExpl_of_variations_qtr3(), "-")),
                 createDetailLine("Q4 Achievement", nvl(activity.getCum_achievements_qtr4(), "-")),
                 createDetailLine("Q4 % Achieved", nvl(activity.getPerc_of_TargetAchieved_qtr4(), "-")),
-                createDetailLine("Q4 Variation", nvl(activity.getExpl_of_variations_qtr4(), "-")),
                 createDetailLine("Objective", nvl(activity.getObjective(), "-")),
                 createDetailLine("Outcome", nvl(activity.getOutcome(), "-")),
                 createDetailLine("Funding Source", nvl(activity.getFundsource(), "-"))
         );
 
         return details;
+    }
+
+    private String getAchievementForSelectedQuarter(Urc_Activities activity) {
+        if (activity == null) {
+            return "";
+        }
+
+        return switch (selectedQuarter != null ? selectedQuarter.toLowerCase() : "") {
+            case "qtr1" ->
+                nvl(activity.getCum_achievements_qtr1(), "");
+            case "qtr2" ->
+                nvl(activity.getCum_achievements_qtr2(), "");
+            case "qtr3" ->
+                nvl(activity.getCum_achievements_qtr3(), "");
+            case "qtr4" ->
+                nvl(activity.getCum_achievements_qtr4(), "");
+            default ->
+                nvl(activity.getCum_achievements_qtr1(), "");
+        };
+    }
+
+    private String getVariationExplanationForSelectedQuarter(Urc_Activities activity) {
+        if (activity == null) {
+            return "";
+        }
+
+        return switch (selectedQuarter != null ? selectedQuarter.toLowerCase() : "") {
+            case "qtr1" ->
+                nvl(activity.getExpl_of_variations_qtr1(), "");
+            case "qtr2" ->
+                nvl(activity.getExpl_of_variations_qtr2(), "");
+            case "qtr3" ->
+                nvl(activity.getExpl_of_variations_qtr3(), "");
+            case "qtr4" ->
+                nvl(activity.getExpl_of_variations_qtr4(), "");
+            default ->
+                nvl(activity.getExpl_of_variations_qtr1(), "");
+        };
+    }
+
+    private double getPhysicalPctForSelectedQuarter(Urc_Activities activity) {
+        if (activity == null) {
+            return 0.0;
+        }
+
+        return switch (selectedQuarter != null ? selectedQuarter.toLowerCase() : "") {
+            case "qtr1" ->
+                nz(activity.getPerc_of_TargetAchieved_qtr11());
+            case "qtr2" ->
+                nz(activity.getPerc_of_TargetAchieved_qtr21());
+            case "qtr3" ->
+                nz(activity.getPerc_of_TargetAchieved_qtr31());
+            case "qtr4" ->
+                nz(activity.getPerc_of_TargetAchieved_qtr41());
+            default ->
+                nz(activity.getPerc_of_TargetAchieved_qtr11());
+        };
+    }
+
+    private BigDecimal getActualForSelectedQuarter(Urc_Activities activity) {
+        if (activity == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal value = switch (selectedQuarter != null ? selectedQuarter.toLowerCase() : "") {
+            case "qtr1" ->
+                nz(activity.getQtr1A());
+            case "qtr2" ->
+                nz(activity.getQtr1A()).add(nz(activity.getQtr2A()));
+            case "qtr3" ->
+                nz(activity.getQtr1A()).add(nz(activity.getQtr2A())).add(nz(activity.getQtr3A()));
+            case "qtr4" ->
+                nz(activity.getQtr1A()).add(nz(activity.getQtr2A())).add(nz(activity.getQtr3A())).add(nz(activity.getQtr4A()));
+            default ->
+                nz(activity.getQtr1A());
+        };
+
+        return invert(value);
+    }
+
+    private BigDecimal sumActivityActualForSelectedQuarter(List<Urc_Activities> activities) {
+        return safeListActivities(activities).stream()
+                .map(this::getActualForSelectedQuarter)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private List<Urc_Activities> safeListActivities(List<Urc_Activities> list) {
+        return list == null ? Collections.emptyList() : list;
     }
 
     private String getLatestAchievement(Urc_Activities activity) {
@@ -906,16 +996,19 @@ public class DepartmentOverview extends VerticalLayout {
         statusContainer.setPadding(false);
         statusContainer.setSpacing(false);
 
-        Span statusLabel = new Span(nvl(department.getStatusText(), "Unknown"));
-        statusLabel.addClassName(nvl(department.getStatusClass(), "status-good"));
+        String statusText = getSelectedDepartmentStatusText(department);
+        String statusClass = getSelectedDepartmentStatusClass(department);
 
-        if (!"On Track".equalsIgnoreCase(nvl(department.getStatusText(), ""))) {
+        Span statusLabel = new Span(statusText);
+        statusLabel.addClassName(statusClass);
+
+        if (!"On Track".equalsIgnoreCase(statusText)) {
             Icon alertIcon = new Icon(VaadinIcon.EXCLAMATION_CIRCLE);
             alertIcon.setSize("0.875rem");
             statusContainer.add(alertIcon);
         }
 
-        BigDecimal spentPct = nz(department.getSpentPercentage());
+        BigDecimal spentPct = getSelectedDepartmentSpentPercentage(department);
         double progress = pctToFraction(spentPct);
 
         ProgressBar progressBar = new ProgressBar(0, 1, progress);
@@ -945,7 +1038,6 @@ public class DepartmentOverview extends VerticalLayout {
     }
 
     private String createBudgetVsSpentConfig(List<DepartmentBudget> departments) {
-
         String[] categories = departments.stream()
                 .map(d -> nvl(shortDeptName(d.getDepartmentName()), "N/A"))
                 .toArray(String[]::new);
@@ -956,7 +1048,7 @@ public class DepartmentOverview extends VerticalLayout {
                 .orElse("");
 
         String spentSeries = departments.stream()
-                .map(d -> toMillions(d.getTotalSpent()))
+                .map(d -> toMillions(getSelectedDepartmentSpent(d)))
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("");
 
@@ -998,13 +1090,12 @@ public class DepartmentOverview extends VerticalLayout {
     }
 
     private String createDepartmentUtilizationConfig(List<DepartmentBudget> departments) {
-
         String[] categories = departments.stream()
                 .map(d -> nvl(shortDeptName(d.getDepartmentName()), "N/A"))
                 .toArray(String[]::new);
 
         String utilizationSeries = departments.stream()
-                .map(d -> nz(d.getSpentPercentage()).toPlainString())
+                .map(d -> getSelectedDepartmentSpentPercentage(d).toPlainString())
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("");
 
@@ -1030,7 +1121,6 @@ public class DepartmentOverview extends VerticalLayout {
           "columnWidth": "45%%"
         }
       }
-               
     }
     """.formatted(
                 utilizationSeries,
@@ -1046,10 +1136,21 @@ public class DepartmentOverview extends VerticalLayout {
     }
 
     private String createDepartmentStatusConfig(List<DepartmentBudget> departments) {
-        long onTrack = departments.stream().filter(d -> "On Track".equalsIgnoreCase(nvl(d.getStatusText(), ""))).count();
-        long near = departments.stream().filter(d -> "Near Limit".equalsIgnoreCase(nvl(d.getStatusText(), ""))).count();
-        long critical = departments.stream().filter(d -> "Critical".equalsIgnoreCase(nvl(d.getStatusText(), ""))).count();
-        long over = departments.stream().filter(d -> "Over Budget".equalsIgnoreCase(nvl(d.getStatusText(), ""))).count();
+        long onTrack = departments.stream()
+                .filter(d -> "On Track".equalsIgnoreCase(getSelectedDepartmentStatusText(d)))
+                .count();
+
+        long near = departments.stream()
+                .filter(d -> "Near Limit".equalsIgnoreCase(getSelectedDepartmentStatusText(d)))
+                .count();
+
+        long critical = departments.stream()
+                .filter(d -> "Critical".equalsIgnoreCase(getSelectedDepartmentStatusText(d)))
+                .count();
+
+        long over = departments.stream()
+                .filter(d -> "Over Budget".equalsIgnoreCase(getSelectedDepartmentStatusText(d)))
+                .count();
 
         if (onTrack == 0 && near == 0 && critical == 0 && over == 0) {
             onTrack = 1;
@@ -1302,6 +1403,298 @@ public class DepartmentOverview extends VerticalLayout {
         return wrapper;
     }
 
+    private Component budgetCoaQtrGeneral(Budget bdgt, Set<UrcDeptSectionAnlDimbgt> deptSections) {
+        VerticalLayout wrapper = new VerticalLayout();
+        wrapper.setWidthFull();
+        wrapper.setPadding(false);
+        wrapper.setSpacing(true);
+        HorizontalLayout overviewContent = new HorizontalLayout();
+
+        Grid<BudgetItemsActuals> gridBudgetItemsQuarterlyGrid = new Grid<>(BudgetItemsActuals.class, false);
+        gridBudgetItemsQuarterlyGrid.setWidthFull();
+        gridBudgetItemsQuarterlyGrid.addThemeVariants(
+                GridVariant.LUMO_WRAP_CELL_CONTENT,
+                GridVariant.LUMO_ROW_STRIPES
+        );
+
+        Grid.Column<BudgetItemsActuals> codeColumn;
+        Grid.Column<BudgetItemsActuals> descColumn;
+        Grid.Column<BudgetItemsActuals> selectedQtrColumn;
+        Grid.Column<BudgetItemsActuals> selectedQtrAColumn;
+
+        Grid.Column<BudgetItemsActuals> totalQtrColumn;
+        Grid.Column<BudgetItemsActuals> totalAQtrColumn;
+        Grid.Column<BudgetItemsActuals> balanceColumn;
+        Grid.Column<BudgetItemsActuals> statusColumn;
+
+        codeColumn = gridBudgetItemsQuarterlyGrid.addColumn(item -> {
+            COA coa = item.getCoacode();
+            return coa != null ? coa.getCode() : "";
+        }).setHeader("Code").setWidth("100px").setFlexGrow(0);
+
+        descColumn = gridBudgetItemsQuarterlyGrid.addColumn(BudgetItemsActuals::getItem)
+                .setHeader("Description")
+                .setWidth("250px");
+        int qtr = mapQuarter(selectedQuarter);
+
+        selectedQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item
+                -> createSpan(getQuarterBudget(item, qtr))
+        ))
+                .setHeader("Cum. Budget (" + getQuarterLabel(qtr) + ")")
+                .setWidth("150px");
+
+        selectedQtrAColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+            Span span = createSpan(getQuarterActual(item, qtr));
+            span.getElement().getThemeList().add("badge");
+
+            ContextMenu contextMenu = new ContextMenu(span);
+            contextMenu.setOpenOnClick(false);
+
+            contextMenu.addItem("Download Qtr " + qtr + " Expenses", event -> {
+                Set<String> sections = extractSectionCodes(deptSections);
+                utils = new utilityActuals(
+                        budget, sampleCoaService,
+                        sampleUrcDeptSectionAnlDimbgtService,
+                        sampleSALFLDGService, sections
+                );
+                utils.createTransactionsDialog3(overviewContent, qtr);
+            });
+
+            contextMenu.addItem("Download Qtr " + qtr + " " + item.getCoacode().getCode() + " Expenses", event -> {
+                Set<String> sections = extractSectionCodes(deptSections);
+                utils = new utilityActuals(
+                        budget, sampleCoaService,
+                        sampleUrcDeptSectionAnlDimbgtService,
+                        sampleSALFLDGService, sections
+                );
+                utils.createTransactionsDialog4(overviewContent, qtr, item.getCoacode().getCode());
+            });
+            return span;
+        }))
+                .setHeader("Cum. Actual (" + getQuarterLabel(qtr) + ")")
+                .setWidth("150px");
+
+        totalQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> createSpan(item.getTotal())))
+                .setHeader("Total Budget").setWidth("150px");
+
+        totalAQtrColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+            Span span = createSpan(item.getTotalA());
+            span.getElement().getThemeList().add("badge");
+            return span;
+        })).setHeader("Total Actual").setWidth("150px");
+
+        balanceColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(item -> {
+            BigDecimal balance = nz(item.getTotal()).subtract(nz(getQuarterActual(item, qtr)));
+            Span span = createSpan(balance);
+            span.getStyle().set("font-weight", "600");
+            if (balance.compareTo(BigDecimal.ZERO) < 0) {
+                span.getStyle().set("color", "var(--lumo-error-text-color)");
+            } else {
+                span.getStyle().set("color", "var(--lumo-success-text-color)");
+            }
+            return span;
+        })).setHeader("Variance").setWidth("150px");
+
+        statusColumn = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(this::createStatusBadge))
+                .setHeader("Status")
+                .setWidth("130px")
+                .setFlexGrow(0);
+
+        codeColumn.setFrozen(true);
+        descColumn.setFrozen(true);
+
+        FooterRow footerRow = gridBudgetItemsQuarterlyGrid.appendFooterRow();
+
+        footerRow.getCell(codeColumn).setComponent(footerText(""));
+        footerRow.getCell(descColumn).setComponent(footerText("TOTAL"));
+        footerRow.getCell(selectedQtrColumn).setComponent(footerText(""));
+        footerRow.getCell(selectedQtrAColumn).setComponent(footerActualText(""));
+
+        footerRow.getCell(totalQtrColumn).setComponent(footerText(""));
+        footerRow.getCell(totalAQtrColumn).setComponent(footerActualText(""));
+        footerRow.getCell(balanceColumn).setComponent(footerBalanceText(""));
+        footerRow.getCell(statusColumn).setComponent(new Span(""));
+
+        Button loadButton = new Button("Load Quarterly Performance", new Icon(VaadinIcon.REFRESH));
+        loadButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Span info = new Span("Click to load or refresh quarterly figures.");
+        info.getStyle().set("color", "var(--lumo-secondary-text-color)");
+
+        HorizontalLayout topBar = new HorizontalLayout(loadButton, info);
+        topBar.setWidthFull();
+        topBar.setAlignItems(FlexComponent.Alignment.CENTER);
+        topBar.setPadding(false);
+        topBar.setSpacing(true);
+
+        loadButton.addClickListener(e -> {
+            java.util.List<BudgetItemsActuals> items = budgetItemsService.findDistinctBudgetItemsesExp(bdgt, deptSections);
+            gridBudgetItemsQuarterlyGrid.setItems(items);
+            refreshFooter(
+                    footerRow,
+                    items,
+                    selectedQtrColumn, selectedQtrAColumn,
+                    totalQtrColumn, totalAQtrColumn,
+                    balanceColumn, statusColumn, qtr
+            );
+            Notification.show("Quarterly performance loaded");
+        });
+
+        wrapper.add(topBar, gridBudgetItemsQuarterlyGrid, overviewContent);
+        return wrapper;
+    }
+
+    private Set<String> extractSectionCodes(Set<UrcDeptSectionAnlDimbgt> sections) {
+        if (sections == null) {
+            return Collections.emptySet();
+        }
+
+        return sections.stream()
+                .map(UrcDeptSectionAnlDimbgt::getANL_CODE)
+                .filter(code -> code != null && !code.isBlank())
+                .map(String::trim)
+                .collect(Collectors.toSet());
+    }
+
+    private BigDecimal getQuarterBudget(BudgetItemsActuals item, int qtr) {
+        if (item == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return switch (qtr) {
+            case 1 ->
+                nz(item.getQtr1());
+            case 2 ->
+                nz(item.getQtr1()).add(nz(item.getQtr2()));
+            case 3 ->
+                nz(item.getQtr1()).add(nz(item.getQtr2())).add(nz(item.getQtr3()));
+            case 4 ->
+                nz(item.getQtr1()).add(nz(item.getQtr2()))
+                .add(nz(item.getQtr3()))
+                .add(nz(item.getQtr4()));
+            default ->
+                BigDecimal.ZERO;
+        };
+    }
+
+    private BigDecimal getQuarterActual(BudgetItemsActuals item, int qtr) {
+        if (item == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal value = switch (qtr) {
+            case 1 ->
+                nz(item.getQtr1A());
+            case 2 ->
+                nz(item.getQtr1A()).add(nz(item.getQtr2A()));
+            case 3 ->
+                nz(item.getQtr1A()).add(nz(item.getQtr2A())).add(nz(item.getQtr3A()));
+            case 4 ->
+                nz(item.getQtr1A()).add(nz(item.getQtr2A()))
+                .add(nz(item.getQtr3A()))
+                .add(nz(item.getQtr4A()));
+            default ->
+                BigDecimal.ZERO;
+        };
+
+        return value;
+    }
+
+    private BigDecimal invert(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value.negate();
+    }
+
+    private String getQuarterLabel(int qtr) {
+        return switch (qtr) {
+            case 1 ->
+                "Q1";
+            case 2 ->
+                "Q2";
+            case 3 ->
+                "Q3";
+            case 4 ->
+                "Q4";
+            default ->
+                "";
+        };
+    }
+
+    private int mapQuarter(String qtr) {
+        if (qtr == null) {
+            return 0;
+        }
+
+        return switch (qtr.toLowerCase()) {
+            case "qtr1" ->
+                1;
+            case "qtr2" ->
+                2;
+            case "qtr3" ->
+                3;
+            case "qtr4" ->
+                4;
+            default ->
+                0;
+        };
+    }
+
+    private void refreshFooter(
+            FooterRow footerRow,
+            java.util.List<BudgetItemsActuals> items,
+            Grid.Column<BudgetItemsActuals> selectedQtrColumn,
+            Grid.Column<BudgetItemsActuals> selectedQtrAColumn,
+            Grid.Column<BudgetItemsActuals> totalQtrColumn,
+            Grid.Column<BudgetItemsActuals> totalAQtrColumn,
+            Grid.Column<BudgetItemsActuals> balanceColumn,
+            Grid.Column<BudgetItemsActuals> statusColumn,
+            int qtr
+    ) {
+        BigDecimal qtr1Total = sum(items, BudgetItemsActuals::getQtr1);
+        BigDecimal qtr1ATotal = sum(items, BudgetItemsActuals::getQtr1A);
+        BigDecimal qtr2Total = sum(items, BudgetItemsActuals::getQtr2);
+        BigDecimal qtr2ATotal = sum(items, BudgetItemsActuals::getQtr2A);
+        BigDecimal qtr3Total = sum(items, BudgetItemsActuals::getQtr3);
+        BigDecimal qtr3ATotal = sum(items, BudgetItemsActuals::getQtr3A);
+        BigDecimal qtr4Total = sum(items, BudgetItemsActuals::getQtr4);
+        BigDecimal qtr4ATotal = sum(items, BudgetItemsActuals::getQtr4A);
+        BigDecimal grandBudget = sum(items, BudgetItemsActuals::getTotal);
+        BigDecimal grandActual = sum(items, BudgetItemsActuals::getTotalA);
+        BigDecimal grandBalance = grandBudget.subtract(grandActual);
+
+        BigDecimal selectdQtrTotal = BigDecimal.ZERO;
+        BigDecimal selectdQtrATotal = BigDecimal.ZERO;
+
+        switch (qtr) {
+            case 1:
+                selectdQtrTotal = qtr1Total;
+                selectdQtrATotal = qtr1ATotal;
+                break;
+            case 2:
+                selectdQtrTotal = qtr1Total.add(qtr2Total);
+                selectdQtrATotal = qtr1ATotal.add(qtr2ATotal);
+                break;
+            case 3:
+                selectdQtrTotal = qtr1Total.add(qtr2Total).add(qtr3Total);
+                selectdQtrATotal = qtr1ATotal.add(qtr2ATotal).add(qtr3ATotal);
+                break;
+            case 4:
+                selectdQtrTotal = qtr1Total.add(qtr2Total).add(qtr3Total).add(qtr4Total);
+                selectdQtrATotal = qtr1ATotal.add(qtr2ATotal).add(qtr3ATotal).add(qtr4ATotal);
+                break;
+            default:
+                break;
+        }
+
+        footerRow.getCell(selectedQtrColumn).setComponent(footerText(formatAmount(selectdQtrTotal)));
+        footerRow.getCell(selectedQtrAColumn).setComponent(footerActualText(formatAmount(selectdQtrATotal)));
+
+        footerRow.getCell(totalQtrColumn).setComponent(footerText(formatAmount(grandBudget)));
+        footerRow.getCell(totalAQtrColumn).setComponent(footerActualText(formatAmount(grandActual)));
+
+        footerRow.getCell(balanceColumn).setComponent(footerBalanceText(formatAmount(grandBalance)));
+        footerRow.getCell(statusColumn).setComponent(createFooterStatusBadge(grandBudget, selectdQtrATotal, grandBalance));
+    }
+
     private void refreshQuarterlyFooter(
             FooterRow footerRow,
             List<BudgetItemsActuals> items,
@@ -1472,5 +1865,92 @@ public class DepartmentOverview extends VerticalLayout {
             span = new Span("-");
         }
         return span;
+    }
+
+    private BigDecimal getSelectedDepartmentSpent(DepartmentBudget department) {
+        if (department == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal value;
+
+        if (selectedQuarter == null || selectedQuarter.isBlank()) {
+            value = nz(department.getTotalSpent());
+        } else {
+            value = switch (selectedQuarter.toLowerCase()) {
+                case "qtr1" ->
+                    nz(department.getCumQtr1Actual());
+                case "qtr2" ->
+                    nz(department.getCumQtr2Actual());
+                case "qtr3" ->
+                    nz(department.getCumQtr3Actual());
+                case "qtr4" ->
+                    nz(department.getCumQtr4Actual());
+                default ->
+                    nz(department.getTotalSpent());
+            };
+        }
+
+        return invert(value);
+    }
+
+    private BigDecimal getSelectedDepartmentAvailable(DepartmentBudget department) {
+        if (department == null) {
+            return BigDecimal.ZERO;
+        }
+        return nz(department.getTotalBudget()).subtract(getSelectedDepartmentSpent(department));
+    }
+
+    private BigDecimal getSelectedDepartmentSpentPercentage(DepartmentBudget department) {
+        BigDecimal totalBudget = nz(department != null ? department.getTotalBudget() : BigDecimal.ZERO);
+        if (totalBudget.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return getSelectedDepartmentSpent(department)
+                .divide(totalBudget, 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private String getSelectedDepartmentStatusText(DepartmentBudget department) {
+        BigDecimal pct = getSelectedDepartmentSpentPercentage(department);
+
+        if (pct.compareTo(BigDecimal.valueOf(100)) > 0) {
+            return "Over Budget";
+        } else if (pct.compareTo(BigDecimal.valueOf(90)) > 0) {
+            return "Critical";
+        } else if (pct.compareTo(BigDecimal.valueOf(75)) > 0) {
+            return "Near Limit";
+        }
+        return "On Track";
+    }
+
+    private String getSelectedDepartmentStatusClass(DepartmentBudget department) {
+        return switch (getSelectedDepartmentStatusText(department)) {
+            case "Over Budget" ->
+                "status-over";
+            case "Critical" ->
+                "status-critical";
+            case "Near Limit" ->
+                "status-near";
+            default ->
+                "status-good";
+        };
+    }
+
+    private String getQuarterLabel() {
+        return switch (selectedQuarter != null ? selectedQuarter.toLowerCase() : "") {
+            case "qtr1" ->
+                "Quarter 1";
+            case "qtr2" ->
+                "Quarter 2";
+            case "qtr3" ->
+                "Quarter 3";
+            case "qtr4" ->
+                "Quarter 4";
+            default ->
+                "Full Year";
+        };
     }
 }

@@ -2103,4 +2103,28 @@ WHERE b.budget = :budget
 """)
     BigDecimal getTotalIncomeByBudget(@Param("budgetId") Long budgetId);
 
+    List<BudgetItems> findByBudgetAndBudgetTypeInAndDeptUnitInAndActivity(
+            Budget budget,
+            Set<Organisation> budgetTypes,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            Urc_Activities activity
+    );
+
+    @Query("""
+    select b
+    from BudgetItems b
+    where b.budget = :budget
+      and b.budgetType in :budgetTypes
+      and b.deptUnit in :deptUnits
+      and (
+            b.coacode.code like '2%'
+         or b.coacode.code like '3%'
+      )
+""")
+    List<BudgetItems> findByBudgetAndBudgetTypeInAndDeptUnitInAndExpenseCoa(
+            @Param("budget") Budget budget,
+            @Param("budgetTypes") Set<Organisation> budgetTypes,
+            @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits
+    );
+
 }

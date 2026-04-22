@@ -1,0 +1,289 @@
+:host {
+    --user-view-surface: var(--lumo-base-color);
+    --user-view-surface-alt: var(--lumo-contrast-5pct);
+    --user-view-border: 1px solid var(--lumo-contrast-10pct);
+    --user-view-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    --user-view-radius: 16px;
+    --user-view-radius-sm: 10px;
+}
+
+.user-view {
+    background:
+        linear-gradient(180deg, var(--lumo-contrast-5pct) 0%, transparent 220px),
+        var(--lumo-base-color);
+    min-height: 100%;
+}
+
+.user-view .grid-wrapper {
+    height: 100%;
+    padding: 0.75rem;
+    box-sizing: border-box;
+}
+
+.user-view .grid-wrapper > vaadin-vertical-layout,
+.user-view .grid-wrapper > vaadin-vertical-layout > vaadin-grid {
+    height: 100%;
+}
+
+.user-view .user-editor-layout {
+    padding: 1rem;
+    box-sizing: border-box;
+    background: linear-gradient(180deg, var(--user-view-surface) 0%, var(--user-view-surface-alt) 100%);
+    border-left: var(--user-view-border);
+}
+
+.user-view .user-editor {
+    background: var(--user-view-surface);
+    border: var(--user-view-border);
+    border-radius: var(--user-view-radius);
+    box-shadow: var(--user-view-shadow);
+    padding: 1.1rem 1rem 1rem 1rem;
+}
+
+.user-view .button-layout {
+    margin-top: 1rem;
+    padding: 0.9rem 1rem 0 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.user-view vaadin-split-layout {
+    background: transparent;
+}
+
+.user-view vaadin-form-layout {
+    gap: 0.9rem 1rem;
+}
+
+.user-view vaadin-text-field,
+.user-view vaadin-email-field,
+.user-view vaadin-password-field,
+.user-view vaadin-combo-box,
+.user-view vaadin-multi-select-combo-box,
+.user-view vaadin-text-area {
+    --vaadin-input-field-border-radius: 12px;
+    --vaadin-input-field-background: var(--lumo-base-color);
+    --vaadin-input-field-hover-highlight: transparent;
+    --vaadin-input-field-border-width: 1px;
+    --vaadin-input-field-border-color: var(--lumo-contrast-15pct);
+    width: 100%;
+}
+
+.user-view vaadin-text-field::part(input-field),
+.user-view vaadin-email-field::part(input-field),
+.user-view vaadin-password-field::part(input-field),
+.user-view vaadin-combo-box::part(input-field),
+.user-view vaadin-multi-select-combo-box::part(input-field),
+.user-view vaadin-text-area::part(input-field) {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.user-view vaadin-text-field:hover::part(input-field),
+.user-view vaadin-email-field:hover::part(input-field),
+.user-view vaadin-password-field:hover::part(input-field),
+.user-view vaadin-combo-box:hover::part(input-field),
+.user-view vaadin-multi-select-combo-box:hover::part(input-field),
+.user-view vaadin-text-area:hover::part(input-field) {
+    border-color: var(--lumo-primary-color-50pct);
+}
+
+.user-view vaadin-text-field[focused]::part(input-field),
+.user-view vaadin-email-field[focused]::part(input-field),
+.user-view vaadin-password-field[focused]::part(input-field),
+.user-view vaadin-combo-box[focused]::part(input-field),
+.user-view vaadin-multi-select-combo-box[focused]::part(input-field),
+.user-view vaadin-text-area[focused]::part(input-field) {
+    border-color: var(--lumo-primary-color);
+    box-shadow: 0 0 0 0.14rem var(--lumo-primary-color-10pct);
+}
+
+.user-view vaadin-checkbox {
+    margin-top: 0.3rem;
+}
+
+.user-view vaadin-checkbox::part(checkbox) {
+    border-radius: 6px;
+}
+
+.user-view vaadin-button {
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.user-view vaadin-button[theme~="primary"] {
+    box-shadow: 0 8px 18px var(--lumo-primary-color-10pct);
+}
+
+.user-view vaadin-button[theme~="success"] {
+    box-shadow: 0 8px 18px rgba(56, 142, 60, 0.15);
+}
+
+.user-view vaadin-button[theme~="error"] {
+    box-shadow: 0 8px 18px rgba(211, 47, 47, 0.14);
+}
+
+.user-view vaadin-grid {
+    border: var(--user-view-border);
+    border-radius: var(--user-view-radius);
+    background: var(--user-view-surface);
+    box-shadow: var(--user-view-shadow);
+    overflow: hidden;
+    --vaadin-grid-cell-padding: 0.8rem 0.95rem;
+    --vaadin-grid-header-cell-background: linear-gradient(180deg, var(--lumo-contrast-5pct), var(--lumo-base-color));
+    --vaadin-grid-row-border-color: var(--lumo-contrast-10pct);
+}
+
+.user-view vaadin-grid::part(header-cell) {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--lumo-secondary-text-color);
+    letter-spacing: 0.02em;
+    border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.user-view vaadin-grid::part(body-cell) {
+    font-size: 0.94rem;
+}
+
+.user-view vaadin-grid::part(row):hover {
+    background: var(--lumo-primary-color-10pct);
+}
+
+.user-view vaadin-grid::part(selected-row) {
+    background: linear-gradient(90deg, var(--lumo-primary-color-10pct), transparent);
+}
+
+.user-view vaadin-grid::part(focused-cell) {
+    box-shadow: inset 0 0 0 1px var(--lumo-primary-color-30pct);
+}
+
+.user-view vaadin-grid-cell-content {
+    align-items: center;
+}
+
+.user-view vaadin-combo-box[label="Show"],
+.user-view vaadin-text-field[placeholder*="Search"] {
+    margin: 0;
+}
+
+.user-view .top-toolbar,
+.user-view .filters-bar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: end;
+    flex-wrap: wrap;
+    padding: 0.2rem 0 0.35rem 0;
+}
+
+.user-view .top-toolbar {
+    margin-bottom: 0.25rem;
+}
+
+.user-view .filters-bar > * {
+    flex: 1 1 220px;
+}
+
+.user-view span[theme~="badge"] {
+    border-radius: 999px;
+    padding: 0.32rem 0.72rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.user-view span[theme~="badge"][theme~="success"] {
+    background: rgba(46, 125, 50, 0.12);
+    color: #256b2a;
+    border: 1px solid rgba(46, 125, 50, 0.18);
+}
+
+.user-view span[theme~="badge"][theme~="error"] {
+    background: rgba(198, 40, 40, 0.1);
+    color: #b3261e;
+    border: 1px solid rgba(198, 40, 40, 0.16);
+}
+
+.user-view vaadin-dialog-overlay::part(content) {
+    border-radius: 18px;
+}
+
+.user-view img {
+    display: block;
+}
+
+.user-view > img,
+.user-view > vaadin-horizontal-layout img,
+.user-view > vaadin-vertical-layout img {
+    border-radius: 12px;
+}
+
+.user-view .section-card,
+.user-view .editor-card,
+.user-view .grid-card {
+    background: var(--user-view-surface);
+    border: var(--user-view-border);
+    border-radius: var(--user-view-radius);
+    box-shadow: var(--user-view-shadow);
+}
+
+.user-view .muted-text {
+    color: var(--lumo-secondary-text-color);
+}
+
+.user-view .danger-text {
+    color: var(--lumo-error-text-color);
+}
+
+.user-view .success-text {
+    color: var(--lumo-success-text-color);
+}
+
+@media (max-width: 960px) {
+    .user-view .grid-wrapper {
+        padding: 0.5rem;
+    }
+
+    .user-view .user-editor-layout {
+        padding: 0.65rem;
+    }
+
+    .user-view .user-editor {
+        padding: 0.85rem;
+        border-radius: 14px;
+    }
+
+    .user-view vaadin-grid {
+        border-radius: 14px;
+        --vaadin-grid-cell-padding: 0.72rem 0.75rem;
+    }
+
+    .user-view .button-layout {
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .user-view {
+        background: var(--lumo-base-color);
+    }
+
+    .user-view .grid-wrapper,
+    .user-view .user-editor-layout {
+        padding: 0.35rem;
+    }
+
+    .user-view .user-editor,
+    .user-view vaadin-grid {
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    }
+
+    .user-view .filters-bar,
+    .user-view .top-toolbar {
+        gap: 0.55rem;
+    }
+}

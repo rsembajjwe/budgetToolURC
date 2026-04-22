@@ -24,6 +24,7 @@
 @import url('./views/ppda-requisition-dialog.css');
 @import url('./views/report-view.css');
 @import url('./views/budget-reports-view.css');
+@import url('./views/user-view.css');
 @import url('./views/budget-visual-cards.css');
 @import url('./views/activity-selection-dialogue.css');    html {
     --lumo-font-size: 1rem;

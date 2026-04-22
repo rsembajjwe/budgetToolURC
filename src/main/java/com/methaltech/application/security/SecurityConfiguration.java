@@ -14,6 +14,12 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @Configuration
 public class SecurityConfiguration extends VaadinWebSecurity {
 
+    private final CustomAuthenticationFailureHandler failureHandler;
+
+    public SecurityConfiguration(CustomAuthenticationFailureHandler failureHandler) {
+        this.failureHandler = failureHandler;
+    }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -21,25 +27,30 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests().requestMatchers(new AntPathRequestMatcher("/images/*.png")).permitAll();
-        http.authorizeHttpRequests().requestMatchers(new AntPathRequestMatcher("/icons/*.png")).permitAll();
-        //Icons from the line-awesome addon
-        http.authorizeHttpRequests().requestMatchers(new AntPathRequestMatcher("/line-awesome/**/*.svg")).permitAll();
-        http.authorizeHttpRequests().requestMatchers(new AntPathRequestMatcher("/VAADIN/**")).permitAll();
-        http.authorizeHttpRequests().requestMatchers("/VAADIN/dynamic/**").permitAll();
-        http.authorizeHttpRequests().requestMatchers(new AntPathRequestMatcher("/vaadinServlet/**")).permitAll();
-        http.authorizeHttpRequests() .requestMatchers("/VAADIN/dynamic/resource/**").permitAll();
 
-        http.authorizeHttpRequests().requestMatchers(new AntPathRequestMatcher("/favicon.ico")).permitAll();
-        http.authorizeHttpRequests().requestMatchers(new AntPathRequestMatcher("/robots.txt")).permitAll();
-        http.authorizeHttpRequests().requestMatchers(new AntPathRequestMatcher("/manifest.webmanifest")).permitAll();
-        http.authorizeHttpRequests().requestMatchers(new AntPathRequestMatcher("/sw.js")).permitAll();
-        http.authorizeHttpRequests().requestMatchers(new AntPathRequestMatcher("/offline.html")).permitAll();
-        http.authorizeHttpRequests().requestMatchers(new AntPathRequestMatcher("/frontend/**")).permitAll();
-        http.authorizeHttpRequests().requestMatchers(new AntPathRequestMatcher("/webjars/**")).permitAll();
-        http.authorizeHttpRequests().requestMatchers(new AntPathRequestMatcher("/lumo-css-framework/**")).permitAll();
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(new AntPathRequestMatcher("/images/*.png")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/icons/*.png")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/line-awesome/**/*.svg")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/VAADIN/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/vaadinServlet/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/favicon.ico")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/robots.txt")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/manifest.webmanifest")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/sw.js")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/offline.html")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/frontend/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/webjars/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/lumo-css-framework/**")).permitAll()
+                .requestMatchers("/VAADIN/dynamic/**").permitAll()
+                .requestMatchers("/VAADIN/dynamic/resource/**").permitAll()
+        );
+
+        http.formLogin(form -> form
+                .failureHandler(failureHandler)
+        );
+
         super.configure(http);
         setLoginView(http, LoginView.class);
     }
-
 }

@@ -112,10 +112,9 @@ public class utilityActuals {
                 .setFlexGrow(0);
 
         // List<SALFLDGProjection> items = refreshgridTransactions2(budget.getFinancialYear(), budget.getCoacode().getCode());
-        
-        if(comboBoxD_Section.contains("#              ")){
+        if (comboBoxD_Section.contains("#              ")) {
             items = sampleSALFLDGService.findByPeriodAndDepartmentExpendituresWithNullSections(getFinancialYearPeriods(budget), comboBoxD_Section);
-        }else{
+        } else {
             items = sampleSALFLDGService.findExpendituresByPeriodAndSections(getFinancialYearPeriods(budget), comboBoxD_Section);
         }
         footerTotal.setText("Total: " + sumAmounts(items));
@@ -150,7 +149,7 @@ public class utilityActuals {
         Button downloadButton = new Button("Download", new Icon(VaadinIcon.ENVELOPE_O), ef
                 -> {
             List<SALFLDGProjection> items2 = refreshgridTransactions2();
-            exportAndDownloadExcelTransactionDetails(budget, items, overviewContent,4);
+            exportAndDownloadExcelTransactionDetails(budget, items, overviewContent, 4);
             dialog.close();
         });
         dialog.getFooter().add(filterButton, downloadButton);
@@ -163,21 +162,204 @@ public class utilityActuals {
         return dialog;
     }
 
-    public void exportAndDownloadExcelTransactionDetails(Budget budget, List<SALFLDGProjection> list, HorizontalLayout overviewContent,int qtr) {
+    public Dialog createTransactionsDialog3(HorizontalLayout overviewContent, int qtr) {
+        Dialog dialog = new Dialog();
+        dialog.getElement().getStyle().set("padding-top", "50px");
+        dialog.setHeaderTitle("Transactions " + budget.getFinancialYear());
+
+        Grid<SALFLDGProjection> gridTransactions = new Grid<>(SALFLDGProjection.class, false);
+        gridTransactions.setSelectionMode(Grid.SelectionMode.SINGLE);
+        gridTransactions.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
+
+        gridTransactions.addColumn(SALFLDGProjection::getAccntCode)
+                .setHeader("Code")
+                .setWidth("80px")
+                .setFlexGrow(0)
+                .setSortable(true);
+
+        gridTransactions.addColumn(SALFLDGProjection::getDescriptn).setHeader("Name").setFrozenToEnd(true);
+
+        gridTransactions.addColumn(SALFLDGProjection::getJrnalNo)
+                .setHeader("Journal No.")
+                .setWidth("80px")
+                .setFlexGrow(0);
+
+        // List<SALFLDGProjection> items = refreshgridTransactions2(budget.getFinancialYear(), budget.getCoacode().getCode());
+        if (comboBoxD_Section.contains("#              ")) {
+            items = sampleSALFLDGService.findByPeriodAndDepartmentExpendituresWithNullSections(getFinancialYearPeriods(budget), comboBoxD_Section);
+        } else {
+            items = sampleSALFLDGService.findExpendituresByPeriodAndSections(getFinancialYearPeriods(budget), comboBoxD_Section);
+        }
+
+        gridTransactions.addColumn(salfldg -> {
+            BigDecimal amount = salfldg.getAmount();
+            return amount != null ? formatAmount(amount) : "";
+        }).setHeader("Amount").setAutoWidth(true).setFooter(footerTotal);
+        gridTransactions.addColumn(SALFLDGProjection::getTransDatetime).setHeader("Trans Date");
+        gridTransactions.addColumn(SALFLDGProjection::getAnalT1).setHeader("Section").setTooltipGenerator(trans -> {
+            String sectcode = trans.getAnalT1();
+            if (sectcode == null || sectcode.trim() == "") {
+                return "_";
+            } else {
+                // return sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE(trans.getAnalT1()).getNAME();
+
+                return sectcode;
+            }
+
+        });
+        //gridTransactions.addColumn(SALFLDGProjection::getPeriod).setHeader("Period");
+
+        gridTransactions.getStyle().set("width", "100%").set("max-width", "100%");
+        gridTransactions.setSelectionMode(Grid.SelectionMode.SINGLE);
+
+        Set<Integer> periods = extra.getFinancialYearPeriodsByCumQuarter(budget, qtr);
+        List<SALFLDGProjection> items3 = filterByPeriods(items, periods);
+        gridTransactions.setItems(items3);
+
+        footerTotal.setText("Total: " + sumAmounts(items3));
+        footerTotal.getStyle().set("text-align", "right").set("font-weight", "bold");
+
+        // Buttons
+        Button filterButton = new Button("Close", new Icon(VaadinIcon.CLOSE), ef -> dialog.close());
+        filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button downloadButton = new Button("Download", new Icon(VaadinIcon.ENVELOPE_O), ef
+                -> {
+            //List<SALFLDGProjection> items2 = refreshgridTransactions2();
+
+            exportAndDownloadExcelTransactionDetails(budget, items3, overviewContent, 4);
+            dialog.close();
+        });
+        dialog.getFooter().add(filterButton, downloadButton);
+
+        dialog.addThemeVariants(DialogVariant.LUMO_NO_PADDING);
+        dialog.add(gridTransactions);
+        dialog.setWidth("80%");
+        dialog.open();
+
+        return dialog;
+    }
+    
+    public Dialog createTransactionsDialog4(HorizontalLayout overviewContent, int qtr,String accCode) {
+        Dialog dialog = new Dialog();
+        dialog.getElement().getStyle().set("padding-top", "50px");
+        dialog.setHeaderTitle("Transactions " + budget.getFinancialYear());
+
+        Grid<SALFLDGProjection> gridTransactions = new Grid<>(SALFLDGProjection.class, false);
+        gridTransactions.setSelectionMode(Grid.SelectionMode.SINGLE);
+        gridTransactions.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
+
+        gridTransactions.addColumn(SALFLDGProjection::getAccntCode)
+                .setHeader("Code")
+                .setWidth("80px")
+                .setFlexGrow(0)
+                .setSortable(true);
+
+        gridTransactions.addColumn(SALFLDGProjection::getDescriptn).setHeader("Name").setFrozenToEnd(true);
+
+        gridTransactions.addColumn(SALFLDGProjection::getJrnalNo)
+                .setHeader("Journal No.")
+                .setWidth("80px")
+                .setFlexGrow(0);
+
+        // List<SALFLDGProjection> items = refreshgridTransactions2(budget.getFinancialYear(), budget.getCoacode().getCode());
+        if (comboBoxD_Section.contains("#              ")) {
+            items = sampleSALFLDGService.findByPeriodAndDepartmentExpendituresWithNullSections(getFinancialYearPeriods(budget), comboBoxD_Section);
+        } else {
+            items = sampleSALFLDGService.findExpendituresByPeriodAndSections(getFinancialYearPeriods(budget), comboBoxD_Section);
+        }
+
+        gridTransactions.addColumn(salfldg -> {
+            BigDecimal amount = salfldg.getAmount();
+            return amount != null ? formatAmount(amount) : "";
+        }).setHeader("Amount").setAutoWidth(true).setFooter(footerTotal);
+        gridTransactions.addColumn(SALFLDGProjection::getTransDatetime).setHeader("Trans Date");
+        gridTransactions.addColumn(SALFLDGProjection::getAnalT1).setHeader("Section").setTooltipGenerator(trans -> {
+            String sectcode = trans.getAnalT1();
+            if (sectcode == null || sectcode.trim() == "") {
+                return "_";
+            } else {
+                // return sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE(trans.getAnalT1()).getNAME();
+
+                return sectcode;
+            }
+
+        });
+        //gridTransactions.addColumn(SALFLDGProjection::getPeriod).setHeader("Period");
+
+        gridTransactions.getStyle().set("width", "100%").set("max-width", "100%");
+        gridTransactions.setSelectionMode(Grid.SelectionMode.SINGLE);
+
+        Set<Integer> periods = extra.getFinancialYearPeriodsByCumQuarter(budget, qtr);
+        List<SALFLDGProjection> items3 = filterByPeriods(items, periods,accCode);
+        gridTransactions.setItems(items3);
+
+        footerTotal.setText("Total: " + sumAmounts(items3));
+        footerTotal.getStyle().set("text-align", "right").set("font-weight", "bold");
+
+        // Buttons
+        Button filterButton = new Button("Close", new Icon(VaadinIcon.CLOSE), ef -> dialog.close());
+        filterButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button downloadButton = new Button("Download", new Icon(VaadinIcon.ENVELOPE_O), ef
+                -> {
+            //List<SALFLDGProjection> items2 = refreshgridTransactions2();
+
+            exportAndDownloadExcelTransactionDetails(budget, items3, overviewContent, 4);
+            dialog.close();
+        });
+        dialog.getFooter().add(filterButton, downloadButton);
+
+        dialog.addThemeVariants(DialogVariant.LUMO_NO_PADDING);
+        dialog.add(gridTransactions);
+        dialog.setWidth("80%");
+        dialog.open();
+
+        return dialog;
+    }    
+
+    private List<SALFLDGProjection> filterByPeriods(
+            List<SALFLDGProjection> items,
+            Set<Integer> periods
+    ) {
+        if (items == null || periods == null || periods.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return items.stream()
+                .filter(item -> item.getPeriod() != null && periods.contains(item.getPeriod()))
+                .toList();
+    }
+    
+    private List<SALFLDGProjection> filterByPeriods(
+            List<SALFLDGProjection> items,
+            Set<Integer> periods,String code
+    ) {
+        if (items == null || periods == null || periods.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return items.stream()
+                .filter(item -> item.getPeriod() != null && periods.contains(item.getPeriod()))
+                .filter(item -> item.getAccntCode() != null && code.equals(item.getAccntCode()))
+                .toList();
+    }    
+
+    public void exportAndDownloadExcelTransactionDetails(Budget budget, List<SALFLDGProjection> list, HorizontalLayout overviewContent, int qtr) {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet(" Transactions " + budget.getFinancialYear());
             // Set the paper size to A3 Landscape
             sheet.getPrintSetup().setPaperSize(PrintSetup.A3_PAPERSIZE);
             sheet.getPrintSetup().setLandscape(true);
-            createTransactionDetails(workbook, sheet, list,qtr);
+            createTransactionDetails(workbook, sheet, list, qtr);
             //createDataRows(sheet, people);
 
             // Write the workbook to a byte array
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             workbook.write(outputStream);
-String filename="QTR "+qtr+" Transactios";
+            String filename = "QTR " + qtr + " Transactios";
             // Create a StreamResource with the Excel data
-            StreamResource resource = new StreamResource(filename+" " + budget.getFinancialYear() + ".xlsx", ()
+            StreamResource resource = new StreamResource(filename + " " + budget.getFinancialYear() + ".xlsx", ()
                     -> new ByteArrayInputStream(outputStream.toByteArray()));
 
             // Create an Anchor component with the StreamResource
@@ -205,7 +387,7 @@ String filename="QTR "+qtr+" Transactios";
      * Period removed - Amount sign normalized: if AccntCode starts with 2 or 3
      * -> always positive else -> always negative
      */
-    private void createTransactionDetails(Workbook workbook, Sheet sheet, List<SALFLDGProjection> list,int qtr) {
+    private void createTransactionDetails(Workbook workbook, Sheet sheet, List<SALFLDGProjection> list, int qtr) {
         Map<TxSKey, CellStyle> st = buildTransactionStyles(workbook);
 
         // Columns: 0..5
@@ -237,7 +419,7 @@ String filename="QTR "+qtr+" Transactios";
         subRow.setHeightInPoints(18);
 
         Cell subCell = subRow.createCell(0);
-        subCell.setCellValue("QUARTER "+qtr+" TRANSACTIONS " + fy);
+        subCell.setCellValue("QUARTER " + qtr + " TRANSACTIONS " + fy);
         subCell.setCellStyle(st.get(TxSKey.SUBTITLE));
         sheet.addMergedRegion(new CellRangeAddress(r, r, 0, LAST_COL));
 

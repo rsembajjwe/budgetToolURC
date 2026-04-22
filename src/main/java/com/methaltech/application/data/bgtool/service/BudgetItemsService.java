@@ -1231,29 +1231,29 @@ public class BudgetItemsService {
 
         return codes.stream()
                 .filter(Objects::nonNull)
-                .map(String::trim)  
+                .map(String::trim)
                 .distinct()
                 .sorted() // optional (good for reporting consistency)
                 .collect(Collectors.joining(","));
     }
-    
+
     public String getCommaSeparatedOrganisationNames(
-        Budget budget,
-        Set<UrcDeptSectionAnlDimbgt> deptUnits,
-        Urc_Activities activity,
-        Set<Organisation> budgetTypes) {
+            Budget budget,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            Urc_Activities activity,
+            Set<Organisation> budgetTypes) {
 
-    List<String> names = repository.findOrganisationNamesBySameFilters(
-            budget, deptUnits, activity, budgetTypes);
+        List<String> names = repository.findOrganisationNamesBySameFilters(
+                budget, deptUnits, activity, budgetTypes);
 
-    return names.stream()
-            .filter(Objects::nonNull)
-            .map(String::trim)
-            .filter(s -> !s.isEmpty())
-            .distinct()
-            .sorted() // optional but good for reports
-            .collect(Collectors.joining(", "));
-}
+        return names.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .distinct()
+                .sorted() // optional but good for reports
+                .collect(Collectors.joining(", "));
+    }
 
     public BigDecimal findSumOfIndividualMonthsByBudgetCoa(
             Budget budget,
@@ -3268,6 +3268,32 @@ public class BudgetItemsService {
                 .filter(Objects::nonNull)
                 .filter(code -> !code.trim().isEmpty())
                 .collect(Collectors.toSet());
+    }
+
+    public List<BudgetItems> findByBudgetAndOrganisationsAndSectionsAndActivity(
+            Budget budget,
+            Set<Organisation> organisations,
+            Set<UrcDeptSectionAnlDimbgt> sections,
+            Urc_Activities activity
+    ) {
+        return repository.findByBudgetAndBudgetTypeInAndDeptUnitInAndActivity(budget, organisations, sections, activity);
+    }
+
+    public List<BudgetItems> findExpenseItemsByBudgetAndBudgetTypesAndDeptUnits(
+            Budget budget,
+            Set<Organisation> budgetTypes,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits
+    ) {
+        if (budget == null || budgetTypes == null || budgetTypes.isEmpty()
+                || deptUnits == null || deptUnits.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return repository.findByBudgetAndBudgetTypeInAndDeptUnitInAndExpenseCoa(
+                budget,
+                budgetTypes,
+                deptUnits
+        );
     }
 
 }

@@ -34,13 +34,15 @@ public class BudgetSummaryCards extends HorizontalLayout {
     private final SALFLDGService sampleSALFLDGService;
     private final Budget budget;
     PeriodExtractor extract = new PeriodExtractor();
+    private final String selectedQuarter;
 
     public BudgetSummaryCards(BudgetSummary budgetSummary,
             CoaService sampleCoaService,
             UrcDeptSectionAnlDimbgtService sampleUrcDeptSectionAnlDimbgtService,
             SALFLDGService sampleSALFLDGService,
             DeptSectionMergerService sampleDeptSectionMergerService,
-            Budget budget) {
+            Budget budget,
+            String selectedQuarter) {
 
         currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
         currencyFormat.setCurrency(java.util.Currency.getInstance("UGX"));
@@ -50,6 +52,7 @@ public class BudgetSummaryCards extends HorizontalLayout {
         this.sampleUrcDeptSectionAnlDimbgtService = sampleUrcDeptSectionAnlDimbgtService;
         this.sampleSALFLDGService = sampleSALFLDGService;
         this.budget = budget;
+        this.selectedQuarter = selectedQuarter;
 
         setWidthFull();
         setSpacing(false);
@@ -65,20 +68,28 @@ public class BudgetSummaryCards extends HorizontalLayout {
         getStyle().set("gap", "1rem");
         getStyle().set("box-sizing", "border-box");
 
+        BigDecimal selectedSpent = getSelectedSpent(budgetSummary);
+        BigDecimal selectedSpentPct = percentage(selectedSpent, budgetSummary.getTotalBudget());
+        BigDecimal selectedRemaining = nz(budgetSummary.getTotalBudget()).subtract(selectedSpent);
+        double percentageRemaining = BigDecimal.valueOf(100)
+                .subtract(selectedSpentPct)
+                .max(BigDecimal.ZERO)
+                .doubleValue();
+
         Div spent = createQuarterlySummaryCardActual(
                 "1.4 Total Spent",
-                budgetSummary.getTotalSpent(),
-                budgetSummary.getCumQtr1Actual(),
-                budgetSummary.getCumQtr2Actual(),
-                budgetSummary.getCumQtr3Actual(),
-                budgetSummary.getCumQtr4Actual(),
+                selectedSpent,
+                nz(budgetSummary.getCumQtr1Actual()),
+                nz(budgetSummary.getCumQtr2Actual()),
+                nz(budgetSummary.getCumQtr3Actual()),
+                nz(budgetSummary.getCumQtr4Actual()),
                 budgetSummary.getOpexActual().abs(),
                 budgetSummary.getCapexActual().abs(),
-                budgetSummary.getRemainingBudget(),
-                100 - budgetSummary.getSpentPercentage().doubleValue(),
+                selectedRemaining,
+                percentageRemaining,
                 VaadinIcon.TRENDING_DOWN,
                 "card-red",
-                String.format("%.1f%% of budget", budgetSummary.getSpentPercentage()),
+                String.format("%.1f%% of budget", selectedSpentPct.doubleValue()),
                 "Actual Exp."
         );
 
@@ -159,9 +170,9 @@ public class BudgetSummaryCards extends HorizontalLayout {
                 budgetSummary.getTotalBudget(),
                 budgetSummary.getProjectedRevenue(),
                 budgetSummary.getRevenueActual(),
-                budgetSummary.getTotalSpent(),
+                selectedSpent,
                 budgetSummary.getBudgetPerformancePercentage(),
-                budgetSummary.getAbsorptionRatePercentage()
+                selectedSpentPct
         );
 
         Div totalBudget = createQuarterlySummaryCard(
@@ -190,10 +201,37 @@ public class BudgetSummaryCards extends HorizontalLayout {
                 VaadinIcon.TRENDING_UP,
                 "card-emerald",
                 String.format("%.1f%% of target",
-                        percentage(budgetSummary.getRevenueActual(), budgetSummary.getProjectedRevenue()))
+                        percentage(budgetSummary.getRevenueActual(), budgetSummary.getProjectedRevenue()).doubleValue())
         );
 
         add(financialHighlights, totalBudget, revenueCollected, spent);
+    }
+
+    private BigDecimal getSelectedSpent(BudgetSummary budgetSummary) {
+        if (budgetSummary == null) {
+            return BigDecimal.ZERO;
+        }
+
+        if (selectedQuarter == null || selectedQuarter.isBlank()) {
+            return nz(budgetSummary.getTotalSpent());
+        }
+
+        return switch (selectedQuarter.toLowerCase()) {
+            case "qtr1" ->
+                nz(budgetSummary.getCumQtr1Actual());
+            case "qtr2" ->
+                nz(budgetSummary.getCumQtr2Actual()); // cumulative = q1 + q2
+            case "qtr3" ->
+                nz(budgetSummary.getCumQtr3Actual()); // cumulative = q1 + q2 + q3
+            case "qtr4" ->
+                nz(budgetSummary.getCumQtr4Actual()); // cumulative full-year
+            default ->
+                nz(budgetSummary.getTotalSpent());
+        };
+    }
+
+    private BigDecimal nz(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 
     private Set<String> collectSections(BudgetSummary budgetSummary) {
@@ -354,18 +392,18 @@ public class BudgetSummaryCards extends HorizontalLayout {
         card.addClassName(cardClass);
 
         HorizontalLayout header = buildCardHeader(title, iconType);
-        Div mainValue = buildMainValue(formatAmount(total), subtitle);
+        Div mainValue = buildMainValue(formatAmount(nz(total)), subtitle);
 
         Div breakdown = new Div();
         breakdown.addClassName("card-breakdown");
         breakdown.add(
-                compactMetricRow("Q1", formatAmount(q1)),
-                compactMetricRow("Q2", formatAmount(q2)),
-                compactMetricRow("Q3", formatAmount(q3)),
-                compactMetricRow("Q4", formatAmount(q4)),
-                compactMetricRow("Opex", formatAmount(opexB), percentage(opexB, total) + "% of actual"),
-                compactMetricRow("Capex", formatAmount(capexB), percentage(capexB, total) + "% of actual"),
-                compactMetricRow("Remaining", formatAmount(remainingB), String.format("%.2f%% of budget", percentageRemaining))
+                compactMetricRow("Q1", formatAmount(nz(q1))),
+                compactMetricRow("Q2", formatAmount(nz(q2)), "Cumulative"),
+                compactMetricRow("Q3", formatAmount(nz(q3)), "Cumulative"),
+                compactMetricRow("Q4", formatAmount(nz(q4)), "Cumulative"),
+                compactMetricRow("Opex", formatAmount(nz(opexB)), percentage(opexB, total) + "% of actual"),
+                compactMetricRow("Capex", formatAmount(nz(capexB)), percentage(capexB, total) + "% of actual"),
+                compactMetricRow("Remaining", formatAmount(nz(remainingB)), String.format("%.2f%% of budget", percentageRemaining))
         );
 
         card.add(header, mainValue, breakdown);
@@ -380,7 +418,7 @@ public class BudgetSummaryCards extends HorizontalLayout {
             BigDecimal revenuePerformancePercent,
             BigDecimal absorptionRatePercent
     ) {
-        BigDecimal netPosition = actualRevenue.subtract(actualExpenditure);
+        BigDecimal netPosition = nz(actualRevenue).subtract(nz(actualExpenditure));
         boolean deficit = netPosition.compareTo(BigDecimal.ZERO) < 0;
 
         Div card = new Div();

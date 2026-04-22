@@ -408,7 +408,7 @@ public class budgetWorkplanView extends Div {
         Set<UrcDeptSectionAnlDimbgt> selectedSections
                 = department.getSections() != null ? department.getSections() : Collections.emptySet();
 
-        String workplanTitle = "WORKPLAN - " + nzs(department.getDepartmentName());
+        String workplanTitle = "WORKPLAN - " + nzs(department.getDepartmentName()+" "+budget.getFinancialYear());
 
         // -----------------------------
         // Fonts

@@ -1,7 +1,7 @@
 package com.methaltech.application.security;
 
-import com.methaltech.application.data.entity.bgtool.User;
 import com.methaltech.application.data.bgtool.repository.UserRepository;
+import com.methaltech.application.data.entity.bgtool.User;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import java.util.Optional;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -28,5 +28,4 @@ public class AuthenticatedUser {
     public void logout() {
         authenticationContext.logout();
     }
-
 }

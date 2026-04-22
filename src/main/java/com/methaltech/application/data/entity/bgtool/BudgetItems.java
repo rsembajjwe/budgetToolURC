@@ -265,3 +265,4 @@ class BudgetItems implements Serializable {
         return getQ1Total().add(getQ2Total()).add(getQ3Total()).add(getQ4Total());
     }
 }
+

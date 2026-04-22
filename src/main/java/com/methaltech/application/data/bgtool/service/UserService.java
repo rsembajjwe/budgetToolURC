@@ -30,7 +30,7 @@ public class UserService {
     @Transactional
     public User getUserByEmail(String email) {
         User user = repository.findByEmail(email);
-        Hibernate.initialize(user.getDepartment());  // Initialize the collection
+        Hibernate.initialize(user.getDepartment());
         return user;
     }
 
@@ -46,13 +46,32 @@ public class UserService {
         return repository.findAll(filter, pageable);
     }
 
+    public Page<User> search(String term, Pageable pageable) {
+        if (term == null || term.trim().isEmpty()) {
+            return repository.findAll(pageable);
+        }
+        return repository.searchUsers(term.trim(), pageable);
+    }
+
     public int count() {
         return (int) repository.count();
     }
 
-
     public boolean getUsername(String username) {
         return repository.findByEmail(username) != null;
+    }
 
+    public Page<User> search(String term, String activeFilter, Pageable pageable) {
+        if (term == null) {
+            term = "";
+        }
+        if (activeFilter == null || activeFilter.isBlank()) {
+            activeFilter = "ACTIVE";
+        }
+        return repository.searchUsers(term.trim(), activeFilter, pageable);
+    }
+
+    public long count(String searchTerm, String filter) {
+        return repository.countUsers(searchTerm, filter);
     }
 }

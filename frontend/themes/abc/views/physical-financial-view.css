@@ -1,0 +1,182 @@
+.physical-financial-view {
+    min-height: 100%;
+    background:
+        radial-gradient(circle at top right, rgba(37, 99, 235, 0.05), transparent 28%),
+        linear-gradient(180deg, var(--lumo-contrast-5pct) 0, transparent 220px),
+        var(--lumo-base-color);
+    box-sizing: border-box;
+    gap: 0.9rem;
+    padding: 0.75rem;
+}
+
+.physical-financial-view > h3 {
+    margin: 0.1rem 0 0.15rem 0;
+    color: var(--lumo-header-text-color);
+    letter-spacing: -0.02em;
+}
+
+.physical-financial-view > h3:first-of-type {
+    font-size: 1.55rem;
+    font-weight: 800;
+    margin-top: 0.15rem;
+    margin-bottom: 0.35rem;
+}
+
+.physical-financial-view > h3:not(:first-of-type) {
+    font-size: 1.08rem;
+    font-weight: 800;
+    margin-top: 0.45rem;
+}
+
+.physical-financial-view > vaadin-horizontal-layout:first-of-type {
+    width: 100%;
+    padding: 1rem;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    align-items: end;
+    background: var(--lumo-base-color);
+    border: 1px solid var(--lumo-contrast-10pct);
+    border-radius: 18px;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+    box-sizing: border-box;
+}
+
+.physical-financial-view > vaadin-horizontal-layout:first-of-type > * {
+    min-width: 180px;
+    flex: 1 1 220px;
+}
+
+.physical-financial-view > vaadin-horizontal-layout:first-of-type > vaadin-button {
+    flex: 0 0 auto;
+    min-width: 120px;
+}
+
+.physical-financial-view vaadin-combo-box,
+.physical-financial-view vaadin-multi-select-combo-box,
+.physical-financial-view vaadin-text-field,
+.physical-financial-view vaadin-number-field,
+.physical-financial-view vaadin-big-decimal-field,
+.physical-financial-view vaadin-text-area {
+    --vaadin-input-field-background: var(--lumo-base-color);
+    --vaadin-input-field-border-width: 1px;
+    --vaadin-input-field-border-color: var(--lumo-contrast-15pct);
+    --vaadin-input-field-border-radius: 12px;
+    width: 100%;
+}
+
+.physical-financial-view vaadin-combo-box::part(input-field),
+.physical-financial-view vaadin-multi-select-combo-box::part(input-field),
+.physical-financial-view vaadin-text-field::part(input-field),
+.physical-financial-view vaadin-number-field::part(input-field),
+.physical-financial-view vaadin-big-decimal-field::part(input-field),
+.physical-financial-view vaadin-text-area::part(input-field) {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+}
+
+.physical-financial-view vaadin-combo-box:hover::part(input-field),
+.physical-financial-view vaadin-multi-select-combo-box:hover::part(input-field),
+.physical-financial-view vaadin-text-field:hover::part(input-field),
+.physical-financial-view vaadin-number-field:hover::part(input-field),
+.physical-financial-view vaadin-big-decimal-field:hover::part(input-field),
+.physical-financial-view vaadin-text-area:hover::part(input-field) {
+    border-color: var(--lumo-primary-color-50pct);
+}
+
+.physical-financial-view vaadin-combo-box[focused]::part(input-field),
+.physical-financial-view vaadin-multi-select-combo-box[focused]::part(input-field),
+.physical-financial-view vaadin-text-field[focused]::part(input-field),
+.physical-financial-view vaadin-number-field[focused]::part(input-field),
+.physical-financial-view vaadin-big-decimal-field[focused]::part(input-field),
+.physical-financial-view vaadin-text-area[focused]::part(input-field) {
+    border-color: var(--lumo-primary-color);
+    box-shadow: 0 0 0 0.15rem var(--lumo-primary-color-10pct);
+}
+
+.physical-financial-view vaadin-button {
+    border-radius: 12px;
+    font-weight: 700;
+    min-height: 40px;
+}
+
+.physical-financial-view vaadin-button[theme~="primary"] {
+    box-shadow: 0 8px 18px var(--lumo-primary-color-10pct);
+}
+
+.physical-financial-view > vaadin-grid {
+    width: 100%;
+    background: var(--lumo-base-color);
+    border: 1px solid var(--lumo-contrast-10pct);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    --vaadin-grid-cell-padding: 0.85rem 0.95rem;
+    --vaadin-grid-header-cell-background: linear-gradient(180deg, var(--lumo-contrast-5pct), var(--lumo-base-color));
+    --vaadin-grid-row-border-color: var(--lumo-contrast-10pct);
+}
+
+.physical-financial-view > vaadin-grid::part(header-cell) {
+    font-size: 0.79rem;
+    font-weight: 800;
+    color: var(--lumo-secondary-text-color);
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.physical-financial-view > vaadin-grid::part(body-cell) {
+    font-size: 0.92rem;
+}
+
+.physical-financial-view > vaadin-grid::part(row):hover {
+    background: var(--lumo-primary-color-10pct);
+}
+
+.physical-financial-view > vaadin-grid::part(selected-row) {
+    background: linear-gradient(90deg, var(--lumo-primary-color-10pct), transparent);
+}
+
+.physical-financial-view > vaadin-grid::part(focused-cell) {
+    box-shadow: inset 0 0 0 1px var(--lumo-primary-color-30pct);
+}
+
+.physical-financial-view > vaadin-grid:nth-of-type(1) {
+    min-height: 190px;
+}
+
+.physical-financial-view > vaadin-grid:nth-of-type(2) {
+    min-height: 420px;
+}
+
+.physical-financial-view vaadin-dialog-overlay::part(content) {
+    border-radius: 18px;
+}
+
+.physical-financial-view vaadin-text-area::part(input-field) {
+    min-height: 110px;
+}
+
+@media (max-width: 960px) {
+    .physical-financial-view {
+        padding: 0.55rem;
+    }
+
+    .physical-financial-view > vaadin-horizontal-layout:first-of-type {
+        padding: 0.8rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .physical-financial-view {
+        padding: 0.35rem;
+        gap: 0.7rem;
+    }
+
+    .physical-financial-view > h3:first-of-type {
+        font-size: 1.3rem;
+    }
+
+    .physical-financial-view > vaadin-horizontal-layout:first-of-type,
+    .physical-financial-view > vaadin-grid {
+        border-radius: 14px;
+    }
+}

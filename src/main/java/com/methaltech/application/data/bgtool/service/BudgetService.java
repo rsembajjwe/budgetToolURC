@@ -581,43 +581,49 @@ public class BudgetService {
     public List<SectionBudget> getDepartmentSections(String departmentCode, Budget budget) {
         List<DepartmentBudget> departments = getDepartmentBudgets(budget);
         DepartmentBudget depts = findByDepartmentCode(departments, departmentCode);
-        // Find the department first to get its category
-        UrcDepartmentAnlDim department = urcDepartmentAnlDimRepository.findByANL_CODE(departmentCode);
-        List<UrcDeptSectionAnlDimbgt> sections = new ArrayList<>();
-        if (department == null) {
+
+        if (depts == null || depts.getSections() == null || depts.getSections().isEmpty()) {
             return new ArrayList<>();
         }
-        /*
-        if (department != null) {
-        String anlCode = department.getANL_CODE();
-        if (anlCode != null && !anlCode.isEmpty()) {
-        Optional<DeptSectionMerger> merger = sampleDeptSectionMergerService.findByDeptcodeCustom(anlCode);
-        if (merger.isPresent()) {
-        DeptSectionMerger deptSectionMerger = merger.get();
-        Set<String> sects = deptSectionMerger.getSectioncodes();
-        for (String result : sects) {
-        UrcDeptSectionAnlDimbgt section = sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE(result);
-        if (section != null) {
-        sections.add(section);
-        }
-        }
-        }
-        }
-        }*/
 
-        sections = depts.getSections().stream().toList();
-        Random random = new Random();
+        List<UrcDeptSectionAnlDimbgt> sections = new ArrayList<>(depts.getSections());
 
         return sections.stream().map(section -> {
-            // Generate mock budget data for each section
-            BigDecimal baseBudget = BigDecimal.ZERO; // 20M to 200M UGX
-            double spentPercentage = 0.2 + random.nextDouble() * 0.7; // 20% to 90%
-            BigDecimal spentAmount = BigDecimal.ZERO;
-            double committedPercentage = 0.0; // 5% to 20%
-            BigDecimal committedAmount = BigDecimal.ZERO;
-            baseBudget = budgetItemsService.calculateTotalDeptExpenditure2(budget, section);
-            spentAmount = sampleSALFLDGService.getTotalAmountByPeriods2(getFinancialYearPeriods(budget), section.getANL_CODE()).abs();
-            SectionBudget sectionBudget = new SectionBudget(section, baseBudget, spentAmount);
+            BigDecimal allocatedBudget = budgetItemsService.calculateTotalDeptExpenditure2(budget, section);
+
+            BigDecimal qtr1Actual = sampleSALFLDGService
+                    .getTotalAmountByPeriods2(periodsGen.getFinancialYearPeriodsByQuarter(budget, 1), section.getANL_CODE())
+                    .abs();
+
+            BigDecimal qtr2OnlyActual = sampleSALFLDGService
+                    .getTotalAmountByPeriods2(periodsGen.getFinancialYearPeriodsByQuarter(budget, 2), section.getANL_CODE())
+                    .abs();
+
+            BigDecimal qtr3OnlyActual = sampleSALFLDGService
+                    .getTotalAmountByPeriods2(periodsGen.getFinancialYearPeriodsByQuarter(budget, 3), section.getANL_CODE())
+                    .abs();
+
+            BigDecimal qtr4OnlyActual = sampleSALFLDGService
+                    .getTotalAmountByPeriods2(periodsGen.getFinancialYearPeriodsByQuarter(budget, 4), section.getANL_CODE())
+                    .abs();
+
+            BigDecimal cumQtr1Actual = qtr1Actual;
+            BigDecimal cumQtr2Actual = qtr1Actual.add(qtr2OnlyActual);
+            BigDecimal cumQtr3Actual = cumQtr2Actual.add(qtr3OnlyActual);
+            BigDecimal cumQtr4Actual = cumQtr3Actual.add(qtr4OnlyActual);
+
+            BigDecimal spentAmount = cumQtr4Actual;
+
+            SectionBudget sectionBudget = new SectionBudget(
+                    section,
+                    allocatedBudget,
+                    spentAmount,
+                    cumQtr1Actual,
+                    cumQtr2Actual,
+                    cumQtr3Actual,
+                    cumQtr4Actual
+            );
+
             sectionBudget.setDepartmentCode(departmentCode);
             sectionBudget.setDescription(generateSectionDescription(section.getNAME()));
 
@@ -625,30 +631,51 @@ public class BudgetService {
         }).collect(Collectors.toList());
     }
 
-    public SectionBudget getSectionBudget(String sectionCode) {
+    public SectionBudget getSectionBudget(String sectionCode, Budget budget) {
         UrcDeptSectionAnlDimbgt section = sampleUrcDeptSectionAnlDimbgtService.findByANL_CODE(sectionCode);
         if (section == null) {
             return null;
         }
 
-        Random random = new Random();
-        BigDecimal baseBudget = BigDecimal.ZERO;
-        BigDecimal spentAmount = BigDecimal.ZERO;
-        BigDecimal committedAmount = BigDecimal.ZERO;
+        BigDecimal allocatedBudget = budgetItemsService.calculateTotalDeptExpenditure2(budget, section);
 
-        SectionBudget sectionBudget = new SectionBudget(section, baseBudget, spentAmount);
+        BigDecimal qtr1Actual = sampleSALFLDGService
+                .getTotalAmountByPeriods2(periodsGen.getFinancialYearPeriodsByQuarter(budget, 1), section.getANL_CODE())
+                .abs();
+
+        BigDecimal qtr2OnlyActual = sampleSALFLDGService
+                .getTotalAmountByPeriods2(periodsGen.getFinancialYearPeriodsByQuarter(budget, 2), section.getANL_CODE())
+                .abs();
+
+        BigDecimal qtr3OnlyActual = sampleSALFLDGService
+                .getTotalAmountByPeriods2(periodsGen.getFinancialYearPeriodsByQuarter(budget, 3), section.getANL_CODE())
+                .abs();
+
+        BigDecimal qtr4OnlyActual = sampleSALFLDGService
+                .getTotalAmountByPeriods2(periodsGen.getFinancialYearPeriodsByQuarter(budget, 4), section.getANL_CODE())
+                .abs();
+
+        BigDecimal cumQtr1Actual = qtr1Actual;
+        BigDecimal cumQtr2Actual = qtr1Actual.add(qtr2OnlyActual);
+        BigDecimal cumQtr3Actual = cumQtr2Actual.add(qtr3OnlyActual);
+        BigDecimal cumQtr4Actual = cumQtr3Actual.add(qtr4OnlyActual);
+
+        BigDecimal spentAmount = cumQtr4Actual;
+
+        SectionBudget sectionBudget = new SectionBudget(
+                section,
+                allocatedBudget,
+                spentAmount,
+                cumQtr1Actual,
+                cumQtr2Actual,
+                cumQtr3Actual,
+                cumQtr4Actual
+        );
+
         sectionBudget.setDescription(generateSectionDescription(section.getNAME()));
-
         return sectionBudget;
     }
 
-    /*    public List<UrcDeptSectionAnlDimbgt> getSectionsByCategory(String categoryId) {
-    return sectionRepository.findByCategoryId(categoryId);
-    }
-    
-    public Long getSectionCountByCategory(String categoryId) {
-    return sectionRepository.countByCategoryId(categoryId);
-    }*/
     private String generateSectionDescription(String sectionName) {
         // Generate appropriate descriptions based on section name
         String name = sectionName.toLowerCase();
