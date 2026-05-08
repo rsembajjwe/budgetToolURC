@@ -569,6 +569,64 @@ public class BudgetService {
             );
         }).collect(Collectors.toList());
     }
+    
+    public List<DepartmentBudget> getDepartmentBudgetsWithoutBudget(Budget budget) {
+        List<UrcDepartmentAnlDim> departments = findActiveDepartments();
+        return departments.stream().map(dept -> {
+            Set<UrcDeptSectionAnlDimbgt> sections = deptSectionMergerService.getSectionsByDeptCode2(dept.getANL_CODE());
+
+            BigDecimal baseBudget = BigDecimal.ZERO; // 50M to 500M UGX
+
+            BigDecimal spentPercentage = BigDecimal.ZERO; // 30% to 90%
+
+            BigDecimal totalCommitted = BigDecimal.ZERO; // 5% to 20%
+            totalCommitted = BigDecimal.ZERO;
+            BigDecimal cumQtr1Budget = BigDecimal.ZERO;
+            BigDecimal cumQtr2Budget = BigDecimal.ZERO;
+            BigDecimal cumQtr3Budget = BigDecimal.ZERO;
+            BigDecimal cumQtr4Budget = BigDecimal.ZERO;
+
+            BigDecimal cumQtr1Actual = BigDecimal.ZERO;
+            BigDecimal cumQtr2Actual = BigDecimal.ZERO;
+            BigDecimal cumQtr3Actual = BigDecimal.ZERO;
+            BigDecimal cumQtr4Actual = BigDecimal.ZERO;
+
+            Set<String> sects = new HashSet<>();
+
+            sects = sections.stream()
+                    .map(UrcDeptSectionAnlDimbgt::getANL_CODE)
+                    .filter(Objects::nonNull)
+                    .map(code -> String.format("%-15s", code)) // right-pad with spaces to length 15
+                    .collect(Collectors.toSet());
+            String color = colors[Math.abs(dept.getANL_CODE().hashCode()) % colors.length];
+            int sectionCount = sects.size();
+
+
+            return new DepartmentBudget(
+                    dept.getANL_CODE(),
+                    dept.getNAME(),
+                    dept.getANL_CAT_ID(),
+                    baseBudget,
+                    totalSpent,
+                    totalCommitted,
+                    color,
+                    false,
+                    false,
+                    false,
+                    dept.getSTATUS(),
+                    sectionCount,
+                    cumQtr1Budget,
+                    cumQtr2Budget,
+                    cumQtr3Budget,
+                    cumQtr4Budget,
+                    cumQtr1Actual,
+                    cumQtr2Actual,
+                    cumQtr3Actual,
+                    cumQtr4Actual,
+                    sections
+            );
+        }).collect(Collectors.toList());
+    }    
 
     public DepartmentBudget findByDepartmentCode(List<DepartmentBudget> list, String code) {
         return list.stream()

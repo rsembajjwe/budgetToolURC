@@ -78,14 +78,11 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
-import jakarta.annotation.security.PermitAll;
 import java.util.ArrayList;
 import java.util.List;
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.persistence.EntityNotFoundException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
@@ -125,6 +122,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.MathContext;
 import java.util.Collections;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 
@@ -379,8 +378,8 @@ public class BudgetFormView extends Div {
         uploadButtonButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         //rectify.setVisible(false);
         rectify.addClickListener(e -> {
-            setStatisticsCode();
-            //fixCOA();
+            //setStatisticsCode();
+            fixCOA();
         });
         uploadBudget.setUploadButton(uploadButtonButton);
 
@@ -1579,23 +1578,90 @@ public class BudgetFormView extends Div {
     }
 
     private void fixCOA() {
-        List<BudgetItems> findByDeptUnitAndBudget = budgetItemsService.findByAll();
-        for (BudgetItems z : findByDeptUnitAndBudget) {
 
-            z.setBcategory(z.getCoacode().getCode());
-            if (!z.getBcategory().trim().equals(z.getCoacode().getCode().trim())) {
-            }
-            //System.out.println(z.getBcategory() + "   " + z.getCoacode().getCode() + " 1");
-
-            int p = Integer.parseInt(z.getCoacode().getCode().substring(0, 1));
-            z.setCoalevel1(coalevel1Service.findByCode(p));
-
-            budgetItemsService.update(z);
-            /*            if (z.getCost() == null || z.getCost() == BigDecimal.ZERO || z.getQty() == null || z.getQty() == BigDecimal.ZERO) {
-            budgetItemsService.deleteBudgetItem(z);
-            }*/
+        if (chosenBudget == null) {
+            Notification.show("No budget selected");
+            return;
         }
-        //fixFundsource();
+
+        List<BudgetItems> items = budgetItemsService.getBudgetItemsByBudget(chosenBudget);
+
+        if (items == null || items.isEmpty()) {
+            Notification.show("No budget items found");
+            return;
+        }
+
+        int updated = 0;
+        int skipped = 0;
+
+        for (BudgetItems z : items) {
+
+            try {
+
+                if (z == null || z.getCoacode() == null) {
+                    skipped++;
+                    continue;
+                }
+
+                COA coa = z.getCoacode();
+
+                String code = coa.getCode();
+
+                if (code == null || code.trim().isEmpty()) {
+                    skipped++;
+                    continue;
+                }
+
+                code = code.trim();
+
+                if (!Character.isDigit(code.charAt(0))) {
+                    skipped++;
+                    continue;
+                }
+
+                // =========================
+                // BCATEGORY
+                // =========================
+                z.setBcategory(code);
+
+                // =========================
+                // PROCUREMENT CLASS
+                // =========================
+                if (coa.getProcclass() != null) {
+                    z.setProcClass(coa.getProcclass());
+                }
+
+                // =========================
+                // COA LEVEL 1
+                // =========================
+                int p = Character.getNumericValue(code.charAt(0));
+
+                Coalevel1 level1 = coalevel1Service.findByCode(p);
+
+                if (level1 != null) {
+                    z.setCoalevel1(level1);
+                }
+
+                budgetItemsService.update(z);
+
+                updated++;
+
+            } catch (Exception ex) {
+                skipped++;
+                Logger.getLogger(getClass().getName())
+                        .log(Level.WARNING,
+                                "Failed updating BudgetItem ID: "
+                                + (z != null ? z.getId() : null),
+                                ex);
+            }
+        }
+
+        Notification.show(
+                "COA fix completed. Updated: "
+                + updated
+                + ", Skipped: "
+                + skipped
+        );
     }
 
     private void fixFundsource() {

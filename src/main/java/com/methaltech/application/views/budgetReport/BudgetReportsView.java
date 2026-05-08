@@ -66,7 +66,6 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.math.BigDecimal;
@@ -112,7 +111,6 @@ import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.*;
-import com.itextpdf.layout.Document;
 import com.itextpdf.layout.Style;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.*;
@@ -160,21 +158,14 @@ import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.layout.Document;
 import com.methaltech.application.data.Classification1;
+import com.methaltech.application.data.ProcClass;
 import com.methaltech.application.data.bgtool.service.BudgetWordReportService;
 import com.methaltech.application.data.bgtool.service.DepartmentWorkplanWordExportService;
 import com.methaltech.application.data.bgtool.service.SystemIconService;
-import com.methaltech.application.data.bgtool.service.report.BudgetReportRequest;
 import com.methaltech.application.data.entity.bgtool.DepartmentBudget;
-import com.methaltech.application.data.entity.bgtool.RowsWorkplan;
 import com.methaltech.application.data.entity.bgtool.SystemIcon;
 import com.methaltech.application.data.entity.bgtool.dto.PerformanceData;
-import com.vaadin.flow.component.html.H1;
-
-// Java IO
-import java.io.InputStream;
 import java.io.IOException;
-
-import jakarta.persistence.Tuple;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -427,6 +418,7 @@ public class BudgetReportsView extends Div {
         AccordionPanel panel33 = new AccordionPanel("Funding Source Envelope");
         AccordionPanel panel44 = new AccordionPanel("Volumes Report");
         AccordionPanel panel55 = new AccordionPanel("Performance Report");
+        AccordionPanel panel66 = new AccordionPanel("Procurement Plan");
 
         // Add content to the panels
         panel02.addContent(new Button("Budget Activities in Detail", new Icon(VaadinIcon.DOWNLOAD), e -> handleActivityDetailClick()));
@@ -446,6 +438,8 @@ public class BudgetReportsView extends Div {
         panel55.addContent(new Button("Budget Performance", VaadinIcon.FILE_PRESENTATION.create(), e -> setPerformanceLayout()));
         panel55.addContent(new Button("Revenue Performance", VaadinIcon.FILE_PRESENTATION.create(), e -> setRevenuePerformancedataLayout()));
 
+        panel66.addContent(new Button("Departmental Procurement Plan", VaadinIcon.FILE_PRESENTATION.create(), e -> handleDepartmentalProcurementPlan()));
+
         // Add the panels to the Accordion
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
         image2.setWidthFull();
@@ -460,6 +454,9 @@ public class BudgetReportsView extends Div {
         }
 
         accordion2.add(panel55);
+        if (user.getRoles().contains(Role.ADMIN) || user.getRoles().contains(Role.PROCUREMENT)) {
+            accordion2.add(panel66);
+        }
 
         HorizontalLayout hlay = new HorizontalLayout();
         hlay.setWidthFull();
@@ -696,34 +693,6 @@ public class BudgetReportsView extends Div {
                 return span;
             })).setHeader("Approved Budget (UGX)");
 
-            /*            financialGrid.addColumn(new ComponentRenderer<>(area -> {
-            Tuple totals = qtrReleasesServiceImpl.getCumulativeQuarterReleases(comboBox2.getValue().getId(), e.getDeptsection());
-            cumRealise = switch (qtr) {
-            case 1 ->
-            nvl(totals.get("q1Total", BigDecimal.class));
-            case 2 ->
-            nvl(totals.get("q2Total", BigDecimal.class));
-            case 3 ->
-            nvl(totals.get("q3Total", BigDecimal.class));
-            case 4 ->
-            nvl(totals.get("q4Total", BigDecimal.class));
-            default ->
-            BigDecimal.ZERO;
-            };
-            
-            Span span = new Span(formatBigDecimal(cumRealise));
-            span.getStyle()
-            .set("font-weight", "500")
-            .set("color", "#2E3A59")
-            .set("font-size", "var(--lumo-font-size-s)");
-            
-            Tooltip tooltip = Tooltip.forComponent(span);
-            tooltip.setText("Cumulative Funds Released: " + formatBigDecimal(cumRealise));
-            tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
-            tooltip.setManual(false); // show on hover
-            
-            return span;
-            })).setHeader("Cumulative Funds Released (UGX)");*/
             financialGrid.addColumn(new ComponentRenderer<>(area -> {
                 if (comboBox2.getValue() != null) {
                     switch (qtr) {
@@ -2532,6 +2501,15 @@ public class BudgetReportsView extends Div {
         }
     }
 
+    private void handleDepartmentalProcurementPlan() {
+        // Handle the click event here, e.g., show a notification or navigate to another view
+        if (comboBox2.isEmpty() || budgetType2.isEmpty()) {
+            warningNotification("Make sure that Neither Section nor Budget nor Budget Type is empty");
+        } else {
+            createDepartmentalProcurementPlanExcelReport(comboBox2.getValue(), "Procurement Plan");
+        }
+    }
+
     private void handleCustomActivityByCOASummaryWordClick() {
         if (comboBox2.isEmpty() || budgetType2.isEmpty() || CustomDetailedBudgetReportImpcomboBox.isEmpty()) {
             warningNotification("Make sure that Neither Section nor Budget nor Budget Type is empty");
@@ -2583,36 +2561,36 @@ public class BudgetReportsView extends Div {
         }
     }
 
-private void exportAndDownloadCustomAccountcodeBudgetWord2(Budget budget) {
-    try {
-        Set<UrcDeptSectionAnlDimbgt> sect = sampleCustomDetailedBudgetReportService
-                .findByBudgetreport(CustomDetailedBudgetReportImpcomboBox.getValue())
-                .stream()
-                .flatMap(r -> r.getDeptsection().stream())
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+    private void exportAndDownloadCustomAccountcodeBudgetWord2(Budget budget) {
+        try {
+            Set<UrcDeptSectionAnlDimbgt> sect = sampleCustomDetailedBudgetReportService
+                    .findByBudgetreport(CustomDetailedBudgetReportImpcomboBox.getValue())
+                    .stream()
+                    .flatMap(r -> r.getDeptsection().stream())
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        StreamResource resource = new StreamResource(
-                "Detailed_Account_Code_Report.docx",
-                () -> new ByteArrayInputStream(
-                        budgetWordReportService.generateDetailedAccountCodeQuarterWordReport(
-                                budget,
-                                sect,
-                                budgetType2.getSelectedItems(),
-                                HeaderExcel2("ACCOUNT CODE DETAIL")
-                        )
-                )
-        );
+            StreamResource resource = new StreamResource(
+                    "Detailed_Account_Code_Report.docx",
+                    () -> new ByteArrayInputStream(
+                            budgetWordReportService.generateDetailedAccountCodeQuarterWordReport(
+                                    budget,
+                                    sect,
+                                    budgetType2.getSelectedItems(),
+                                    HeaderExcel2("ACCOUNT CODE DETAIL")
+                            )
+                    )
+            );
 
-        Anchor anchor = new Anchor(resource, "");
-        anchor.getElement().setAttribute("download", true);
-        anchor.getStyle().set("display", "none");
-        add(anchor);
-        anchor.getElement().executeJs("this.click()");
-    } catch (Exception e) {
-        e.printStackTrace();
-        warningNotification("Failed to generate Word document");
+            Anchor anchor = new Anchor(resource, "");
+            anchor.getElement().setAttribute("download", true);
+            anchor.getStyle().set("display", "none");
+            add(anchor);
+            anchor.getElement().executeJs("this.click()");
+        } catch (Exception e) {
+            e.printStackTrace();
+            warningNotification("Failed to generate Word document");
+        }
     }
-}
 
     private void createOpenBudgetSummaryByActivityByCOAExcelReport(Budget budget, String name) {
         try {
@@ -2640,6 +2618,46 @@ private void exportAndDownloadCustomAccountcodeBudgetWord2(Budget budget) {
 
             StreamResource resource = new StreamResource(
                     name + "_" + timestamp + "_department-workplans.xlsx",
+                    () -> new ByteArrayInputStream(file)
+            );
+
+            resource.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            resource.setCacheTime(0);
+
+            Anchor download = new Anchor(resource, "");
+            download.getElement().setAttribute("download", true);
+            add(download);
+
+            download.getElement().callJsFunction("click");
+
+            getUI().ifPresent(ui
+                    -> ui.getPage().executeJs(
+                            "setTimeout(() => $0.remove(), 1500)",
+                            download.getElement()
+                    )
+            );
+
+        } catch (Exception e) {
+            Logger.getLogger(BudgetReportsView.class.getName()).log(Level.SEVERE, null, e);
+            warningNotification("Failed to generate Excel file");
+        }
+    }
+
+    private void createDepartmentalProcurementPlanExcelReport(Budget budget, String name) {
+        try {
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
+            String timestamp = LocalDateTime.now().format(dtf);
+
+            List<DepartmentBudget> departmentBudgets = budgetService.getDepartmentBudgetsWithoutBudget(budget);
+
+            byte[] file = generateProcurementPlansExcel(
+                    budget,
+                    budgetType2.getSelectedItems(),
+                    departmentBudgets
+            );
+
+            StreamResource resource = new StreamResource(
+                    name + "_" + timestamp + "_procurementPlan.xlsx",
                     () -> new ByteArrayInputStream(file)
             );
 
@@ -15650,6 +15668,416 @@ private void exportAndDownloadCustomAccountcodeBudgetWord2(Budget budget) {
         }
     }
 
+    private byte[] generateProcurementPlansExcel(
+            Budget budget,
+            Set<Organisation> selectedOrganisations,
+            List<DepartmentBudget> departmentBudgets
+    ) {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            WorkplanStyles styles = createWorkplanStyles(workbook);
+
+            List<DepartmentBudget> validDepartments = departmentBudgets == null
+                    ? Collections.emptyList()
+                    : departmentBudgets.stream()
+                            .filter(dept -> dept != null
+                            && dept.getSections() != null
+                            && !dept.getSections().isEmpty())
+                            .toList();
+
+            // =========================
+            // 1. DEPARTMENT SHEETS
+            // =========================
+            for (DepartmentBudget department : validDepartments) {
+
+                String rawSheetName = department.getDepartmentName() != null
+                        ? department.getDepartmentName()
+                        : "Department";
+
+                String sheetName = WorkbookUtil.createSafeSheetName(rawSheetName);
+                Sheet sheet = workbook.createSheet(sheetName);
+
+                int rowPointer = 0;
+                boolean hasAnyTable = false;
+
+                for (ProcClass procClass : ProcClass.values()) {
+
+                    List<BudgetItems> procItems
+                            = sampleBudgetItemsService.findByBudgetAndBudgetTypesAndDeptUnitsAndProcClass(
+                                    budget,
+                                    selectedOrganisations,
+                                    department.getSections(),
+                                    procClass
+                            );
+
+                    if (procItems == null || procItems.isEmpty()) {
+                        continue;
+                    }
+
+                    hasAnyTable = true;
+
+                    DepartmentTotals totals = createDepartmentalProcurementPlanDetailed(
+                            workbook,
+                            sheet,
+                            budget,
+                            selectedOrganisations,
+                            department,
+                            rowPointer,
+                            styles,
+                            procClass
+                    );
+
+                    rowPointer = totals.nextRowPointer() + 3;
+                }
+
+                if (!hasAnyTable) {
+                    Row row = sheet.createRow(0);
+                    Cell cell = row.createCell(0);
+                    cell.setCellValue("No procurement items available for " + rawSheetName);
+                    cell.setCellStyle(styles.titleStyle);
+                }
+
+                applyProcurementSheetPrintSetup(sheet);
+            }
+
+            // =========================
+            // 2. ALL DEPARTMENTS SUMMARY SHEET
+            // =========================
+            if (!validDepartments.isEmpty()) {
+                Sheet summarySheet = workbook.createSheet(
+                        WorkbookUtil.createSafeSheetName("All Departments")
+                );
+
+                createAllDepartmentsProcurementPlanSheet(
+                        workbook,
+                        summarySheet,
+                        budget,
+                        selectedOrganisations,
+                        styles
+                );
+
+                applyProcurementSheetPrintSetup(summarySheet);
+            }
+
+            // =========================
+            // 3. FALLBACK
+            // =========================
+            if (workbook.getNumberOfSheets() == 0) {
+                Sheet sheet = workbook.createSheet("Procurement Plan");
+                Row row = sheet.createRow(0);
+                row.createCell(0).setCellValue("No departmental procurement plans available");
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+
+        } catch (IOException ex) {
+            throw new RuntimeException(
+                    "Failed to generate departmental procurement plans Excel",
+                    ex
+            );
+        }
+    }
+
+    private void createAllDepartmentsProcurementPlanSheet(
+            Workbook workbook,
+            Sheet sheet,
+            Budget budget,
+            Set<Organisation> selectedOrganisations,
+            WorkplanStyles styles
+    ) {
+        int rowPointer = 0;
+
+        BigDecimal grandTotal = BigDecimal.ZERO;
+        BigDecimal grandQ1 = BigDecimal.ZERO;
+        BigDecimal grandQ2 = BigDecimal.ZERO;
+        BigDecimal grandQ3 = BigDecimal.ZERO;
+        BigDecimal grandQ4 = BigDecimal.ZERO;
+
+        for (ProcClass procClass : ProcClass.values()) {
+
+            List<BudgetItems> procItems
+                    = sampleBudgetItemsService.findByBudgetAndBudgetTypesAndProcClassFiltered(
+                            budget,
+                            selectedOrganisations,
+                            procClass
+                    );
+
+            if (procItems == null || procItems.isEmpty()) {
+                continue;
+            }
+
+            String procClassLabel
+                    = procClass.name().replace("_", " ").toUpperCase();
+
+            // =========================
+            // TITLE
+            // =========================
+            Row titleRow = sheet.createRow(rowPointer++);
+            titleRow.setHeight((short) 700);
+
+            Cell titleCell = titleRow.createCell(0);
+            titleCell.setCellValue(
+                    procClassLabel
+                    + " PROCUREMENT PLAN - ALL DEPARTMENTS"
+            );
+            titleCell.setCellStyle(styles.titleStyle);
+
+            sheet.addMergedRegion(
+                    new CellRangeAddress(
+                            rowPointer - 1,
+                            rowPointer - 1,
+                            0,
+                            12
+                    )
+            );
+
+            // =========================
+            // HEADER
+            // =========================
+            Row headerRow = sheet.createRow(rowPointer++);
+            headerRow.setHeight((short) 650);
+
+            createCell(headerRow, 0, "Programme", styles.headerStyle);
+            createCell(headerRow, 1, "Procurement Item", styles.headerStyle);
+            createCell(headerRow, 2, "Budget", styles.headerStyle);
+            createCell(headerRow, 3, "Account", styles.headerStyle);
+            createCell(headerRow, 4, "Funding", styles.headerStyle);
+            createCell(headerRow, 5, "Q1", styles.headerStyle);
+            createCell(headerRow, 6, "Q2", styles.headerStyle);
+            createCell(headerRow, 7, "Q3", styles.headerStyle);
+            createCell(headerRow, 8, "Q4", styles.headerStyle);
+            createCell(headerRow, 9, "Code Description", styles.headerStyle);
+            createCell(headerRow, 10, "Section", styles.headerStyle);
+            createCell(headerRow, 11, "Activity", styles.headerStyle);
+            createCell(headerRow, 12, "Department", styles.headerStyle);
+
+            BigDecimal classTotal = BigDecimal.ZERO;
+            BigDecimal classQ1 = BigDecimal.ZERO;
+            BigDecimal classQ2 = BigDecimal.ZERO;
+            BigDecimal classQ3 = BigDecimal.ZERO;
+            BigDecimal classQ4 = BigDecimal.ZERO;
+
+            // =========================
+            // BODY
+            // =========================
+            for (BudgetItems item : procItems) {
+
+                Row row = sheet.createRow(rowPointer++);
+                row.setHeight((short) 580);
+
+                BigDecimal amount = nz(item.getYearTotalFromQuarters());
+                BigDecimal q1 = nz(item.getQ1Total());
+                BigDecimal q2 = nz(item.getQ2Total());
+                BigDecimal q3 = nz(item.getQ3Total());
+                BigDecimal q4 = nz(item.getQ4Total());
+
+                classTotal = classTotal.add(amount);
+                classQ1 = classQ1.add(q1);
+                classQ2 = classQ2.add(q2);
+                classQ3 = classQ3.add(q3);
+                classQ4 = classQ4.add(q4);
+
+                String programme = "";
+                String activity = "";
+
+                if (item.getActivity() != null) {
+                    activity = nzs(item.getActivity().getName());
+
+                    if (item.getActivity().getUrcPriorityAreas() != null) {
+                        programme = nzs(
+                                item.getActivity()
+                                        .getUrcPriorityAreas()
+                                        .getName()
+                        );
+                    }
+                }
+
+                createCell(row, 0, programme, styles.textStyle);
+                createCell(row, 1, nzs(item.getItem()), styles.textStyle);
+
+                createNumericCell(row, 2, amount, styles.amountStyle);
+
+                createCell(
+                        row,
+                        3,
+                        nzs(item.getCoacode() != null
+                                ? item.getCoacode().getCode()
+                                : ""),
+                        styles.textStyle
+                );
+
+                createCell(
+                        row,
+                        4,
+                        nzs(item.getBudgetType() != null
+                                ? item.getBudgetType().getName()
+                                : ""),
+                        styles.textStyle
+                );
+
+                createNumericCell(row, 5, q1, styles.amountStyle);
+                createNumericCell(row, 6, q2, styles.amountStyle);
+                createNumericCell(row, 7, q3, styles.amountStyle);
+                createNumericCell(row, 8, q4, styles.amountStyle);
+
+                createCell(
+                        row,
+                        9,
+                        nzs(item.getCoacode() != null
+                                ? item.getCoacode().getName()
+                                : ""),
+                        styles.textStyle
+                );
+
+                createCell(
+                        row,
+                        10,
+                        nzs(item.getDeptUnit() != null
+                                ? item.getDeptUnit().getNAME()
+                                : ""),
+                        styles.textStyle
+                );
+
+                createCell(row, 11, activity, styles.textStyle);
+
+                createCell(
+                        row,
+                        12,
+                        nzs(item.getDeptUnit() != null
+                                && item.getDeptUnit().getNAME() != null
+                                ? item.getDeptUnit().getNAME()
+                                : ""),
+                        styles.textStyle
+                );
+            }
+
+            // =========================
+            // CLASS TOTAL
+            // =========================
+            Row totalRow = sheet.createRow(rowPointer++);
+            totalRow.setHeight((short) 650);
+
+            createCell(
+                    totalRow,
+                    0,
+                    "TOTAL " + procClassLabel,
+                    styles.totalLabelStyle
+            );
+
+            sheet.addMergedRegion(
+                    new CellRangeAddress(
+                            rowPointer - 1,
+                            rowPointer - 1,
+                            0,
+                            1
+                    )
+            );
+
+            createNumericCell(
+                    totalRow,
+                    2,
+                    classTotal,
+                    styles.totalAmountStyle
+            );
+
+            createNumericCell(
+                    totalRow,
+                    5,
+                    classQ1,
+                    styles.totalAmountStyle
+            );
+
+            createNumericCell(
+                    totalRow,
+                    6,
+                    classQ2,
+                    styles.totalAmountStyle
+            );
+
+            createNumericCell(
+                    totalRow,
+                    7,
+                    classQ3,
+                    styles.totalAmountStyle
+            );
+
+            createNumericCell(
+                    totalRow,
+                    8,
+                    classQ4,
+                    styles.totalAmountStyle
+            );
+
+            grandTotal = grandTotal.add(classTotal);
+            grandQ1 = grandQ1.add(classQ1);
+            grandQ2 = grandQ2.add(classQ2);
+            grandQ3 = grandQ3.add(classQ3);
+            grandQ4 = grandQ4.add(classQ4);
+
+            rowPointer += 3;
+        }
+
+        // =========================
+        // GRAND TOTAL
+        // =========================
+        Row grandRow = sheet.createRow(rowPointer);
+        grandRow.setHeight((short) 750);
+
+        createCell(
+                grandRow,
+                0,
+                "GRAND TOTAL - ALL PROCUREMENT CLASSES",
+                styles.totalLabelStyle
+        );
+
+        sheet.addMergedRegion(
+                new CellRangeAddress(
+                        rowPointer,
+                        rowPointer,
+                        0,
+                        1
+                )
+        );
+
+        createNumericCell(
+                grandRow,
+                2,
+                grandTotal,
+                styles.totalAmountStyle
+        );
+
+        createNumericCell(
+                grandRow,
+                5,
+                grandQ1,
+                styles.totalAmountStyle
+        );
+
+        createNumericCell(
+                grandRow,
+                6,
+                grandQ2,
+                styles.totalAmountStyle
+        );
+
+        createNumericCell(
+                grandRow,
+                7,
+                grandQ3,
+                styles.totalAmountStyle
+        );
+
+        createNumericCell(
+                grandRow,
+                8,
+                grandQ4,
+                styles.totalAmountStyle
+        );
+
+        applyStandardWorkplanColumnWidths(sheet);
+    }
+
     private DepartmentTotals createHeaderRowWorkplanQtr2ForDepartmentCombined(
             Workbook workbook,
             Sheet sheet,
@@ -15877,6 +16305,41 @@ private void exportAndDownloadCustomAccountcodeBudgetWord2(Budget budget) {
                         currentGroupEnd = rownum;
                     }
 
+                    // =========================
+// ACTIVITY SEPARATOR ROW
+// =========================
+                    rownum++;
+
+                    Row separatorRow = sheet.createRow(rownum);
+                    separatorRow.setHeight((short) 260);
+
+                    CellStyle separatorStyle = workbook.createCellStyle();
+                    separatorStyle.cloneStyleFrom(styles.detailTextStyle);
+
+                    separatorStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+                    separatorStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+                    separatorStyle.setBorderTop(BorderStyle.NONE);
+                    separatorStyle.setBorderBottom(BorderStyle.NONE);
+                    separatorStyle.setBorderLeft(BorderStyle.NONE);
+                    separatorStyle.setBorderRight(BorderStyle.NONE);
+
+                    for (int c = 0; c <= 12; c++) {
+                        Cell cell = separatorRow.createCell(c);
+                        cell.setCellStyle(separatorStyle);
+
+                        if (c == 0) {
+                            cell.setCellValue("");
+                        }
+                    }
+
+                    CellRangeAddress separatorRange
+                            = new CellRangeAddress(rownum, rownum, 0, 12);
+
+                    sheet.addMergedRegion(separatorRange);
+
+                    currentGroupEnd = rownum;
+
                     sectionCards.add(new SectionCard(cardStartRow, rownum, 0, 12));
                     sheet.groupRow(detailGroupStart, rownum);
                     sheet.setRowGroupCollapsed(detailGroupStart, true);
@@ -15951,6 +16414,621 @@ private void exportAndDownloadCustomAccountcodeBudgetWord2(Budget budget) {
                 totalQtr3,
                 totalQtr4
         );
+    }
+
+    private DepartmentTotals createDepartmentalProcurementPlanDetailed(
+            Workbook workbook,
+            Sheet sheet,
+            Budget budget,
+            Set<Organisation> selectedOrganisations,
+            DepartmentBudget department,
+            int startRow,
+            WorkplanStyles styles,
+            ProcClass procClass
+    ) {
+        int tr = startRow;
+        final short defaultRowHeight = 500;
+        final short sectionCardBorderColor = IndexedColors.GREY_50_PERCENT.getIndex();
+
+        Set<UrcDeptSectionAnlDimbgt> selectedSections
+                = department.getSections() != null ? department.getSections() : Collections.emptySet();
+
+        String deptName = nzs(department.getDepartmentName());
+        String procClassLabel = procClass != null
+                ? procClass.name().replace("_", " ").toUpperCase()
+                : "UNSPECIFIED";
+
+        String workplanTitle = procClassLabel
+                + " PROCUREMENT PLAN - "
+                + deptName + " "
+                + budget.getFinancialYear();
+
+        List<SectionCard> sectionCards = new ArrayList<>();
+
+        Map<Long, ActivityRenderData> activityDataMap
+                = preloadActivityRenderDataByProcClass(
+                        budget,
+                        selectedOrganisations,
+                        selectedSections,
+                        procClass
+                );
+
+        // =========================
+        // SECTION / TABLE BANNER
+        // =========================
+        Row deptRow = sheet.createRow(tr);
+        deptRow.setHeight((short) 600);
+
+        Cell deptCell = deptRow.createCell(0);
+        String subTitle = "DEPARTMENT: " + (deptName.isBlank() ? "Department" : deptName)
+                + " | PROCUREMENT CLASS: " + procClassLabel;
+        deptCell.setCellValue(subTitle.toUpperCase());
+        deptCell.setCellStyle(styles.deptBannerStyle);
+
+        CellRangeAddress deptRange = new CellRangeAddress(tr, tr, 0, 12);
+        sheet.addMergedRegion(deptRange);
+        setBottomBorderForRegion(sheet, deptRange);
+        tr++;
+
+        Row titleRow = sheet.createRow(tr);
+        titleRow.setHeight((short) 650);
+
+        Cell titleCell = titleRow.createCell(1);
+        titleCell.setCellValue("UGANDA RAILWAYS CORPORATION");
+        titleCell.setCellStyle(styles.titleStyle);
+
+        CellRangeAddress titleRange = new CellRangeAddress(tr, tr, 1, 12);
+        sheet.addMergedRegion(titleRange);
+        tr++;
+
+        Row reportRow = sheet.createRow(tr);
+        reportRow.setHeight((short) 900);
+
+        Cell reportCell = reportRow.createCell(0);
+        reportCell.setCellValue(workplanTitle.toUpperCase());
+        reportCell.setCellStyle(styles.subtitleStyle);
+
+        CellRangeAddress reportRange = new CellRangeAddress(tr, tr, 0, 12);
+        sheet.addMergedRegion(reportRange);
+        tr++;
+
+        // =========================
+        // HEADER
+        // =========================
+        Row headerRow = sheet.createRow(tr);
+        headerRow.setHeight((short) 950);
+
+        createCell(headerRow, 0, "Programme", styles.headerStyle);
+        createCell(headerRow, 1, "Activities / Budget Items", styles.headerStyle);
+        createCell(headerRow, 2, "Budget", styles.headerStyle);
+        createCell(headerRow, 3, "Account", styles.headerStyle);
+        createCell(headerRow, 4, "Funding", styles.headerStyle);
+        createCell(headerRow, 5, "Time Line Quarterly", styles.headerStyle);
+        createCell(headerRow, 9, "Output / Code Description", styles.headerStyle);
+        createCell(headerRow, 10, "Performance Indicator / Section", styles.headerStyle);
+        createCell(headerRow, 11, "Outcome", styles.headerStyle);
+        createCell(headerRow, 12, "Strategic Objective", styles.headerStyle);
+
+        int headerTopRow = tr;
+        tr++;
+
+        Row qtrRow = sheet.createRow(tr);
+        qtrRow.setHeight(defaultRowHeight);
+
+        createCell(qtrRow, 5, "Q1", styles.quarterHeaderStyle);
+        createCell(qtrRow, 6, "Q2", styles.quarterHeaderStyle);
+        createCell(qtrRow, 7, "Q3", styles.quarterHeaderStyle);
+        createCell(qtrRow, 8, "Q4", styles.quarterHeaderStyle);
+
+        int headerBottomRow = tr;
+
+        sheet.addMergedRegion(new CellRangeAddress(headerTopRow, headerBottomRow, 0, 0));
+        sheet.addMergedRegion(new CellRangeAddress(headerTopRow, headerBottomRow, 1, 1));
+        sheet.addMergedRegion(new CellRangeAddress(headerTopRow, headerBottomRow, 2, 2));
+        sheet.addMergedRegion(new CellRangeAddress(headerTopRow, headerBottomRow, 3, 3));
+        sheet.addMergedRegion(new CellRangeAddress(headerTopRow, headerBottomRow, 4, 4));
+        sheet.addMergedRegion(new CellRangeAddress(headerTopRow, headerTopRow, 5, 8));
+        sheet.addMergedRegion(new CellRangeAddress(headerTopRow, headerBottomRow, 9, 9));
+        sheet.addMergedRegion(new CellRangeAddress(headerTopRow, headerBottomRow, 10, 10));
+        sheet.addMergedRegion(new CellRangeAddress(headerTopRow, headerBottomRow, 11, 11));
+        sheet.addMergedRegion(new CellRangeAddress(headerTopRow, headerBottomRow, 12, 12));
+
+        short rownum = (short) tr;
+
+        BigDecimal totalExpense = BigDecimal.ZERO;
+        BigDecimal totalQtr1 = BigDecimal.ZERO;
+        BigDecimal totalQtr2 = BigDecimal.ZERO;
+        BigDecimal totalQtr3 = BigDecimal.ZERO;
+        BigDecimal totalQtr4 = BigDecimal.ZERO;
+
+        if (sheet instanceof XSSFSheet xssfSheet) {
+            xssfSheet.setRowSumsBelow(false);
+        }
+
+        // =========================
+        // EMPTY PROCUREMENT CLASS TABLE
+        // =========================
+        if (activityDataMap.isEmpty()) {
+            rownum++;
+
+            Row emptyRow = sheet.createRow(rownum);
+            emptyRow.setHeight((short) 600);
+
+            createCell(
+                    emptyRow,
+                    0,
+                    "No procurement items found for " + procClassLabel,
+                    styles.textStyle
+            );
+
+            for (int c = 1; c <= 12; c++) {
+                createCell(emptyRow, c, "", styles.textStyle);
+            }
+
+            CellRangeAddress emptyRange = new CellRangeAddress(rownum, rownum, 0, 12);
+            sheet.addMergedRegion(emptyRange);
+            setBottomBorderForRegion(sheet, emptyRange);
+
+            rownum++;
+
+            applyStandardWorkplanColumnWidths(sheet);
+
+            return new DepartmentTotals(
+                    procClassLabel,
+                    rownum + 1,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO,
+                    BigDecimal.ZERO
+            );
+        }
+
+        // =========================
+        // BODY
+        // =========================
+        programmes = sampleURC_Priority_Areas.getAreasByDate(budget.getCloseDate());
+
+        for (URC_Priority_Areas prog : programmes) {
+            programmesActivities = sampleUrc_ActivitiesService.findActivitiesByBudgetAndPriorityAndDeptUnits(
+                    budget,
+                    prog,
+                    new ArrayList<>(selectedSections)
+            );
+
+            if (programmesActivities == null || programmesActivities.isEmpty()) {
+                continue;
+            }
+
+            int currentGroupStart = -1;
+            int currentGroupEnd = -1;
+
+            for (Urc_Activities activity : programmesActivities) {
+                if (activity == null || activity.getId() == null) {
+                    continue;
+                }
+
+                ActivityRenderData renderData = activityDataMap.get(activity.getId());
+
+                if (renderData == null
+                        || renderData.items() == null
+                        || renderData.items().isEmpty()
+                        || renderData.total().compareTo(BigDecimal.ZERO) == 0) {
+                    continue;
+                }
+
+                rownum++;
+
+                Row dataRow = sheet.createRow(rownum);
+                dataRow.setHeight((short) 900);
+
+                boolean zebra = rownum % 2 == 0;
+                CellStyle rowTextStyle = zebra ? styles.zebraActivityTextStyle : styles.activityTextStyle;
+                CellStyle rowAmountStyle = zebra ? styles.zebraActivityAmountStyle : styles.activityAmountStyle;
+                CellStyle rowQuarterStyle = zebra ? styles.zebraActivityQuarterStyle : styles.activityQuarterStyle;
+
+                int col = 0;
+
+                createCell(dataRow, col++, nzs(prog.getName()), rowTextStyle);
+                createCell(dataRow, col++, nzs(activity.getName()), rowTextStyle);
+
+                totalExpense = totalExpense.add(renderData.total());
+                totalQtr1 = totalQtr1.add(renderData.q1());
+                totalQtr2 = totalQtr2.add(renderData.q2());
+                totalQtr3 = totalQtr3.add(renderData.q3());
+                totalQtr4 = totalQtr4.add(renderData.q4());
+
+                createNumericCell(dataRow, col++, renderData.total(), rowAmountStyle);
+                createCell(dataRow, col++, renderData.accounts(), rowTextStyle);
+                createCell(dataRow, col++, renderData.funding(), rowTextStyle);
+
+                createNumericCell(dataRow, col++, renderData.q1(),
+                        renderData.q1().compareTo(BigDecimal.ZERO) > 0 ? rowQuarterStyle : rowAmountStyle);
+                createNumericCell(dataRow, col++, renderData.q2(),
+                        renderData.q2().compareTo(BigDecimal.ZERO) > 0 ? rowQuarterStyle : rowAmountStyle);
+                createNumericCell(dataRow, col++, renderData.q3(),
+                        renderData.q3().compareTo(BigDecimal.ZERO) > 0 ? rowQuarterStyle : rowAmountStyle);
+                createNumericCell(dataRow, col++, renderData.q4(),
+                        renderData.q4().compareTo(BigDecimal.ZERO) > 0 ? rowQuarterStyle : rowAmountStyle);
+
+                createCell(dataRow, col++, nzs(activity.getOutput()), rowTextStyle);
+                createCell(dataRow, col++, nzs(activity.getPerformanceIndicator()), rowTextStyle);
+                createCell(dataRow, col++, nzs(activity.getOutcome()), rowTextStyle);
+                createCell(dataRow, col++, nzs(activity.getObjective()), rowTextStyle);
+
+                if (currentGroupStart == -1) {
+                    currentGroupStart = rownum;
+                }
+                currentGroupEnd = rownum;
+
+                // =========================
+                // PROCUREMENT ITEMS BLOCK
+                // =========================
+                rownum++;
+
+                Row bandRow = sheet.createRow(rownum);
+                bandRow.setHeight((short) 430);
+
+                int cardStartRow = rownum;
+                int detailGroupStart = rownum;
+
+                createCell(bandRow, 0, "", styles.detailBandStyle);
+                createCell(bandRow, 1, procClassLabel + " Procurement Item Breakdown", styles.detailBandStyle);
+
+                for (int i = 2; i <= 12; i++) {
+                    createCell(bandRow, i, "", styles.detailBandStyle);
+                }
+
+                sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 1, 12));
+                currentGroupEnd = rownum;
+
+                rownum++;
+
+                Row itemHeaderRow = sheet.createRow(rownum);
+                itemHeaderRow.setHeight((short) 500);
+                createBudgetItemSubHeaderWithoutOrganisation(itemHeaderRow, styles.detailHeaderStyle);
+
+                currentGroupEnd = rownum;
+
+                for (BudgetItems item : renderData.items()) {
+                    rownum++;
+
+                    Row itemRow = sheet.createRow(rownum);
+                    itemRow.setHeight((short) 680);
+
+                    boolean zebraItem = rownum % 2 == 0;
+                    CellStyle itemTextStyle = zebraItem ? styles.zebraDetailTextStyle : styles.detailTextStyle;
+                    CellStyle itemAmountStyle = zebraItem ? styles.zebraDetailAmountStyle : styles.detailAmountStyle;
+                    CellStyle itemQuarterStyle = zebraItem ? styles.zebraDetailQuarterStyle : styles.detailQuarterStyle;
+
+                    BigDecimal itemAmount = nz(item.getYearTotalFromQuarters());
+                    BigDecimal itemQ1 = nz(item.getQ1Total());
+                    BigDecimal itemQ2 = nz(item.getQ2Total());
+                    BigDecimal itemQ3 = nz(item.getQ3Total());
+                    BigDecimal itemQ4 = nz(item.getQ4Total());
+
+                    createCell(itemRow, 0, "", itemTextStyle);
+                    createCell(itemRow, 1, "• " + nzs(item.getItem()), itemTextStyle);
+                    createNumericCell(itemRow, 2, itemAmount, itemAmountStyle);
+                    createCell(itemRow, 3, nzs(item.getCoacode() != null ? item.getCoacode().getCode() : ""), itemTextStyle);
+                    createCell(itemRow, 4, nzs(item.getBudgetType() != null ? item.getBudgetType().getName() : ""), itemTextStyle);
+
+                    createNumericCell(itemRow, 5, itemQ1,
+                            itemQ1.compareTo(BigDecimal.ZERO) > 0 ? itemQuarterStyle : itemAmountStyle);
+                    createNumericCell(itemRow, 6, itemQ2,
+                            itemQ2.compareTo(BigDecimal.ZERO) > 0 ? itemQuarterStyle : itemAmountStyle);
+                    createNumericCell(itemRow, 7, itemQ3,
+                            itemQ3.compareTo(BigDecimal.ZERO) > 0 ? itemQuarterStyle : itemAmountStyle);
+                    createNumericCell(itemRow, 8, itemQ4,
+                            itemQ4.compareTo(BigDecimal.ZERO) > 0 ? itemQuarterStyle : itemAmountStyle);
+
+                    createCell(itemRow, 9, nzs(item.getCoacode() != null ? item.getCoacode().getName() : ""), itemTextStyle);
+                    createCell(itemRow, 10, nzs(item.getDeptUnit() != null ? item.getDeptUnit().getNAME() : ""), itemTextStyle);
+                    createCell(itemRow, 11, nzs(item.getProcClass() != null ? item.getProcClass().name().replace("_", " ") : ""), itemTextStyle);
+                    createCell(itemRow, 12, "", itemTextStyle);
+
+                    currentGroupEnd = rownum;
+                }
+
+                // =========================
+// ACTIVITY SEPARATOR ROW
+// =========================
+                rownum++;
+
+                Row separatorRow = sheet.createRow(rownum);
+                separatorRow.setHeight((short) 260);
+
+                CellStyle separatorStyle = workbook.createCellStyle();
+                separatorStyle.cloneStyleFrom(styles.detailTextStyle);
+
+                separatorStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+                separatorStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+                separatorStyle.setBorderTop(BorderStyle.NONE);
+                separatorStyle.setBorderBottom(BorderStyle.NONE);
+                separatorStyle.setBorderLeft(BorderStyle.NONE);
+                separatorStyle.setBorderRight(BorderStyle.NONE);
+
+                for (int c = 0; c <= 12; c++) {
+                    Cell cell = separatorRow.createCell(c);
+                    cell.setCellStyle(separatorStyle);
+
+                    if (c == 0) {
+                        cell.setCellValue("");
+                    }
+                }
+
+                CellRangeAddress separatorRange
+                        = new CellRangeAddress(rownum, rownum, 0, 12);
+
+                sheet.addMergedRegion(separatorRange);
+
+                currentGroupEnd = rownum;
+
+                sectionCards.add(new SectionCard(cardStartRow, rownum, 0, 12));
+
+                sheet.groupRow(detailGroupStart, rownum);
+                sheet.setRowGroupCollapsed(detailGroupStart, true);
+            }
+
+            if (currentGroupStart != -1 && currentGroupEnd != -1 && currentGroupEnd > currentGroupStart) {
+                CellRangeAddress merged = new CellRangeAddress(currentGroupStart, currentGroupEnd, 0, 0);
+                if (!isOverlappingWithExistingRegions(sheet, merged)) {
+                    addMergedRegion(sheet, merged);
+                }
+            }
+        }
+
+        // =========================
+        // TOTAL ROW
+        // =========================
+        rownum++;
+
+        Row totalRow = sheet.createRow(rownum);
+        totalRow.setHeight(defaultRowHeight);
+
+        createCell(totalRow, 0, "TOTAL " + procClassLabel, styles.totalLabelStyle);
+        sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 0, 1));
+
+        createNumericCell(totalRow, 2, totalExpense, styles.totalAmountStyle);
+        sheet.addMergedRegion(new CellRangeAddress(rownum, rownum, 2, 4));
+
+        createNumericCell(totalRow, 5, totalQtr1, styles.totalAmountStyle);
+        createNumericCell(totalRow, 6, totalQtr2, styles.totalAmountStyle);
+        createNumericCell(totalRow, 7, totalQtr3, styles.totalAmountStyle);
+        createNumericCell(totalRow, 8, totalQtr4, styles.totalAmountStyle);
+
+        for (int c = 3; c <= 4; c++) {
+            Cell cell = totalRow.getCell(c);
+            if (cell == null) {
+                cell = totalRow.createCell(c);
+            }
+            cell.setCellStyle(styles.totalAmountStyle);
+        }
+
+        for (int c = 9; c <= 12; c++) {
+            Cell cell = totalRow.getCell(c);
+            if (cell == null) {
+                cell = totalRow.createCell(c);
+            }
+            cell.setCellStyle(styles.totalLabelStyle);
+        }
+
+        applySectionCardsFast(sheet, sectionCards, sectionCardBorderColor);
+
+        for (int i = 0; i < sheet.getNumMergedRegions(); i++) {
+            applyRegionBorder(sheet, sheet.getMergedRegion(i));
+        }
+
+        applyStandardWorkplanColumnWidths(sheet);
+
+        return new DepartmentTotals(
+                procClassLabel,
+                rownum + 1,
+                totalExpense,
+                totalQtr1,
+                totalQtr2,
+                totalQtr3,
+                totalQtr4
+        );
+    }
+
+    private void applySectionCardsFast(
+            Sheet sheet,
+            List<SectionCard> cards,
+            short borderColor
+    ) {
+        if (sheet == null || cards == null || cards.isEmpty()) {
+            return;
+        }
+
+        for (SectionCard card : cards) {
+            if (card == null) {
+                continue;
+            }
+
+            int firstRow = Math.max(0, card.startRow());
+            int lastRow = Math.max(firstRow, card.endRow());
+            int firstCol = Math.max(0, card.startCol());
+            int lastCol = Math.max(firstCol, card.endCol());
+
+            CellRangeAddress region = new CellRangeAddress(
+                    firstRow,
+                    lastRow,
+                    firstCol,
+                    lastCol
+            );
+
+            RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet);
+            RegionUtil.setTopBorderColor(borderColor, region, sheet);
+
+            RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);
+            RegionUtil.setBottomBorderColor(borderColor, region, sheet);
+
+            RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet);
+            RegionUtil.setLeftBorderColor(borderColor, region, sheet);
+
+            RegionUtil.setBorderRight(BorderStyle.THIN, region, sheet);
+            RegionUtil.setRightBorderColor(borderColor, region, sheet);
+        }
+    }
+
+    private void applyProcurementSheetPrintSetup(Sheet sheet) {
+        PrintSetup ps = sheet.getPrintSetup();
+        ps.setLandscape(true);
+        ps.setPaperSize(PrintSetup.A4_PAPERSIZE);
+        ps.setFitWidth((short) 1);
+        ps.setFitHeight((short) 0);
+
+        sheet.setFitToPage(true);
+        sheet.setHorizontallyCenter(true);
+        sheet.setAutobreaks(true);
+
+        sheet.setMargin(Sheet.TopMargin, 0.5);
+        sheet.setMargin(Sheet.BottomMargin, 0.5);
+        sheet.setMargin(Sheet.LeftMargin, 0.3);
+        sheet.setMargin(Sheet.RightMargin, 0.3);
+
+        sheet.setZoom(85);
+    }
+
+    private void applyStandardWorkplanColumnWidths(Sheet sheet) {
+        sheet.setColumnWidth(0, 5000);
+        sheet.setColumnWidth(1, 11000);
+        sheet.setColumnWidth(2, 4500);
+        sheet.setColumnWidth(3, 4500);
+        sheet.setColumnWidth(4, 5500);
+        sheet.setColumnWidth(5, 3400);
+        sheet.setColumnWidth(6, 3400);
+        sheet.setColumnWidth(7, 3400);
+        sheet.setColumnWidth(8, 3400);
+        sheet.setColumnWidth(9, 7000);
+        sheet.setColumnWidth(10, 5500);
+        sheet.setColumnWidth(11, 5000);
+        sheet.setColumnWidth(12, 5000);
+    }
+
+    private byte[] generateDepartmentalProcurementPlanByProcClass(
+            Budget budget,
+            Set<Organisation> selectedOrganisations,
+            DepartmentBudget department
+    ) {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            WorkplanStyles styles = createWorkplanStyles(workbook);
+
+            Sheet sheet = workbook.createSheet(
+                    WorkbookUtil.createSafeSheetName("Procurement Plan")
+            );
+
+            int rowPointer = 0;
+
+            for (ProcClass procClass : ProcClass.values()) {
+                DepartmentTotals totals = createDepartmentalProcurementPlanDetailed(
+                        workbook,
+                        sheet,
+                        budget,
+                        selectedOrganisations,
+                        department,
+                        rowPointer,
+                        styles,
+                        procClass
+                );
+
+                rowPointer = totals.nextRowPointer() + 3;
+            }
+
+            PrintSetup ps = sheet.getPrintSetup();
+            ps.setLandscape(true);
+            ps.setPaperSize(PrintSetup.A4_PAPERSIZE);
+            ps.setFitWidth((short) 1);
+            ps.setFitHeight((short) 0);
+
+            sheet.setFitToPage(true);
+            sheet.setHorizontallyCenter(true);
+            sheet.setAutobreaks(true);
+            sheet.createFreezePane(0, 4);
+
+            workbook.write(out);
+            return out.toByteArray();
+
+        } catch (IOException ex) {
+            throw new RuntimeException("Failed to generate procurement plan Excel", ex);
+        }
+    }
+
+    private Map<Long, ActivityRenderData> preloadActivityRenderDataByProcClass(
+            Budget budget,
+            Set<Organisation> selectedOrganisations,
+            Set<UrcDeptSectionAnlDimbgt> selectedSections,
+            ProcClass procClass
+    ) {
+        List<BudgetItems> allItems
+                = sampleBudgetItemsService.findByBudgetAndBudgetTypesAndDeptUnitsAndProcClass(
+                        budget,
+                        selectedOrganisations,
+                        selectedSections,
+                        procClass
+                );
+
+        Map<Long, List<BudgetItems>> itemsByActivity = allItems.stream()
+                .filter(item -> item.getActivity() != null && item.getActivity().getId() != null)
+                .collect(Collectors.groupingBy(item -> item.getActivity().getId()));
+
+        Map<Long, ActivityRenderData> result = new HashMap<>();
+
+        for (Map.Entry<Long, List<BudgetItems>> entry : itemsByActivity.entrySet()) {
+            List<BudgetItems> items = entry.getValue();
+            Urc_Activities activity = items.get(0).getActivity();
+
+            BigDecimal total = items.stream()
+                    .map(item -> nz(item.getYearTotalFromQuarters()))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal q1 = items.stream()
+                    .map(item -> nz(item.getQ1Total()))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal q2 = items.stream()
+                    .map(item -> nz(item.getQ2Total()))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal q3 = items.stream()
+                    .map(item -> nz(item.getQ3Total()))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal q4 = items.stream()
+                    .map(item -> nz(item.getQ4Total()))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            String accounts = items.stream()
+                    .map(item -> item.getCoacode() != null ? nzs(item.getCoacode().getCode()) : "")
+                    .filter(s -> !s.isBlank())
+                    .distinct()
+                    .sorted()
+                    .collect(Collectors.joining(", "));
+
+            String funding = items.stream()
+                    .map(item -> item.getBudgetType() != null ? nzs(item.getBudgetType().getName()) : "")
+                    .filter(s -> !s.isBlank())
+                    .distinct()
+                    .sorted()
+                    .collect(Collectors.joining(", "));
+
+            result.put(entry.getKey(), new ActivityRenderData(
+                    activity,
+                    items,
+                    total,
+                    q1,
+                    q2,
+                    q3,
+                    q4,
+                    accounts,
+                    funding
+            ));
+        }
+
+        return result;
     }
 
     private record DepartmentOrganisationBudgetRow(

@@ -185,11 +185,11 @@ public class MainLayout extends AppLayout {
             nav.addItem(item);
         }
 
-        if (accessChecker.hasAccess(BudgetCeilingView.class)) {
-            SideNavItem item = new SideNavItem("Budget Ceiling", BudgetCeilingView.class, VaadinIcon.TRENDING_UP.create());
-            item.addClassName("menu-item");
-            nav.addItem(item);
-        }
+        /*        if (accessChecker.hasAccess(BudgetCeilingView.class)) {
+        SideNavItem item = new SideNavItem("Budget Ceiling", BudgetCeilingView.class, VaadinIcon.TRENDING_UP.create());
+        item.addClassName("menu-item");
+        nav.addItem(item);
+        }*/
 
         SideNavItem budgetingHeader = new SideNavItem("Budgeting");
         budgetingHeader.setClassName("menu-header");
@@ -200,11 +200,11 @@ public class MainLayout extends AppLayout {
             item.addClassName("menu-item");
             nav.addItem(item);
         }
-        if (accessChecker.hasAccess(BudgetControlView.class)) {
-            SideNavItem item = new SideNavItem("Budget Controls", BudgetControlView.class, VaadinIcon.SHIELD.create());
-            item.addClassName("menu-item");
-            nav.addItem(item);
-        }
+        /*        if (accessChecker.hasAccess(BudgetControlView.class)) {
+        SideNavItem item = new SideNavItem("Budget Controls", BudgetControlView.class, VaadinIcon.SHIELD.create());
+        item.addClassName("menu-item");
+        nav.addItem(item);
+        }*/
 
         if (accessChecker.hasAccess(freightVolumeView.class)) {
             SideNavItem item = new SideNavItem("Freight Volume Reports", freightVolumeView.class, VaadinIcon.TRUCK.create());
@@ -218,11 +218,11 @@ public class MainLayout extends AppLayout {
             nav.addItem(item);
         }
 
-        if (accessChecker.hasAccess(BLORequisitionView.class)) {
-            SideNavItem item = new SideNavItem("Requisitions", BLORequisitionView.class, VaadinIcon.CART.create());
-            item.addClassName("menu-item");
-            nav.addItem(item);
-        }
+        /*        if (accessChecker.hasAccess(BLORequisitionView.class)) {
+        SideNavItem item = new SideNavItem("Requisitions", BLORequisitionView.class, VaadinIcon.CART.create());
+        item.addClassName("menu-item");
+        nav.addItem(item);
+        }*/
 
         SideNavItem budgetReportHeader = new SideNavItem("Budget Reports");
         budgetReportHeader.setClassName("menu-header");
@@ -245,16 +245,16 @@ public class MainLayout extends AppLayout {
             item.addClassName("menu-item");
             nav.addItem(item);
         }
-
+/* 
         SideNavItem approvalReportHeader = new SideNavItem("Budget Approvals");
         approvalReportHeader.setClassName("menu-header");
         nav.addItem(approvalReportHeader);
 
-        if (accessChecker.hasAccess(ApprovalView.class)) {
-            SideNavItem item = new SideNavItem("Budget Approvals", ApprovalView.class, VaadinIcon.CHECK_CIRCLE.create());
-            item.addClassName("menu-item");
-            nav.addItem(item);
-        }
+               if (accessChecker.hasAccess(ApprovalView.class)) {
+        SideNavItem item = new SideNavItem("Budget Approvals", ApprovalView.class, VaadinIcon.CHECK_CIRCLE.create());
+        item.addClassName("menu-item");
+        nav.addItem(item);
+        }*/
 
         SideNavItem performanceReportHeader = new SideNavItem("Performance Reports");
         performanceReportHeader.setClassName("menu-header");
@@ -269,29 +269,29 @@ public class MainLayout extends AppLayout {
             item.addClassName("menu-item");
             nav.addItem(item);
         }
-        
+        /*
         if (accessChecker.hasAccess(URCPhysicalPerformanceEntryView.class)) {
             SideNavItem item = new SideNavItem("Physical Performance Entry", URCPhysicalPerformanceEntryView.class, VaadinIcon.TRENDING_UP.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }
-        if (accessChecker.hasAccess(URCPhysicalPerformanceDashboardView.class)) {
-            SideNavItem item = new SideNavItem("Physical Performance Dashboard", URCPhysicalPerformanceDashboardView.class, VaadinIcon.TRENDING_UP.create());
-            item.addClassName("menu-item");
-            nav.addItem(item);
-        }        
-
+                if (accessChecker.hasAccess(URCPhysicalPerformanceDashboardView.class)) {
+        SideNavItem item = new SideNavItem("Physical Performance Dashboard", URCPhysicalPerformanceDashboardView.class, VaadinIcon.TRENDING_UP.create());
+        item.addClassName("menu-item");
+        nav.addItem(item);
+        }
+        
         if (accessChecker.hasAccess(PerformanceView.class)) {
-            SideNavItem item = new SideNavItem("Analysis Report", PerformanceView.class, VaadinIcon.CHART.create());
-            item.addClassName("menu-item");
-            nav.addItem(item);
+        SideNavItem item = new SideNavItem("Analysis Report", PerformanceView.class, VaadinIcon.CHART.create());
+        item.addClassName("menu-item");
+        nav.addItem(item);
         }
-
+        
         if (accessChecker.hasAccess(ActualByActivityView.class)) {
-            SideNavItem item = new SideNavItem("Analysis-Activity Report", ActualByActivityView.class, VaadinIcon.CHART_GRID.create());
-            item.addClassName("menu-item");
-            nav.addItem(item);
-        }
+        SideNavItem item = new SideNavItem("Analysis-Activity Report", ActualByActivityView.class, VaadinIcon.CHART_GRID.create());
+        item.addClassName("menu-item");
+        nav.addItem(item);
+        }*/
 
         SideNavItem userManagementHeader2 = new SideNavItem("Setting");
         userManagementHeader2.setClassName("menu-header");

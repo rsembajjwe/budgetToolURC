@@ -3296,4 +3296,42 @@ public class BudgetItemsService {
         );
     }
 
+    public List<BudgetItems> findByBudgetAndBudgetTypesAndDeptUnitsAndProcClass(
+            Budget budget,
+            Set<Organisation> budgetTypes,
+            Set<UrcDeptSectionAnlDimbgt> deptUnits,
+            ProcClass procClass
+    ) {
+        if (budget == null || budgetTypes == null || budgetTypes.isEmpty()
+                || deptUnits == null || deptUnits.isEmpty()
+                || procClass == null) {
+            return Collections.emptyList();
+        }
+
+        return repository.findByBudgetAndBudgetTypesAndDeptUnitsAndProcClassFiltered(
+                budget,
+                budgetTypes,
+                deptUnits,
+                procClass
+        );
+    }
+
+    public List<BudgetItems> findByBudgetAndBudgetTypesAndProcClassFiltered(
+            Budget budget,
+            Set<Organisation> budgetTypes,
+            ProcClass procClass
+    ) {
+        if (budget == null
+                || budgetTypes == null || budgetTypes.isEmpty()
+                || procClass == null) {
+            return Collections.emptyList();
+        }
+
+        return repository.findByBudgetAndBudgetTypesAndProcClassFiltered(
+                budget,
+                budgetTypes,
+                procClass
+        );
+    }
+
 }
