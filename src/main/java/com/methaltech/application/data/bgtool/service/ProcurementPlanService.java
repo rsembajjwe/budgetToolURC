@@ -17,7 +17,7 @@ import com.methaltech.application.data.entity.bgtool.ProcurementMethod;
 import com.methaltech.application.data.entity.bgtool.ProcurementPlan;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -140,12 +140,38 @@ public class ProcurementPlanService {
     }
 
     @Transactional
+    public List<ProcurementPlan> findProcurementPlansForExport(Budget budget) {
+        if (budget == null) {
+            // Handle the case when the budget is null (e.g., throw an exception or return an empty list)
+            return Collections.emptyList();  // Return an empty list as an example
+        }
+
+        // Assuming you have a 'Budget' entity associated with 'ProcurementPlan'
+        return procurementPlanRepository.findProcurementPlansForExport(budget);
+    }
+
+    @Transactional
     public List<ProcurementPlan> findByBudgetAndProcClass(Budget budget, ProcClass procClass) {
         if (budget == null || procClass == null) {
             // Handle the case when the budget is null (e.g., throw an exception or return an empty list)
             return Collections.emptyList();  // Return an empty list as an example
         }
         return procurementPlanRepository.findByBudgetAndProcClass(budget, procClass);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProcurementPlan> findByBudgetAndProcClassWithItems(
+            Budget budget,
+            ProcClass procClass
+    ) {
+        if (budget == null || procClass == null) {
+            return Collections.emptyList();
+        }
+
+        return procurementPlanRepository.findByBudgetAndProcClassWithItems(
+                budget,
+                procClass
+        );
     }
 
     @Transactional

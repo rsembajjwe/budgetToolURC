@@ -22,7 +22,37 @@ public interface ProcurementPlanRepository extends JpaRepository<ProcurementPlan
     // You can add custom query methods if needed
     List<ProcurementPlan> findByBudget(Budget budget);
 
+    @Query("""
+    SELECT DISTINCT p
+    FROM ProcurementPlan p
+    LEFT JOIN FETCH p.procPlanBudgetItems bi
+    LEFT JOIN FETCH bi.procurementMethod
+    LEFT JOIN FETCH bi.procurementType
+    LEFT JOIN FETCH bi.fundsource
+    LEFT JOIN FETCH bi.coacode
+    LEFT JOIN FETCH bi.deptUnit
+    WHERE p.budget = :budget
+""")
+    List<ProcurementPlan> findProcurementPlansForExport(@Param("budget") Budget budget);
+
     List<ProcurementPlan> findByBudgetAndProcClass(Budget budget, ProcClass procClass);
+
+    @Query("""
+    SELECT DISTINCT p
+    FROM ProcurementPlan p
+    LEFT JOIN FETCH p.procPlanBudgetItems bi
+    LEFT JOIN FETCH bi.procurementMethod
+    LEFT JOIN FETCH bi.procurementType
+    LEFT JOIN FETCH bi.fundsource
+    LEFT JOIN FETCH bi.coacode
+    LEFT JOIN FETCH bi.deptUnit
+    WHERE p.budget = :budget
+      AND p.procClass = :procClass
+""")
+    List<ProcurementPlan> findByBudgetAndProcClassWithItems(
+            @Param("budget") Budget budget,
+            @Param("procClass") ProcClass procClass
+    );
 
     @Modifying
     @Transactional
@@ -36,6 +66,7 @@ public interface ProcurementPlanRepository extends JpaRepository<ProcurementPlan
     List<ProcurementPlan> findByBudgetAndProcClassAndCoa(Budget budget, ProcClass procClass, COA coa);
 
     ProcurementPlan findFirstByBudgetAndProcClassAndCoa(Budget budget, ProcClass procClass, COA coa);
+
     ProcurementPlan findFirstByProcPlanBudgetItems(BudgetItems budgetItem);
 
 }

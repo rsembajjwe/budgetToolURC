@@ -18,12 +18,17 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Transient;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "budgetItem")
 @NoArgsConstructor
-public @Data
-class BudgetItems implements Serializable {
+@Getter
+@Setter
+public class BudgetItems implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -103,17 +108,69 @@ class BudgetItems implements Serializable {
     private String target_group;
     private String expected_trainer;
     private String no_of_days;
-    private String procMethod;
-    private String procType;
-    private String preQ;
-    private String appofResv;
-    private LocalDate bidInv;
-    private LocalDate bidclos;
-    private LocalDate apprevadate;
-    private LocalDate awardnotidate;
-    private LocalDate contractsigndate;
-    private LocalDate completiondate;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "procurement_method_id")
+    private ProcurementMethod procurementMethod;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "procurement_type_id")
+    private ProcurementType procurementType;
+
+    @Column(name = "prequalification")
+    private Boolean prequalification = false;
+
+    @Column(name = "reserve_scheme")
+    private Boolean reserveScheme = false;
+
+    @Column(name = "bid_invitation_date")
+    private LocalDate bidInvitationDate;
+
+    @Column(name = "bid_closing_opening_date")
+    private LocalDate bidClosingOpeningDate;
+
+    @Column(name = "evaluation_approval_date")
+    private LocalDate evaluationApprovalDate;
+
+    @Column(name = "award_notification_date")
+    private LocalDate awardNotificationDate;
+
+    @Column(name = "contract_signing_date")
+    private LocalDate contractSigningDate;
+
+    @Column(name = "completion_date")
+    private LocalDate completionDate;
+
+    @Column(name = "proposal_invitation_date")
+    private LocalDate proposalInvitationDate;
+
+    @Column(name = "proposal_submission_opening_date")
+    private LocalDate proposalSubmissionOpeningDate;
+
+    @Column(name = "final_evaluation_approval_date")
+    private LocalDate finalEvaluationApprovalDate;
+
+    @Column(name = "final_notification_date")
+    private LocalDate finalNotificationDate;
+
+    @Column(name = "current_year_estimated_cost", precision = 25, scale = 6)
+    private BigDecimal currentYearEstimatedCost;
+
+    @Column(name = "projected_completion_time_years")
+    private Integer projectedCompletionTimeYears;
+
+    @Column(name = "paid_up_sum", precision = 25, scale = 6)
+    private BigDecimal paidUpSum;
+
+    @Column(name = "pending_sum", precision = 25, scale = 6)
+    private BigDecimal pendingSum;
+
+    @Column(name = "pending_time_to_completion")
+    private String pendingTimeToCompletion;
+
+    @Column(name = "reservation_scheme_details")
+    private String reservationSchemeDetails;
+    
     @ManyToOne
     @JoinColumn(name = "Organisation_id")
     private Organisation budgetType;
@@ -264,5 +321,42 @@ class BudgetItems implements Serializable {
     public BigDecimal getYearTotalFromQuarters() {
         return getQ1Total().add(getQ2Total()).add(getQ3Total()).add(getQ4Total());
     }
-}
 
+    @Transient
+    public String getProcurementMethodName() {
+        return procurementMethod == null ? "" : procurementMethod.getProcuremntMethod();
+    }
+
+    @Transient
+    public String getProcurementTypeName() {
+        return procurementType == null ? "" : procurementType.getProcuremntType();
+    }
+
+    @Transient
+    public String getPrequalificationText() {
+        return Boolean.TRUE.equals(prequalification) ? "Yes" : "No";
+    }
+
+    @Transient
+    public String getReserveSchemeText() {
+        return Boolean.TRUE.equals(reserveScheme) ? "Yes" : "No";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof BudgetItems other)) {
+            return false;
+        }
+
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+}

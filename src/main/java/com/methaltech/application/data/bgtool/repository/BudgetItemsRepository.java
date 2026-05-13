@@ -2145,7 +2145,7 @@ WHERE b.budget = :budget
             @Param("deptUnits") Set<UrcDeptSectionAnlDimbgt> deptUnits,
             @Param("procClass") ProcClass procClass
     );
-    
+
     @Query("""
     SELECT b
     FROM BudgetItems b
@@ -2157,10 +2157,25 @@ WHERE b.budget = :budget
             OR b.coacode.code LIKE '3%'
           )
 """)
-List<BudgetItems> findByBudgetAndBudgetTypesAndProcClassFiltered(
-        @Param("budget") Budget budget,
-        @Param("budgetTypes") Set<Organisation> budgetTypes,
-        @Param("procClass") ProcClass procClass
-);
+    List<BudgetItems> findByBudgetAndBudgetTypesAndProcClassFiltered(
+            @Param("budget") Budget budget,
+            @Param("budgetTypes") Set<Organisation> budgetTypes,
+            @Param("procClass") ProcClass procClass
+    );
+
+    @Query("""
+    SELECT b
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+      AND b.procClass = :procClass
+      AND (
+            b.coacode.code LIKE '2%'
+            OR b.coacode.code LIKE '3%'
+          )
+""")
+    List<BudgetItems> findByBudgetAndProcClassFiltered(
+            @Param("budget") Budget budget,
+            @Param("procClass") ProcClass procClass
+    );
 
 }

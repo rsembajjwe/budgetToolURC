@@ -3334,4 +3334,19 @@ public class BudgetItemsService {
         );
     }
 
+    public List<BudgetItems> findByBudgetAndProcClassFiltered(
+            Budget budget,
+            ProcClass procClass
+    ) {
+        if (budget == null
+                || procClass == null) {
+            return Collections.emptyList();
+        }
+
+        return repository.findByBudgetAndProcClassFiltered(
+                budget,
+                procClass
+        );
+    }
+
 }

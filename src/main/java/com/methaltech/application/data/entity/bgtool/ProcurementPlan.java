@@ -23,13 +23,16 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Set;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "procurementPlan")
 @NoArgsConstructor
-public @Data
-class ProcurementPlan  implements Serializable{
+@Getter
+@Setter
+public class ProcurementPlan implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -118,5 +121,23 @@ class ProcurementPlan  implements Serializable{
 
     @Column(name = "bcompletion")
     private LocalDate bcompletion;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof BudgetItems other)) {
+            return false;
+        }
+
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 
 }

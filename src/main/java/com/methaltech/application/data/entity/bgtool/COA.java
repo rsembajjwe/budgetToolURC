@@ -27,7 +27,9 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 @Entity
@@ -39,7 +41,9 @@ import lombok.ToString;
 )
 @NoArgsConstructor
 @ToString(exclude = {"id", "code", "budget", "coalevel1", "coalevel11", "coalevel12", "coalevel13", "dsections"})
-public @Data
+@Getter
+@Setter
+public
 class COA implements Serializable {
 
     @Id
@@ -297,4 +301,5 @@ class COA implements Serializable {
         Long budgetId = (budget != null ? budget.getId() : null);
         return java.util.Objects.hash(code, budgetId);
     }
+
 }

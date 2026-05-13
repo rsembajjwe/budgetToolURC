@@ -10,12 +10,16 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.io.Serializable;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "fundsource")
 @NoArgsConstructor
-public @Data class Fundsource  implements Serializable{
+@Getter
+@Setter
+public class Fundsource  implements Serializable{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,5 +29,23 @@ public @Data class Fundsource  implements Serializable{
     @JoinColumn(name = "budget_id")
     @JsonIgnore
     private Budget budget; 
+    
+        @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof BudgetItems other)) {
+            return false;
+        }
+
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
    
 }

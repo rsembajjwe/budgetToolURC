@@ -1284,12 +1284,13 @@ public class BudgetFormView extends Div {
                     budg.setOct(getNonNullValue(oct).stripTrailingZeros());
                     budg.setNov(getNonNullValue(nov).stripTrailingZeros());
                     budg.setDec(getNonNullValue(dec).stripTrailingZeros());
+                    budg.setProcurementMethod(sampleProcurementPlanService.getProcurementMethodList2(budg.getProcClass(), calculateMonthSum(budg)));
                     budgetItemsService.update(budg);
                     ProcurementPlan getAllProcurementPlans = sampleProcurementPlanService.findFirstByBudgetAndProcClassAndCoa(budg.getBudget(), budg.getProcClass(), budg.getCoacode());
                     if (getAllProcurementPlans != null) {
                         // pp.setCost(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(budg.getBudget(), budg.getProcClass(), budg.getCoacode()));
                         BigDecimal tDecimal = budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(getAllProcurementPlans.getBudget(), getAllProcurementPlans.getProcClass(), getAllProcurementPlans.getCoa());
-                        getAllProcurementPlans.setProcurementMethod(sampleProcurementPlanService.getProcurementMethodList2(budg.getProcClass(), tDecimal));
+
                         sampleProcurementPlanService.save(getAllProcurementPlans);
                     } else {
                         ProcurementPlan pr = new ProcurementPlan();
@@ -1301,8 +1302,6 @@ public class BudgetFormView extends Div {
                         //pr.setFundsource(fundsourceSet); // Assuming all selected plans have the same fund source
                         pr.setCost(calculateMonthSum(budg));
                         pr.setProcClass(procClassCombo.getValue());
-                        pr.setProcurementMethod(sampleProcurementPlanService.getProcurementMethodList2(budg.getProcClass(), pr.getCost()));
-
                         sampleProcurementPlanService.save(pr);
                     }
 
@@ -2692,6 +2691,7 @@ public class BudgetFormView extends Div {
                             budg.setOct(b.getOct());
                             budg.setNov(b.getNov());
                             budg.setDec(b.getDec());
+                            budg.setProcurementMethod(sampleProcurementPlanService.getProcurementMethodList2(budg.getProcClass(), calculateMonthSum(budg)));
                             if (!b.getCoacode().getDisplay().equals(Display.FREIGHT)) {
                                 budgetItemsService.update(budg);
                                 if (b.getCoacode().getCoalevel1().getCode() != 1) {
@@ -2699,7 +2699,7 @@ public class BudgetFormView extends Div {
                                     if (getAllProcurementPlans != null) {
                                         // pp.setCost(budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(budg.getBudget(), budg.getProcClass(), budg.getCoacode()));
                                         BigDecimal tDecimal = budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(getAllProcurementPlans.getBudget(), getAllProcurementPlans.getProcClass(), getAllProcurementPlans.getCoa());
-                                        getAllProcurementPlans.setProcurementMethod(sampleProcurementPlanService.getProcurementMethodList2(budg.getProcClass(), tDecimal));
+
                                         sampleProcurementPlanService.save(getAllProcurementPlans);
                                     } else {
                                         ProcurementPlan pr = new ProcurementPlan();
@@ -2711,7 +2711,6 @@ public class BudgetFormView extends Div {
                                         //pr.setFundsource(fundsourceSet); // Assuming all selected plans have the same fund source
                                         pr.setCost(calculateMonthSum(budg));
                                         pr.setProcClass(procClassCombo.getValue());
-                                        pr.setProcurementMethod(sampleProcurementPlanService.getProcurementMethodList2(budg.getProcClass(), pr.getCost()));
                                         pr.setCurrency(sampleCurrencyService.findCurrenciesByCurrencyShortAndBudget("UGX", budg.getBudget()));
 
                                         sampleProcurementPlanService.save(pr);
