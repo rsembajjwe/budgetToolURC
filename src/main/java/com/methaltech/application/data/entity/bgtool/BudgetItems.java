@@ -41,6 +41,12 @@ public class BudgetItems implements Serializable {
     @Column(precision = 25, scale = 6)
     private BigDecimal cost;
 
+    @Transient
+    private Long syntheticGroupId;
+
+    @Transient
+    private Boolean syntheticGroupedRow = false;
+
     @ManyToOne
     @JoinColumn(name = "budget_id")
     @JsonIgnore
@@ -170,7 +176,7 @@ public class BudgetItems implements Serializable {
 
     @Column(name = "reservation_scheme_details")
     private String reservationSchemeDetails;
-    
+
     @ManyToOne
     @JoinColumn(name = "Organisation_id")
     private Organisation budgetType;

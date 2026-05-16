@@ -3334,19 +3334,45 @@ public class BudgetItemsService {
         );
     }
 
-    public List<BudgetItems> findByBudgetAndProcClassFiltered(
+    public List<BudgetItems> findByBudgetAndCoaAndProcClassFiltered(
             Budget budget,
-            ProcClass procClass
+            ProcClass procClass, COA coa
     ) {
         if (budget == null
                 || procClass == null) {
             return Collections.emptyList();
         }
 
-        return repository.findByBudgetAndProcClassFiltered(
+        return repository.findByBudgetAndCoaAndProcClassFiltered(
                 budget,
-                procClass
+                procClass,
+                coa
         );
+    }
+
+    @Transactional
+    public List<COA> findProcurementCoasByBudget(Budget budget) {
+
+        if (budget == null) {
+            return Collections.emptyList();
+        }
+
+        List<COA> result = repository.findProcurementCoasByBudget(budget).stream()
+                .filter(Objects::nonNull)
+                .filter(coa -> coa.getProcclass() != null)
+                .filter(coa -> coa.getCode() != null).collect(Collectors.toList());
+
+        return result == null
+                ? Collections.emptyList()
+                : result;
+    }
+
+    public List<BudgetItems> findProcurementBudgetItemsByBudget(Budget budget) {
+        if (budget == null) {
+            return Collections.emptyList();
+        }
+
+        return repository.findProcurementBudgetItemsByBudget(budget);
     }
 
 }

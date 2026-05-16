@@ -120,7 +120,9 @@ public class ProcurementPlanService {
 
     @Transactional
     public void deleteProcurementPlanByBudget(Budget budget) {
-        procurementPlanRepository.deleteByBudget(budget);
+        List<ProcurementPlan> plans = procurementPlanRepository.findByBudget(budget);
+        procurementPlanRepository.deleteAll(plans);
+        procurementPlanRepository.flush();
     }
 
     @Transactional

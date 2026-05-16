@@ -8,6 +8,7 @@ import com.methaltech.application.data.bgtool.service.BudgetService;
 import com.methaltech.application.data.bgtool.service.CoaService;
 import com.methaltech.application.data.bgtool.service.CurrencyService;
 import com.methaltech.application.data.bgtool.service.FundsourceService;
+import com.methaltech.application.data.bgtool.service.ProcurementBudgetItemGroupService;
 import com.methaltech.application.data.bgtool.service.ProcurementMethodService;
 import com.methaltech.application.data.bgtool.service.ProcurementPlanService;
 import com.methaltech.application.data.bgtool.service.ProcurementTypeService;
@@ -18,6 +19,7 @@ import com.methaltech.application.data.entity.bgtool.BudgetItems;
 import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.Currency;
 import com.methaltech.application.data.entity.bgtool.Fundsource;
+import com.methaltech.application.data.entity.bgtool.ProcurementBudgetItemGroup;
 import com.methaltech.application.data.entity.bgtool.ProcurementMethod;
 import com.methaltech.application.data.entity.bgtool.ProcurementPlan;
 import com.methaltech.application.data.entity.bgtool.ProcurementType;
@@ -33,11 +35,13 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
+import com.vaadin.flow.component.grid.FooterRow;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.HeaderRow;
@@ -80,17 +84,23 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
@@ -128,8 +138,10 @@ public class ProcurementPlanView extends Div {
     private final CurrencyService currencyService;
     private final FundsourceService fundsourceService;
     private final AuthenticatedUser authenticatedUser;
+    private final ProcurementBudgetItemGroupService procurementBudgetItemGroupService;
 
     private final DecimalFormat moneyFormat = new DecimalFormat("#,##0.00");
+    private final Map<CellStyle, CellStyle> blackStyleCache = new HashMap<>();
 
     private User currentUser;
 
@@ -157,7 +169,8 @@ public class ProcurementPlanView extends Div {
             CoaService coaService,
             CurrencyService currencyService,
             FundsourceService fundsourceService,
-            AuthenticatedUser authenticatedUser
+            AuthenticatedUser authenticatedUser,
+            ProcurementBudgetItemGroupService procurementBudgetItemGroupService
     ) {
         this.userService = userService;
         this.budgetService = budgetService;
@@ -170,6 +183,7 @@ public class ProcurementPlanView extends Div {
         this.currencyService = currencyService;
         this.fundsourceService = fundsourceService;
         this.authenticatedUser = authenticatedUser;
+        this.procurementBudgetItemGroupService = procurementBudgetItemGroupService;
 
         addClassName("procurement-plan-view");
         setSizeFull();
@@ -285,27 +299,35 @@ public class ProcurementPlanView extends Div {
     }
 
     private HorizontalLayout createToolbar(PlanSection section) {
-        Button regenerate = new Button("Regenerate Procurement Plan", new Icon(VaadinIcon.REFRESH));
+        Button regenerate = new Button("Refresh Procurement Plan", new Icon(VaadinIcon.REFRESH));
         regenerate.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        regenerate.addClickListener(e -> regenerateProcurementPlan(section));
+        regenerate.addClickListener(e -> confirmAction(
+                "Refresh Procurement Plan",
+                "This will update existing procurement plan records while preserving manual details such as procurement method, contract type and dates.",
+                "Refresh",
+                () -> regenerateProcurementPlan(section)
+        ));
 
-        Button refresh = new Button("Refresh", new Icon(VaadinIcon.REFRESH));
-        refresh.addClickListener(e -> refreshSection(section));
-
-        Button downloadCategory = new Button("Download By Category", new Icon(VaadinIcon.DOWNLOAD));
-        downloadCategory.addClickListener(e -> {
-            if (!validateBudgetAndClass(section)) {
-                return;
-            }
-            exportAndDownloadExcelWorkplan(section.procClass.getValue());
-        });
+        Button refresh = new Button("Regenerate Procurement Plan", new Icon(VaadinIcon.REFRESH));
+        refresh.addClickListener(e -> confirmAction(
+                "Regenerate Procurement Plan",
+                "This will delete existing procurement plan records and recreate them from budget items. Manual plan changes may be lost.",
+                "Regenerate",
+                () -> regenerateProcurementPlan2(section)
+        ));
 
         Button downloadPlan = new Button("Download Procurement Plan", new Icon(VaadinIcon.DOWNLOAD));
         downloadPlan.addClickListener(e -> {
             if (!validateBudgetAndClass(section)) {
                 return;
             }
-            exportAndDownloadExcelProcurementPlanSheets(section.budget.getValue());
+
+            confirmAction(
+                    "Download Procurement Plan",
+                    "Generate and download the full procurement plan workbook?",
+                    "Download",
+                    () -> exportAndDownloadExcelProcurementPlanSheets(section.budget.getValue())
+            );
         });
 
         HorizontalLayout toolbar = new HorizontalLayout(
@@ -314,6 +336,7 @@ public class ProcurementPlanView extends Div {
                 section.costCentres,
                 section.funds,
                 regenerate,
+                refresh,
                 downloadPlan
         );
 
@@ -324,6 +347,28 @@ public class ProcurementPlanView extends Div {
         toolbar.addClassName("procurement-toolbar");
 
         return toolbar;
+    }
+
+    private void confirmAction(
+            String title,
+            String message,
+            String confirmText,
+            Runnable action
+    ) {
+        ConfirmDialog dialog = new ConfirmDialog();
+
+        dialog.setHeader(title);
+        dialog.setText(message);
+
+        dialog.setCancelable(true);
+        dialog.setCancelText("Cancel");
+
+        dialog.setConfirmText(confirmText);
+        dialog.setConfirmButtonTheme("primary");
+
+        dialog.addConfirmListener(e -> action.run());
+
+        dialog.open();
     }
 
 // ================= PART 2 OF 3 =================
@@ -378,7 +423,7 @@ public class ProcurementPlanView extends Div {
                 GridVariant.LUMO_COLUMN_BORDERS
         );
 
-        grid.addColumn(BudgetItems::getItem)
+        Grid.Column<BudgetItems> itemColumn = grid.addColumn(BudgetItems::getItem)
                 .setHeader("Budget Item")
                 .setFrozen(true)
                 .setWidth("300px")
@@ -389,7 +434,7 @@ public class ProcurementPlanView extends Div {
                 .setWidth("100px")
                 .setResizable(true);
 
-        grid.addColumn(item -> money(sumBudgetItem(item)))
+        Grid.Column<BudgetItems> totalColumn = grid.addColumn(item -> money(sumBudgetItem(item)))
                 .setHeader("Total")
                 .setAutoWidth(true)
                 .setResizable(true)
@@ -401,9 +446,9 @@ public class ProcurementPlanView extends Div {
                 .setWidth("180px")
                 .setResizable(true);
 
-        grid.addColumn(item -> item.getDeptUnit() == null ? "" : item.getDeptUnit().getNAME())
+        grid.addColumn(this::costCentreText)
                 .setHeader("Cost Centre")
-                .setWidth("220px")
+                .setWidth("260px")
                 .setResizable(true);
 
         grid.addColumn(BudgetItems::getProcurementMethodName)
@@ -437,6 +482,79 @@ public class ProcurementPlanView extends Div {
         );
 
         addMonthColumns(grid);
+
+        FooterRow footer = grid.appendFooterRow();
+
+        Span totalLabel = new Span("TOTAL");
+        totalLabel.getStyle()
+                .set("font-weight", "700")
+                .set("color", "#0f172a")
+                .set("background", "#f8fafc")
+                .set("padding", "6px")
+                .set("display", "block");
+
+        section.budgetItemsTotalFooter = new Span("UGX 0.00");
+
+        Div totalContainer = new Div(section.budgetItemsTotalFooter);
+        totalContainer.getStyle()
+                .set("background", "#f8fafc")
+                .set("border-top", "2px solid #d1d5db")
+                .set("padding", "6px 8px")
+                .set("text-align", "right")
+                .set("display", "block");
+
+        footer.getCell(itemColumn).setComponent(totalLabel);
+        footer.getCell(totalColumn).setComponent(totalContainer);
+
+        grid.getDataProvider().addDataProviderListener(event -> {
+            List<BudgetItems> items = new ArrayList<>();
+
+            grid.getDataProvider()
+                    .fetch(new Query<>())
+                    .forEach(items::add);
+
+            BigDecimal total = sumBudgetItemsMonths(items);
+
+            section.budgetItemsTotalFooter.setText("UGX " + money(total));
+        });
+    }
+
+    private void updateBudgetItemsFooter(
+            PlanSection section,
+            List<BudgetItems> items
+    ) {
+        if (section == null || section.budgetItemsTotalFooter == null) {
+            return;
+        }
+
+        BigDecimal total = sumBudgetItemsMonths(items);
+        section.budgetItemsTotalFooter.setText("UGX " + money(total));
+    }
+
+    private String costCentreText(BudgetItems item) {
+        if (item == null) {
+            return "";
+        }
+
+        if (isSyntheticGroupRow(item)) {
+            Long groupId = Math.abs(item.getId());
+
+            return procurementBudgetItemGroupService.findByIdWithItems(groupId)
+                    .map(group -> group.getItems() == null
+                    ? ""
+                    : group.getItems().stream()
+                            .filter(Objects::nonNull)
+                            .map(BudgetItems::getDeptUnit)
+                            .filter(Objects::nonNull)
+                            .map(UrcDeptSectionAnlDimbgt::getNAME)
+                            .filter(Objects::nonNull)
+                            .filter(name -> !name.isBlank())
+                            .distinct()
+                            .collect(Collectors.joining(", ")))
+                    .orElse("");
+        }
+
+        return item.getDeptUnit() == null ? "" : nvl(item.getDeptUnit().getNAME());
     }
 
     private void addMonthColumns(Grid<BudgetItems> grid) {
@@ -516,18 +634,360 @@ public class ProcurementPlanView extends Div {
             return;
         }
 
+        // =========================
+        // PROCUREMENT PLAN MENU
+        // =========================
         section.planContextMenu = new GridContextMenu<>(section.planGrid);
-        section.planContextMenu.addItem("Edit", e -> editSelectedPlan(section));
-        section.planContextMenu.addItem("Combine Items", e -> openCombineDialog(section));
-        section.planContextMenu.addItem("Ungroup Combination", e -> ungroupSelectedPlans(section));
-        section.planContextMenu.addItem("Change Procurement Class", e -> openChangeClassDialog(section));
 
-        section.itemContextMenu = new GridContextMenu<>(section.budgetItemsGrid);
-        section.itemContextMenu.addItem(
-                "Update COA",
-                e -> openUpdateCoaDialog(section)
+        section.planContextMenu.addItem("Edit Procurement Plan", e
+                -> editSelectedPlan(section)
         );
+
+        section.planContextMenu.addItem("Combine Selected Plans", e
+                -> openCombineDialog(section)
+        );
+
+        section.planContextMenu.addItem("Ungroup Combined Plan", e
+                -> ungroupSelectedPlans(section)
+        );
+
+        section.planContextMenu.addItem("Change Procurement Class", e
+                -> openChangeClassDialog(section)
+        );
+
+        // =========================
+        // BUDGET ITEM MENU
+        // =========================
+        section.itemContextMenu = new GridContextMenu<>(section.budgetItemsGrid);
+
+        section.itemContextMenu.addItem("Update COA", e
+                -> openUpdateCoaDialog(section)
+        );
+
         addTransferMenus(section);
+
+        section.itemContextMenu.addItem("Group Selected Budget Items", e
+                -> openGroupBudgetItemsDialog(section)
+        );
+
+        section.itemContextMenu.addItem("Add Selected Items to Existing Group", e
+                -> openAddItemsToGroupDialog(section)
+        );
+
+        section.itemContextMenu.addItem("Ungroup Selected Budget Item Group", e -> {
+            Set<BudgetItems> selected = section.budgetItemsGrid.getSelectedItems();
+
+            if (selected == null || selected.isEmpty()) {
+                warn("Select a grouped budget item row to ungroup.");
+                return;
+            }
+
+            boolean hasGroupedRow = selected.stream()
+                    .anyMatch(this::isSyntheticGroupRow);
+
+            if (!hasGroupedRow) {
+                warn("Only grouped budget item rows can be ungrouped.");
+                return;
+            }
+
+            ungroupSelectedBudgetItemGroup(section);
+        });
+
+        section.itemContextMenu.addItem("View Group Items", e
+                -> openViewGroupItemsDialog(section)
+        );
+    }
+
+    private void openViewGroupItemsDialog(PlanSection section) {
+        Set<BudgetItems> selectedItems = section.budgetItemsGrid.getSelectedItems();
+
+        List<Long> groupIds = selectedItems.stream()
+                .filter(this::isSyntheticGroupRow)
+                .map(BudgetItems::getSyntheticGroupId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (groupIds.size() != 1) {
+            warn("Select exactly one grouped row.");
+            return;
+        }
+
+        ProcurementBudgetItemGroup group = procurementBudgetItemGroupService
+                .findByIdWithItems(groupIds.get(0))
+                .orElse(null);
+
+        if (group == null) {
+            warn("Group not found.");
+            return;
+        }
+
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Group Items - " + group.getGroupName());
+        dialog.setWidth("850px");
+
+        Grid<BudgetItems> grid = new Grid<>(BudgetItems.class, false);
+        grid.setWidthFull();
+        grid.setHeight("320px");
+
+        grid.addColumn(item -> item.getCoacode() == null ? "" : item.getCoacode().getCode())
+                .setHeader("Code")
+                .setWidth("90px");
+
+        grid.addColumn(BudgetItems::getItem)
+                .setHeader("Budget Item")
+                .setFlexGrow(1);
+
+        grid.addColumn(item -> money(sumBudgetItem(item)))
+                .setHeader("Total")
+                .setTextAlign(ColumnTextAlign.END)
+                .setResizable(true);
+
+        grid.addColumn(item -> item.getDeptUnit() == null ? "" : item.getDeptUnit().getNAME())
+                .setHeader("Section / Cost Centre")
+                .setWidth("220px")
+                .setResizable(true);
+
+        grid.setItems(group.getItems() == null ? Collections.emptySet() : group.getItems());
+
+        Button close = new Button("Close", e -> dialog.close());
+
+        dialog.add(grid);
+        dialog.getFooter().add(close);
+        dialog.open();
+    }
+
+    private void ungroupSelectedBudgetItemGroup(PlanSection section) {
+        Set<BudgetItems> selected = section.budgetItemsGrid.getSelectedItems();
+
+        if (selected == null || selected.isEmpty()) {
+            warn("Select at least one grouped budget item row.");
+            return;
+        }
+
+        List<BudgetItems> groupedRows = selected.stream()
+                .filter(Objects::nonNull)
+                .filter(this::isSyntheticGroupRow)
+                .collect(Collectors.toList());
+
+        if (groupedRows.isEmpty()) {
+            warn("Only grouped budget item rows can be ungrouped.");
+            return;
+        }
+
+        int deletedGroups = 0;
+        int restoredItems = 0;
+        int skipped = 0;
+
+        for (BudgetItems synthetic : groupedRows) {
+            try {
+                Long groupId = synthetic.getSyntheticGroupId();
+
+                if (groupId == null) {
+                    skipped++;
+                    continue;
+                }
+
+                ProcurementBudgetItemGroup group = procurementBudgetItemGroupService
+                        .findByIdWithItems(groupId)
+                        .orElse(null);
+
+                if (group == null) {
+                    skipped++;
+                    continue;
+                }
+
+                int itemCount = group.getItems() == null ? 0 : group.getItems().size();
+
+                procurementBudgetItemGroupService.delete(group);
+
+                deletedGroups++;
+                restoredItems += itemCount;
+
+            } catch (Exception ex) {
+                skipped++;
+                Logger.getLogger(getClass().getName())
+                        .log(Level.WARNING, "Failed to ungroup budget item group", ex);
+            }
+        }
+
+        refreshAllSectionsAfterTransfer();
+        clearAllSelections();
+
+        success("Ungroup completed. Removed "
+                + deletedGroups
+                + " group(s), restored "
+                + restoredItems
+                + " budget item(s), skipped "
+                + skipped
+                + ".");
+    }
+
+    private void openAddItemsToGroupDialog(PlanSection section) {
+        Set<BudgetItems> selectedItems = section.budgetItemsGrid.getSelectedItems();
+
+        List<BudgetItems> normalItems = selectedItems.stream()
+                .filter(item -> item != null && item.getId() != null && item.getId() > 0)
+                .collect(Collectors.toList());
+
+        if (normalItems.isEmpty()) {
+            warn("Select at least one normal budget item to add.");
+            return;
+        }
+
+        if (section.budget.isEmpty() || section.procClass.isEmpty()) {
+            warn("Select a financial year and procurement class first.");
+            return;
+        }
+
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Add Items to Group");
+        dialog.setWidth("650px");
+
+        ComboBox<ProcurementBudgetItemGroup> groupCombo = new ComboBox<>("Select Group");
+        groupCombo.setWidthFull();
+        groupCombo.setRequiredIndicatorVisible(true);
+
+        List<ProcurementBudgetItemGroup> groups
+                = procurementBudgetItemGroupService.findByBudgetAndProcClassWithItems(
+                        section.budget.getValue(),
+                        section.procClass.getValue()
+                );
+
+        groupCombo.setItems(groups);
+        groupCombo.setItemLabelGenerator(group
+                -> group == null ? "" : group.getGroupName()
+        );
+
+        Button add = new Button("Add to Group", e -> {
+            ProcurementBudgetItemGroup group = groupCombo.getValue();
+
+            if (group == null) {
+                warn("Select a group.");
+                return;
+            }
+
+            Set<BudgetItems> groupItems = new HashSet<>(
+                    group.getItems() == null ? Collections.emptySet() : group.getItems()
+            );
+
+            groupItems.addAll(normalItems);
+            group.setItems(groupItems);
+
+            procurementBudgetItemGroupService.save(group);
+
+            refreshSection(section);
+            section.planGrid.deselectAll();
+            section.budgetItemsGrid.setItems(Collections.emptyList());
+
+            dialog.close();
+            success("Added " + normalItems.size() + " item(s) to group.");
+        });
+
+        add.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button cancel = new Button("Cancel", e -> dialog.close());
+
+        dialog.add(new VerticalLayout(groupCombo));
+        dialog.getFooter().add(cancel, add);
+        dialog.open();
+    }
+
+    private void ungroupSelectedPlans(PlanSection section) {
+
+        Set<ProcurementPlan> selectedPlans = section.planGrid.getSelectedItems();
+
+        if (selectedPlans == null || selectedPlans.isEmpty()) {
+            warn("Select at least one combined procurement plan to ungroup.");
+            return;
+        }
+
+        int createdPlans = 0;
+        int deletedPlans = 0;
+        int skipped = 0;
+
+        for (ProcurementPlan plan : selectedPlans) {
+
+            if (plan == null) {
+                skipped++;
+                continue;
+            }
+
+            List<BudgetItems> items = safeBudgetItems(plan).stream()
+                    .filter(Objects::nonNull)
+                    .filter(item -> item.getId() != null && item.getId() > 0)
+                    .filter(item -> item.getCoacode() != null)
+                    .collect(Collectors.toList());
+
+            if (items.isEmpty()) {
+                skipped++;
+                continue;
+            }
+
+            Map<COA, List<BudgetItems>> itemsByCoa = items.stream()
+                    .collect(Collectors.groupingBy(
+                            BudgetItems::getCoacode,
+                            LinkedHashMap::new,
+                            Collectors.toList()
+                    ));
+
+            for (Map.Entry<COA, List<BudgetItems>> entry : itemsByCoa.entrySet()) {
+
+                COA coa = entry.getKey();
+                List<BudgetItems> coaItems = entry.getValue();
+
+                if (coa == null || coaItems == null || coaItems.isEmpty()) {
+                    skipped++;
+                    continue;
+                }
+
+                BudgetItems firstItem = coaItems.get(0);
+
+                ProcurementPlan newPlan = new ProcurementPlan();
+                newPlan.setSubject(nvl(coa.getName()));
+                newPlan.setBudget(firstItem.getBudget() != null ? firstItem.getBudget() : plan.getBudget());
+                newPlan.setCoa(coa);
+                newPlan.setCurrency(firstItem.getCurrency() != null ? firstItem.getCurrency() : plan.getCurrency());
+                newPlan.setProcClass(firstItem.getProcClass() != null ? firstItem.getProcClass() : plan.getProcClass());
+                newPlan.setProcPlanBudgetItems(new HashSet<>(coaItems));
+                newPlan.setCost(sumBudgetItems(coaItems));
+
+                newPlan.setProcurementMethod(plan.getProcurementMethod());
+                newPlan.setProcurementtype(plan.getProcurementtype());
+                newPlan.setPrequal(plan.getPrequal());
+                newPlan.setReserve(plan.getReserve());
+
+                newPlan.setBinvite(plan.getBinvite());
+                newPlan.setReqInviofExpofInterestdate(plan.getReqInviofExpofInterestdate());
+                newPlan.setReqClosingOpeningdate(plan.getReqClosingOpeningdate());
+                newPlan.setApprovaloffinalevaluationreport(plan.getApprovaloffinalevaluationreport());
+                newPlan.setReqApprovalOfShortlist(plan.getReqApprovalOfShortlist());
+                newPlan.setAwardnotificationdate(plan.getAwardnotificationdate());
+                newPlan.setReqNotificationdate(plan.getReqNotificationdate());
+                newPlan.setInvitationofProposalsdate(plan.getInvitationofProposalsdate());
+                newPlan.setSubmissionOpeningdate(plan.getSubmissionOpeningdate());
+                newPlan.setInvNotificationdate(plan.getInvNotificationdate());
+                newPlan.setContractsigningdate(plan.getContractsigningdate());
+                newPlan.setBcompletion(plan.getBcompletion());
+
+                procurementPlanService.save(newPlan);
+                createdPlans++;
+            }
+
+            procurementPlanService.deleteProcurementPlan(plan);
+            deletedPlans++;
+        }
+
+        refreshAllSectionsAfterTransfer();
+        clearAllSelections();
+
+        success("Ungroup completed. Created "
+                + createdPlans
+                + " COA-based procurement plan(s), deleted "
+                + deletedPlans
+                + " combined plan(s), skipped "
+                + skipped
+                + ".");
     }
 
     private void addTransferMenus(PlanSection section) {
@@ -549,11 +1009,25 @@ public class ProcurementPlanView extends Div {
         }
     }
 
+    private boolean isSyntheticGroupRow(BudgetItems item) {
+        return item != null
+                && Boolean.TRUE.equals(item.getSyntheticGroupedRow())
+                && item.getSyntheticGroupId() != null;
+    }
+
     private void openUpdateCoaDialog(PlanSection section) {
         Set<BudgetItems> selectedItems = section.budgetItemsGrid.getSelectedItems();
 
         if (selectedItems.isEmpty()) {
             warn("Select at least one budget item.");
+            return;
+        }
+
+        boolean hasGroupedRow = selectedItems.stream()
+                .anyMatch(this::isSyntheticGroupRow);
+
+        if (hasGroupedRow) {
+            warn("Grouped rows cannot have COA updated directly. Ungroup first or update the original budget items.");
             return;
         }
 
@@ -688,33 +1162,112 @@ public class ProcurementPlanView extends Div {
         section.budgetItemsGrid.setItems(Collections.emptyList());
     }
 
+    private void resetBudgetItemsFooter(PlanSection section) {
+        if (section != null && section.budgetItemsTotalFooter != null) {
+            section.budgetItemsTotalFooter.setText("UGX 0.00");
+        }
+    }
+
     private void loadBudgetItemsForSelection(PlanSection section) {
         Set<ProcurementPlan> selectedPlans = section.planGrid.getSelectedItems();
 
         if (selectedPlans.isEmpty()) {
             section.budgetItemsGrid.setItems(Collections.emptyList());
+            resetBudgetItemsFooter(section);
             return;
         }
 
-        List<BudgetItems> items = selectedPlans.stream()
-                .flatMap(plan -> safeBudgetItems(plan).stream())
-                .distinct()
-                .collect(Collectors.toList());
+        List<BudgetItems> displayItems = new ArrayList<>();
 
-        if (items.isEmpty()) {
-            items = selectedPlans.stream()
-                    .flatMap(plan -> budgetItemsService
-                    .findByBudgetAndProcClassAndCoa(
+        for (ProcurementPlan plan : selectedPlans) {
+            List<BudgetItems> planItems = safeBudgetItems(plan);
+
+            List<ProcurementBudgetItemGroup> groups
+                    = plan.getCoa() == null
+                    ? Collections.emptyList()
+                    : procurementBudgetItemGroupService.findByBudgetAndProcClassAndCoaWithItems(
                             plan.getBudget(),
                             plan.getProcClass(),
                             plan.getCoa()
-                    )
-                    .stream())
-                    .distinct()
-                    .collect(Collectors.toList());
+                    ).stream()
+                            .filter(group -> sameCoa(group.getCoa(), plan.getCoa()))
+                            .collect(Collectors.toList());
+
+            Set<Long> groupedItemIds = groups.stream()
+                    .filter(group -> group.getItems() != null)
+                    .flatMap(group -> group.getItems().stream())
+                    .map(BudgetItems::getId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+            groups.forEach(group
+                    -> displayItems.add(toSyntheticGroupedBudgetItem(group))
+            );
+
+            planItems.stream()
+                    .filter(Objects::nonNull)
+                    .filter(item -> plan.getCoa() == null || sameCoa(item.getCoacode(), plan.getCoa()))
+                    .filter(item -> item.getId() == null || !groupedItemIds.contains(item.getId()))
+                    .forEach(displayItems::add);
         }
 
-        section.budgetItemsGrid.setItems(items);
+        section.budgetItemsGrid.setItems(displayItems);
+        updateBudgetItemsFooter(section, displayItems);
+    }
+
+    private boolean sameCoa(COA a, COA b) {
+        if (a == null || b == null) {
+            return false;
+        }
+
+        return Objects.equals(a.getId(), b.getId());
+    }
+
+    private BudgetItems toSyntheticGroupedBudgetItem(ProcurementBudgetItemGroup group) {
+        BudgetItems item = new BudgetItems();
+
+        if (group == null) {
+            return item;
+        }
+
+        item.setSyntheticGroupedRow(true);
+        item.setSyntheticGroupId(group.getId());
+
+        item.setId(group.getId() == null ? null : -group.getId());
+        item.setItem("[GROUP] " + nvl(group.getGroupName()));
+        item.setBudget(group.getBudget());
+        item.setCoacode(group.getCoa());
+        item.setDeptUnit(group.getDeptUnit());
+        item.setProcClass(group.getProcClass());
+
+        item.setJul(sumGroupMonth(group, BudgetItems::getJul));
+        item.setAug(sumGroupMonth(group, BudgetItems::getAug));
+        item.setSep(sumGroupMonth(group, BudgetItems::getSep));
+        item.setOct(sumGroupMonth(group, BudgetItems::getOct));
+        item.setNov(sumGroupMonth(group, BudgetItems::getNov));
+        item.setDec(sumGroupMonth(group, BudgetItems::getDec));
+        item.setJan(sumGroupMonth(group, BudgetItems::getJan));
+        item.setFeb(sumGroupMonth(group, BudgetItems::getFeb));
+        item.setMar(sumGroupMonth(group, BudgetItems::getMar));
+        item.setApr(sumGroupMonth(group, BudgetItems::getApr));
+        item.setMay(sumGroupMonth(group, BudgetItems::getMay));
+        item.setJun(sumGroupMonth(group, BudgetItems::getJun));
+
+        return item;
+    }
+
+    private BigDecimal sumGroupMonth(
+            ProcurementBudgetItemGroup group,
+            Function<BudgetItems, BigDecimal> getter
+    ) {
+        if (group == null || group.getItems() == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return group.getItems().stream()
+                .map(getter)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private void editSelectedPlan(PlanSection section) {
@@ -828,36 +1381,62 @@ public class ProcurementPlanView extends Div {
 // ================= PART 3 OF 3 =================
     private void openCombineDialog(PlanSection section) {
 
-        Set<ProcurementPlan> selected = section.planGrid.getSelectedItems();
+        Set<ProcurementPlan> selectedPlans = section.planGrid.getSelectedItems();
 
-        if (selected.size() < 2) {
+        if (selectedPlans == null || selectedPlans.size() < 2) {
             warn("Select more than one procurement plan item to combine.");
             return;
         }
 
-        if (!allHaveSameCoa(selected)) {
-            warn("Selected items must have the same account code.");
+        if (section.procClass.isEmpty()) {
+            warn("Select procurement class first.");
             return;
         }
+
+        ProcurementPlan firstPlan = selectedPlans.iterator().next();
+
+        List<BudgetItems> items = selectedPlans.stream()
+                .filter(Objects::nonNull)
+                .flatMap(plan -> safeBudgetItems(plan).stream())
+                .filter(Objects::nonNull)
+                .filter(item -> item.getId() != null && item.getId() > 0)
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (items.isEmpty()) {
+            warn("No valid budget items found to combine.");
+            return;
+        }
+
+        BigDecimal totalCost = sumBudgetItems(items);
+
+        boolean singleCoa = items.stream()
+                .map(BudgetItems::getCoacode)
+                .filter(Objects::nonNull)
+                .map(COA::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .count() == 1;
+
+        COA representativeCoa = singleCoa
+                ? items.stream()
+                        .map(BudgetItems::getCoacode)
+                        .filter(Objects::nonNull)
+                        .findFirst()
+                        .orElse(null)
+                : null;
 
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Combine Procurement Items");
         dialog.setModal(true);
         dialog.setDraggable(true);
         dialog.setResizable(true);
-        dialog.setWidth("800px");
-
-        COA coa = selected.iterator().next().getCoa();
-
-        List<BudgetItems> items = selected.stream()
-                .flatMap(plan -> safeBudgetItems(plan).stream())
-                .distinct()
-                .collect(Collectors.toList());
-
-        BigDecimal totalCost = sumBudgetItems(items);
+        dialog.setWidth("850px");
 
         TextField subject = new TextField("Subject of Procurement");
-        subject.setValue(coa == null ? "" : nvl(coa.getName()));
+        subject.setValue(singleCoa && representativeCoa != null
+                ? nvl(representativeCoa.getName())
+                : "Combined Procurement Item");
         subject.setRequiredIndicatorVisible(true);
         subject.setWidthFull();
 
@@ -871,12 +1450,7 @@ public class ProcurementPlanView extends Div {
         procClass.setReadOnly(true);
         procClass.setWidthFull();
 
-        FormLayout form = new FormLayout(
-                subject,
-                cost,
-                procClass
-        );
-
+        FormLayout form = new FormLayout(subject, cost, procClass);
         form.setResponsiveSteps(
                 new FormLayout.ResponsiveStep("0px", 1),
                 new FormLayout.ResponsiveStep("700px", 2)
@@ -889,31 +1463,32 @@ public class ProcurementPlanView extends Div {
 
         combine.addClickListener(e -> {
 
-            if (subject.isEmpty()) {
+            if (subject.isEmpty() || subject.getValue().trim().isEmpty()) {
                 warn("Subject is required.");
                 return;
             }
 
-            ProcurementPlan first = selected.iterator().next();
+            ProcurementPlan combinedPlan = new ProcurementPlan();
+            combinedPlan.setSubject(subject.getValue().trim());
+            combinedPlan.setBudget(firstPlan.getBudget());
+            combinedPlan.setCurrency(firstPlan.getCurrency());
+            combinedPlan.setProcClass(section.procClass.getValue());
+            combinedPlan.setCost(totalCost);
+            combinedPlan.setProcPlanBudgetItems(new HashSet<>(items));
 
-            ProcurementPlan newPlan = new ProcurementPlan();
-            newPlan.setSubject(subject.getValue());
-            newPlan.setBudget(first.getBudget());
-            newPlan.setCoa(first.getCoa());
-            newPlan.setCurrency(first.getCurrency());
-            newPlan.setProcClass(section.procClass.getValue());
-            newPlan.setCost(totalCost);
-            newPlan.setProcPlanBudgetItems(new HashSet<>(items));
+            // If all items have same COA, keep it.
+            // If mixed COAs, leave plan COA null so BudgetItems retain their own COA.
+            combinedPlan.setCoa(representativeCoa);
 
-            selected.forEach(procurementPlanService::deleteProcurementPlan);
+            selectedPlans.forEach(procurementPlanService::deleteProcurementPlan);
 
-            procurementPlanService.save(newPlan);
+            procurementPlanService.save(combinedPlan);
 
-            refreshSection(section);
+            refreshAllSectionsAfterTransfer();
+            clearAllSelections();
 
             dialog.close();
-
-            success("Items combined successfully.");
+            success("Selected procurement plans combined successfully.");
         });
 
         dialog.add(new VerticalLayout(form, preview));
@@ -926,50 +1501,10 @@ public class ProcurementPlanView extends Div {
         dialog.open();
     }
 
-    private void ungroupSelectedPlans(PlanSection section) {
-
-        Set<ProcurementPlan> selected = section.planGrid.getSelectedItems();
-
-        if (selected.isEmpty()) {
-            warn("Select at least one combined procurement plan to ungroup.");
-            return;
-        }
-
-        for (ProcurementPlan plan : selected) {
-
-            List<BudgetItems> items = safeBudgetItems(plan);
-
-            if (items.isEmpty()) {
-                continue;
-            }
-
-            for (BudgetItems item : items) {
-
-                ProcurementPlan newPlan = new ProcurementPlan();
-
-                newPlan.setSubject(nvl(item.getItem()));
-                newPlan.setBudget(item.getBudget());
-                newPlan.setCoa(item.getCoacode());
-                newPlan.setCurrency(item.getCurrency());
-                newPlan.setProcClass(item.getProcClass());
-                newPlan.setProcPlanBudgetItems(Set.of(item));
-                newPlan.setCost(sumBudgetItem(item));
-
-                procurementPlanService.save(newPlan);
-            }
-
-            procurementPlanService.deleteProcurementPlan(plan);
-        }
-
-        refreshAllSectionsAfterTransfer();
-
-        success("Selected items ungrouped.");
-    }
-
     private void openChangeClassDialog(PlanSection section) {
-        Set<ProcurementPlan> selected = section.planGrid.getSelectedItems();
+        Set<ProcurementPlan> selectedPlans = section.planGrid.getSelectedItems();
 
-        if (selected.isEmpty()) {
+        if (selectedPlans == null || selectedPlans.isEmpty()) {
             warn("Select at least one procurement plan item.");
             return;
         }
@@ -977,6 +1512,9 @@ public class ProcurementPlanView extends Div {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Change Procurement Class");
         dialog.setModal(true);
+        dialog.setDraggable(true);
+        dialog.setResizable(true);
+        dialog.setWidth("420px");
 
         ComboBox<ProcClass> targetClass = new ComboBox<>("Procurement Class");
         targetClass.setItems(
@@ -989,38 +1527,80 @@ public class ProcurementPlanView extends Div {
         );
         targetClass.setValue(section.procClass.getValue());
         targetClass.setRequiredIndicatorVisible(true);
+        targetClass.setWidthFull();
 
         Button save = primaryButton("Change");
+
         save.addClickListener(e -> {
-            if (targetClass.isEmpty()) {
+            ProcClass newClass = targetClass.getValue();
+
+            if (newClass == null) {
                 warn("Select procurement class.");
                 return;
             }
 
-            for (ProcurementPlan plan : selected) {
-                plan.setProcClass(targetClass.getValue());
-                procurementPlanService.save(plan);
+            int updatedPlans = 0;
+            int updatedItems = 0;
+            int skipped = 0;
 
-                for (BudgetItems item : safeBudgetItems(plan)) {
-                    item.setProcClass(targetClass.getValue());
-                    budgetItemsService.saveBudgetItem(item);
+            for (ProcurementPlan plan : selectedPlans) {
+                if (plan == null) {
+                    skipped++;
+                    continue;
                 }
+
+                List<BudgetItems> realItems = safeBudgetItems(plan).stream()
+                        .filter(Objects::nonNull)
+                        .filter(item -> item.getId() != null && item.getId() > 0)
+                        .collect(Collectors.toList());
+
+                if (realItems.isEmpty()) {
+                    plan.setProcClass(newClass);
+                    procurementPlanService.save(plan);
+                    updatedPlans++;
+                    continue;
+                }
+
+                for (BudgetItems item : realItems) {
+                    item.setProcClass(newClass);
+                    budgetItemsService.saveBudgetItem(item);
+                    updatedItems++;
+                }
+
+                plan.setProcClass(newClass);
+                plan.setProcPlanBudgetItems(new HashSet<>(realItems));
+                plan.setCost(sumBudgetItems(realItems));
+
+                procurementPlanService.save(plan);
+                updatedPlans++;
             }
 
-            refreshSection(section);
-            section.budgetItemsGrid.setItems(Collections.emptyList());
+            refreshAllSectionsAfterTransfer();
+            clearAllSelections();
 
             dialog.close();
-            success("Procurement class updated.");
+
+            success("Procurement class updated. Plans: "
+                    + updatedPlans
+                    + ", Budget items: "
+                    + updatedItems
+                    + ", Skipped: "
+                    + skipped
+                    + ".");
         });
 
         dialog.add(new VerticalLayout(targetClass));
-        dialog.getFooter().add(new Button("Cancel", e -> dialog.close()), save);
+
+        dialog.getFooter().add(
+                new Button("Cancel", e -> dialog.close()),
+                save
+        );
+
         dialog.open();
     }
 
     private void transferSelectedBudgetItems(PlanSection section, ProcClass targetClass) {
-        Set<BudgetItems> selectedItems = section.budgetItemsGrid.getSelectedItems();
+        Set<BudgetItems> selectedItems = new HashSet<>(section.budgetItemsGrid.getSelectedItems());
         Set<ProcurementPlan> selectedPlans = section.planGrid.getSelectedItems();
 
         if (selectedItems.isEmpty()) {
@@ -1030,6 +1610,19 @@ public class ProcurementPlanView extends Div {
 
         if (selectedPlans.size() != 1) {
             warn("Select exactly one procurement plan item as the source.");
+            return;
+        }
+
+        if (targetClass == null) {
+            warn("Select a valid target procurement class.");
+            return;
+        }
+
+        boolean hasGroupedRow = selectedItems.stream()
+                .anyMatch(this::isSyntheticGroupRow);
+
+        if (hasGroupedRow) {
+            warn("Grouped rows cannot be transferred directly. Ungroup first or transfer the original budget items.");
             return;
         }
 
@@ -1047,14 +1640,17 @@ public class ProcurementPlanView extends Div {
             return;
         }
 
+        // Remove selected items from source plan
         Set<BudgetItems> remainingItems = new HashSet<>(sourceItems);
         remainingItems.removeAll(selectedItems);
 
+        // Update selected budget items class first
         for (BudgetItems item : selectedItems) {
             item.setProcClass(targetClass);
             budgetItemsService.saveBudgetItem(item);
         }
 
+        // Delete source plan if empty, otherwise update it
         if (remainingItems.isEmpty()) {
             procurementPlanService.deleteProcurementPlan(sourcePlan);
         } else {
@@ -1063,6 +1659,7 @@ public class ProcurementPlanView extends Div {
             procurementPlanService.save(sourcePlan);
         }
 
+        // Add selected items to compatible target plan, or create a new one
         ProcurementPlan targetPlan = findCompatibleTargetPlan(section, sourcePlan, targetClass)
                 .orElseGet(() -> createTargetPlanSkeleton(sourcePlan, targetClass));
 
@@ -1075,8 +1672,15 @@ public class ProcurementPlanView extends Div {
 
         procurementPlanService.save(targetPlan);
 
+        // Refresh both grids and clear selection
         refreshAllSectionsAfterTransfer();
         clearAllSelections();
+
+        // Force current section grids to reload cleanly
+        refreshSection(section);
+        section.planGrid.getDataProvider().refreshAll();
+        section.budgetItemsGrid.setItems(Collections.emptyList());
+        resetBudgetItemsFooter(section);
 
         success("Transferred " + selectedItems.size() + " budget item(s) to " + label(targetClass) + ".");
     }
@@ -1152,56 +1756,159 @@ public class ProcurementPlanView extends Div {
 
         Budget selectedBudget = section.budget.getValue();
 
-        List<ProcClass> classesToGenerate = List.of(
-                ProcClass.Consultancy,
-                ProcClass.Supplies,
-                ProcClass.Works,
-                ProcClass.Non_Consultancy,
-                ProcClass.Disposal,
-                ProcClass.Other
+        List<BudgetItems> procurementItems
+                = budgetItemsService.findProcurementBudgetItemsByBudget(selectedBudget);
+
+        Map<String, List<BudgetItems>> groupedItems = procurementItems.stream()
+                .filter(Objects::nonNull)
+                .filter(item -> item.getId() != null)
+                .filter(item -> item.getCoacode() != null)
+                .filter(item -> item.getCoacode().getId() != null)
+                .filter(item -> item.getCoacode().getCode() != null)
+                .filter(item -> item.getCoacode().getCode().startsWith("2")
+                || item.getCoacode().getCode().startsWith("3"))
+                .filter(item -> item.getProcClass() != null)
+                .collect(Collectors.groupingBy(
+                        item -> planKey(item.getProcClass(), item.getCoacode()),
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
+
+        Currency ugx = currencyService.findCurrenciesByCurrencyShortAndBudget(
+                "UGX",
+                selectedBudget
         );
 
-        procurementPlanService.deleteProcurementPlanByBudget(selectedBudget);
+        List<ProcurementPlan> existingPlans
+                = procurementPlanService.findProcurementPlansForExport(selectedBudget);
 
-        List<COA> coaList = coaService.findByBudgetAndProcclassIn(
-                selectedBudget,
-                classesToGenerate
-        )
-                .stream()
-                .filter(this::isProcurementCoaCode)
-                .collect(Collectors.toList());
-
-        Currency ugx = currencyService.findCurrenciesByCurrencyShortAndBudget("UGX", selectedBudget);
+        Map<String, ProcurementPlan> existingPlanMap = existingPlans.stream()
+                .filter(Objects::nonNull)
+                .filter(plan -> plan.getCoa() != null)
+                .filter(plan -> plan.getProcClass() != null)
+                .collect(Collectors.toMap(
+                        plan -> planKey(plan.getProcClass(), plan.getCoa()),
+                        Function.identity(),
+                        (existing, duplicate) -> existing,
+                        LinkedHashMap::new
+                ));
 
         int created = 0;
+        int updated = 0;
         int skipped = 0;
 
-        for (COA coa : coaList) {
-            if (coa == null || coa.getProcclass() == null) {
+        for (Map.Entry<String, List<BudgetItems>> entry : groupedItems.entrySet()) {
+            List<BudgetItems> budgetItems = entry.getValue();
+
+            if (budgetItems == null || budgetItems.isEmpty()) {
                 skipped++;
                 continue;
             }
 
-            BigDecimal total = budgetItemsService.sumOfAllMonthsByBudgetAndProcClassAndCoa(
-                    selectedBudget,
-                    coa.getProcclass(),
-                    coa
-            );
+            BudgetItems first = budgetItems.get(0);
+            COA coa = first.getCoacode();
+            ProcClass procClass = first.getProcClass();
+
+            BigDecimal total = sumBudgetItemsMonths(budgetItems);
 
             if (nz(total).compareTo(BigDecimal.ZERO) <= 0) {
                 skipped++;
                 continue;
             }
 
-            /*            List<BudgetItems> budgetItems = budgetItemsService
-            .getBudgetItemsByBudgetAndCoacode(selectedBudget, coa)
-            .stream()
-            .filter(Objects::nonNull)
-            .filter(item -> Objects.equals(item.getProcClass(), coa.getProcclass()))
-            .collect(Collectors.toList());*/
-            List<BudgetItems> budgetItems = budgetItemsService.findByBudgetAndProcClassFiltered(selectedBudget, coa.getProcclass());
+            ProcurementPlan plan = existingPlanMap.get(entry.getKey());
 
+            if (plan == null) {
+                plan = new ProcurementPlan();
+                plan.setBudget(selectedBudget);
+                plan.setCurrency(ugx);
+                plan.setProcClass(procClass);
+                plan.setCoa(coa);
+                plan.setSubject(coa.getName());
+                created++;
+            } else {
+                updated++;
+
+                if (plan.getCurrency() == null) {
+                    plan.setCurrency(ugx);
+                }
+
+                if (plan.getSubject() == null || plan.getSubject().isBlank()) {
+                    plan.setSubject(coa.getName());
+                }
+            }
+
+            // Only update generated fields
+            plan.setCost(total);
+            plan.setProcPlanBudgetItems(new HashSet<>(budgetItems));
+
+            // Do NOT reset manual fields here:
+            // procurementMethod
+            // procurementtype
+            // prequal
+            // reserve
+            // dates
+            // subject if user edited it
+            procurementPlanService.save(plan);
+        }
+
+        refreshAllSectionsAfterTransfer();
+
+        success("Regeneration completed. Created "
+                + created
+                + ", updated "
+                + updated
+                + ", skipped "
+                + skipped
+                + ".");
+    }
+
+    private void regenerateProcurementPlan2(PlanSection section) {
+        if (section.budget.isEmpty()) {
+            warn("Select a financial year first.");
+            return;
+        }
+
+        Budget selectedBudget = section.budget.getValue();
+        procurementPlanService.deleteProcurementPlanByBudget(selectedBudget);
+
+        List<BudgetItems> procurementItems
+                = budgetItemsService.findProcurementBudgetItemsByBudget(selectedBudget);
+
+        Map<String, List<BudgetItems>> groupedItems = procurementItems.stream()
+                .filter(Objects::nonNull)
+                .filter(item -> item.getCoacode() != null)
+                .filter(item -> item.getCoacode().getCode() != null)
+                .filter(item -> item.getCoacode().getCode().startsWith("2")
+                || item.getCoacode().getCode().startsWith("3"))
+                .filter(item -> item.getProcClass() != null)
+                .collect(Collectors.groupingBy(
+                        item -> item.getCoacode().getId() + "::" + item.getProcClass().name(),
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
+
+        Currency ugx = currencyService.findCurrenciesByCurrencyShortAndBudget(
+                "UGX",
+                selectedBudget
+        );
+
+        int created = 0;
+        int skipped = 0;
+
+        for (List<BudgetItems> budgetItems : groupedItems.values()) {
             if (budgetItems.isEmpty()) {
+                skipped++;
+                continue;
+            }
+
+            BudgetItems first = budgetItems.get(0);
+            COA coa = first.getCoacode();
+            ProcClass procClass = first.getProcClass();
+
+            BigDecimal total = sumBudgetItemsMonths(budgetItems);
+
+            if (nz(total).compareTo(BigDecimal.ZERO) <= 0) {
                 skipped++;
                 continue;
             }
@@ -1210,7 +1917,7 @@ public class ProcurementPlanView extends Div {
             plan.setBudget(selectedBudget);
             plan.setCurrency(ugx);
             plan.setSubject(coa.getName());
-            plan.setProcClass(coa.getProcclass());
+            plan.setProcClass(procClass);
             plan.setCoa(coa);
             plan.setCost(total);
             plan.setProcPlanBudgetItems(new HashSet<>(budgetItems));
@@ -1226,6 +1933,35 @@ public class ProcurementPlanView extends Div {
                 + " procurement plan item(s), skipped "
                 + skipped
                 + " item(s).");
+    }
+
+    private BigDecimal sumBudgetItemsMonths(List<BudgetItems> items) {
+
+        if (items == null || items.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+
+        return items.stream()
+                .filter(Objects::nonNull)
+                .map(item
+                        -> nz(item.getJul())
+                        .add(nz(item.getAug()))
+                        .add(nz(item.getSep()))
+                        .add(nz(item.getOct()))
+                        .add(nz(item.getNov()))
+                        .add(nz(item.getDec()))
+                        .add(nz(item.getJan()))
+                        .add(nz(item.getFeb()))
+                        .add(nz(item.getMar()))
+                        .add(nz(item.getApr()))
+                        .add(nz(item.getMay()))
+                        .add(nz(item.getJun()))
+                )
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private String planKey(ProcClass procClass, COA coa) {
+        return procClass.name() + "::" + coa.getId();
     }
 
     private boolean isProcurementCoaCode(COA coa) {
@@ -1332,9 +2068,23 @@ public class ProcurementPlanView extends Div {
     }
 
     private String safeCoaName(ProcurementPlan plan) {
-        return plan == null || plan.getCoa() == null
-                ? ""
-                : nvl(plan.getCoa().getName());
+        if (plan == null) {
+            return "";
+        }
+
+        if (plan.getCoa() != null) {
+            return nvl(plan.getCoa().getName());
+        }
+
+        return safeBudgetItems(plan).stream()
+                .map(BudgetItems::getCoacode)
+                .filter(Objects::nonNull)
+                .map(COA::getName)
+                .filter(Objects::nonNull)
+                .filter(name -> !name.isBlank())
+                .distinct()
+                .sorted()
+                .collect(Collectors.joining(", "));
     }
 
     private String getFundSources(ProcurementPlan plan) {
@@ -1534,22 +2284,98 @@ public class ProcurementPlanView extends Div {
                         List<BudgetItems> allItems = plans.stream()
                                 .flatMap(plan -> safeBudgetItems(plan).stream())
                                 .filter(Objects::nonNull)
+                                .filter(item -> item.getId() != null)
                                 .filter(item -> item.getCoacode() != null)
                                 .filter(item -> isProcurementCoaCode(item.getCoacode()))
+                                .collect(Collectors.toMap(
+                                        BudgetItems::getId,
+                                        Function.identity(),
+                                        (existing, duplicate) -> existing,
+                                        LinkedHashMap::new
+                                ))
+                                .values()
+                                .stream()
                                 .collect(Collectors.toList());
 
-                        List<BudgetItems> suppliesItems = filterByProcClass(allItems, ProcClass.Supplies);
-                        List<BudgetItems> worksItems = filterByProcClass(allItems, ProcClass.Works);
-                        List<BudgetItems> nonConsultancyItems = filterByProcClass(allItems, ProcClass.Non_Consultancy);
-                        List<BudgetItems> consultancyItems = filterByProcClass(allItems, ProcClass.Consultancy);
+                        List<ProcurementBudgetItemGroup> groups
+                                = procurementBudgetItemGroupService.findByBudgetWithItems(budget)
+                                        .stream()
+                                        .filter(Objects::nonNull)
+                                        .filter(group -> group.getId() != null)
+                                        .collect(Collectors.toMap(
+                                                ProcurementBudgetItemGroup::getId,
+                                                Function.identity(),
+                                                (existing, duplicate) -> existing,
+                                                LinkedHashMap::new
+                                        ))
+                                        .values()
+                                        .stream()
+                                        .collect(Collectors.toList());
+
+                        Set<Long> groupedItemIds = groups.stream()
+                                .filter(group -> group.getItems() != null)
+                                .flatMap(group -> group.getItems().stream())
+                                .filter(Objects::nonNull)
+                                .map(BudgetItems::getId)
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toSet());
+
+                        List<BudgetItems> ungroupedItems = allItems.stream()
+                                .filter(item -> !groupedItemIds.contains(item.getId()))
+                                .collect(Collectors.toList());
+
+                        List<BudgetItems> exportItems = new ArrayList<>();
+
+                        groups.stream()
+                                .map(this::toSyntheticGroupedBudgetItem)
+                                .filter(Objects::nonNull)
+                                .forEach(exportItems::add);
+
+                        exportItems.addAll(ungroupedItems);
+
+                        exportItems = exportItems.stream()
+                                .filter(Objects::nonNull)
+                                .filter(item -> item.getId() != null)
+                                .collect(Collectors.toMap(
+                                        BudgetItems::getId,
+                                        Function.identity(),
+                                        (existing, duplicate) -> existing,
+                                        LinkedHashMap::new
+                                ))
+                                .values()
+                                .stream()
+                                .collect(Collectors.toList());
+
+                        List<BudgetItems> suppliesItems
+                                = filterByProcClass(exportItems, ProcClass.Supplies);
+
+                        List<BudgetItems> worksItems
+                                = filterByProcClass(exportItems, ProcClass.Works);
+
+                        List<BudgetItems> nonConsultancyItems
+                                = filterByProcClass(exportItems, ProcClass.Non_Consultancy);
+
+                        List<BudgetItems> consultancyItems
+                                = filterByProcClass(exportItems, ProcClass.Consultancy);
 
                         Sheet suppliesSheet = otherTemplate;
-                        workbook.setSheetName(workbook.getSheetIndex(suppliesSheet), "Supplies");
+                        workbook.setSheetName(
+                                workbook.getSheetIndex(suppliesSheet),
+                                "Supplies"
+                        );
 
                         Sheet worksSheet = cloneSheet(workbook, otherTemplate, "Works");
-                        Sheet nonConsultancySheet = cloneSheet(workbook, otherTemplate, "Non Consultancy");
 
-                        workbook.setSheetName(workbook.getSheetIndex(consultancySheet), "Consultancy");
+                        Sheet nonConsultancySheet = cloneSheet(
+                                workbook,
+                                otherTemplate,
+                                "Non Consultancy"
+                        );
+
+                        workbook.setSheetName(
+                                workbook.getSheetIndex(consultancySheet),
+                                "Consultancy"
+                        );
 
                         setFinancialYear(suppliesSheet, budget);
                         setFinancialYear(worksSheet, budget);
@@ -1565,14 +2391,17 @@ public class ProcurementPlanView extends Div {
                         if (notes != null) {
                             workbook.removeSheetAt(workbook.getSheetIndex(notes));
                         }
-
+                        applyWorkbookFormatting(workbook);
                         workbook.write(out);
                     }
 
                     return new ByteArrayInputStream(out.toByteArray());
 
                 } catch (Exception ex) {
-                    throw new RuntimeException("Failed to generate procurement plan workbook", ex);
+                    throw new RuntimeException(
+                            "Failed to generate procurement plan workbook",
+                            ex
+                    );
                 }
     }
 
@@ -1611,6 +2440,7 @@ public class ProcurementPlanView extends Div {
         for (BudgetItems item : items) {
             Row row = sheet.createRow(rowIndex++);
             copyRowStyle(templateRow, row);
+            applyBlackFontAndLeftAlignment(row, sheet.getWorkbook());
 
             BigDecimal itemTotal = nz(sumBudgetItem(item));
 
@@ -1664,6 +2494,7 @@ public class ProcurementPlanView extends Div {
         for (BudgetItems item : items) {
             Row row = sheet.createRow(rowIndex++);
             copyRowStyle(templateRow, row);
+            applyBlackFontAndLeftAlignment(row, sheet.getWorkbook());
 
             BigDecimal itemTotal = nz(sumBudgetItem(item));
 
@@ -1755,6 +2586,83 @@ public class ProcurementPlanView extends Div {
         }
     }
 
+    private void applyBlackFontAndLeftAlignment(Row row, Workbook workbook) {
+
+        if (row == null || workbook == null) {
+            return;
+        }
+
+        for (Cell cell : row) {
+
+            if (cell == null) {
+                continue;
+            }
+
+            CellStyle originalStyle = cell.getCellStyle();
+
+            if (originalStyle == null) {
+                continue;
+            }
+
+            CellStyle cachedStyle = blackStyleCache.get(originalStyle);
+
+            if (cachedStyle == null) {
+
+                Font originalFont = workbook.getFontAt(
+                        originalStyle.getFontIndex()
+                );
+
+                Font blackFont = workbook.createFont();
+
+                blackFont.setFontName(originalFont.getFontName());
+                blackFont.setFontHeight(originalFont.getFontHeight());
+                blackFont.setBold(originalFont.getBold());
+                blackFont.setItalic(originalFont.getItalic());
+
+                blackFont.setColor(IndexedColors.BLACK.getIndex());
+
+                CellStyle newStyle = workbook.createCellStyle();
+                newStyle.cloneStyleFrom(originalStyle);
+
+                newStyle.setFont(blackFont);
+
+                cachedStyle = newStyle;
+
+                blackStyleCache.put(originalStyle, cachedStyle);
+            }
+
+            cell.setCellStyle(cachedStyle);
+        }
+
+        Cell subjectCell = row.getCell(1);
+
+        if (subjectCell != null) {
+
+            CellStyle subjectOriginal = subjectCell.getCellStyle();
+
+            CellStyle leftStyle = workbook.createCellStyle();
+            leftStyle.cloneStyleFrom(subjectOriginal);
+
+            leftStyle.setAlignment(HorizontalAlignment.LEFT);
+
+            Font originalFont = workbook.getFontAt(
+                    subjectOriginal.getFontIndex()
+            );
+
+            Font blackFont = workbook.createFont();
+
+            blackFont.setFontName(originalFont.getFontName());
+            blackFont.setFontHeight(originalFont.getFontHeight());
+            blackFont.setBold(originalFont.getBold());
+
+            blackFont.setColor(IndexedColors.BLACK.getIndex());
+
+            leftStyle.setFont(blackFont);
+
+            subjectCell.setCellStyle(leftStyle);
+        }
+    }
+
     private String sectionName(BudgetItems item) {
         return item == null || item.getDeptUnit() == null
                 ? ""
@@ -1804,13 +2712,9 @@ public class ProcurementPlanView extends Div {
             return;
         }
 
-        Workbook workbook = sourceRow.getSheet().getWorkbook();
-
         targetRow.setHeight(sourceRow.getHeight());
 
-        for (int i = sourceRow.getFirstCellNum();
-                i < sourceRow.getLastCellNum();
-                i++) {
+        for (int i = 0; i < sourceRow.getLastCellNum(); i++) {
 
             Cell sourceCell = sourceRow.getCell(i);
 
@@ -1820,39 +2724,26 @@ public class ProcurementPlanView extends Div {
 
             Cell targetCell = targetRow.createCell(i);
 
-            CellStyle style = workbook.createCellStyle();
-            style.cloneStyleFrom(sourceCell.getCellStyle());
+            // REUSE EXISTING STYLE
+            targetCell.setCellStyle(sourceCell.getCellStyle());
 
-            // force black font
-            Font font = workbook.createFont();
-            font.setFontHeightInPoints(
-                    workbook.getFontAt(
-                            sourceCell.getCellStyle().getFontIndex()
-                    ).getFontHeightInPoints()
-            );
+            // copy cell type if needed
+            switch (sourceCell.getCellType()) {
+                case STRING ->
+                    targetCell.setCellValue(sourceCell.getStringCellValue());
 
-            font.setFontName(
-                    workbook.getFontAt(
-                            sourceCell.getCellStyle().getFontIndex()
-                    ).getFontName()
-            );
+                case NUMERIC ->
+                    targetCell.setCellValue(sourceCell.getNumericCellValue());
 
-            font.setBold(
-                    workbook.getFontAt(
-                            sourceCell.getCellStyle().getFontIndex()
-                    ).getBold()
-            );
+                case BOOLEAN ->
+                    targetCell.setCellValue(sourceCell.getBooleanCellValue());
 
-            font.setColor(IndexedColors.BLACK.getIndex());
+                case FORMULA ->
+                    targetCell.setCellFormula(sourceCell.getCellFormula());
 
-            style.setFont(font);
-
-            // Subject of procurement column LEFT aligned
-            if (i == 1) {
-                style.setAlignment(HorizontalAlignment.LEFT);
+                default -> {
+                }
             }
-
-            targetCell.setCellStyle(style);
         }
     }
 
@@ -2097,7 +2988,7 @@ public class ProcurementPlanView extends Div {
             for (int i = 0; i < headers.length; i++) {
                 sheet.autoSizeColumn(i);
             }
-
+            applyWorkbookFormatting(workbook);
             workbook.write(out);
 
             return new ByteArrayInputStream(out.toByteArray());
@@ -2110,6 +3001,62 @@ public class ProcurementPlanView extends Div {
         }
     }
 
+    private void applyWorkbookFormatting(Workbook workbook) {
+        if (workbook == null) {
+            return;
+        }
+
+        DataFormat dataFormat = workbook.createDataFormat();
+
+        Font cgTimes10 = workbook.createFont();
+        cgTimes10.setFontName("CG Times");
+        cgTimes10.setFontHeightInPoints((short) 10);
+        cgTimes10.setColor(IndexedColors.BLACK.getIndex());
+
+        Map<CellStyle, CellStyle> cache = new HashMap<>();
+
+        for (Sheet sheet : workbook) {
+            for (Row row : sheet) {
+                for (Cell cell : row) {
+                    CellStyle original = cell.getCellStyle();
+
+                    CellStyle updated = cache.computeIfAbsent(original, style -> {
+                        CellStyle s = workbook.createCellStyle();
+                        s.cloneStyleFrom(style);
+                        s.setFont(cgTimes10);
+                        return s;
+                    });
+
+                    cell.setCellStyle(updated);
+                }
+            }
+        }
+
+        formatEstimatedCostColumn(workbook.getSheet("Consultancy"), dataFormat);
+        formatEstimatedCostColumn(workbook.getSheet("Supplies"), dataFormat);
+        formatEstimatedCostColumn(workbook.getSheet("Works"), dataFormat);
+        formatEstimatedCostColumn(workbook.getSheet("Non Consultancy"), dataFormat);
+    }
+
+    private void formatEstimatedCostColumn(Sheet sheet, DataFormat dataFormat) {
+        if (sheet == null) {
+            return;
+        }
+
+        int estimatedCostColumn = 3; // Column D
+
+        for (Row row : sheet) {
+            Cell cell = row.getCell(estimatedCostColumn);
+
+            if (cell == null) {
+                continue;
+            }
+
+            CellStyle style = cell.getCellStyle();
+            style.setDataFormat(dataFormat.getFormat("#,##0.00"));
+        }
+    }
+
     private String dateText(LocalDate date) {
         return date == null ? "" : date.toString();
     }
@@ -2119,6 +3066,7 @@ public class ProcurementPlanView extends Div {
         private final String title;
         private final List<ProcClass> allowedClasses;
         private final ProcClass defaultClass;
+        Span budgetItemsTotalFooter;
 
         private final VerticalLayout root = new VerticalLayout();
 
@@ -2343,6 +3291,69 @@ public class ProcurementPlanView extends Div {
                 save
         );
 
+        dialog.open();
+    }
+
+    private void openGroupBudgetItemsDialog(PlanSection section) {
+        Set<BudgetItems> selectedItems = section.budgetItemsGrid.getSelectedItems();
+
+        if (selectedItems.size() < 2) {
+            warn("Select at least two budget items to group.");
+            return;
+        }
+
+        BudgetItems first = selectedItems.iterator().next();
+
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Group Budget Items");
+        dialog.setWidth("650px");
+
+        TextField groupName = new TextField("Group Name");
+        groupName.setWidthFull();
+        groupName.setRequiredIndicatorVisible(true);
+        groupName.setValue(first.getCoacode() == null
+                ? "Grouped Procurement Item"
+                : first.getCoacode().getName());
+
+        BigDecimal total = selectedItems.stream()
+                .map(BudgetItems::getYearTotalFromQuarters)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimalField totalField = new BigDecimalField("Grouped Total");
+        totalField.setValue(total);
+        totalField.setReadOnly(true);
+        totalField.setWidthFull();
+
+        Button save = new Button("Group Items", e -> {
+            if (groupName.isEmpty()) {
+                warn("Enter group name.");
+                return;
+            }
+
+            ProcurementBudgetItemGroup group = new ProcurementBudgetItemGroup();
+            group.setGroupName(groupName.getValue());
+            group.setBudget(first.getBudget());
+            group.setCoa(first.getCoacode());
+            group.setDeptUnit(first.getDeptUnit());
+            group.setProcClass(first.getProcClass());
+            group.setItems(new HashSet<>(selectedItems));
+
+            procurementBudgetItemGroupService.save(group);
+
+            refreshAllSectionsAfterTransfer();
+            clearAllSelections();
+
+            dialog.close();
+            success("Grouped " + selectedItems.size() + " budget item(s).");
+        });
+
+        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button cancel = new Button("Cancel", e -> dialog.close());
+
+        dialog.add(new VerticalLayout(groupName, totalField));
+        dialog.getFooter().add(cancel, save);
         dialog.open();
     }
 

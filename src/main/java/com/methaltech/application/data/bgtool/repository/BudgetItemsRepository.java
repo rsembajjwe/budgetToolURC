@@ -2178,4 +2178,51 @@ WHERE b.budget = :budget
             @Param("procClass") ProcClass procClass
     );
 
+    @Query("""
+    SELECT b
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+      AND b.procClass = :procClass
+      AND b.coacode = :coa
+      AND (
+            b.coacode.code LIKE '2%'
+            OR b.coacode.code LIKE '3%'
+          )
+""")
+    List<BudgetItems> findByBudgetAndCoaAndProcClassFiltered(
+            @Param("budget") Budget budget,
+            @Param("procClass") ProcClass procClass,
+            @Param("coa") COA coa
+    );
+
+    @Query("""
+    SELECT DISTINCT b.coacode
+    FROM BudgetItems b
+    WHERE b.budget = :budget
+      AND b.coacode IS NOT NULL
+      AND (
+            b.coacode.code LIKE '2%'
+            OR b.coacode.code LIKE '3%'
+          )
+""")
+    List<COA> findProcurementCoasByBudget(
+            @Param("budget") Budget budget
+    );
+
+    @Query("""
+    SELECT DISTINCT b
+    FROM BudgetItems b
+    LEFT JOIN FETCH b.coacode
+    WHERE b.budget = :budget
+      AND b.coacode IS NOT NULL
+      AND b.procClass IS NOT NULL
+      AND (
+            b.coacode.code LIKE '2%'
+            OR b.coacode.code LIKE '3%'
+          )
+""")
+    List<BudgetItems> findProcurementBudgetItemsByBudget(
+            @Param("budget") Budget budget
+    );
+
 }
