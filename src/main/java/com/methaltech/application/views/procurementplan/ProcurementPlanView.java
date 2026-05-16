@@ -199,6 +199,7 @@ public class ProcurementPlanView extends Div {
     private void buildView() {
         Image strip = new Image("images/ugflagstrip.png", "Uganda flag strip");
         strip.setWidthFull();
+        strip.addClassName("procurement-flag-strip");
         strip.getStyle().set("margin", "0").set("padding", "0");
 
         configureSection(consultancySection);
@@ -206,6 +207,7 @@ public class ProcurementPlanView extends Div {
 
         TabSheet tabs = new TabSheet();
         tabs.setSizeFull();
+        tabs.addClassName("procurement-tabs");
         tabs.add(consultancySection.title, consultancySection.root);
         tabs.add(otherSection.title, otherSection.root);
 
@@ -224,11 +226,13 @@ public class ProcurementPlanView extends Div {
         SplitLayout split = new SplitLayout();
         split.setSizeFull();
         split.setSplitterPosition(40);
+        split.addClassName("procurement-split");
 
         VerticalLayout primary = new VerticalLayout(section.planGrid);
         primary.setPadding(false);
         primary.setSpacing(false);
         primary.setSizeFull();
+        primary.addClassName("procurement-plan-panel");
 
         VerticalLayout secondary = createBudgetItemsPanel(section);
         secondary.setPadding(false);
@@ -301,6 +305,7 @@ public class ProcurementPlanView extends Div {
     private HorizontalLayout createToolbar(PlanSection section) {
         Button regenerate = new Button("Refresh Procurement Plan", new Icon(VaadinIcon.REFRESH));
         regenerate.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        regenerate.addClassName("procurement-primary-action");
         regenerate.addClickListener(e -> confirmAction(
                 "Refresh Procurement Plan",
                 "This will update existing procurement plan records while preserving manual details such as procurement method, contract type and dates.",
@@ -309,6 +314,7 @@ public class ProcurementPlanView extends Div {
         ));
 
         Button refresh = new Button("Regenerate Procurement Plan", new Icon(VaadinIcon.REFRESH));
+        refresh.addClassName("procurement-secondary-action");
         refresh.addClickListener(e -> confirmAction(
                 "Regenerate Procurement Plan",
                 "This will delete existing procurement plan records and recreate them from budget items. Manual plan changes may be lost.",
@@ -317,6 +323,7 @@ public class ProcurementPlanView extends Div {
         ));
 
         Button downloadPlan = new Button("Download Procurement Plan", new Icon(VaadinIcon.DOWNLOAD));
+        downloadPlan.addClassName("procurement-download-action");
         downloadPlan.addClickListener(e -> {
             if (!validateBudgetAndClass(section)) {
                 return;
@@ -376,6 +383,7 @@ public class ProcurementPlanView extends Div {
         Grid<ProcurementPlan> grid = section.planGrid;
         grid.setSizeFull();
         grid.setSelectionMode(Grid.SelectionMode.MULTI);
+        grid.addClassName("procurement-master-grid");
 
         grid.addThemeVariants(
                 GridVariant.LUMO_NO_BORDER,
@@ -386,12 +394,14 @@ public class ProcurementPlanView extends Div {
 
         grid.addColumn(ProcurementPlan::getSubject)
                 .setHeader("Subject of Procurement")
+                .setKey("subject")
                 .setFrozen(true)
                 .setWidth("200px")
                 .setResizable(true);
 
         grid.addColumn(new ComponentRenderer<>(plan -> badgeText(safeCoaCode(plan))))
                 .setHeader("Code")
+                .setKey("code")
                 .setFrozen(true)
                 .setWidth("30px")
                 .setResizable(true)
@@ -399,6 +409,7 @@ public class ProcurementPlanView extends Div {
 
         grid.addColumn(plan -> money(plan.getCost()))
                 .setHeader("Estimated Cost")
+                .setKey("estimated-cost")
                 .setTextAlign(com.vaadin.flow.component.grid.ColumnTextAlign.END)
                 .setWidth("70px")
                 .setFooter(section.total)
@@ -406,6 +417,7 @@ public class ProcurementPlanView extends Div {
 
         grid.addColumn(this::getFundSources)
                 .setHeader("Fund Source")
+                .setKey("fund-source")
                 .setWidth("90px")
                 .setResizable(true);
         grid.asMultiSelect().addValueChangeListener(e -> loadBudgetItemsForSelection(section));
@@ -415,6 +427,8 @@ public class ProcurementPlanView extends Div {
         Grid<BudgetItems> grid = section.budgetItemsGrid;
         grid.setSizeFull();
         grid.setSelectionMode(Grid.SelectionMode.MULTI);
+        grid.addClassName("procurement-detail-grid");
+        grid.setPartNameGenerator(item -> isSyntheticGroupRow(item) ? "grouped-budget-item" : null);
 
         grid.addThemeVariants(
                 GridVariant.LUMO_NO_BORDER,
@@ -604,10 +618,12 @@ public class ProcurementPlanView extends Div {
 
     private VerticalLayout createBudgetItemsPanel(PlanSection section) {
         H3 title = new H3("Selected Budget Items");
-        title.getStyle().set("margin", "var(--lumo-space-m)");
+        title.addClassName("procurement-panel-title");
+        title.getStyle().set("margin", "0");
 
         Button download = new Button("Download Excel Report", new Icon(VaadinIcon.DOWNLOAD));
         download.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        download.addClassName("procurement-download-action");
 
         Anchor hiddenAnchor = new Anchor();
         hiddenAnchor.getStyle().set("display", "none");
@@ -620,11 +636,13 @@ public class ProcurementPlanView extends Div {
         header.setPadding(true);
         header.setAlignItems(FlexComponent.Alignment.CENTER);
         header.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+        header.addClassName("procurement-detail-header");
 
         VerticalLayout layout = new VerticalLayout(header, section.budgetItemsGrid);
         layout.setSizeFull();
         layout.setPadding(false);
         layout.setSpacing(false);
+        layout.addClassName("procurement-detail-panel");
 
         return layout;
     }

@@ -1,15 +1,234 @@
-.actual-view {
-  display: block;
+.actual-view.financial-actual-view {
+  --actual-surface: #ffffff;
+  --actual-page: #f3f6f9;
+  --actual-border: #dbe3ee;
+  --actual-border-strong: #c8d2df;
+  --actual-text: #172033;
+  --actual-muted: #64748b;
+  --actual-header: #edf2f7;
+  --actual-hover: #f0f6ff;
+  --actual-selected: #dcecff;
+  --actual-accent: #1f6f5b;
+  --actual-accent-strong: #145443;
+  --actual-navy: #17324d;
+  --actual-warning-soft: #fff7ed;
+
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  background-color: #cccccc;
+  min-height: 0;
+  background: var(--actual-page);
+  color: var(--actual-text);
 }
 
-.actual-view vaadin-grid::part(selected-row-cell){
-    background-color: dodgerblue;
+.actual-view.financial-actual-view .actual-flag-strip {
+  flex: 0 0 auto;
+  max-height: 6px;
+  object-fit: cover;
 }
-.actual-view .orange-column {
-    background-color: orange;
+
+.actual-view.financial-actual-view .actual-page-header {
+  flex: 0 0 auto;
+  margin: var(--lumo-space-m) var(--lumo-space-m) 0;
+  padding: var(--lumo-space-l) var(--lumo-space-l) var(--lumo-space-m);
+  background: var(--actual-surface);
+  border: 1px solid var(--actual-border);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
-.actual-view vaadin-grid-cell-background{
-   background-color: orange; 
+
+.actual-view.financial-actual-view .actual-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-left: 4px solid var(--actual-accent);
+  padding-left: var(--lumo-space-m);
+}
+
+.actual-view.financial-actual-view .actual-page-title {
+  margin: 0;
+  color: var(--actual-navy);
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.actual-view.financial-actual-view .actual-page-subtitle {
+  color: var(--actual-muted);
+  font-size: var(--lumo-font-size-s);
+  font-weight: 600;
+}
+
+.actual-view.financial-actual-view .actual-toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--lumo-space-s);
+  margin: var(--lumo-space-s) var(--lumo-space-m) 0;
+  padding: var(--lumo-space-m);
+  background: var(--actual-surface);
+  border: 1px solid var(--actual-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.actual-view.financial-actual-view .actual-toolbar vaadin-combo-box,
+.actual-view.financial-actual-view .actual-toolbar vaadin-multi-select-combo-box {
+  min-width: 240px;
+}
+
+.actual-view.financial-actual-view .actual-toolbar vaadin-button {
+  font-weight: 700;
+}
+
+.actual-view.financial-actual-view .actual-view-action {
+  color: #ffffff;
+  background: var(--actual-accent);
+  border-radius: 6px;
+  box-shadow: 0 8px 18px rgba(31, 111, 91, 0.18);
+}
+
+.actual-view.financial-actual-view .actual-view-action:hover {
+  background: var(--actual-accent-strong);
+}
+
+.actual-view.financial-actual-view .actual-download-action {
+  color: #1e3a8a;
+  background: #eef4ff;
+  border-radius: 6px;
+}
+
+.actual-view.financial-actual-view .actual-tabs {
+  flex: 1;
+  min-height: 0;
+  padding: var(--lumo-space-s) var(--lumo-space-m) var(--lumo-space-m);
+}
+
+.actual-view.financial-actual-view vaadin-tabsheet::part(tabs-container) {
+  background: var(--actual-surface);
+  border: 1px solid var(--actual-border);
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  padding: 0 var(--lumo-space-m);
+}
+
+.actual-view.financial-actual-view vaadin-tab {
+  color: var(--actual-muted);
+  font-weight: 600;
+}
+
+.actual-view.financial-actual-view vaadin-tab[selected] {
+  color: var(--actual-accent);
+}
+
+.actual-view.financial-actual-view .actual-grid-panel {
+  height: 100%;
+  min-height: 0;
+  background: var(--actual-surface);
+  border: 1px solid var(--actual-border);
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+.actual-view.financial-actual-view .actual-grid {
+  height: 100%;
+  border: 0;
+  font-size: var(--lumo-font-size-s);
+  --lumo-primary-color-10pct: var(--actual-selected);
+}
+
+.actual-view.financial-actual-view vaadin-grid::part(header-cell) {
+  min-height: 40px;
+  background: var(--actual-header);
+  color: var(--actual-navy);
+  font-weight: 800;
+  border-bottom: 1px solid var(--actual-border-strong);
+}
+
+.actual-view.financial-actual-view vaadin-grid::part(footer-cell) {
+  background: #f7fafc;
+  color: var(--actual-text);
+  font-weight: 800;
+  min-height: 38px;
+  border-top: 1px solid var(--actual-border-strong);
+}
+
+.actual-view.financial-actual-view vaadin-grid::part(body-cell) {
+  min-height: 34px;
+  border-color: #e5eaf0;
+}
+
+.actual-view.financial-actual-view vaadin-grid::part(body-cell):hover {
+  background: var(--actual-hover);
+}
+
+.actual-view.financial-actual-view vaadin-grid::part(selected-row-cell) {
+  background: var(--actual-selected);
+}
+
+.actual-view.financial-actual-view vaadin-grid::part(focused-cell) {
+  box-shadow: inset 0 0 0 2px rgba(31, 111, 91, 0.35);
+}
+
+.actual-view.financial-actual-view .actual-grid::part(cell first-column-cell) {
+  box-shadow: 3px 0 8px rgba(15, 23, 42, 0.08);
+}
+
+.actual-view.financial-actual-view .orange-column {
+  background: var(--actual-warning-soft);
+  color: #7c2d12;
+  font-weight: 700;
+}
+
+.actual-view.financial-actual-view vaadin-grid [theme~="badge"] {
+  min-width: 76px;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.actual-view.financial-actual-view vaadin-grid [theme~="badge"][theme~="success"] {
+  color: #166534;
+}
+
+.actual-view.financial-actual-view .actual-total-cell {
+  display: block;
+  width: 100%;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.actual-view.financial-actual-view .actual-total-label {
+  color: var(--actual-navy);
+  text-transform: uppercase;
+}
+
+.actual-view.financial-actual-view .actual-total-code {
+  color: var(--actual-muted);
+  text-align: center;
+}
+
+.actual-view.financial-actual-view .actual-total-value {
+  text-align: right;
+  color: #1e3a8a;
+}
+
+@media (max-width: 900px) {
+  .actual-view.financial-actual-view .actual-page-header,
+  .actual-view.financial-actual-view .actual-toolbar,
+  .actual-view.financial-actual-view .actual-tabs {
+    margin-inline: var(--lumo-space-s);
+    padding: var(--lumo-space-s);
+  }
+
+  .actual-view.financial-actual-view .actual-page-title {
+    font-size: 1.1rem;
+  }
+
+  .actual-view.financial-actual-view .actual-toolbar vaadin-combo-box,
+  .actual-view.financial-actual-view .actual-toolbar vaadin-multi-select-combo-box,
+  .actual-view.financial-actual-view .actual-toolbar vaadin-button {
+    width: 100%;
+  }
 }

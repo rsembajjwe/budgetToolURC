@@ -37,6 +37,7 @@ import com.vaadin.flow.component.grid.Grid.Column;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -206,6 +207,8 @@ public class ActualView extends Div {
     Column<BudgetItemsActuals> qtr4AColumn;
     Column<BudgetItemsActuals> totalQtrColumn;
     Column<BudgetItemsActuals> totalAQtrColumn;
+    Column<BudgetItemsActuals> qtrCodeColumn;
+    Column<BudgetItemsActuals> qtrDescriptionColumn;
 
     Span footerJul = new Span();
     Span footerJulA = new Span();
@@ -240,6 +243,10 @@ public class ActualView extends Div {
     private final CoaService sampleCoaService;
     private Span footerTotal = new Span("");
     Button view = new Button("View", new Icon(VaadinIcon.MENU));
+    private final ActualFooter monthlyRevenueFooter = new ActualFooter("TOTAL REVENUE");
+    private final ActualFooter monthlyExpenditureFooter = new ActualFooter("TOTAL EXPENDITURE");
+    private final ActualFooter quarterlyRevenueFooter = new ActualFooter("TOTAL REVENUE");
+    private final ActualFooter quarterlyExpenditureFooter = new ActualFooter("TOTAL EXPENDITURE");
 
     @Autowired
 
@@ -257,7 +264,7 @@ public class ActualView extends Div {
         //this.setSizeFull();
         gridBudgetItems.setHeightFull();
 
-        addClassNames("actual-view");
+        addClassNames("actual-view", "financial-actual-view");
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
@@ -268,8 +275,22 @@ public class ActualView extends Div {
 
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
         image2.setWidthFull();
+        image2.addClassName("actual-flag-strip");
         image2.getStyle().set("margin", "0").set("padding", "0");
         add(image2);
+
+        H2 pageTitle = new H2("Financial Performance Report");
+        pageTitle.addClassName("actual-page-title");
+
+        Span pageSubtitle = new Span("Budget vs actuals by cost centre and account code");
+        pageSubtitle.addClassName("actual-page-subtitle");
+
+        Div titleBlock = new Div(pageTitle, pageSubtitle);
+        titleBlock.addClassName("actual-title-block");
+
+        Div pageHeader = new Div(titleBlock);
+        pageHeader.addClassName("actual-page-header");
+        add(pageHeader);
 
         budget.getStyle().set("marginRight", "10px");
         comboBoxD_Section.getStyle().set("marginRight", "10px");
@@ -286,7 +307,11 @@ public class ActualView extends Div {
         budget.setItemLabelGenerator(Budget::getFinancialYear);
         budget.setItems(query -> sampleBudgetService.list(PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query))).stream());
         Div div = new Div();
+        div.addClassName("actual-toolbar");
         div.add(budget, comboBoxD_Section, view, downloadWorkplan, downloadWorkplan2);
+        view.addClassName("actual-view-action");
+        downloadWorkplan.addClassName("actual-download-action");
+        downloadWorkplan2.addClassName("actual-download-action");
         downloadWorkplan.addThemeVariants(ButtonVariant.LUMO_ICON);
         downloadWorkplan.setEnabled(false);
 
@@ -295,6 +320,7 @@ public class ActualView extends Div {
         add(div);
 
         TabSheet tabSheet = new TabSheet();
+        tabSheet.addClassName("actual-tabs");
         tabSheet.add("Monthly Budget Vs Actuals", budgetCoaView());
         tabSheet.add("Quarterly Budget Vs Actuals", budgetCoaQtrView());
         setSpanValues(budget.getValue());
@@ -358,7 +384,8 @@ public class ActualView extends Div {
                 gridBudgetItems.setItems(items);
                 gridBudgetItemsQuarterlyGrid.setItems(items);
 
-               // refreshMonthlyFooter(items);
+                refreshMonthlyFooter(items);
+                refreshQuarterlyFooter(items);
             }
         });
 
@@ -376,15 +403,22 @@ public class ActualView extends Div {
 
     private Div budgetCoaView() {
         Div div = new Div();
+        div.addClassNames("actual-grid-panel", "actual-monthly-panel");
         div.setSizeFull();
         div.setSizeFull();
-        gridBudgetItems.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
+        gridBudgetItems.addClassNames("actual-grid", "actual-monthly-grid");
+        gridBudgetItems.addThemeVariants(
+                GridVariant.LUMO_NO_BORDER,
+                GridVariant.LUMO_WRAP_CELL_CONTENT,
+                GridVariant.LUMO_ROW_STRIPES,
+                GridVariant.LUMO_COLUMN_BORDERS
+        );
         codeColumn = gridBudgetItems.addColumn(budgetItem -> {
             COA coacode = budgetItem.getCoacode();
             Text label = new Text(coacode != null ? coacode.getCode() : "");
             return label.getText(); // Get the text content
         })
-                .setHeader("Code").setWidth("80px").setFlexGrow(0)
+                .setHeader("Code").setKey("code").setWidth("80px").setFlexGrow(0)
                 .setSortable(true) // Make the column sortable
                 .setComparator((budgetItem1, budgetItem2) -> {
                     // Implement your custom comparator logic here
@@ -392,7 +426,9 @@ public class ActualView extends Div {
                     String name2 = budgetItem2.getCoacode() != null ? budgetItem2.getCoacode().getName() : "";
                     return name1.compareTo(name2);
                 });
-        descriptionColumn = gridBudgetItems.addColumn(BudgetItemsActuals::getItem).setHeader("Description");
+        descriptionColumn = gridBudgetItems.addColumn(BudgetItemsActuals::getItem)
+                .setHeader("Description")
+                .setKey("description");
         //gridBudgetItems.addColumn(BudgetItemsActuals::getJul).setHeader("July");
 
         julColumn = gridBudgetItems.addColumn(new ComponentRenderer<>(urcActivity -> {
@@ -744,7 +780,7 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getTotalA();
             Span span = createSpan(value);
             if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
-                span = createSpan(value.negate());
+                span = createSpan(value);
             }
             span.getElement().getThemeList().add("badge success");
             ContextMenu contextMenu = new ContextMenu(span);
@@ -760,7 +796,7 @@ public class ActualView extends Div {
 
             BigDecimal value = urcActivity.getTotalA();
             BigDecimal value2 = urcActivity.getTotal();
-            Span span = createSpan(value2.subtract(value.abs()));
+            Span span = createSpan(value2.subtract(value));
             if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
                 span = createSpan(value2.add(value));
             }
@@ -770,6 +806,8 @@ public class ActualView extends Div {
 
         })).setHeader("Balance").setFlexGrow(0).setWidth("150px");
 
+        configureMonthlyFooterRows();
+
         gridBudgetItems.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
 
         div.add(gridBudgetItems);
@@ -778,15 +816,22 @@ public class ActualView extends Div {
 
     private Div budgetCoaQtrView() {
         Div div = new Div();
+        div.addClassNames("actual-grid-panel", "actual-quarterly-panel");
         div.setSizeFull();
         div.setSizeFull();
-        gridBudgetItemsQuarterlyGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
-        gridBudgetItemsQuarterlyGrid.addColumn(budgetItem -> {
+        gridBudgetItemsQuarterlyGrid.addClassNames("actual-grid", "actual-quarterly-grid");
+        gridBudgetItemsQuarterlyGrid.addThemeVariants(
+                GridVariant.LUMO_NO_BORDER,
+                GridVariant.LUMO_WRAP_CELL_CONTENT,
+                GridVariant.LUMO_ROW_STRIPES,
+                GridVariant.LUMO_COLUMN_BORDERS
+        );
+        qtrCodeColumn = gridBudgetItemsQuarterlyGrid.addColumn(budgetItem -> {
             COA coacode = budgetItem.getCoacode();
             Text label = new Text(coacode != null ? coacode.getCode() : "");
             return label.getText(); // Get the text content
         })
-                .setHeader("Code").setWidth("80px").setFlexGrow(0)
+                .setHeader("Code").setKey("code").setWidth("80px").setFlexGrow(0)
                 .setSortable(true) // Make the column sortable
                 .setComparator((budgetItem1, budgetItem2) -> {
                     // Implement your custom comparator logic here
@@ -794,7 +839,9 @@ public class ActualView extends Div {
                     String name2 = budgetItem2.getCoacode() != null ? budgetItem2.getCoacode().getName() : "";
                     return name1.compareTo(name2);
                 });
-        gridBudgetItemsQuarterlyGrid.addColumn(BudgetItemsActuals::getItem).setHeader("Description");
+        qtrDescriptionColumn = gridBudgetItemsQuarterlyGrid.addColumn(BudgetItemsActuals::getItem)
+                .setHeader("Description")
+                .setKey("description");
         //gridBudgetItems.addColumn(BudgetItemsActuals::getJul).setHeader("July");
 
         qtr1Column = gridBudgetItemsQuarterlyGrid.addColumn(new ComponentRenderer<>(urcActivity -> {
@@ -901,7 +948,7 @@ public class ActualView extends Div {
             BigDecimal value = urcActivity.getTotalA();
             Span span = createSpan(value);
             if (urcActivity.getCoacode().getCode().startsWith("2") || urcActivity.getCoacode().getCode().startsWith("3")) {
-                span = createSpan(value.negate());
+                span = createSpan(value);
             }
             span.getElement().getThemeList().add("badge");
 
@@ -909,10 +956,70 @@ public class ActualView extends Div {
 
         })).setHeader("Total Actual").setWidth("150px");
 
+        configureQuarterlyFooterRows();
+
         gridBudgetItemsQuarterlyGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
         //gridBudgetItems.setHeight("900px");
         div.add(gridBudgetItemsQuarterlyGrid);
         return div;
+    }
+
+    private void configureMonthlyFooterRows() {
+        configureMonthlyFooterRow(gridBudgetItems.appendFooterRow(), monthlyRevenueFooter, "1");
+        configureMonthlyFooterRow(gridBudgetItems.appendFooterRow(), monthlyExpenditureFooter, "2/3");
+    }
+
+    private void configureMonthlyFooterRow(FooterRow row, ActualFooter footer, String codeLabel) {
+        Span code = footerTextSpan(codeLabel, "actual-total-code");
+        row.getCell(codeColumn).setComponent(code);
+        row.getCell(descriptionColumn).setComponent(footer.label);
+        row.getCell(julColumn).setComponent(footer.value(0));
+        row.getCell(julAColumn).setComponent(footer.value(1));
+        row.getCell(augColumn).setComponent(footer.value(2));
+        row.getCell(augAColumn).setComponent(footer.value(3));
+        row.getCell(sepColumn).setComponent(footer.value(4));
+        row.getCell(sepAColumn).setComponent(footer.value(5));
+        row.getCell(octColumn).setComponent(footer.value(6));
+        row.getCell(octAColumn).setComponent(footer.value(7));
+        row.getCell(novColumn).setComponent(footer.value(8));
+        row.getCell(novAColumn).setComponent(footer.value(9));
+        row.getCell(decColumn).setComponent(footer.value(10));
+        row.getCell(decAColumn).setComponent(footer.value(11));
+        row.getCell(janColumn).setComponent(footer.value(12));
+        row.getCell(janAColumn).setComponent(footer.value(13));
+        row.getCell(febColumn).setComponent(footer.value(14));
+        row.getCell(febAColumn).setComponent(footer.value(15));
+        row.getCell(marColumn).setComponent(footer.value(16));
+        row.getCell(marAColumn).setComponent(footer.value(17));
+        row.getCell(aprColumn).setComponent(footer.value(18));
+        row.getCell(aprAColumn).setComponent(footer.value(19));
+        row.getCell(mayColumn).setComponent(footer.value(20));
+        row.getCell(mayAColumn).setComponent(footer.value(21));
+        row.getCell(junColumn).setComponent(footer.value(22));
+        row.getCell(junAColumn).setComponent(footer.value(23));
+        row.getCell(totalColumn).setComponent(footer.value(24));
+        row.getCell(totalAColumn).setComponent(footer.value(25));
+        row.getCell(balanceColumn).setComponent(footer.value(26));
+    }
+
+    private void configureQuarterlyFooterRows() {
+        configureQuarterlyFooterRow(gridBudgetItemsQuarterlyGrid.appendFooterRow(), quarterlyRevenueFooter, "1");
+        configureQuarterlyFooterRow(gridBudgetItemsQuarterlyGrid.appendFooterRow(), quarterlyExpenditureFooter, "2/3");
+    }
+
+    private void configureQuarterlyFooterRow(FooterRow row, ActualFooter footer, String codeLabel) {
+        row.getCell(qtrCodeColumn).setComponent(footerTextSpan(codeLabel, "actual-total-code"));
+        row.getCell(qtrDescriptionColumn).setComponent(footer.label);
+        row.getCell(qtr1Column).setComponent(footer.value(0));
+        row.getCell(qtr1AColumn).setComponent(footer.value(1));
+        row.getCell(qtr2Column).setComponent(footer.value(2));
+        row.getCell(qtr2AColumn).setComponent(footer.value(3));
+        row.getCell(qtr3Column).setComponent(footer.value(4));
+        row.getCell(qtr3AColumn).setComponent(footer.value(5));
+        row.getCell(qtr4Column).setComponent(footer.value(6));
+        row.getCell(qtr4AColumn).setComponent(footer.value(7));
+        row.getCell(totalQtrColumn).setComponent(footer.value(8));
+        row.getCell(totalAQtrColumn).setComponent(footer.value(9));
     }
 
     private BigDecimal nz(BigDecimal value) {
@@ -925,6 +1032,102 @@ public class ActualView extends Div {
                 .map(extractor)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private void refreshMonthlyFooter(List<BudgetItemsActuals> items) {
+        List<BudgetItemsActuals> revenueItems = filterByCode(items, "1", false);
+        List<BudgetItemsActuals> expenditureItems = filterByExpenditureCode(items);
+
+        updateMonthlyFooter(monthlyRevenueFooter, revenueItems);
+        updateMonthlyFooter(monthlyExpenditureFooter, expenditureItems);
+    }
+
+    private void refreshQuarterlyFooter(List<BudgetItemsActuals> items) {
+        List<BudgetItemsActuals> revenueItems = filterByCode(items, "1", false);
+        List<BudgetItemsActuals> expenditureItems = filterByExpenditureCode(items);
+
+        updateQuarterlyFooter(quarterlyRevenueFooter, revenueItems);
+        updateQuarterlyFooter(quarterlyExpenditureFooter, expenditureItems);
+    }
+
+    private List<BudgetItemsActuals> filterByExpenditureCode(List<BudgetItemsActuals> source) {
+        return source.stream()
+                .filter(item -> codeStartsWith(item, "2") || codeStartsWith(item, "3"))
+                .collect(Collectors.toList());
+    }
+
+    private List<BudgetItemsActuals> filterByCode(
+            List<BudgetItemsActuals> source,
+            String prefix,
+            boolean exclude
+    ) {
+        return source.stream()
+                .filter(item -> codeStartsWith(item, prefix) != exclude)
+                .collect(Collectors.toList());
+    }
+
+    private boolean codeStartsWith(BudgetItemsActuals item, String prefix) {
+        return item != null
+                && item.getCoacode() != null
+                && item.getCoacode().getCode() != null
+                && item.getCoacode().getCode().startsWith(prefix);
+    }
+
+    private void updateMonthlyFooter(ActualFooter footer, List<BudgetItemsActuals> items) {
+        setFooterValue(footer, 0, sum(items, BudgetItemsActuals::getJul));
+        setFooterValue(footer, 1, sum(items, BudgetItemsActuals::getJulA));
+        setFooterValue(footer, 2, sum(items, BudgetItemsActuals::getAug));
+        setFooterValue(footer, 3, sum(items, BudgetItemsActuals::getAugA));
+        setFooterValue(footer, 4, sum(items, BudgetItemsActuals::getSep));
+        setFooterValue(footer, 5, sum(items, BudgetItemsActuals::getSepA));
+        setFooterValue(footer, 6, sum(items, BudgetItemsActuals::getOct));
+        setFooterValue(footer, 7, sum(items, BudgetItemsActuals::getOctA));
+        setFooterValue(footer, 8, sum(items, BudgetItemsActuals::getNov));
+        setFooterValue(footer, 9, sum(items, BudgetItemsActuals::getNovA));
+        setFooterValue(footer, 10, sum(items, BudgetItemsActuals::getDec));
+        setFooterValue(footer, 11, sum(items, BudgetItemsActuals::getDecA));
+        setFooterValue(footer, 12, sum(items, BudgetItemsActuals::getJan));
+        setFooterValue(footer, 13, sum(items, BudgetItemsActuals::getJanA));
+        setFooterValue(footer, 14, sum(items, BudgetItemsActuals::getFeb));
+        setFooterValue(footer, 15, sum(items, BudgetItemsActuals::getFebA));
+        setFooterValue(footer, 16, sum(items, BudgetItemsActuals::getMar));
+        setFooterValue(footer, 17, sum(items, BudgetItemsActuals::getMarA));
+        setFooterValue(footer, 18, sum(items, BudgetItemsActuals::getApr));
+        setFooterValue(footer, 19, sum(items, BudgetItemsActuals::getAprA));
+        setFooterValue(footer, 20, sum(items, BudgetItemsActuals::getMay));
+        setFooterValue(footer, 21, sum(items, BudgetItemsActuals::getMayA));
+        setFooterValue(footer, 22, sum(items, BudgetItemsActuals::getJun));
+        setFooterValue(footer, 23, sum(items, BudgetItemsActuals::getJunA));
+
+        BigDecimal totalBudget = sum(items, BudgetItemsActuals::getTotal);
+        BigDecimal totalActual = sum(items, BudgetItemsActuals::getTotalA);
+
+        setFooterValue(footer, 24, totalBudget);
+        setFooterValue(footer, 25, totalActual);
+        setFooterValue(footer, 26, totalBudget.subtract(totalActual));
+    }
+
+    private void updateQuarterlyFooter(ActualFooter footer, List<BudgetItemsActuals> items) {
+        setFooterValue(footer, 0, sum(items, BudgetItemsActuals::getQtr1));
+        setFooterValue(footer, 1, sum(items, BudgetItemsActuals::getQtr1A));
+        setFooterValue(footer, 2, sum(items, BudgetItemsActuals::getQtr2));
+        setFooterValue(footer, 3, sum(items, BudgetItemsActuals::getQtr2A));
+        setFooterValue(footer, 4, sum(items, BudgetItemsActuals::getQtr3));
+        setFooterValue(footer, 5, sum(items, BudgetItemsActuals::getQtr3A));
+        setFooterValue(footer, 6, sum(items, BudgetItemsActuals::getQtr4));
+        setFooterValue(footer, 7, sum(items, BudgetItemsActuals::getQtr4A));
+        setFooterValue(footer, 8, sum(items, BudgetItemsActuals::getTotal));
+        setFooterValue(footer, 9, sum(items, BudgetItemsActuals::getTotalA));
+    }
+
+    private void setFooterValue(ActualFooter footer, int index, BigDecimal value) {
+        footer.value(index).setText(formatFooter(value));
+    }
+
+    private Span footerTextSpan(String text, String className) {
+        Span span = new Span(text);
+        span.addClassNames("actual-total-cell", className);
+        return span;
     }
 
     private Component footerText(String text) {
@@ -4278,68 +4481,6 @@ return v == null ? 0d : v.doubleValue();
         return periods;
     }
 
-    private void refreshMonthlyFooter(List<BudgetItemsActuals> items) {
-        footerJul.setText(formatFooter(sum(items, BudgetItemsActuals::getJul)));
-        footerJulA.setText(formatFooter(sum(items, BudgetItemsActuals::getJulA)));
-        footerAug.setText(formatFooter(sum(items, BudgetItemsActuals::getAug)));
-        footerAugA.setText(formatFooter(sum(items, BudgetItemsActuals::getAugA)));
-        footerSep.setText(formatFooter(sum(items, BudgetItemsActuals::getSep)));
-        footerSepA.setText(formatFooter(sum(items, BudgetItemsActuals::getSepA)));
-        footerOct.setText(formatFooter(sum(items, BudgetItemsActuals::getOct)));
-        footerOctA.setText(formatFooter(sum(items, BudgetItemsActuals::getOctA)));
-        footerNov.setText(formatFooter(sum(items, BudgetItemsActuals::getNov)));
-        footerNovA.setText(formatFooter(sum(items, BudgetItemsActuals::getNovA)));
-        footerDec.setText(formatFooter(sum(items, BudgetItemsActuals::getDec)));
-        footerDecA.setText(formatFooter(sum(items, BudgetItemsActuals::getDecA)));
-        footerJan.setText(formatFooter(sum(items, BudgetItemsActuals::getJan)));
-        footerJanA.setText(formatFooter(sum(items, BudgetItemsActuals::getJanA)));
-        footerFeb.setText(formatFooter(sum(items, BudgetItemsActuals::getFeb)));
-        footerFebA.setText(formatFooter(sum(items, BudgetItemsActuals::getFebA)));
-        footerMar.setText(formatFooter(sum(items, BudgetItemsActuals::getMar)));
-        footerMarA.setText(formatFooter(sum(items, BudgetItemsActuals::getMarA)));
-        footerApr.setText(formatFooter(sum(items, BudgetItemsActuals::getApr)));
-        footerAprA.setText(formatFooter(sum(items, BudgetItemsActuals::getAprA)));
-        footerMay.setText(formatFooter(sum(items, BudgetItemsActuals::getMay)));
-        footerMayA.setText(formatFooter(sum(items, BudgetItemsActuals::getMayA)));
-        footerJun.setText(formatFooter(sum(items, BudgetItemsActuals::getJun)));
-        footerJunA.setText(formatFooter(sum(items, BudgetItemsActuals::getJunA)));
-
-        BigDecimal grandBudget = sum(items, BudgetItemsActuals::getTotal);
-        BigDecimal grandActual = sum(items, BudgetItemsActuals::getTotalA);
-
-        footerTotal.setText(formatFooter(grandBudget));
-        footerTotalA.setText(formatFooter(grandActual));
-        footerBalance.setText(formatFooter(grandBudget.subtract(grandActual)));
-
-        makeFooterBold(footerJul, false);
-        makeFooterBold(footerJulA, true);
-        makeFooterBold(footerAug, false);
-        makeFooterBold(footerAugA, true);
-        makeFooterBold(footerSep, false);
-        makeFooterBold(footerSepA, true);
-        makeFooterBold(footerOct, false);
-        makeFooterBold(footerOctA, true);
-        makeFooterBold(footerNov, false);
-        makeFooterBold(footerNovA, true);
-        makeFooterBold(footerDec, false);
-        makeFooterBold(footerDecA, true);
-        makeFooterBold(footerJan, false);
-        makeFooterBold(footerJanA, true);
-        makeFooterBold(footerFeb, false);
-        makeFooterBold(footerFebA, true);
-        makeFooterBold(footerMar, false);
-        makeFooterBold(footerMarA, true);
-        makeFooterBold(footerApr, false);
-        makeFooterBold(footerAprA, true);
-        makeFooterBold(footerMay, false);
-        makeFooterBold(footerMayA, true);
-        makeFooterBold(footerJun, false);
-        makeFooterBold(footerJunA, true);
-        makeFooterBold(footerTotal, false);
-        makeFooterBold(footerTotalA, true);
-        makeFooterBold(footerBalance, false);
-    }
-
     private String formatFooter(BigDecimal value) {
         return value == null ? "0.00" : new DecimalFormat("#,##0.00").format(value);
     }
@@ -4352,6 +4493,27 @@ return v == null ? 0d : v.doubleValue();
             span.getStyle().set("color", "#1565c0");
         } else {
             span.getStyle().remove("color");
+        }
+    }
+
+    private static class ActualFooter {
+
+        private final Span label;
+        private final List<Span> values = new ArrayList<>();
+
+        ActualFooter(String labelText) {
+            label = new Span(labelText);
+            label.addClassNames("actual-total-cell", "actual-total-label");
+
+            for (int i = 0; i < 27; i++) {
+                Span value = new Span("0.00");
+                value.addClassNames("actual-total-cell", "actual-total-value");
+                values.add(value);
+            }
+        }
+
+        Span value(int index) {
+            return values.get(index);
         }
     }
 

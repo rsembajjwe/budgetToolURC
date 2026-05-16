@@ -1445,8 +1445,12 @@ public class BudgetItemsService {
         )
                 .filter(Objects::nonNull)
                 .filter(coa -> coa.getCode() != null)
+                .filter(coa -> !coa.getCode().startsWith("231"))
                 .distinct()
-                .sorted(Comparator.comparing(COA::getCode, Comparator.nullsFirst(String::compareTo)))
+                .sorted(Comparator.comparing(
+                        COA::getCode,
+                        Comparator.nullsFirst(String::compareTo)
+                ))
                 .collect(Collectors.toList());
 
         UrcDeptSectionAnlDimbgt freightDept = urcDeptSectionAnlDimRepository.findByCustomANL_CODE("S020");
@@ -1561,45 +1565,99 @@ public class BudgetItemsService {
             boolean containsUnanalyzed,
             PeriodExtractor periodExtractor
     ) {
+
+        if (coa == null || coa.getCode() == null) {
+            return;
+        }
+
         String code = coa.getCode();
 
+        boolean reverseExpenseSign
+                = code.startsWith("2") || code.startsWith("3");
+
         if (isFreightCoa(coa, code, containsFreight)) {
-            setActualValuesForAllMonths(item, budget, month
-                    -> safeAbs(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(
-                            code,
-                            periodExtractor.getFinancialYearPeriodByMonth(budget, month)
-                    ))
-            );
+
+            setActualValuesForAllMonths(item, budget, month -> {
+
+                BigDecimal value = safe(
+                        salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(
+                                code,
+                                periodExtractor.getFinancialYearPeriodByMonth(budget, month)
+                        )
+                );
+
+                return reverseExpenseSign
+                        ? reverseSign(value)
+                        : value;
+            });
+
             return;
         }
 
         if (isPropertyCoa(code, containsProperty)) {
-            setActualValuesForAllMonths(item, budget, month
-                    -> safeAbs(salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(
-                            code,
-                            periodExtractor.getFinancialYearPeriodByMonth(budget, month)
-                    ))
-            );
+
+            setActualValuesForAllMonths(item, budget, month -> {
+
+                BigDecimal value = safe(
+                        salfldgRepository.findSumOfAmountByAccntCodeAndPeriod(
+                                code,
+                                periodExtractor.getFinancialYearPeriodByMonth(budget, month)
+                        )
+                );
+
+                return reverseExpenseSign
+                        ? reverseSign(value)
+                        : value;
+            });
+
             return;
         }
 
         if (containsUnanalyzed) {
-            setActualValuesForAllMonths(item, budget, month
-                    -> safeAbs(salfldgRepository.findTotalAmountByPeriodAndCodeAndUnAnalyzed(
-                            code,
-                            periodExtractor.getFinancialYearPeriodByMonth(budget, month),
-                            sections
-                    ))
-            );
+
+            setActualValuesForAllMonths(item, budget, month -> {
+
+                BigDecimal value = safe(
+                        salfldgRepository.findTotalAmountByPeriodAndCodeAndUnAnalyzed(
+                                code,
+                                periodExtractor.getFinancialYearPeriodByMonth(budget, month),
+                                sections
+                        )
+                );
+
+                return reverseExpenseSign
+                        ? reverseSign(value)
+                        : value;
+            });
+
         } else {
-            setActualValuesForAllMonths(item, budget, month
-                    -> safeAbs(salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(
-                            code,
-                            periodExtractor.getFinancialYearPeriodByMonth(budget, month),
-                            sections
-                    ))
-            );
+
+            setActualValuesForAllMonths(item, budget, month -> {
+
+                BigDecimal value = safe(
+                        salfldgRepository.findSumOfAmountByAccntCodeAndPeriodAndAnalT1In(
+                                code,
+                                periodExtractor.getFinancialYearPeriodByMonth(budget, month),
+                                sections
+                        )
+                );
+
+                return reverseExpenseSign
+                        ? reverseSign(value)
+                        : value;
+            });
         }
+    }
+
+    private BigDecimal reverseSign(BigDecimal value) {
+
+        if (value == null || value.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return value.compareTo(BigDecimal.ZERO) < 0
+                ? value.abs()
+                : value.negate();
     }
 
     private BigDecimal positive(BigDecimal value) {

@@ -1,19 +1,180 @@
 .procurement-plan-view {
-  display: block;
+  --procurement-surface: #ffffff;
+  --procurement-page: #f5f7fa;
+  --procurement-border: #dbe3ee;
+  --procurement-border-strong: #c8d2df;
+  --procurement-text: #172033;
+  --procurement-muted: #64748b;
+  --procurement-header: #eef3f8;
+  --procurement-hover: #f0f6ff;
+  --procurement-selected: #dcecff;
+  --procurement-accent: #1f6f5b;
+
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  background-color: #cccccc;
-}
-.procurement-plan-view [part~="cell"][column="subject"] {
-    /* Your styles for the 'subject' column in the procurement-plan-view class */
-}
-
-.procurement-plan-view #grid [part~="cell"][column="subject"] {
-    --vaadin-grid-cell-background: #cccccc; /* Replace #cccccc with the desired background color */
-}
-.procurement-plan-view .positive-value {
-    --vaadin-grid-cell-background: green;
+  min-height: 0;
+  background: var(--procurement-page);
+  color: var(--procurement-text);
 }
 
-.procurement-plan-view .negative-value {
-     --vaadin-grid-cell-background: red;
+.procurement-plan-view .procurement-flag-strip {
+  flex: 0 0 auto;
+  max-height: 6px;
+  object-fit: cover;
+}
+
+.procurement-plan-view .procurement-tabs {
+  flex: 1;
+  min-height: 0;
+  padding: var(--lumo-space-m);
+}
+
+.procurement-plan-view vaadin-tabsheet::part(tabs-container) {
+  background: var(--procurement-surface);
+  border: 1px solid var(--procurement-border);
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  padding: 0 var(--lumo-space-s);
+}
+
+.procurement-plan-view vaadin-tab {
+  color: var(--procurement-muted);
+  font-weight: 600;
+}
+
+.procurement-plan-view vaadin-tab[selected] {
+  color: var(--procurement-accent);
+}
+
+.procurement-plan-view .procurement-section {
+  height: 100%;
+  min-height: 0;
+  gap: var(--lumo-space-m);
+}
+
+.procurement-plan-view .procurement-toolbar {
+  flex-wrap: wrap;
+  gap: var(--lumo-space-s);
+  background: var(--procurement-surface);
+  border: 1px solid var(--procurement-border);
+  border-radius: 8px;
+  padding: var(--lumo-space-m);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.procurement-plan-view .procurement-toolbar vaadin-combo-box,
+.procurement-plan-view .procurement-toolbar vaadin-multi-select-combo-box {
+  min-width: 220px;
+}
+
+.procurement-plan-view .procurement-toolbar vaadin-button {
+  font-weight: 700;
+}
+
+.procurement-plan-view .procurement-secondary-action {
+  color: #7c2d12;
+}
+
+.procurement-plan-view .procurement-download-action {
+  color: #1e3a8a;
+}
+
+.procurement-plan-view .procurement-split {
+  min-height: 0;
+  background: var(--procurement-surface);
+  border: 1px solid var(--procurement-border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.procurement-plan-view .procurement-plan-panel,
+.procurement-plan-view .procurement-detail-panel {
+  min-width: 0;
+  min-height: 0;
+  background: var(--procurement-surface);
+}
+
+.procurement-plan-view .procurement-detail-header {
+  flex: 0 0 auto;
+  min-height: 52px;
+  border-bottom: 1px solid var(--procurement-border);
+  background: #fafcff;
+}
+
+.procurement-plan-view .procurement-panel-title {
+  font-size: var(--lumo-font-size-l);
+  font-weight: 800;
+  color: var(--procurement-text);
+  line-height: 1.2;
+}
+
+.procurement-plan-view vaadin-grid {
+  border: 0;
+  font-size: var(--lumo-font-size-s);
+  --lumo-primary-color-10pct: var(--procurement-selected);
+}
+
+.procurement-plan-view vaadin-grid::part(header-cell) {
+  min-height: 38px;
+  background: var(--procurement-header);
+  color: #263445;
+  font-weight: 800;
+  border-bottom: 1px solid var(--procurement-border-strong);
+}
+
+.procurement-plan-view vaadin-grid::part(footer-cell) {
+  background: #f8fafc;
+  color: var(--procurement-text);
+  font-weight: 800;
+  border-top: 2px solid var(--procurement-border-strong);
+}
+
+.procurement-plan-view vaadin-grid::part(body-cell) {
+  min-height: 34px;
+  border-color: #e5eaf0;
+}
+
+.procurement-plan-view vaadin-grid::part(body-cell):hover {
+  background: var(--procurement-hover);
+}
+
+.procurement-plan-view vaadin-grid::part(selected-row-cell) {
+  background: var(--procurement-selected);
+}
+
+.procurement-plan-view vaadin-grid::part(grouped-budget-item),
+.procurement-plan-view vaadin-grid::part(grouped-budget-item-cell) {
+  background: #fff7ed;
+  color: #7c2d12;
+  font-weight: 700;
+}
+
+.procurement-plan-view .procurement-master-grid::part(cell first-column-cell),
+.procurement-plan-view .procurement-detail-grid::part(cell first-column-cell) {
+  box-shadow: 3px 0 8px rgba(15, 23, 42, 0.08);
+}
+
+.procurement-plan-view vaadin-grid [theme~="badge"] {
+  min-width: 68px;
+  justify-content: center;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .procurement-plan-view .procurement-tabs {
+    padding: var(--lumo-space-s);
+  }
+
+  .procurement-plan-view .procurement-toolbar vaadin-combo-box,
+  .procurement-plan-view .procurement-toolbar vaadin-multi-select-combo-box,
+  .procurement-plan-view .procurement-toolbar vaadin-button {
+    width: 100%;
+  }
+
+  .procurement-plan-view .procurement-detail-header {
+    align-items: stretch;
+    gap: var(--lumo-space-s);
+  }
 }
