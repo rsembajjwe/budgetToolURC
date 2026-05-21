@@ -23,6 +23,8 @@ import com.methaltech.application.views.budgetReport.BudgetReportsView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HtmlComponent;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.accordion.Accordion;
+import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -113,6 +115,8 @@ public class ActualView extends Div {
 
     private Grid<BudgetItemsActuals> gridBudgetItems = new Grid<>(BudgetItemsActuals.class, false);
     private Grid<BudgetItemsActuals> gridBudgetItemsQuarterlyGrid = new Grid<>(BudgetItemsActuals.class, false);
+    private Grid<BudgetItemsActuals> gridRevenueMonthly = new Grid<>(BudgetItemsActuals.class, false);
+    private Grid<BudgetItemsActuals> gridRevenueQuarterly = new Grid<>(BudgetItemsActuals.class, false);
     private final SALFLDGService sampleSALFLDGService;
     private final BudgetItemsService budgetItemsService;
     private AuthenticatedUser authenticatedUser;
@@ -247,6 +251,14 @@ public class ActualView extends Div {
     private final ActualFooter monthlyExpenditureFooter = new ActualFooter("TOTAL EXPENDITURE");
     private final ActualFooter quarterlyRevenueFooter = new ActualFooter("TOTAL REVENUE");
     private final ActualFooter quarterlyExpenditureFooter = new ActualFooter("TOTAL EXPENDITURE");
+    private Span revenueBudgetMetric;
+    private Span revenueActualMetric;
+    private Span revenueVarianceMetric;
+    private Span expenditureBudgetMetric;
+    private Span expenditureActualMetric;
+    private Span expenditureVarianceMetric;
+    private Span netPositionMetric;
+    private Span executionRateMetric;
 
     @Autowired
 
@@ -319,6 +331,8 @@ public class ActualView extends Div {
         downloadWorkplan2.setEnabled(false);
         add(div);
 
+        add(createExecutiveSummary());
+
         TabSheet tabSheet = new TabSheet();
         tabSheet.addClassName("actual-tabs");
         tabSheet.add("Monthly Budget Vs Actuals", budgetCoaView());
@@ -345,6 +359,7 @@ public class ActualView extends Div {
         tabSheet.setSizeFull();
         tabSheet.setHeightFull();
         add(tabSheet);
+        showExpenseScopeNotification();
 
         downloadWorkplan.addClickListener(e -> {
             if (comboBoxD_Section.isEmpty() || budget.isEmpty()) {
@@ -381,11 +396,17 @@ public class ActualView extends Div {
         view.addSingleClickListener(v -> {
             if (!comboBoxD_Section.isEmpty() && !budget.isEmpty()) {
                 items = budgetItemsService.findDistinctBudgetItemses(budget.getValue(), comboBoxD_Section.getSelectedItems());
-                gridBudgetItems.setItems(items);
-                gridBudgetItemsQuarterlyGrid.setItems(items);
+                List<BudgetItemsActuals> revenueItems = filterByCode(items, "1", false);
+                List<BudgetItemsActuals> expenditureItems = filterByExpenditureCode(items);
+
+                gridRevenueMonthly.setItems(revenueItems);
+                gridRevenueQuarterly.setItems(revenueItems);
+                gridBudgetItems.setItems(expenditureItems);
+                gridBudgetItemsQuarterlyGrid.setItems(expenditureItems);
 
                 refreshMonthlyFooter(items);
                 refreshQuarterlyFooter(items);
+                refreshExecutiveSummary(items);
             }
         });
 
@@ -401,11 +422,67 @@ public class ActualView extends Div {
         });
     }
 
+    private void showExpenseScopeNotification() {
+        Notification notification = Notification.show(
+                "Note: expenditure figures in this report exclude asset depreciation.",
+                7000,
+                Notification.Position.TOP_CENTER
+        );
+        notification.addThemeVariants(NotificationVariant.LUMO_PRIMARY);
+    }
+
+    private Div createExecutiveSummary() {
+        revenueBudgetMetric = metricValue();
+        revenueActualMetric = metricValue();
+        revenueVarianceMetric = metricValue();
+        expenditureBudgetMetric = metricValue();
+        expenditureActualMetric = metricValue();
+        expenditureVarianceMetric = metricValue();
+        netPositionMetric = metricValue();
+        executionRateMetric = metricValue();
+
+        Div summary = new Div(
+                metricCard("Revenue Budget", revenueBudgetMetric, "Planned revenue", "revenue"),
+                metricCard("Revenue Actual", revenueActualMetric, "Collected revenue", "revenue"),
+                metricCard("Revenue Variance", revenueVarianceMetric, "Actual less budget", "variance"),
+                metricCard("Expenditure Budget", expenditureBudgetMetric, "Approved spend", "expenditure"),
+                metricCard("Expenditure Actual", expenditureActualMetric, "Posted expenditure", "expenditure"),
+                metricCard("Expenditure Balance", expenditureVarianceMetric, "Budget less actual", "variance"),
+                metricCard("Net Position", netPositionMetric, "Revenue actual less expenditure actual", "net"),
+                metricCard("Execution Rate", executionRateMetric, "Expenditure actual over budget", "rate")
+        );
+
+        summary.addClassName("actual-summary-panel");
+        refreshExecutiveSummary(List.of());
+
+        return summary;
+    }
+
+    private Div metricCard(String title, Span value, String caption, String tone) {
+        Span titleSpan = new Span(title);
+        titleSpan.addClassName("actual-metric-title");
+
+        Span captionSpan = new Span(caption);
+        captionSpan.addClassName("actual-metric-caption");
+
+        Div card = new Div(titleSpan, value, captionSpan);
+        card.addClassNames("actual-metric-card", "actual-metric-" + tone);
+
+        return card;
+    }
+
+    private Span metricValue() {
+        Span value = new Span("0.00");
+        value.addClassName("actual-metric-value");
+        return value;
+    }
+
     private Div budgetCoaView() {
         Div div = new Div();
         div.addClassNames("actual-grid-panel", "actual-monthly-panel");
         div.setSizeFull();
         div.setSizeFull();
+        configureSimpleMonthlyGrid(gridRevenueMonthly, monthlyRevenueFooter);
         gridBudgetItems.addClassNames("actual-grid", "actual-monthly-grid");
         gridBudgetItems.addThemeVariants(
                 GridVariant.LUMO_NO_BORDER,
@@ -806,11 +883,12 @@ public class ActualView extends Div {
 
         })).setHeader("Balance").setFlexGrow(0).setWidth("150px");
 
+        applyMonthlyColumnStyles();
         configureMonthlyFooterRows();
 
         gridBudgetItems.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
 
-        div.add(gridBudgetItems);
+        div.add(createActualAccordion("Revenue", gridRevenueMonthly, "Expenditure", gridBudgetItems));
         return div;
     }
 
@@ -819,6 +897,7 @@ public class ActualView extends Div {
         div.addClassNames("actual-grid-panel", "actual-quarterly-panel");
         div.setSizeFull();
         div.setSizeFull();
+        configureSimpleQuarterlyGrid(gridRevenueQuarterly, quarterlyRevenueFooter);
         gridBudgetItemsQuarterlyGrid.addClassNames("actual-grid", "actual-quarterly-grid");
         gridBudgetItemsQuarterlyGrid.addThemeVariants(
                 GridVariant.LUMO_NO_BORDER,
@@ -956,20 +1035,204 @@ public class ActualView extends Div {
 
         })).setHeader("Total Actual").setWidth("150px");
 
+        applyQuarterlyColumnStyles();
         configureQuarterlyFooterRows();
 
         gridBudgetItemsQuarterlyGrid.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
         //gridBudgetItems.setHeight("900px");
-        div.add(gridBudgetItemsQuarterlyGrid);
+        div.add(createActualAccordion("Revenue", gridRevenueQuarterly, "Expenditure", gridBudgetItemsQuarterlyGrid));
         return div;
     }
 
+    private Accordion createActualAccordion(
+            String firstTitle,
+            Grid<BudgetItemsActuals> firstGrid,
+            String secondTitle,
+            Grid<BudgetItemsActuals> secondGrid
+    ) {
+        firstGrid.setHeight("640px");
+        firstGrid.setWidthFull();
+        secondGrid.setHeight("640px");
+        secondGrid.setWidthFull();
+
+        Accordion accordion = new Accordion();
+        accordion.addClassName("actual-report-accordion");
+        accordion.setWidthFull();
+
+        AccordionPanel firstPanel = accordion.add(firstTitle, accordionGridContent(firstGrid));
+        AccordionPanel secondPanel = accordion.add(secondTitle, accordionGridContent(secondGrid));
+
+        firstPanel.addClassName("actual-accordion-panel");
+        secondPanel.addClassName("actual-accordion-panel");
+        accordion.open(0);
+
+        return accordion;
+    }
+
+    private Div accordionGridContent(Grid<BudgetItemsActuals> grid) {
+        Div content = new Div(grid);
+        content.addClassName("actual-accordion-content");
+        content.setWidthFull();
+        content.setHeight("660px");
+        return content;
+    }
+
+    private void configureSimpleMonthlyGrid(Grid<BudgetItemsActuals> grid, ActualFooter footer) {
+        grid.addClassNames("actual-grid", "actual-monthly-grid", "actual-revenue-grid");
+        grid.addThemeVariants(
+                GridVariant.LUMO_NO_BORDER,
+                GridVariant.LUMO_WRAP_CELL_CONTENT,
+                GridVariant.LUMO_ROW_STRIPES,
+                GridVariant.LUMO_COLUMN_BORDERS
+        );
+
+        Column<BudgetItemsActuals> code = grid.addColumn(this::safeCode)
+                .setHeader("Code")
+                .setWidth("80px")
+                .setFlexGrow(0)
+                .setSortable(true);
+
+        Column<BudgetItemsActuals> description = grid.addColumn(BudgetItemsActuals::getItem)
+                .setHeader("Description")
+                .setWidth("320px")
+                .setResizable(true);
+
+        List<Column<BudgetItemsActuals>> columns = new ArrayList<>();
+        columns.add(addSimpleMoneyColumn(grid, "Jul", BudgetItemsActuals::getJul, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Jul Actual", BudgetItemsActuals::getJulA, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Aug", BudgetItemsActuals::getAug, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Aug Actual", BudgetItemsActuals::getAugA, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Sep", BudgetItemsActuals::getSep, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Sep Actual", BudgetItemsActuals::getSepA, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Oct", BudgetItemsActuals::getOct, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Oct Actual", BudgetItemsActuals::getOctA, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Nov", BudgetItemsActuals::getNov, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Nov Actual", BudgetItemsActuals::getNovA, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Dec", BudgetItemsActuals::getDec, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Dec Actual", BudgetItemsActuals::getDecA, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Jan", BudgetItemsActuals::getJan, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Jan Actual", BudgetItemsActuals::getJanA, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Feb", BudgetItemsActuals::getFeb, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Feb Actual", BudgetItemsActuals::getFebA, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Mar", BudgetItemsActuals::getMar, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Mar Actual", BudgetItemsActuals::getMarA, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Apr", BudgetItemsActuals::getApr, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Apr Actual", BudgetItemsActuals::getAprA, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "May", BudgetItemsActuals::getMay, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "May Actual", BudgetItemsActuals::getMayA, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Jun", BudgetItemsActuals::getJun, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Jun Actual", BudgetItemsActuals::getJunA, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Total", BudgetItemsActuals::getTotal, "actual-budget-column actual-total-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Total Actual", BudgetItemsActuals::getTotalA, "actual-actual-column actual-total-column"));
+        columns.add(addSimpleBalanceColumn(grid));
+
+        FooterRow row = grid.appendFooterRow();
+        row.getCell(code).setComponent(footerTextSpan("1", "actual-total-code"));
+        row.getCell(description).setComponent(footer.label);
+        for (int i = 0; i < columns.size(); i++) {
+            row.getCell(columns.get(i)).setComponent(footer.value(i));
+        }
+    }
+
+    private void configureSimpleQuarterlyGrid(Grid<BudgetItemsActuals> grid, ActualFooter footer) {
+        grid.addClassNames("actual-grid", "actual-quarterly-grid", "actual-revenue-grid");
+        grid.addThemeVariants(
+                GridVariant.LUMO_NO_BORDER,
+                GridVariant.LUMO_WRAP_CELL_CONTENT,
+                GridVariant.LUMO_ROW_STRIPES,
+                GridVariant.LUMO_COLUMN_BORDERS
+        );
+
+        Column<BudgetItemsActuals> code = grid.addColumn(this::safeCode)
+                .setHeader("Code")
+                .setWidth("80px")
+                .setFlexGrow(0)
+                .setSortable(true);
+
+        Column<BudgetItemsActuals> description = grid.addColumn(BudgetItemsActuals::getItem)
+                .setHeader("Description")
+                .setWidth("320px")
+                .setResizable(true);
+
+        List<Column<BudgetItemsActuals>> columns = new ArrayList<>();
+        columns.add(addSimpleMoneyColumn(grid, "Qtr1", BudgetItemsActuals::getQtr1, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Qtr1 Actual", BudgetItemsActuals::getQtr1A, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Qtr2", BudgetItemsActuals::getQtr2, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Qtr2 Actual", BudgetItemsActuals::getQtr2A, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Qtr3", BudgetItemsActuals::getQtr3, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Qtr3 Actual", BudgetItemsActuals::getQtr3A, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Qtr4", BudgetItemsActuals::getQtr4, "actual-budget-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Qtr4 Actual", BudgetItemsActuals::getQtr4A, "actual-actual-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Total", BudgetItemsActuals::getTotal, "actual-budget-column actual-total-column"));
+        columns.add(addSimpleMoneyColumn(grid, "Total Actual", BudgetItemsActuals::getTotalA, "actual-actual-column actual-total-column"));
+
+        FooterRow row = grid.appendFooterRow();
+        row.getCell(code).setComponent(footerTextSpan("1", "actual-total-code"));
+        row.getCell(description).setComponent(footer.label);
+        for (int i = 0; i < columns.size(); i++) {
+            row.getCell(columns.get(i)).setComponent(footer.value(i));
+        }
+    }
+
+    private Column<BudgetItemsActuals> addSimpleMoneyColumn(
+            Grid<BudgetItemsActuals> grid,
+            String header,
+            Function<BudgetItemsActuals, BigDecimal> getter,
+            String className
+    ) {
+        return grid.addColumn(new ComponentRenderer<>(item -> {
+            Span span = createSpan(getter.apply(item));
+            span.getElement().getThemeList().add("badge");
+            span.addClassName(className.contains("actual-actual-column")
+                    ? "actual-actual-value"
+                    : "actual-budget-value");
+            return span;
+        }))
+                .setHeader(header)
+                .setWidth("150px")
+                .setFlexGrow(0)
+                .setClassNameGenerator(item -> className);
+    }
+
+    private Column<BudgetItemsActuals> addSimpleBalanceColumn(Grid<BudgetItemsActuals> grid) {
+        return grid.addColumn(new ComponentRenderer<>(item -> {
+            BigDecimal budgetValue = nz(item.getTotal());
+            BigDecimal actualValue = nz(item.getTotalA());
+            Span span = createSpan(budgetValue.subtract(actualValue));
+            span.getElement().getThemeList().add("badge success");
+            return span;
+        }))
+                .setHeader("Balance")
+                .setWidth("150px")
+                .setFlexGrow(0)
+                .setClassNameGenerator(item -> "actual-balance-column");
+    }
+
     private void configureMonthlyFooterRows() {
-        configureMonthlyFooterRow(gridBudgetItems.appendFooterRow(), monthlyRevenueFooter, "1");
         configureMonthlyFooterRow(gridBudgetItems.appendFooterRow(), monthlyExpenditureFooter, "2/3");
     }
 
+    private void applyMonthlyColumnStyles() {
+        applyColumnStyle("actual-budget-column", julColumn, augColumn, sepColumn, octColumn, novColumn, decColumn,
+                janColumn, febColumn, marColumn, aprColumn, mayColumn, junColumn);
+        applyColumnStyle("actual-actual-column", julAColumn, augAColumn, sepAColumn, octAColumn, novAColumn, decAColumn,
+                janAColumn, febAColumn, marAColumn, aprAColumn, mayAColumn, junAColumn);
+        applyColumnStyle("actual-budget-column actual-total-column", totalColumn);
+        applyColumnStyle("actual-actual-column actual-total-column", totalAColumn);
+        applyColumnStyle("actual-balance-column", balanceColumn);
+    }
+
+    @SafeVarargs
+    private final void applyColumnStyle(String className, Column<BudgetItemsActuals>... columns) {
+        for (Column<BudgetItemsActuals> column : columns) {
+            if (column != null) {
+                column.setClassNameGenerator(item -> className);
+            }
+        }
+    }
+
     private void configureMonthlyFooterRow(FooterRow row, ActualFooter footer, String codeLabel) {
+        applyMonthlyFooterStyles(footer);
         Span code = footerTextSpan(codeLabel, "actual-total-code");
         row.getCell(codeColumn).setComponent(code);
         row.getCell(descriptionColumn).setComponent(footer.label);
@@ -1003,11 +1266,18 @@ public class ActualView extends Div {
     }
 
     private void configureQuarterlyFooterRows() {
-        configureQuarterlyFooterRow(gridBudgetItemsQuarterlyGrid.appendFooterRow(), quarterlyRevenueFooter, "1");
         configureQuarterlyFooterRow(gridBudgetItemsQuarterlyGrid.appendFooterRow(), quarterlyExpenditureFooter, "2/3");
     }
 
+    private void applyQuarterlyColumnStyles() {
+        applyColumnStyle("actual-budget-column", qtr1Column, qtr2Column, qtr3Column, qtr4Column);
+        applyColumnStyle("actual-actual-column", qtr1AColumn, qtr2AColumn, qtr3AColumn, qtr4AColumn);
+        applyColumnStyle("actual-budget-column actual-total-column", totalQtrColumn);
+        applyColumnStyle("actual-actual-column actual-total-column", totalAQtrColumn);
+    }
+
     private void configureQuarterlyFooterRow(FooterRow row, ActualFooter footer, String codeLabel) {
+        applyQuarterlyFooterStyles(footer);
         row.getCell(qtrCodeColumn).setComponent(footerTextSpan(codeLabel, "actual-total-code"));
         row.getCell(qtrDescriptionColumn).setComponent(footer.label);
         row.getCell(qtr1Column).setComponent(footer.value(0));
@@ -1020,6 +1290,23 @@ public class ActualView extends Div {
         row.getCell(qtr4AColumn).setComponent(footer.value(7));
         row.getCell(totalQtrColumn).setComponent(footer.value(8));
         row.getCell(totalAQtrColumn).setComponent(footer.value(9));
+    }
+
+    private void applyMonthlyFooterStyles(ActualFooter footer) {
+        for (int i = 0; i <= 23; i++) {
+            footer.value(i).addClassName(i % 2 == 0 ? "actual-budget-total" : "actual-actual-total");
+        }
+        footer.value(24).addClassNames("actual-budget-total", "actual-grand-total");
+        footer.value(25).addClassNames("actual-actual-total", "actual-grand-total");
+        footer.value(26).addClassName("actual-balance-total");
+    }
+
+    private void applyQuarterlyFooterStyles(ActualFooter footer) {
+        for (int i = 0; i <= 7; i++) {
+            footer.value(i).addClassName(i % 2 == 0 ? "actual-budget-total" : "actual-actual-total");
+        }
+        footer.value(8).addClassNames("actual-budget-total", "actual-grand-total");
+        footer.value(9).addClassNames("actual-actual-total", "actual-grand-total");
     }
 
     private BigDecimal nz(BigDecimal value) {
@@ -1048,6 +1335,80 @@ public class ActualView extends Div {
 
         updateQuarterlyFooter(quarterlyRevenueFooter, revenueItems);
         updateQuarterlyFooter(quarterlyExpenditureFooter, expenditureItems);
+    }
+
+    private void refreshExecutiveSummary(List<BudgetItemsActuals> items) {
+        List<BudgetItemsActuals> revenueItems = filterByCode(items, "1", false);
+        List<BudgetItemsActuals> expenditureItems = filterByExpenditureCode(items);
+
+        BigDecimal revenueBudget = sum(itemsOrEmpty(revenueItems), BudgetItemsActuals::getTotal);
+        BigDecimal revenueActual = sum(itemsOrEmpty(revenueItems), BudgetItemsActuals::getTotalA);
+        BigDecimal revenueVariance = revenueActual.subtract(revenueBudget);
+
+        BigDecimal expenditureBudget = sum(itemsOrEmpty(expenditureItems), BudgetItemsActuals::getTotal);
+        BigDecimal expenditureActual = sum(itemsOrEmpty(expenditureItems), BudgetItemsActuals::getTotalA);
+        BigDecimal expenditureBalance = expenditureBudget.subtract(expenditureActual);
+
+        BigDecimal netPosition = revenueActual.subtract(expenditureActual);
+
+        revenueBudgetMetric.setText(formatFooter(revenueBudget));
+        revenueActualMetric.setText(formatFooter(revenueActual));
+        revenueVarianceMetric.setText(formatSigned(revenueVariance));
+        expenditureBudgetMetric.setText(formatFooter(expenditureBudget));
+        expenditureActualMetric.setText(formatFooter(expenditureActual));
+        expenditureVarianceMetric.setText(formatSigned(expenditureBalance));
+        netPositionMetric.setText(formatSigned(netPosition));
+        executionRateMetric.setText(formatPercent(expenditureActual, expenditureBudget));
+
+        setMetricTone(revenueVarianceMetric, revenueVariance);
+        setMetricTone(expenditureVarianceMetric, expenditureBalance);
+        setMetricTone(netPositionMetric, netPosition);
+    }
+
+    private List<BudgetItemsActuals> itemsOrEmpty(List<BudgetItemsActuals> items) {
+        return items == null ? List.of() : items;
+    }
+
+    private String formatSigned(BigDecimal value) {
+        BigDecimal safeValue = value == null ? BigDecimal.ZERO : value;
+        String formatted = formatFooter(safeValue.abs());
+
+        if (safeValue.compareTo(BigDecimal.ZERO) > 0) {
+            return "+" + formatted;
+        }
+
+        if (safeValue.compareTo(BigDecimal.ZERO) < 0) {
+            return "-" + formatted;
+        }
+
+        return formatted;
+    }
+
+    private String formatPercent(BigDecimal numerator, BigDecimal denominator) {
+        BigDecimal safeDenominator = denominator == null ? BigDecimal.ZERO : denominator;
+        if (safeDenominator.compareTo(BigDecimal.ZERO) == 0) {
+            return "0.0%";
+        }
+
+        BigDecimal safeNumerator = numerator == null ? BigDecimal.ZERO : numerator;
+        BigDecimal percent = safeNumerator
+                .multiply(BigDecimal.valueOf(100))
+                .divide(safeDenominator, 1, java.math.RoundingMode.HALF_UP);
+
+        return percent + "%";
+    }
+
+    private void setMetricTone(Span metric, BigDecimal value) {
+        metric.removeClassNames("actual-positive", "actual-negative", "actual-neutral");
+
+        BigDecimal safeValue = value == null ? BigDecimal.ZERO : value;
+        if (safeValue.compareTo(BigDecimal.ZERO) > 0) {
+            metric.addClassName("actual-positive");
+        } else if (safeValue.compareTo(BigDecimal.ZERO) < 0) {
+            metric.addClassName("actual-negative");
+        } else {
+            metric.addClassName("actual-neutral");
+        }
     }
 
     private List<BudgetItemsActuals> filterByExpenditureCode(List<BudgetItemsActuals> source) {
@@ -3777,18 +4138,18 @@ public class ActualView extends Div {
             double totalActual = 0;
 
             for (BigDecimal bd : new BigDecimal[]{
-                h.getJul(), h.getJulA().abs(),
-                h.getAug(), h.getAugA().abs(),
-                h.getSep(), h.getSepA().abs(),
-                h.getOct(), h.getOctA().abs(),
-                h.getNov(), h.getNovA().abs(),
-                h.getDec(), h.getDecA().abs(),
-                h.getJan(), h.getJanA().abs(),
-                h.getFeb(), h.getFebA().abs(),
-                h.getMar(), h.getMarA().abs(),
-                h.getApr(), h.getAprA().abs(),
-                h.getMay(), h.getMayA().abs(),
-                h.getJun(), h.getJunA().abs()
+                h.getJul(), h.getJulA(),
+                h.getAug(), h.getAugA(),
+                h.getSep(), h.getSepA(),
+                h.getOct(), h.getOctA(),
+                h.getNov(), h.getNovA(),
+                h.getDec(), h.getDecA(),
+                h.getJan(), h.getJanA(),
+                h.getFeb(), h.getFebA(),
+                h.getMar(), h.getMarA(),
+                h.getApr(), h.getAprA(),
+                h.getMay(), h.getMayA(),
+                h.getJun(), h.getJunA()
             }) {
                 double val = bd != null ? bd.doubleValue() : 0;
                 createMoneyCell(row, col++, val, st.get(SKey.MONEY));

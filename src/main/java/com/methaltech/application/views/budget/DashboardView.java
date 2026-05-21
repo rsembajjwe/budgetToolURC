@@ -193,6 +193,12 @@ public class DashboardView extends VerticalLayout {
         setSpacing(false);
         setMargin(false);
         addClassName("dashboard-view");
+        overviewTab.addClassName("dashboard-nav-tab");
+        departmentTab.addClassName("dashboard-nav-tab");
+        revenueTab.addClassName("dashboard-nav-tab");
+        overviewTab.getElement().setAttribute("aria-label", "Overview");
+        departmentTab.getElement().setAttribute("aria-label", "Department Analysis");
+        revenueTab.getElement().setAttribute("aria-label", "Revenue Analysis");
 
         loadFiscalYearData();
         createHeader();
@@ -203,18 +209,18 @@ public class DashboardView extends VerticalLayout {
         Div header = new Div();
         header.addClassName("dashboard-header");
         header.setWidthFull();
-        header.setHeight("72px"); // optional fixed height
 
         HorizontalLayout headerContent = new HorizontalLayout();
+        headerContent.addClassName("dashboard-header-content");
         headerContent.setWidthFull();
         headerContent.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
         headerContent.setAlignItems(FlexComponent.Alignment.CENTER);
         headerContent.setPadding(false);
         headerContent.setSpacing(false);
         headerContent.setMargin(false);
-        headerContent.setHeight("72px");
 
         HorizontalLayout leftSide = new HorizontalLayout();
+        leftSide.addClassName("dashboard-header-left");
         leftSide.setAlignItems(FlexComponent.Alignment.CENTER);
         leftSide.setSpacing(true);
         leftSide.setPadding(false);
@@ -235,6 +241,7 @@ public class DashboardView extends VerticalLayout {
         logo.add(logoText);
 
         VerticalLayout titleGroup = new VerticalLayout();
+        titleGroup.addClassName("dashboard-title-group");
         titleGroup.setSpacing(false);
         titleGroup.setPadding(false);
         titleGroup.setMargin(false);
@@ -251,7 +258,7 @@ public class DashboardView extends VerticalLayout {
         // Fiscal year layout
         HorizontalLayout fiscalYearLayout = new HorizontalLayout();
         fiscalYearLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        fiscalYearLayout.addClassName("fiscal-year");
+        fiscalYearLayout.addClassNames("dashboard-filter", "fiscal-year");
         fiscalYearLayout.setSpacing(true);
         fiscalYearLayout.setPadding(false);
         fiscalYearLayout.setMargin(false);
@@ -284,7 +291,7 @@ public class DashboardView extends VerticalLayout {
         // Organisation layout
         HorizontalLayout organisationLayout = new HorizontalLayout();
         organisationLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        organisationLayout.addClassName("fiscal-year");
+        organisationLayout.addClassNames("dashboard-filter", "fiscal-year");
         organisationLayout.setSpacing(true);
         organisationLayout.setPadding(false);
         organisationLayout.setMargin(false);
@@ -322,7 +329,7 @@ public class DashboardView extends VerticalLayout {
         // Quarter layout
         HorizontalLayout quarterLayout = new HorizontalLayout();
         quarterLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-        quarterLayout.addClassName("fiscal-year");
+        quarterLayout.addClassNames("dashboard-filter", "fiscal-year");
         quarterLayout.setSpacing(true);
         quarterLayout.setPadding(false);
         quarterLayout.setMargin(false);
@@ -354,6 +361,7 @@ public class DashboardView extends VerticalLayout {
         leftSide.add(logoSection, fiscalYearLayout, organisationLayout, quarterLayout);
 
         HorizontalLayout rightSide = new HorizontalLayout();
+        rightSide.addClassName("dashboard-header-actions");
         rightSide.setAlignItems(FlexComponent.Alignment.CENTER);
         rightSide.setSpacing(true);
         rightSide.setPadding(false);
@@ -362,6 +370,7 @@ public class DashboardView extends VerticalLayout {
 
         Button notificationButton = new Button(new Icon(VaadinIcon.BELL));
         notificationButton.addClassName("notification-button");
+        notificationButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         notificationButton.addClickListener(e -> {
             showNotification("No new notifications", NotificationVariant.LUMO_CONTRAST);
         });
@@ -373,6 +382,7 @@ public class DashboardView extends VerticalLayout {
 
         Button refreshButton = new Button("Refresh", new Icon(VaadinIcon.REFRESH));
         refreshButton.addClassName("primary-action");
+        refreshButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
         refreshButton.addClickListener(e -> {
             refreshDashboard();
             showNotification("Dashboard refreshed successfully!", NotificationVariant.LUMO_SUCCESS);
@@ -380,17 +390,21 @@ public class DashboardView extends VerticalLayout {
 
         Button exportButton = new Button("Export Pdf", new Icon(VaadinIcon.DOWNLOAD));
         exportButton.addClassName("secondary-action");
+        exportButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_SMALL);
         exportButton.addClickListener(e -> generatePDFReport());
 
         Button exportwordButton = new Button("Export Word", new Icon(VaadinIcon.DOWNLOAD));
         exportwordButton.addClassName("secondary-action");
+        exportwordButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_SMALL);
         exportwordButton.addClickListener(e -> generateWordReport());
 
         Button settingsButton = new Button(new Icon(VaadinIcon.COG));
         settingsButton.addClassName("tertiary-action");
+        settingsButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
         Button userButton = new Button(new Icon(VaadinIcon.USER));
         userButton.addClassName("tertiary-action");
+        userButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
         rightSide.add(notificationButton, refreshButton, exportButton, exportwordButton, settingsButton, userButton);
 
@@ -404,7 +418,7 @@ public class DashboardView extends VerticalLayout {
         contentContainer.setSpacing(true);
         contentContainer.setPadding(false);
         contentContainer.setMargin(false);
-        contentContainer.addClassName("content-container");
+        contentContainer.addClassNames("content-container", "dashboard-content-container");
         contentContainer.getStyle()
                 .set("overflow", "hidden")
                 .set("min-height", "0");
@@ -414,7 +428,7 @@ public class DashboardView extends VerticalLayout {
         dashboardTabs.addSelectedChangeListener(event -> showSelectedTab(event.getSelectedTab()));
 
         tabContent.setSizeFull();
-        tabContent.addClassName("dashboard-tab-content");
+        tabContent.addClassNames("dashboard-tab-content", "dashboard-content-panel");
         tabContent.getStyle()
                 .set("overflow", "auto")
                 .set("min-height", "0");
@@ -503,6 +517,8 @@ public class DashboardView extends VerticalLayout {
             Tabs tabsSummary = new Tabs(overviewSummaryTab, generalSummaryPhysicalTab);
             tabsSummary.setWidthFull();
             tabsSummary.addClassName("summary-tabs");
+            overviewSummaryTab.addClassName("dashboard-nav-tab");
+            generalSummaryPhysicalTab.addClassName("dashboard-nav-tab");
 
             Component summaryExpenditurePage = budgetCoaQtrGeneral(currentBudget, deptSections);
             Component generalPhysicalPage = createOverallGeneralPhysicalPerformanceContent(currentBudget);

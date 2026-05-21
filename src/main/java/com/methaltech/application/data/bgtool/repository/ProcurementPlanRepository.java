@@ -69,4 +69,18 @@ public interface ProcurementPlanRepository extends JpaRepository<ProcurementPlan
 
     ProcurementPlan findFirstByProcPlanBudgetItems(BudgetItems budgetItem);
 
+    @Modifying
+    @Query(value = """
+        DELETE FROM proc_plan_budget_items
+        WHERE budget_item_id IN (:ids)
+    """, nativeQuery = true)
+    void detachBudgetItems(@Param("ids") List<Long> ids);
+
+    @Modifying
+    @Query(value = """
+        DELETE FROM proc_plan_budget_items
+        WHERE budget_item_id = (:ids)
+    """, nativeQuery = true)
+    void detachBudgetItems(@Param("ids") Long ids);
+
 }

@@ -47,7 +47,7 @@ public class QuarterlyActualsService {
     }
 
     public List<QuarterlyActuals> getQuarterlyActuals(String analT1, Set<Integer> periods, Urc_Activities activity) {
-        List<SALFLDGProjection> salfldgs = SALFLDGRepository.findByPeriodAndDepartmentExpenditures(periods, analT1);
+        List<SALFLDGProjection> salfldgs = SALFLDGRepository.findByPeriodAndDepartmentExpenditures2(periods, analT1);
         return salfldgs.stream().map(s -> {
             QuarterlyActuals qa = new QuarterlyActuals();
             qa.setAccountCode(s.getAccntCode());
@@ -68,6 +68,17 @@ public class QuarterlyActualsService {
             return List.of();
         }
         return quarterlyActualsRepository.findByPeriodIn(periods);
+    }
+
+    public int deleteQuarterlyActualsByAccountCodeStartingWith231() {
+        return quarterlyActualsRepository.deleteByAccountCodeStartingWith231();
+    }
+
+    public int deleteQuarterlyActualsByAccountCodeStartingWith231(Urc_Activities activity, Set<Integer> periods) {
+        if (activity == null || periods == null || periods.isEmpty()) {
+            return 0;
+        }
+        return quarterlyActualsRepository.deleteByAccountCodeStartingWith231AndActivityAndPeriodIn(activity, periods);
     }
 
 }

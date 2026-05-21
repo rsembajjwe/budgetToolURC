@@ -10,8 +10,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface QuarterlyActualsRepository extends JpaRepository<QuarterlyActuals, Long> {
@@ -35,5 +37,26 @@ public interface QuarterlyActualsRepository extends JpaRepository<QuarterlyActua
     BigDecimal sumAmountByPeriodsAndActivity(
             @Param("periods") Set<Integer> periods,
             @Param("activity") Urc_Activities activity
+    );
+
+    @Transactional
+    @Modifying
+    @Query("""
+        DELETE FROM QuarterlyActuals q
+        WHERE q.accountCode LIKE '231%'
+    """)
+    int deleteByAccountCodeStartingWith231();
+
+    @Transactional
+    @Modifying
+    @Query("""
+        DELETE FROM QuarterlyActuals q
+        WHERE q.accountCode LIKE '231%'
+          AND q.activity = :activity
+          AND q.period IN :periods
+    """)
+    int deleteByAccountCodeStartingWith231AndActivityAndPeriodIn(
+            @Param("activity") Urc_Activities activity,
+            @Param("periods") Set<Integer> periods
     );
 }

@@ -38,6 +38,7 @@ import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.contextmenu.GridContextMenu;
 import com.vaadin.flow.component.grid.dnd.GridDropMode;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Hr;
@@ -133,6 +134,16 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
     private BigDecimal totalBudget = BigDecimal.ZERO;
     private BigDecimal totalActualExpenditure = BigDecimal.ZERO;
     private BigDecimal cumReleasedFund = BigDecimal.ZERO;
+    private Span budgetMetric;
+    private Span releasedMetric;
+    private Span spentMetric;
+    private Span absorptionMetric;
+    private Span fiscalYearMetric;
+    private Span sectionMetric;
+    private Span quarterMetric;
+    private Span activitiesMetric;
+    private Span completionMetric;
+    private Span statusMetric;
 
     private QuarterlyActuals draggedItem = null;
     private final Binder<SectionBudgetPerformance> binderSectionBudgetPerformance
@@ -187,24 +198,92 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         configureSubmit();
 
         HorizontalLayout headMenu = new HorizontalLayout(
-                budgetComboBox, sectionComboBox, qtrComboBox, importPhyPerf,
-                submitButton, downloadButton, sectionMultiComboBox
-        );
+                budgetComboBox, sectionComboBox, qtrComboBox, importPhyPerf, downloadButton);
+        headMenu.addClassName("performance-toolbar");
         headMenu.setAlignItems(Alignment.BASELINE);
 
         contextMenuPriorityArea.setOpenOnClick(true);
         contextMenuPhysicalGrid.setOpenOnClick(true);
 
+        add(createReportHeader());
         add(headMenu);
-        add(new H3("FINANCIAL & PHYSICAL PERFORMANCE REPORT"));
-        add(new H3("1. FINANCIAL PERFORMANCE"));
+        add(createSummaryPanel());
 
-        configureFinancialGridByPriorityArea();
-        add(financialGrid);
-
-        add(new H3("2. PHYSICAL PERFORMANCE"));
         configurePhysicalGrid(activities);
-        add(physicalGrid);
+        add(createReportSection(
+                "Physical Performance",
+                "Activity-level targets, achievements and variance explanations for the selected quarter.",
+                physicalGrid
+        ));
+    }
+
+    private Div createReportHeader() {
+        H3 title = new H3("Physical Performance Report");
+        title.addClassName("performance-page-title");
+
+        Span subtitle = new Span("Quarterly activity delivery, target achievement and variance reporting");
+        subtitle.addClassName("performance-page-subtitle");
+
+        Div text = new Div(title, subtitle);
+        text.addClassName("performance-title-block");
+
+        Div header = new Div(text);
+        header.addClassName("performance-page-header");
+        return header;
+    }
+
+    private Div createSummaryPanel() {
+        fiscalYearMetric = metricValue();
+        sectionMetric = metricValue();
+        quarterMetric = metricValue();
+        activitiesMetric = metricValue();
+        completionMetric = metricValue();
+        statusMetric = metricValue();
+
+        Div panel = new Div(
+                metricCard("Financial Year", fiscalYearMetric, "Selected budget cycle", "budget"),
+                metricCard("Cost Centre", sectionMetric, "Selected reporting section", "released"),
+                metricCard("Quarter", quarterMetric, "Current reporting period", "spent"),
+                metricCard("Activities", activitiesMetric, "Activities in selected section", "activities"),
+                metricCard("Completion", completionMetric, "Activities ready for submission", "completion"),
+                metricCard("Report Status", statusMetric, "Submission state", "absorption")
+        );
+        panel.addClassName("performance-summary-panel");
+        refreshSummaryPanel();
+        return panel;
+    }
+
+    private Div metricCard(String title, Span value, String caption, String tone) {
+        Span titleSpan = new Span(title);
+        titleSpan.addClassName("performance-metric-title");
+
+        Span captionSpan = new Span(caption);
+        captionSpan.addClassName("performance-metric-caption");
+
+        Div card = new Div(titleSpan, value, captionSpan);
+        card.addClassNames("performance-metric-card", "performance-metric-" + tone);
+        return card;
+    }
+
+    private Span metricValue() {
+        Span value = new Span("0.00");
+        value.addClassName("performance-metric-value");
+        return value;
+    }
+
+    private Div createReportSection(String title, String subtitle, Component content) {
+        H3 heading = new H3(title);
+        heading.addClassName("performance-section-title");
+
+        Span description = new Span(subtitle);
+        description.addClassName("performance-section-subtitle");
+
+        Div header = new Div(heading, description);
+        header.addClassName("performance-section-header");
+
+        Div section = new Div(header, content);
+        section.addClassName("performance-report-section");
+        return section;
     }
 
     private void configureUser() {
@@ -286,6 +365,9 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
     }
 
     private void configureButtonActions() {
+        importPhyPerf.addClassName("performance-secondary-action");
+        submitButton.addClassName("performance-primary-action");
+        downloadButton.addClassName("performance-download-action");
         submitButton.addClickListener(e -> handleSubmit());
         downloadButton.addClickListener(e -> handleDownload());
     }
@@ -372,6 +454,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             submitButton.setEnabled(false);
             downloadButton.setEnabled(false);
             sectionMultiComboBox.setEnabled(false);
+            refreshSummaryPanel();
             return;
         }
 
@@ -431,6 +514,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         } else {
             sectionMultiComboBox.clear();
         }
+        refreshSummaryPanel();
     }
 
     private void disableElements() {
@@ -482,14 +566,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         chosenDsection = selectedSection;
         applyQuarterFromCombo(selectedQuarter);
 
-        refreshFinancialGrid();
-
-        if (financialGrid.getDataProvider() != null) {
-            financialGrid.getDataProvider().refreshAll();
-        }
-        if (physicalGrid.getDataProvider() != null) {
-            physicalGrid.getDataProvider().refreshAll();
-        }
+        refreshPhysicalReport();
 
         if (!Objects.equals(budgetComboBox.getValue(), selectedBudget)) {
             budgetComboBox.setValue(selectedBudget);
@@ -502,12 +579,17 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         }
     }
 
-    private void refreshFinancialGrid() {
+    private void refreshPhysicalReport() {
         chosenDsection = sectionComboBox.getValue();
 
         if (chosenDsection == null || chosenBudget == null || qtr == 0) {
-            financialGrid.setItems(Collections.emptyList());
+            acts = new ArrayList<>();
+            totalActualExpenditure = BigDecimal.ZERO;
+            cumRealiseSpent = BigDecimal.ZERO;
+            totalBudget = BigDecimal.ZERO;
+            cumReleasedFund = BigDecimal.ZERO;
             physicalGrid.setItems(Collections.emptyList());
+            refreshSummaryPanel();
             return;
         }
 
@@ -519,11 +601,53 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         totalBudget = budgetItemsService.calculateTotalDeptExpenditure2(chosenBudget, chosenDsection);
         cumReleasedFund = cumFundsReleased();
 
-        List<PriorityArea> priorityAreas
-                = URC_Priority_AreasService.getDistinctPriorityAreasByBudget(chosenBudget.getStartDate());
-
-        financialGrid.setItems(priorityAreas);
         physicalGrid.setItems(acts);
+        refreshSummaryPanel();
+    }
+
+    private void refreshSummaryPanel() {
+        if (fiscalYearMetric == null) {
+            return;
+        }
+
+        fiscalYearMetric.setText(chosenBudget == null ? "Not selected" : chosenBudget.getFinancialYear());
+        sectionMetric.setText(chosenDsection == null ? "Not selected" : nvl(chosenDsection.getNAME(), "Not selected"));
+        quarterMetric.setText(qtr == 0 ? "Not selected" : "Qtr " + qtr);
+        activitiesMetric.setText(String.valueOf(acts == null ? 0 : acts.size()));
+
+        long completeActivities = acts == null ? 0 : acts.stream()
+                .filter(activity -> isActivityCompleteForQuarter(activity, qtr))
+                .count();
+        completionMetric.setText(completeActivities + " / " + (acts == null ? 0 : acts.size()));
+        statusMetric.setText(submit ? "Submitted" : "In progress");
+        statusMetric.removeClassNames("performance-good", "performance-warning");
+        if (submit) {
+            statusMetric.addClassName("performance-good");
+        } else {
+            statusMetric.addClassName("performance-warning");
+        }
+    }
+
+    private boolean isActivityCompleteForQuarter(Urc_Activities activity, int quarter) {
+        if (activity == null || quarter == 0) {
+            return false;
+        }
+        if (isBlank(activity.getName()) || isBlank(activity.getPerformanceIndicator()) || isBlank(activity.getAnnualTarget())) {
+            return false;
+        }
+
+        return switch (quarter) {
+            case 1 ->
+                !isBlank(activity.getCum_achievements_qtr1()) && !isBlank(activity.getExpl_of_variations_qtr1());
+            case 2 ->
+                !isBlank(activity.getCum_achievements_qtr2()) && !isBlank(activity.getExpl_of_variations_qtr2());
+            case 3 ->
+                !isBlank(activity.getCum_achievements_qtr3()) && !isBlank(activity.getExpl_of_variations_qtr3());
+            case 4 ->
+                !isBlank(activity.getCum_achievements_qtr4()) && !isBlank(activity.getExpl_of_variations_qtr4());
+            default ->
+                false;
+        };
     }
 
     private Set<Integer> getPeriodsForQuarter(Budget budget, int quarter) {
@@ -667,79 +791,9 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
         refreshKeepingSelections();
         configureSubmit();
     }
-
-    private void configureFinancialGridByPriorityArea() {
-        financialGrid.removeAllColumns();
-        financialGrid.setSizeFull();
-        financialGrid.setAllRowsVisible(true);
-        financialGrid.addThemeVariants(
-                GridVariant.LUMO_ROW_STRIPES,
-                GridVariant.LUMO_COLUMN_BORDERS,
-                GridVariant.LUMO_WRAP_CELL_CONTENT
-        );
-
-        financialGrid.addColumn(PriorityArea::getName).setHeader("NDP Programme");
-
-        financialGrid.addColumn(new ComponentRenderer<>(area -> {
-            Span span = new Span(formatBigDecimal(totalBudget));
-            Tooltip tooltip = Tooltip.forComponent(span);
-            tooltip.setText("Total Budget: " + formatBigDecimal(totalBudget));
-            tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
-            return span;
-        })).setHeader("Planned Output / Budget (UGX)");
-
-        financialGrid.addColumn(new ComponentRenderer<>(area -> {
-            Span span = new Span(formatBigDecimal(totalBudget));
-            Tooltip tooltip = Tooltip.forComponent(span);
-            tooltip.setText("Approved Budget: " + formatBigDecimal(totalBudget));
-            tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
-            return span;
-        })).setHeader("Approved Budget (UGX)");
-
-        financialGrid.addColumn(new ComponentRenderer<>(area -> {
-            Span label = new Span(formatBigDecimal(totalActualExpenditure.abs()));
-            if (totalActualExpenditure.abs().doubleValue() <= cumReleasedFund.abs().doubleValue()) {
-                label.getStyle().set("color", "green").set("font-weight", "bold");
-            } else {
-                label.getStyle().set("color", "red").set("font-weight", "bold");
-                label.getElement().setProperty("title", "⚠ Warning: Below You Actual Expenditure");
-            }
-            Tooltip tooltip = Tooltip.forComponent(label);
-            tooltip.setText("Release Spent: " + formatBigDecimal(totalActualExpenditure.abs()));
-            tooltip.setPosition(Tooltip.TooltipPosition.TOP_START);
-            return label;
-        })).setHeader("Release Spent (UGX) BNs");
-
-        financialGrid.addColumn(area -> formatPercentage(totalActualExpenditure, cumReleasedFund))
-                .setHeader("% of Budget Spent");
-
-        financialGrid.addColumn(area -> {
-            Optional<SectionBudgetPerformance> budgetchosen
-                    = sectionBudgetPerformanceService.findByBudgetAndDeptSection(chosenBudget, chosenDsection);
-            if (budgetchosen.isEmpty()) {
-                return "—";
-            }
-            SectionBudgetPerformance perf = budgetchosen.get();
-            String reason = switch (qtr) {
-                case 1 ->
-                    Optional.ofNullable(perf.getReasonsForUnderOver1()).orElse("");
-                case 2 ->
-                    Optional.ofNullable(perf.getReasonsForUnderOver2()).orElse("");
-                case 3 ->
-                    Optional.ofNullable(perf.getReasonsForUnderOver3()).orElse("");
-                case 4 ->
-                    Optional.ofNullable(perf.getReasonsForUnderOver4()).orElse("");
-                default ->
-                    "";
-            };
-            return reason.isBlank() ? "—" : reason;
-        }).setHeader("Reasons for Under / Over Absorption");
-
-        financialGrid.setHeight("180px");
-    }
-
     private void configurePhysicalGrid(List<Urc_Activities> activities) {
         physicalGrid.setSizeFull();
+        physicalGrid.addClassName("performance-physical-grid");
         physicalGrid.addThemeVariants(
                 GridVariant.LUMO_ROW_STRIPES,
                 GridVariant.LUMO_COLUMN_BORDERS,
@@ -761,10 +815,10 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             field.setWidthFull();
             field.setPlaceholder("0");
             field.setSuffixComponent(new Span("%"));
+            makeGridFieldEasyToEdit(field);
 
             Double pct = getPct(activity);
             field.setValue(pct != null ? BigDecimal.valueOf(pct) : null);
-            field.getElement().addEventListener("click", e -> field.focus());
             field.addValueChangeListener(e -> {
                 if (!e.isFromClient()) {
                     return;
@@ -792,7 +846,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             field.setMinHeight("120px");
             field.setValue(getCumAchievements(activity));
             field.setPlaceholder("Enter cumulative achievements");
-            field.getElement().addEventListener("click", e -> field.focus());
+            makeGridFieldEasyToEdit(field);
             field.addValueChangeListener(e -> {
                 if (!e.isFromClient()) {
                     return;
@@ -810,7 +864,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             area.setPlaceholder("Enter explanation for variations");
             area.setMaxLength(1000);
             area.setMinHeight("120px");
-            area.getElement().addEventListener("click", e -> area.focus());
+            makeGridFieldEasyToEdit(area);
             area.addValueChangeListener(e -> {
                 if (!e.isFromClient()) {
                     return;
@@ -837,6 +891,21 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             });
             return editButton;
         }).setHeader("Actions").setWidth("120px").setFlexGrow(0);
+    }
+
+    private void makeGridFieldEasyToEdit(Component field) {
+        field.getElement().addEventListener("pointerdown", event -> {
+        }).stopPropagation();
+        field.getElement().addEventListener("mousedown", event -> {
+        }).stopPropagation();
+        field.getElement().addEventListener("click", event -> {
+            field.getElement().callJsFunction("focus");
+        }).stopPropagation();
+        field.getElement().addEventListener("dblclick", event -> {
+            field.getElement().callJsFunction("focus");
+        }).stopPropagation();
+        field.getElement().addEventListener("keydown", event -> {
+        }).stopPropagation();
     }
 
     private void savePhysicalRow(Urc_Activities activity) {
@@ -1011,11 +1080,12 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             int qtr
     ) {
         Dialog dialog = new Dialog();
-        dialog.setWidth("1100px");
-        dialog.setHeight("650px");
+        dialog.addClassName("performance-assignment-dialog");
+        dialog.getElement().setAttribute("theme", "performance-assignment-dialog");
+        dialog.setWidth("min(1280px, 96vw)");
+        dialog.setHeight("min(820px, 92vh)");
         dialog.setMinWidth("550px");
-        dialog.setHeaderTitle("Manage Deliverables & Quarterly Actuals - "
-                + activity.getActivityCode() + ": " + activity.getName());
+        dialog.setHeaderTitle("Quarterly Actuals Assignment");
         dialog.setModal(false);
         dialog.setDraggable(true);
         dialog.setResizable(true);
@@ -1054,6 +1124,8 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
         Grid<QuarterlyActuals> sourceGrid = buildActualsGrid(sourceProvider, targetProvider, true);
         Grid<QuarterlyActuals> targetGrid = buildActualsGrid(targetProvider, sourceProvider, false);
+        sourceGrid.addClassNames("performance-assignment-grid", "performance-source-grid");
+        targetGrid.addClassNames("performance-assignment-grid", "performance-target-grid");
 
         sourceGrid.setDataProvider(sourceProvider);
         targetGrid.setDataProvider(targetProvider);
@@ -1072,13 +1144,44 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
 
         TextField sourceSearch = buildSearchField("Search available actuals...", sourceProvider);
         TextField targetSearch = buildSearchField("Search assigned actuals...", targetProvider);
+        sourceSearch.addClassName("performance-dialog-search");
+        targetSearch.addClassName("performance-dialog-search");
 
-        HorizontalLayout searchLayout = new HorizontalLayout(sourceSearch, targetSearch);
-        searchLayout.setWidthFull();
-        searchLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+        Span availableCount = createAssignmentMetricValue();
+        Span assignedCount = createAssignmentMetricValue();
+        Span assignedAmount = createAssignmentMetricValue();
+        refreshAssignmentMetrics(availableCount, assignedCount, assignedAmount, sourceProvider, targetProvider);
+        sourceProvider.addDataProviderListener(event
+                -> refreshAssignmentMetrics(availableCount, assignedCount, assignedAmount, sourceProvider, targetProvider));
+        targetProvider.addDataProviderListener(event
+                -> refreshAssignmentMetrics(availableCount, assignedCount, assignedAmount, sourceProvider, targetProvider));
 
-        HorizontalLayout gridsLayout = new HorizontalLayout(sourceGrid, targetGrid);
+        Div metrics = new Div(
+                createAssignmentMetric("Available Actuals", availableCount, "source"),
+                createAssignmentMetric("Assigned Actuals", assignedCount, "target"),
+                createAssignmentMetric("Assigned Total", assignedAmount, "amount")
+        );
+        metrics.addClassName("performance-dialog-metrics");
+
+        Div sourcePanel = createActualsAssignmentPanel(
+                "Available actuals",
+                "Unassigned transactions matching the selected quarter and cost centre.",
+                sourceSearch,
+                sourceGrid,
+                "source"
+        );
+        Div targetPanel = createActualsAssignmentPanel(
+                "Assigned to activity",
+                "Transactions that will be linked to this activity when saved.",
+                targetSearch,
+                targetGrid,
+                "target"
+        );
+
+        HorizontalLayout gridsLayout = new HorizontalLayout(sourcePanel, targetPanel);
+        gridsLayout.addClassName("performance-dialog-panels");
         gridsLayout.setWidthFull();
+        gridsLayout.setHeightFull();
         gridsLayout.setSpacing(true);
         gridsLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
 
@@ -1115,30 +1218,189 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
             Notification.show("Changes saved successfully.", 3000, Notification.Position.BOTTOM_CENTER);
             dialog.close();
         });
+        saveBtn.setText("Save assignments");
         saveBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        saveBtn.addClassName("performance-dialog-save");
+
+        Button remove231Btn = new Button("Delete actuals", e -> {
+            ConfirmDialog confirmDialog = new ConfirmDialog();
+            confirmDialog.setHeader("Delete actuals?");
+            confirmDialog.setText("This will remove assigned actuals whose account code starts with 231 for this activity and selected quarter.");
+            confirmDialog.setCancelable(true);
+            confirmDialog.setCancelText("Cancel");
+            confirmDialog.setConfirmText("Delete actuals");
+            confirmDialog.setConfirmButtonTheme("error primary");
+            confirmDialog.addConfirmListener(event -> {
+               // int removedFromGrid = removeAssignedActualsStartingWith231(targetProvider, targetGrid);
+                int deletedFromDatabase = quarterlyActualsService.deleteQuarterlyActualsByAccountCodeStartingWith231(
+                        activity,
+                        periods.getFinancialYearPeriods(activity.getBudget(), qtr)
+                );
+                /*
+                activity.getQuarterlyActuals().removeIf(this::isAccountCodeStartingWith231);
+                updateActivityQuarterActual(activity, qtr, targetProvider);
+                
+                if (removedFromGrid > 0 || deletedFromDatabase > 0) {
+                sampleUrc_ActivitiesService.saveActivity(activity);
+                }*/
+
+                Notification.show(
+                        "Deleted " + deletedFromDatabase + " account(s).",
+                        3000,
+                        Notification.Position.BOTTOM_CENTER
+                );
+            });
+            confirmDialog.open();
+        });
+        remove231Btn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
+        remove231Btn.addClassName("performance-dialog-danger");
 
         Button cancelBtn = new Button("Cancel", e -> dialog.close());
         cancelBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        cancelBtn.addClassName("performance-dialog-cancel");
 
-        HorizontalLayout footer = new HorizontalLayout(saveBtn, cancelBtn);
+        Div destructiveActions = new Div(remove231Btn);
+        destructiveActions.addClassName("performance-dialog-destructive-actions");
+
+        HorizontalLayout footer = new HorizontalLayout(destructiveActions, cancelBtn, saveBtn);
+        footer.addClassName("performance-dialog-footer");
         footer.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
         footer.setWidthFull();
-        footer.getStyle().set("margin-top", "15px");
 
         VerticalLayout content = new VerticalLayout(
-                new H3("Quarterly Financial Performance for QTR " + qtr),
-                new Span("Drag items between tables to assign or unassign quarterly actuals."),
-                searchLayout,
-                gridsLayout,
-                new Hr(),
-                footer
+                createPerformanceDialogHeader(activity, qtr),
+                metrics,
+                gridsLayout
         );
+        content.addClassName("performance-dialog-content");
         content.setPadding(true);
         content.setSpacing(true);
         content.setAlignItems(FlexComponent.Alignment.STRETCH);
+        content.setHeightFull();
 
         dialog.add(content);
+        dialog.getFooter().add(footer);
         dialog.open();
+    }
+
+    /*    private int removeAssignedActualsStartingWith231(
+    ListDataProvider<QuarterlyActuals> targetProvider,
+    Grid<QuarterlyActuals> targetGrid
+    ) {
+    List<QuarterlyActuals> matchingActuals = targetProvider.getItems().stream()
+    .filter(this::isAccountCodeStartingWith231)
+    .collect(Collectors.toList());
+    
+    if (matchingActuals.isEmpty()) {
+    targetGrid.deselectAll();
+    return 0;
+    }
+    
+    targetProvider.getItems().removeAll(matchingActuals);
+    targetProvider.refreshAll();
+    targetGrid.deselectAll();
+    return matchingActuals.size();
+    }*/
+
+    private boolean isAccountCodeStartingWith231(QuarterlyActuals actual) {
+        return actual != null
+                && actual.getAccountCode() != null
+                && actual.getAccountCode().trim().startsWith("231");
+    }
+
+    private void updateActivityQuarterActual(
+            Urc_Activities activity,
+            int qtr,
+            ListDataProvider<QuarterlyActuals> targetProvider
+    ) {
+        BigDecimal total = targetProvider.getItems().stream()
+                .map(QuarterlyActuals::getAmount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        switch (qtr) {
+            case 1 ->
+                activity.setQtr1A(total);
+            case 2 ->
+                activity.setQtr2A(total);
+            case 3 ->
+                activity.setQtr3A(total);
+            case 4 ->
+                activity.setQtr4A(total);
+            default -> {
+            }
+        }
+    }
+
+    private Div createPerformanceDialogHeader(Urc_Activities activity, int qtr) {
+        Span eyebrow = new Span("Quarter " + qtr + " Actuals");
+        eyebrow.addClassName("performance-dialog-eyebrow");
+
+        H3 title = new H3(activity.getActivityCode() + " - " + activity.getName());
+        title.addClassName("performance-dialog-title");
+
+        Span subtitle = new Span("Review available actuals and assign the relevant transactions to this activity.");
+        subtitle.addClassName("performance-dialog-subtitle");
+
+        Div text = new Div(eyebrow, title, subtitle);
+        text.addClassName("performance-dialog-title-block");
+
+        Div header = new Div(text);
+        header.addClassName("performance-dialog-hero");
+        return header;
+    }
+
+    private Span createAssignmentMetricValue() {
+        Span value = new Span("0");
+        value.addClassName("performance-dialog-metric-value");
+        return value;
+    }
+
+    private Div createAssignmentMetric(String title, Span value, String tone) {
+        Span label = new Span(title);
+        label.addClassName("performance-dialog-metric-label");
+
+        Div metric = new Div(label, value);
+        metric.addClassNames("performance-dialog-metric", "performance-dialog-metric-" + tone);
+        return metric;
+    }
+
+    private Div createActualsAssignmentPanel(
+            String title,
+            String subtitle,
+            TextField search,
+            Grid<QuarterlyActuals> grid,
+            String tone
+    ) {
+        H4 heading = new H4(title);
+        heading.addClassName("performance-panel-title");
+
+        Span description = new Span(subtitle);
+        description.addClassName("performance-panel-subtitle");
+
+        Div header = new Div(heading, description);
+        header.addClassName("performance-panel-header");
+
+        Div panel = new Div(header, search, grid);
+        panel.addClassNames("performance-actuals-panel", "performance-actuals-panel-" + tone);
+        return panel;
+    }
+
+    private void refreshAssignmentMetrics(
+            Span availableCount,
+            Span assignedCount,
+            Span assignedAmount,
+            ListDataProvider<QuarterlyActuals> sourceProvider,
+            ListDataProvider<QuarterlyActuals> targetProvider
+    ) {
+        availableCount.setText(String.valueOf(sourceProvider.getItems().size()));
+        assignedCount.setText(String.valueOf(targetProvider.getItems().size()));
+
+        BigDecimal total = targetProvider.getItems().stream()
+                .map(QuarterlyActuals::getAmount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        assignedAmount.setText(formatBigDecimal(total));
     }
 
     private Grid<QuarterlyActuals> buildActualsGrid(
@@ -1277,8 +1539,8 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
                 GridVariant.LUMO_WRAP_CELL_CONTENT
         );
         grid.getStyle().set("border", "1px solid var(--lumo-contrast-10pct)");
-        grid.setHeight("400px");
-        grid.setWidth("48%");
+        grid.setHeightFull();
+        grid.setWidthFull();
         grid.setSelectionMode(Grid.SelectionMode.MULTI);
 
         return grid;
@@ -1359,7 +1621,7 @@ public class PhysicalFinancialPerformanceView extends VerticalLayout {
     private TextField buildSearchField(String placeholder, ListDataProvider<QuarterlyActuals> provider) {
         TextField search = new TextField();
         search.setPlaceholder(placeholder);
-        search.setWidth("48%");
+        search.setWidthFull();
         search.setPrefixComponent(VaadinIcon.SEARCH.create());
 
         search.addValueChangeListener(e -> {

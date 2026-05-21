@@ -122,6 +122,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.MathContext;
 import java.util.Collections;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.poi.ss.usermodel.CellType;
@@ -344,32 +346,32 @@ public class BudgetFormView extends Div {
         String username = authentication.getName();
         user = userService.getUserByEmail(username);
         saveBudgetItem = new Button("Save", new Icon(VaadinIcon.PLUS));
-        saveBudgetItem.addThemeVariants(ButtonVariant.LUMO_ICON);
+        saveBudgetItem.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
         saveBudgetItem.setAriaLabel("Save");
         saveBudgetItem.setTooltipText("Save or Update");
 
         deleteBudgetItem = new Button("Delete", new Icon(VaadinIcon.TRASH));
-        deleteBudgetItem.addThemeVariants(ButtonVariant.LUMO_ICON);
+        deleteBudgetItem.addThemeVariants(ButtonVariant.LUMO_ERROR);
         deleteBudgetItem.setAriaLabel("Delete");
         deleteBudgetItem.setTooltipText("Delete");
 
         distrWorkplan = new Button("Evenly Distribute", new Icon(VaadinIcon.SPLIT));
-        distrWorkplan.addThemeVariants(ButtonVariant.LUMO_ICON);
+        distrWorkplan.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
         distrWorkplan.setAriaLabel("Evenly Distribute");
         distrWorkplan.setTooltipText("Evenly Distribute");
 
         quarterWorkplan = new Button("Quarterly", new Icon(VaadinIcon.SPLIT_H));
-        quarterWorkplan.addThemeVariants(ButtonVariant.LUMO_ICON);
+        quarterWorkplan.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
         quarterWorkplan.setAriaLabel("Quarterly");
         quarterWorkplan.setTooltipText("Quarterly");
 
         clearWorkplan = new Button("Clear", new Icon(VaadinIcon.STAR));
-        clearWorkplan.addThemeVariants(ButtonVariant.LUMO_ICON);
+        clearWorkplan.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         clearWorkplan.setAriaLabel("Save");
-        clearWorkplan.setTooltipText("Save or Update");
+        clearWorkplan.setTooltipText("Clear execution months");
 
         templateDownload = new Button("Download Budget Template", new Icon(VaadinIcon.DOWNLOAD));
-        templateDownload.addThemeVariants(ButtonVariant.LUMO_ICON);
+        templateDownload.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
         templateDownload.setAriaLabel("Download Budget Template");
 
         MultiFileMemoryBuffer buffer2 = new MultiFileMemoryBuffer();
@@ -677,36 +679,49 @@ public class BudgetFormView extends Div {
         }
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
         image2.setWidthFull();
+        image2.addClassName("budget-form-flag-strip");
         image2.getStyle().set("margin", "0").set("padding", "0");
         add(image2, budgetTabs());
     }
 
     private TabSheet budgetTabs() {
         TabSheet tabSheet = new TabSheet();
+        tabSheet.addClassName("budget-form-tabs");
         tabSheet.setHeight("100%");
         SplitLayout lay = new SplitLayout(settingView(), coaView());
+        lay.addClassName("budget-form-split");
+        lay.addClassName("budget-form-details-split");
         lay.setHeight("100%");
         lay.setSplitterPosition(50);
 
         tabSheet.add("Budget Details", lay);
 
         VerticalLayout vert = new VerticalLayout();
+        vert.addClassName("budget-form-workspace");
         vert.setHeight("100%");
+        vert.setPadding(false);
+        vert.setSpacing(false);
         vert.add(BudgetSemiDetailDiv());
 
         SplitLayout vert2 = new SplitLayout(budgetDetailView(), budgetWorkplanView());
+        vert2.addClassName("budget-form-split");
+        vert2.addClassName("budget-form-edit-split");
         vert2.setHeight("100%");
         vert2.setOrientation(SplitLayout.Orientation.VERTICAL);
         vert2.setSplitterPosition(50);
         //vert2.add(budgetDetailView(), budgetWorkplanView());
 
         SplitLayout vert3 = new SplitLayout(budgetView(), budgetCoaView());
+        vert3.addClassName("budget-form-split");
+        vert3.addClassName("budget-form-grid-split");
         vert3.setHeight("100%");
         vert3.setOrientation(SplitLayout.Orientation.VERTICAL);
         vert3.setSplitterPosition(50);
         //vert3.add(budgetView(), budgetCoaView());
 
         SplitLayout layy = new SplitLayout(vert2, vert3);
+        layy.addClassName("budget-form-split");
+        layy.addClassName("budget-form-main-split");
         layy.setSplitterPosition(40);
         layy.setHeight("100%");
         vert.add(layy);
@@ -717,16 +732,22 @@ public class BudgetFormView extends Div {
 
     private FormLayout BudgetSemiDetailDiv() {
         FormLayout div = new FormLayout();
+        div.addClassName("budget-context-strip");
         fy = new Span("");
+        fy.addClassName("budget-context-pill");
         fy.getElement().getThemeList().add("badge");
 
         fyType = new Span("");
+        fyType.addClassName("budget-context-pill");
         fyType.getElement().getThemeList().add("badge success");
         deptUnit = new Span("");
+        deptUnit.addClassName("budget-context-pill");
         deptUnit.getElement().getThemeList().add("badge error");
         accCode = new Span("");
+        accCode.addClassName("budget-context-pill");
         accCode.getElement().getThemeList().add("badge contrast");
         activity = new Span("");
+        activity.addClassName("budget-context-pill");
         activity.getElement().getThemeList().add("badge");
         div.add(fy, fyType, deptUnit, accCode, activity);
         div.setResponsiveSteps(
@@ -773,6 +794,8 @@ public class BudgetFormView extends Div {
 
     private VerticalLayout settingView() {
         VerticalLayout contain = new VerticalLayout();
+        contain.addClassName("budget-panel");
+        contain.addClassName("budget-settings-panel");
         contain.setAlignItems(FlexComponent.Alignment.STRETCH);
 
         contain.setHeight("100%");
@@ -783,10 +806,13 @@ public class BudgetFormView extends Div {
         //contain.getStyle().set("border-top", "1px solid var(--lumo-contrast-20pct)");
 
         FormLayout hor = new FormLayout();
+        hor.addClassName("budget-toolbar-form");
 
         // Header
         Header header = new Header();
+        header.addClassName("budget-panel-header");
         Footer footer = new Footer();
+        footer.addClassName("budget-panel-footer");
 
         footer.getStyle().set("height", "30px")
                 .set("margin", "1px");
@@ -795,6 +821,7 @@ public class BudgetFormView extends Div {
         .set("border-bottom", "1px solid var(--lumo-contrast-20pct)")
         .set("display", "flex").set("padding", "var(--lumo-space-m)");*/
         H5 editEmployee = new H5("Budget Details");
+        editEmployee.addClassName("budget-panel-title");
         editEmployee.getStyle().set("margin", "0");
 
         Icon arrowLeft = VaadinIcon.ARROW_LEFT.create();
@@ -873,6 +900,7 @@ public class BudgetFormView extends Div {
 
         TextField searchField = new TextField();
         searchField.setWidth("50%");
+        searchField.setClearButtonVisible(true);
 
         searchField.setPlaceholder("Search");
         searchField.setPrefixComponent(new Icon(VaadinIcon.SEARCH));
@@ -1059,16 +1087,21 @@ public class BudgetFormView extends Div {
         hor.add(comboBoxBudget, comboBoxOrganisation, comboBoxD_Section, searchField);
         //hor.setAlignItems(Alignment.BASELINE);
         VerticalLayout vert = new VerticalLayout();
+        vert.addClassName("budget-panel-body");
         //hor.setHeightFull();
         vert.setHeight("100%");
+        vert.setPadding(false);
+        vert.setSpacing(false);
         vert.add(hor, gridUrc_Activities);
         Footer ft = new Footer();
+        ft.addClassName("budget-total-footer");
         ft.getElement().getStyle().set("margin-left", "auto");
         calculateSumOfAllMonthstotalText2.setWidthFull();
         ft.add(calculateSumOfAllMonthstotalText2);
         ft.getElement().getThemeList().add("badge success");
         vert.add(ft);
         Scroller scroller = new Scroller(vert);
+        scroller.addClassName("budget-panel-scroller");
         scroller.setScrollDirection(Scroller.ScrollDirection.VERTICAL);
         scroller.getStyle()
                 .set("border-bottom", "1px solid var(--lumo-contrast-20pct)")
@@ -1094,12 +1127,17 @@ public class BudgetFormView extends Div {
     private VerticalLayout budgetDetailView() {
         Button button = new Button("temp");
         VerticalLayout contain = new VerticalLayout();
+        contain.addClassName("budget-panel");
+        contain.addClassName("budget-item-panel");
         contain.setAlignItems(FlexComponent.Alignment.STRETCH);
 
         Header header = new Header();
+        header.addClassName("budget-panel-header");
         Footer footer = new Footer();
+        footer.addClassName("budget-action-footer");
 
         H5 editEmployee = new H5("Budget Item Details");
+        editEmployee.addClassName("budget-panel-title");
         editEmployee.getStyle().set("margin", "0");
 
         Icon arrowLeft = VaadinIcon.ARROW_LEFT.create();
@@ -1110,6 +1148,7 @@ public class BudgetFormView extends Div {
                 .set("padding", "calc(var(--lumo-space-xs) / 2)");
 
         FormLayout form = new FormLayout();
+        form.addClassName("budget-item-form");
         /*        currency.setItems(query -> sampleCurrencyService.list(
         PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
         .stream());*/
@@ -1185,6 +1224,7 @@ public class BudgetFormView extends Div {
         form.setColspan(item, 4);
         Scroller scroller = new Scroller(
                 new Div(editEmployee, form));
+        scroller.addClassName("budget-panel-scroller");
         scroller.setScrollDirection(Scroller.ScrollDirection.VERTICAL);
         scroller.getStyle()
                 .set("border-bottom", "1px solid var(--lumo-contrast-20pct)")
@@ -1509,6 +1549,7 @@ public class BudgetFormView extends Div {
         });
         // footer.add(saveBudgetItem, deleteBudgetItem, distrWorkplan, quarterWorkplan, clearWorkplan, templateDownload, uploadBudget);
         footer.add(saveBudgetItem, deleteBudgetItem, distrWorkplan, quarterWorkplan, clearWorkplan, templateDownload);
+        footer.setWidthFull();
         if (user.getRoles().contains(Role.ADMIN)) {
             footer.add(rectify, button);
         }
@@ -1863,6 +1904,8 @@ public class BudgetFormView extends Div {
 
     private VerticalLayout budgetWorkplanView() {
         VerticalLayout contain = new VerticalLayout();
+        contain.addClassName("budget-panel");
+        contain.addClassName("budget-workplan-panel");
         contain.setAlignItems(FlexComponent.Alignment.STRETCH);
         /*        contain.setHeightFull();
         contain.setMaxWidth("100%");
@@ -1873,12 +1916,15 @@ public class BudgetFormView extends Div {
 
         // Header
         Header header = new Header();
+        header.addClassName("budget-panel-header");
         Footer footer = new Footer();
+        footer.addClassName("budget-panel-footer");
         /*        header.getStyle().set("align-items", "center").set("height", "50px")
         .set("border-bottom", "1px solid var(--lumo-contrast-20pct)")
         .set("display", "flex").set("padding", "var(--lumo-space-m)");*/
 
         H5 editEmployee = new H5("Budget Item Execution Month(s)");
+        editEmployee.addClassName("budget-panel-title");
         editEmployee.getStyle().set("margin", "0");
 
         Icon arrowLeft = VaadinIcon.ARROW_LEFT.create();
@@ -1892,6 +1938,7 @@ public class BudgetFormView extends Div {
         // header.add(goBack, editEmployee);
         //contain.add(header);
         FormLayout form = new FormLayout();
+        form.addClassName("budget-month-form");
         form.add(jul, aug, sep,
                 oct, nov, dec, jan,
                 feb, mar,
@@ -1908,6 +1955,7 @@ public class BudgetFormView extends Div {
         form.getStyle().set("margin-bottom", "0px");
         Scroller scroller = new Scroller(
                 new Div(editEmployee, form));
+        scroller.addClassName("budget-panel-scroller");
         scroller.setScrollDirection(Scroller.ScrollDirection.VERTICAL);
         scroller.getStyle()
                 .set("border-bottom", "1px solid var(--lumo-contrast-20pct)")
@@ -2012,13 +2060,17 @@ public class BudgetFormView extends Div {
 
     private VerticalLayout coaView() {
         VerticalLayout contain = new VerticalLayout();
+        contain.addClassName("budget-panel");
+        contain.addClassName("budget-coa-panel");
         // Header
         Header header = new Header();
+        header.addClassName("budget-panel-header");
         header.getStyle().set("align-items", "center").set("height", "50px")
                 .set("border-bottom", "1px solid var(--lumo-contrast-20pct)")
                 .set("display", "flex").set("padding", "var(--lumo-space-m)");
 
         H5 editEmployee = new H5("Chart Of Accounts");
+        editEmployee.addClassName("budget-panel-title");
         editEmployee.getStyle().set("margin", "0");
 
         Icon arrowLeft = VaadinIcon.ARROW_LEFT.create();
@@ -2040,6 +2092,7 @@ public class BudgetFormView extends Div {
         contain.setWidthFull();
 
         searchCoa = new TextField();
+        searchCoa.addClassName("budget-search-field");
         searchCoa.setPlaceholder("Search");
         searchCoa.setClearButtonVisible(true);
         searchCoa.setValueChangeMode(ValueChangeMode.EAGER);
@@ -2051,7 +2104,7 @@ public class BudgetFormView extends Div {
         });
 
         HorizontalLayout lay1 = new HorizontalLayout();
-        lay1.setHeight("40px");
+        lay1.addClassName("budget-filter-row");
 
         lay1.add(comboBoxCoalevel1, searchCoa);
 
@@ -2163,9 +2216,13 @@ public class BudgetFormView extends Div {
         });
 
         VerticalLayout div = new VerticalLayout();
+        div.addClassName("budget-panel-body");
         div.setHeight("100%");
+        div.setPadding(false);
+        div.setSpacing(false);
         div.add(lay1, gridCOA);
         Scroller scroller = new Scroller(div);
+        scroller.addClassName("budget-panel-scroller");
         scroller.setScrollDirection(Scroller.ScrollDirection.VERTICAL);
         scroller.getStyle()
                 .set("border-bottom", "1px solid var(--lumo-contrast-20pct)")
@@ -2178,6 +2235,8 @@ public class BudgetFormView extends Div {
     private VerticalLayout budgetView() {
         MenuBar menuBar = new MenuBar();
         VerticalLayout contain = new VerticalLayout();
+        contain.addClassName("budget-panel");
+        contain.addClassName("budget-items-table-panel");
         contain.setAlignItems(FlexComponent.Alignment.STRETCH);
         /*        contain.setHeightFull();
         contain.setMaxWidth("100%");
@@ -2189,11 +2248,13 @@ public class BudgetFormView extends Div {
         // Header
         Header header = new Header();
         Footer footer = new Footer();
+        footer.addClassName("budget-total-footer");
         header.getStyle().set("align-items", "center").set("height", "50px")
                 .set("border-bottom", "1px solid var(--lumo-contrast-20pct)")
                 .set("display", "flex").set("padding", "var(--lumo-space-m)");
 
         H5 editEmployee = new H5("Table of Budget Items");
+        editEmployee.addClassName("budget-panel-title");
         editEmployee.getStyle().set("margin", "0");
 
         Icon arrowLeft = VaadinIcon.ARROW_LEFT.create();
@@ -2258,6 +2319,7 @@ public class BudgetFormView extends Div {
 
         gridBudgetItems.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
         gridBudgetItems.setWidthFull();
+        gridBudgetItems.addClassName("budget-data-grid");
 
         gridBudgetItems.asSingleSelect().addValueChangeListener(vl -> {
             if (vl.getValue() != null) {
@@ -2323,12 +2385,15 @@ public class BudgetFormView extends Div {
 
     private VerticalLayout budgetCoaView() {
         VerticalLayout contain = new VerticalLayout();
+        contain.addClassName("budget-panel");
+        contain.addClassName("budget-coa-summary-panel");
         contain.setAlignItems(FlexComponent.Alignment.STRETCH);
 
         comboBoxCoalevel1Two.setPlaceholder("Select COA Category");
         comboBoxCoalevel1Two.setItemLabelGenerator(Coalevel1::getName);
 
         Footer footer = new Footer();
+        footer.addClassName("budget-total-footer");
 
         gridBudgetCoa.addColumn(budgetItem -> {
             COA coacode = budgetItem.getCoacode();
@@ -2358,6 +2423,10 @@ public class BudgetFormView extends Div {
         })).setHeader("Total").setFlexGrow(0).setWidth("150px");
 
         gridBudgetCoa.addThemeVariants(GridVariant.LUMO_WRAP_CELL_CONTENT, GridVariant.LUMO_ROW_STRIPES);
+        gridBudgetCoa.addClassName("budget-data-grid");
+        GridContextMenu<BudgetItems> budgetCoaContextMenu = gridBudgetCoa.addContextMenu();
+        budgetCoaContextMenu.addItem("Combine Budget items", event
+                -> event.getItem().ifPresent(this::handleCombineBudgetItems));
 
         //sectionBudgetText.getElement().getThemeList().add("badge success");
         footer.getElement().getStyle().set("margin-right", "auto");
@@ -2366,6 +2435,7 @@ public class BudgetFormView extends Div {
         footer.add(sectionBudgetText);
         sectionBudgetText.getElement().getThemeList().add("badge success");
         HorizontalLayout out = new HorizontalLayout();
+        out.addClassName("budget-filter-row");
         ComboBox<String> sett = new ComboBox();
 
         sett.setItems("View By Section", "View By Activity");
@@ -2467,9 +2537,139 @@ public class BudgetFormView extends Div {
             }
         });
         out.add(comboBoxCoalevel1Two, sett, importBudgetItems);
-        contain.add(new H5("Chat of Accounts"), out, gridBudgetCoa, sectionBudgetText);
+        H5 title = new H5("Chart of Accounts");
+        title.addClassName("budget-panel-title");
+        contain.add(title, out, gridBudgetCoa, sectionBudgetText);
         return contain;
     }
+
+    private void handleCombineBudgetItems(BudgetItems budgetItem) {
+        if (budgetItem == null || budgetItem.getCoacode() == null) {
+            Notification.show("Please select a valid budget item with COA.",
+                    4000, Notification.Position.TOP_CENTER);
+            return;
+        }
+
+        COA selectedCoa = budgetItem.getCoacode();
+
+        String accountCode = selectedCoa.getCode();
+        String accountName = selectedCoa.getName();
+
+        List<BudgetItems> listBudgets
+                = budgetItemsService.findByDeptUnitAndBudgetAndCoa(
+                        chosenDsection,
+                        chosenBudget,
+                        selectedCoa
+                );
+
+        if (listBudgets == null || listBudgets.isEmpty()) {
+            Notification.show("No budget items found to combine.",
+                    4000, Notification.Position.TOP_CENTER);
+            return;
+        }
+
+        Map<Organisation, List<BudgetItems>> groupedByOrganisation
+                = listBudgets.stream()
+                        .filter(item -> item.getBudgetType() != null)
+                        .collect(Collectors.groupingBy(BudgetItems::getBudgetType));
+
+        List<BudgetItems> combinedItems = new ArrayList<>();
+
+        for (Map.Entry<Organisation, List<BudgetItems>> entry : groupedByOrganisation.entrySet()) {
+            Organisation organisation = entry.getKey();
+            List<BudgetItems> items = entry.getValue();
+
+            BudgetItems first = items.get(0);
+
+            BudgetItems combined = new BudgetItems();
+
+            combined.setBudget(chosenBudget);
+            combined.setDeptUnit(chosenDsection);
+            combined.setBudgetType(organisation);
+            combined.setActivity(chosenUrc_Activities);
+
+            combined.setCoacode(selectedCoa);
+            combined.setItem(accountName + " - " + chosenDsection.getNAME() + " - " + organisation.getCode());
+
+            combined.setProcClass(first.getProcClass());
+            combined.setFundsource(first.getFundsource());
+            combined.setCoalevel1(first.getCoalevel1());
+            combined.setCurrency(first.getCurrency());
+            combined.setType(first.getType());
+            combined.setBcategory(first.getBcategory());
+            combined.setUnitMeasure(first.getUnitMeasure());
+
+            combined.setJul(sum(items, BudgetItems::getJul));
+            combined.setAug(sum(items, BudgetItems::getAug));
+            combined.setSep(sum(items, BudgetItems::getSep));
+            combined.setOct(sum(items, BudgetItems::getOct));
+            combined.setNov(sum(items, BudgetItems::getNov));
+            combined.setDec(sum(items, BudgetItems::getDec));
+            combined.setJan(sum(items, BudgetItems::getJan));
+            combined.setFeb(sum(items, BudgetItems::getFeb));
+            combined.setMar(sum(items, BudgetItems::getMar));
+            combined.setApr(sum(items, BudgetItems::getApr));
+            combined.setMay(sum(items, BudgetItems::getMay));
+            combined.setJun(sum(items, BudgetItems::getJun));
+
+            combined.setTotal(combined.getYearTotalFromQuarters());
+            combined.setQty(BigDecimal.ONE);
+            combined.setCost(combined.getYearTotalFromQuarters());
+            String text = items.stream()
+                    .map(BudgetItems::getItem)
+                    .filter(Objects::nonNull)
+                    .filter(s -> !s.isBlank())
+                    .distinct()
+                    .collect(Collectors.joining(", "));
+            combined.setNotes(safeLimit(text, 50)); // or 255 depending on DB column
+            combinedItems.add(combined);
+        }
+
+        List<Long> oldItemIds = listBudgets.stream()
+                .map(BudgetItems::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        try {
+            budgetItemsService.saveAll(combinedItems);
+
+            if (!oldItemIds.isEmpty()) {
+
+                budgetItemsService.deleteOldBudgetItemsSafely(listBudgets);
+            }
+
+            Notification.show(
+                    "Combined " + listBudgets.size()
+                    + " budget items into "
+                    + combinedItems.size()
+                    + " organisation budget item(s) for "
+                    + accountCode + " " + accountName,
+                    5000,
+                    Notification.Position.TOP_CENTER
+            );
+
+        } catch (Exception ex) {
+            Notification.show("Failed to combine budget items: " + ex.getMessage(),
+                    7000, Notification.Position.TOP_CENTER);
+            ex.printStackTrace();
+        }
+    }
+
+    private BigDecimal sum(List<BudgetItems> items,
+            Function<BudgetItems, BigDecimal> mapper) {
+        return items.stream()
+                .map(mapper)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+    
+    private String safeLimit(String value, int max) {
+    if (value == null) {
+        return null;
+    }
+    value = value.trim();
+    return value.length() <= max ? value : value.substring(0, max);
+}
 
     private Dialog openActivityDialogue() {
         Dialog dialog = new Dialog();

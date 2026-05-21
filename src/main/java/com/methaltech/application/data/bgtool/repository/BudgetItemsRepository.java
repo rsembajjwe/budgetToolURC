@@ -1109,6 +1109,7 @@ WHERE b.budget = :budget
 
     // Find BudgetItems by deptUnit and budget
     List<BudgetItems> findByDeptUnitAndBudget(UrcDeptSectionAnlDimbgt deptUnit, Budget budget);
+    List<BudgetItems> findByDeptUnitAndBudgetAndCoacode(UrcDeptSectionAnlDimbgt deptUnit, Budget budget,COA coa);
 
     @Query("SELECT COALESCE(SUM(b.jul + b.aug + b.sep + b.oct + b.nov + b.dec + b.jan + b.feb + b.mar + b.apr + b.may + b.jun), 0) "
             + "FROM BudgetItems b "

@@ -1346,3 +1346,411 @@
         animation: none;
     }
 }
+
+/* ===================================================================
+   ADMIN DASHBOARD RESPONSIVE PROFESSIONAL REFRESH
+   ================================================================== */
+.dashboard-view {
+    --dashboard-primary: #164e63;
+    --dashboard-primary-light: #0e7490;
+    --dashboard-primary-dark: #083344;
+    --dashboard-accent: #b45309;
+    --dashboard-accent-light: #d97706;
+    --dashboard-accent-dark: #92400e;
+    --dashboard-secondary: #0f766e;
+    --dashboard-secondary-light: #14b8a6;
+    --dashboard-surface: #ffffff;
+    --dashboard-surface-subtle: #f8fafc;
+    --dashboard-border: #dbe4ee;
+    --dashboard-border-strong: #c8d4e1;
+    --dashboard-radius-card: 8px;
+    --dashboard-shadow-panel: 0 12px 30px rgba(16, 24, 40, 0.08);
+
+    align-items: stretch;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef4f7 100%);
+    color: var(--dashboard-gray-800);
+    letter-spacing: 0;
+}
+
+.dashboard-view::before {
+    display: none;
+}
+
+.dashboard-header {
+    position: relative;
+    top: auto;
+    z-index: 2;
+    min-height: unset;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--dashboard-border);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 8px 22px rgba(16, 24, 40, 0.07);
+}
+
+.dashboard-header:hover {
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 8px 22px rgba(16, 24, 40, 0.07);
+}
+
+.dashboard-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-width: 0;
+    height: auto !important;
+}
+
+.dashboard-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.logo-section {
+    flex: 0 0 auto;
+    gap: 0.6rem !important;
+}
+
+.dashboard-title-group {
+    min-width: 8rem;
+}
+
+.app-logo {
+    width: 2.55rem;
+    height: 2.55rem;
+    border-radius: 8px;
+    background: var(--dashboard-primary);
+    box-shadow: 0 8px 18px rgba(8, 51, 68, 0.16);
+}
+
+.app-logo:hover {
+    transform: none;
+    box-shadow: 0 8px 18px rgba(8, 51, 68, 0.16);
+}
+
+.app-logo::before {
+    display: none;
+}
+
+.logo-text {
+    font-size: 1.05rem;
+    font-weight: 750;
+    letter-spacing: 0;
+}
+
+.app-title {
+    color: var(--dashboard-primary-dark);
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    font-size: clamp(1.1rem, 1.4vw, 1.45rem);
+    font-weight: 750;
+    letter-spacing: 0;
+}
+
+.app-subtitle {
+    color: var(--dashboard-gray-600);
+    font-size: 0.82rem;
+    letter-spacing: 0;
+}
+
+.dashboard-filter,
+.fiscal-year {
+    flex: 1 1 12rem;
+    min-width: 11rem;
+    max-width: 16rem;
+    padding: 0.45rem 0.55rem;
+    gap: 0.45rem;
+    border: 1px solid var(--dashboard-border);
+    border-radius: var(--dashboard-radius-card);
+    background: var(--dashboard-surface-subtle);
+    box-shadow: none;
+    color: var(--dashboard-gray-700);
+}
+
+.calendar-icon {
+    color: var(--dashboard-secondary);
+    width: 1rem;
+    height: 1rem;
+}
+
+.fiscal-label {
+    color: var(--dashboard-gray-600);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.fiscal-year-selector {
+    min-width: 0;
+    width: 100%;
+    padding: 0;
+    background: transparent;
+}
+
+.dashboard-view vaadin-combo-box::part(input-field) {
+    min-height: 2.25rem;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 7px;
+    background: #fff;
+    box-shadow: none;
+}
+
+.dashboard-view vaadin-combo-box[focused]::part(input-field) {
+    border-color: var(--dashboard-secondary);
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+}
+
+.dashboard-header-actions,
+.header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.45rem;
+    flex: 0 0 auto;
+    min-width: 0;
+}
+
+.dashboard-view vaadin-button {
+    border-radius: 7px;
+    font-weight: 650;
+}
+
+.primary-action[theme~="primary"] {
+    background: var(--dashboard-secondary);
+    color: #fff;
+}
+
+.secondary-action {
+    color: var(--dashboard-primary);
+}
+
+.tertiary-action,
+.notification-button {
+    color: var(--dashboard-gray-700);
+}
+
+.notification-badge {
+    min-width: 1rem;
+    height: 1rem;
+    border: 2px solid #fff;
+    background: var(--dashboard-accent);
+    font-size: 0.62rem;
+    animation: none;
+}
+
+.dashboard-content-container,
+.content-container {
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+    min-height: 0;
+    gap: 0;
+}
+
+.dashboard-tabs,
+.summary-tabs {
+    flex: 0 0 auto;
+    padding: 0.45rem 1rem 0;
+    border-bottom: 1px solid var(--dashboard-border);
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: none;
+}
+
+.dashboard-tabs::part(tabs),
+.summary-tabs::part(tabs) {
+    gap: 0.25rem;
+}
+
+.dashboard-nav-tab,
+.dashboard-tabs vaadin-tab,
+.summary-tabs vaadin-tab {
+    min-height: 2.7rem;
+    border-radius: 7px 7px 0 0;
+    color: var(--dashboard-gray-600);
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.dashboard-nav-tab[selected],
+.dashboard-tabs vaadin-tab[selected],
+.summary-tabs vaadin-tab[selected] {
+    color: var(--dashboard-primary-dark);
+    background: #fff;
+    box-shadow: inset 0 -3px 0 var(--dashboard-secondary);
+}
+
+.dashboard-nav-tab:hover,
+.dashboard-tabs vaadin-tab:hover,
+.summary-tabs vaadin-tab:hover {
+    color: var(--dashboard-primary);
+    background: rgba(15, 118, 110, 0.06);
+}
+
+.dashboard-content-panel,
+.dashboard-tab-content {
+    min-height: 0;
+    overflow: auto;
+    padding: 1rem;
+}
+
+.dashboard-page {
+    gap: 1rem;
+    min-width: 0;
+}
+
+.budget-summary-cards,
+.budget-visual-cards-wrapper,
+.department-overview,
+.revenue-breakdown,
+.summary-tab-content,
+.empty-state,
+.loading-indicator {
+    border: 1px solid var(--dashboard-border);
+    border-radius: var(--dashboard-radius-card);
+    background: var(--dashboard-surface);
+    box-shadow: var(--dashboard-shadow-panel);
+}
+
+.budget-summary-cards,
+.budget-visual-cards-wrapper,
+.department-overview,
+.revenue-breakdown,
+.summary-tab-content {
+    padding: 1rem;
+}
+
+.summary-tab-content {
+    min-width: 0;
+    overflow: auto;
+}
+
+.empty-state {
+    min-height: 24rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+.empty-state-icon {
+    color: var(--dashboard-secondary);
+}
+
+.empty-state-title,
+.section-title {
+    color: var(--dashboard-primary-dark);
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    letter-spacing: 0;
+}
+
+.empty-state-message {
+    color: var(--dashboard-gray-600);
+    letter-spacing: 0;
+}
+
+.dashboard-view vaadin-grid {
+    width: 100%;
+    border: 1px solid var(--dashboard-border);
+    border-radius: var(--dashboard-radius-card);
+    overflow: hidden;
+    --vaadin-grid-cell-padding: 0.62rem 0.75rem;
+    --vaadin-grid-row-border-color: #e7edf4;
+}
+
+.dashboard-view vaadin-grid::part(header-cell) {
+    color: var(--dashboard-gray-700);
+    font-weight: 700;
+    background: linear-gradient(180deg, #f8fafc, #eef3f8);
+}
+
+.dashboard-view vaadin-grid::part(row):hover {
+    background: rgba(15, 118, 110, 0.06);
+}
+
+.dashboard-view span[theme~="badge"] {
+    border-radius: 999px;
+    font-weight: 650;
+}
+
+@media (max-width: 1280px) {
+    .dashboard-view {
+        overflow: auto;
+    }
+
+    .dashboard-header-content,
+    .dashboard-header-left {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .logo-section {
+        align-self: flex-start;
+    }
+
+    .dashboard-filter,
+    .fiscal-year {
+        max-width: none;
+        width: 100%;
+    }
+
+    .dashboard-header-actions,
+    .header-actions {
+        justify-content: flex-start;
+        width: 100%;
+    }
+}
+
+@media (max-width: 760px) {
+    .dashboard-header {
+        padding: 0.7rem;
+    }
+
+    .dashboard-header-left {
+        gap: 0.55rem;
+    }
+
+    .dashboard-filter,
+    .fiscal-year {
+        min-width: 0;
+    }
+
+    .dashboard-header-actions vaadin-button,
+    .header-actions vaadin-button {
+        flex: 1 1 9rem;
+    }
+
+    .notification-button,
+    .tertiary-action {
+        flex: 0 0 2.5rem !important;
+    }
+
+    .dashboard-tabs,
+    .summary-tabs {
+        padding-inline: 0.6rem;
+        overflow-x: auto;
+    }
+
+    .dashboard-content-panel,
+    .dashboard-tab-content {
+        padding: 0.7rem;
+    }
+
+    .budget-summary-cards,
+    .budget-visual-cards-wrapper,
+    .department-overview,
+    .revenue-breakdown,
+    .summary-tab-content {
+        padding: 0.75rem;
+    }
+
+    .empty-state {
+        min-height: 18rem;
+        padding: 1.25rem;
+    }
+}

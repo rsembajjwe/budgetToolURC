@@ -149,6 +149,10 @@ public class DeptSectionMergerService {
             sectionCodes2.add("S005");
             dept = "Civil";
         } //Mechanical
+        else if (deptcode.equals("S004")) {
+            sectionCodes2.add("S004");
+            dept = "Property";
+        } //Mechanical        
         else if (deptcode.equals("D0002")) {
             sectionCodes2.add("S002");
             sectionCodes2.add("S003");
@@ -174,9 +178,12 @@ public class DeptSectionMergerService {
             
             sectionCodes2.add("S001");
             sectionCodes2.add("S006");
+            dept = "Operations";
+        } 
+        else if (deptcode.equals("S020")) {
             sectionCodes2.add("S020");
-            dept = "Commercial Operations";
-        } //Corporate Planning
+            dept = "Commercial";
+        }//Corporate Planning
         else if (deptcode.equals("S014")) {
             sectionCodes2.add("S014");
             dept = "Corporate Planning";

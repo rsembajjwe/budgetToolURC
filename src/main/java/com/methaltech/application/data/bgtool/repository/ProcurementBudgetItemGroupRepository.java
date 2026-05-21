@@ -7,6 +7,7 @@ import com.methaltech.application.data.entity.bgtool.ProcurementBudgetItemGroup;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -69,4 +70,18 @@ public interface ProcurementBudgetItemGroupRepository
     WHERE g.budget = :budget
 """)
     List<ProcurementBudgetItemGroup> findByBudgetWithItems(@Param("budget") Budget budget);
+
+    @Modifying
+    @Query(value = """
+        DELETE FROM proc_budget_item_group_items
+        WHERE budget_item_id IN (:ids)
+    """, nativeQuery = true)
+    void detachBudgetItems(@Param("ids") List<Long> ids);
+
+    @Modifying
+    @Query(value = """
+        DELETE FROM proc_budget_item_group_items
+        WHERE budget_item_id = (:ids)
+    """, nativeQuery = true)
+    void detachBudgetItems(@Param("ids") Long ids);
 }

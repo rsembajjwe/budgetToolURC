@@ -569,7 +569,7 @@ public class BudgetService {
             );
         }).collect(Collectors.toList());
     }
-    
+
     public List<DepartmentBudget> getDepartmentBudgetsWithoutBudget(Budget budget) {
         List<UrcDepartmentAnlDim> departments = findActiveDepartments();
         return departments.stream().map(dept -> {
@@ -601,7 +601,6 @@ public class BudgetService {
             String color = colors[Math.abs(dept.getANL_CODE().hashCode()) % colors.length];
             int sectionCount = sects.size();
 
-
             return new DepartmentBudget(
                     dept.getANL_CODE(),
                     dept.getNAME(),
@@ -626,7 +625,7 @@ public class BudgetService {
                     sections
             );
         }).collect(Collectors.toList());
-    }    
+    }
 
     public DepartmentBudget findByDepartmentCode(List<DepartmentBudget> list, String code) {
         return list.stream()
@@ -805,6 +804,10 @@ public class BudgetService {
         civil.setANL_CODE("D0003");
         civil.setNAME("Civil Department");
 
+        UrcDepartmentAnlDim property = new UrcDepartmentAnlDim();
+        property.setANL_CODE("S004");
+        property.setNAME("Property Section");
+
         UrcDepartmentAnlDim mechanical = new UrcDepartmentAnlDim();
         mechanical.setANL_CODE("D0002");
         mechanical.setNAME("Mechanical Department");
@@ -827,7 +830,11 @@ public class BudgetService {
 
         UrcDepartmentAnlDim operations = new UrcDepartmentAnlDim();
         operations.setANL_CODE("D0001");
-        operations.setNAME("Operations Department");
+        operations.setNAME("Operations Section");
+        
+                UrcDepartmentAnlDim commercial = new UrcDepartmentAnlDim();
+        commercial.setANL_CODE("S020");
+        commercial.setNAME("Commercial Section");
 
         UrcDepartmentAnlDim corporate_planning = new UrcDepartmentAnlDim();
         corporate_planning.setANL_CODE("S014");
@@ -850,12 +857,14 @@ public class BudgetService {
         legal.setNAME("Legal Department");
 
         deptList.add(civil);
+        deptList.add(property);
         deptList.add(mechanical);
         deptList.add(hr);
         deptList.add(md);
         deptList.add(security);
         deptList.add(internal_Audit);
         deptList.add(operations);
+        deptList.add(commercial);
         deptList.add(corporate_planning);
         deptList.add(finance);
         deptList.add(procurement);

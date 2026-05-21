@@ -128,7 +128,7 @@ public class ProcurementPlan implements Serializable {
             return true;
         }
 
-        if (!(o instanceof BudgetItems other)) {
+        if (!(o instanceof ProcurementPlan other)) {
             return false;
         }
 

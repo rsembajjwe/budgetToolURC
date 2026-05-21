@@ -99,6 +99,81 @@
   border-radius: 6px;
 }
 
+.actual-view.financial-actual-view .actual-summary-panel {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: var(--lumo-space-s);
+  flex: 0 0 auto;
+  margin: var(--lumo-space-s) var(--lumo-space-m) 0;
+}
+
+.actual-view.financial-actual-view .actual-metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  min-height: 96px;
+  padding: var(--lumo-space-m);
+  background: var(--actual-surface);
+  border: 1px solid var(--actual-border);
+  border-left: 4px solid var(--actual-border-strong);
+  border-radius: 8px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+}
+
+.actual-view.financial-actual-view .actual-metric-revenue {
+  border-left-color: #1f6f5b;
+}
+
+.actual-view.financial-actual-view .actual-metric-expenditure {
+  border-left-color: #7c2d12;
+}
+
+.actual-view.financial-actual-view .actual-metric-variance {
+  border-left-color: #1e3a8a;
+}
+
+.actual-view.financial-actual-view .actual-metric-net,
+.actual-view.financial-actual-view .actual-metric-rate {
+  border-left-color: #475569;
+}
+
+.actual-view.financial-actual-view .actual-metric-title {
+  color: var(--actual-muted);
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.actual-view.financial-actual-view .actual-metric-value {
+  color: var(--actual-navy);
+  font-size: 1.25rem;
+  font-weight: 850;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.actual-view.financial-actual-view .actual-metric-caption {
+  margin-top: auto;
+  color: var(--actual-muted);
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 600;
+}
+
+.actual-view.financial-actual-view .actual-positive {
+  color: #166534;
+}
+
+.actual-view.financial-actual-view .actual-negative {
+  color: #991b1b;
+}
+
+.actual-view.financial-actual-view .actual-neutral {
+  color: var(--actual-navy);
+}
+
 .actual-view.financial-actual-view .actual-tabs {
   flex: 1;
   min-height: 0;
@@ -128,8 +203,38 @@
   background: var(--actual-surface);
   border: 1px solid var(--actual-border);
   border-radius: 0 0 8px 8px;
-  overflow: hidden;
+  overflow: auto;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+.actual-view.financial-actual-view .actual-report-accordion {
+  width: 100%;
+  min-height: 0;
+  background: var(--actual-surface);
+}
+
+.actual-view.financial-actual-view .actual-report-accordion vaadin-accordion-panel {
+  border-bottom: 1px solid var(--actual-border);
+}
+
+.actual-view.financial-actual-view .actual-report-accordion vaadin-accordion-panel::part(summary) {
+  min-height: 46px;
+  padding: 0 var(--lumo-space-m);
+  background: #f8fafc;
+  color: var(--actual-navy);
+  font-weight: 850;
+}
+
+.actual-view.financial-actual-view .actual-report-accordion vaadin-accordion-panel[opened]::part(summary) {
+  background: #eef6f3;
+  color: var(--actual-accent-strong);
+}
+
+.actual-view.financial-actual-view .actual-accordion-content {
+  width: 100%;
+  height: 660px;
+  min-height: 660px;
+  background: var(--actual-surface);
 }
 
 .actual-view.financial-actual-view .actual-grid {
@@ -158,6 +263,28 @@
 .actual-view.financial-actual-view vaadin-grid::part(body-cell) {
   min-height: 34px;
   border-color: #e5eaf0;
+}
+
+.actual-view.financial-actual-view vaadin-grid::part(actual-budget-column),
+.actual-view.financial-actual-view vaadin-grid .actual-budget-column {
+  background: #f8fbff;
+}
+
+.actual-view.financial-actual-view vaadin-grid::part(actual-actual-column),
+.actual-view.financial-actual-view vaadin-grid .actual-actual-column {
+  background: #f4fbf7;
+}
+
+.actual-view.financial-actual-view vaadin-grid::part(actual-total-column),
+.actual-view.financial-actual-view vaadin-grid .actual-total-column {
+  font-weight: 800;
+}
+
+.actual-view.financial-actual-view vaadin-grid::part(actual-balance-column),
+.actual-view.financial-actual-view vaadin-grid .actual-balance-column {
+  background: #fffaf0;
+  color: #7c2d12;
+  font-weight: 800;
 }
 
 .actual-view.financial-actual-view vaadin-grid::part(body-cell):hover {
@@ -192,6 +319,18 @@
   color: #166534;
 }
 
+.actual-view.financial-actual-view vaadin-grid .actual-budget-value,
+.actual-view.financial-actual-view vaadin-grid [theme~="badge"].actual-budget-value {
+  color: #1e3a8a;
+  background: #edf5ff;
+}
+
+.actual-view.financial-actual-view vaadin-grid .actual-actual-value,
+.actual-view.financial-actual-view vaadin-grid [theme~="badge"].actual-actual-value {
+  color: #166534;
+  background: #eaf7ef;
+}
+
 .actual-view.financial-actual-view .actual-total-cell {
   display: block;
   width: 100%;
@@ -214,12 +353,42 @@
   color: #1e3a8a;
 }
 
+.actual-view.financial-actual-view .actual-budget-total {
+  color: #1e3a8a;
+  background: #edf5ff;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.actual-view.financial-actual-view .actual-actual-total {
+  color: #166534;
+  background: #eaf7ef;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.actual-view.financial-actual-view .actual-balance-total {
+  color: #7c2d12;
+  background: #fff4df;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.actual-view.financial-actual-view .actual-grand-total {
+  box-shadow: inset 0 -2px 0 rgba(15, 23, 42, 0.12);
+}
+
 @media (max-width: 900px) {
   .actual-view.financial-actual-view .actual-page-header,
+  .actual-view.financial-actual-view .actual-summary-panel,
   .actual-view.financial-actual-view .actual-toolbar,
   .actual-view.financial-actual-view .actual-tabs {
     margin-inline: var(--lumo-space-s);
     padding: var(--lumo-space-s);
+  }
+
+  .actual-view.financial-actual-view .actual-summary-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .actual-view.financial-actual-view .actual-page-title {
@@ -230,5 +399,16 @@
   .actual-view.financial-actual-view .actual-toolbar vaadin-multi-select-combo-box,
   .actual-view.financial-actual-view .actual-toolbar vaadin-button {
     width: 100%;
+  }
+
+  .actual-view.financial-actual-view .actual-accordion-content {
+    height: 480px;
+    min-height: 480px;
+  }
+}
+
+@media (max-width: 560px) {
+  .actual-view.financial-actual-view .actual-summary-panel {
+    grid-template-columns: 1fr;
   }
 }

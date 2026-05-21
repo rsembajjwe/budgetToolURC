@@ -14,6 +14,8 @@ import com.methaltech.application.data.bgtool.repository.BudgetItemsRepository;
 import com.methaltech.application.data.bgtool.repository.BudgetRepository;
 import com.methaltech.application.data.bgtool.repository.CoaRepository;
 import com.methaltech.application.data.bgtool.repository.FundsourceRepository;
+import com.methaltech.application.data.bgtool.repository.ProcurementBudgetItemGroupRepository;
+import com.methaltech.application.data.bgtool.repository.ProcurementPlanRepository;
 import com.methaltech.application.data.bgtool.repository.RequisitionDataRepository;
 import com.methaltech.application.data.bgtool.repository.UrcDeptSectionAnlDimbgtRepository;
 import com.methaltech.application.data.entity.bgtool.Budget;
@@ -62,6 +64,9 @@ import java.util.stream.Stream;
 public class BudgetItemsService {
 
     private final BudgetItemsRepository repository;
+    private final ProcurementPlanRepository procurementPlanRepository;
+    private final ProcurementBudgetItemGroupRepository procurementBudgetItemGroupRepository;
+
     private final CoaRepository caoRepository;
     private final FundsourceRepository fundsourceRepository;
     private final SALFLDGRepository salfldgRepository;
@@ -81,7 +86,7 @@ public class BudgetItemsService {
             UrcDeptSectionAnlDimbgtRepository urcDeptSectionAnlDimRepository,
             SALFLDGService sALFLDGService, DeptSectionMergerService deptSectionMergerService,
             RequisitionDataRepository requisitionDataRepository, BudgetRepository budgetRepository,
-            CoaService sampleCoaService) {
+            CoaService sampleCoaService, ProcurementPlanRepository procurementPlanRepository, ProcurementBudgetItemGroupRepository procurementBudgetItemGroupRepository) {
         this.repository = repository;
         this.caoRepository = caoRepository;
         this.fundsourceRepository = fundsourceRepository;
@@ -92,6 +97,8 @@ public class BudgetItemsService {
         this.requisitionDataRepository = requisitionDataRepository;
         this.budgetRepository = budgetRepository;
         this.sampleCoaService = sampleCoaService;
+        this.procurementPlanRepository = procurementPlanRepository;
+        this.procurementBudgetItemGroupRepository = procurementBudgetItemGroupRepository;
     }
 
     public Optional<BudgetItems> get(Long id) {
@@ -116,6 +123,12 @@ public class BudgetItemsService {
     }
 
     public void delete(Long id) {
+        if (id == null) {
+            return;
+        }
+
+        procurementPlanRepository.detachBudgetItems(id);
+        procurementBudgetItemGroupRepository.detachBudgetItems(id);
         repository.deleteById(id);
     }
 
@@ -272,7 +285,15 @@ public class BudgetItemsService {
 
     @Transactional
     public void deleteBudgetItem(BudgetItems budgetItem) {
-        repository.deleteBudgetItem(budgetItem);
+        if (budgetItem == null) {
+            return;
+        }
+        Long id = budgetItem.getId();
+
+        procurementPlanRepository.detachBudgetItems(id);
+        procurementBudgetItemGroupRepository.detachBudgetItems(id);
+        repository.deleteById(id);
+        //repository.deleteBudgetItem(budgetItem);
     }
 
     public List<COA> findDistinctCoacodesByBudgetTypeAndBudgetAndDeptUnit(
@@ -595,6 +616,49 @@ public class BudgetItemsService {
     // Method to find BudgetItems by deptUnit and budget
     public List<BudgetItems> findByDeptUnitAndBudget(UrcDeptSectionAnlDimbgt deptUnit, Budget budget) {
         return repository.findByDeptUnitAndBudget(deptUnit, budget);
+    }
+
+    public List<BudgetItems> findByDeptUnitAndBudgetAndCoa(UrcDeptSectionAnlDimbgt deptUnit, Budget budget, COA coacode) {
+        return repository.findByDeptUnitAndBudgetAndCoacode(deptUnit, budget, coacode);
+    }
+
+    @Transactional
+    public void saveAll(List<BudgetItems> items) {
+        repository.saveAll(items);
+    }
+
+    @Transactional
+    public void deleteAll(List<BudgetItems> items) {
+        List<Long> ids = items.stream()
+                .map(BudgetItems::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (ids.isEmpty()) {
+            return;
+        }
+
+        procurementPlanRepository.detachBudgetItems(ids);
+        procurementBudgetItemGroupRepository.detachBudgetItems(ids);
+
+        repository.deleteAllById(ids);
+    }
+
+    @Transactional
+    public void deleteOldBudgetItemsSafely(List<BudgetItems> oldItems) {
+        List<Long> ids = oldItems.stream()
+                .map(BudgetItems::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (ids.isEmpty()) {
+            return;
+        }
+
+        procurementPlanRepository.detachBudgetItems(ids);
+        procurementBudgetItemGroupRepository.detachBudgetItems(ids);
+
+        repository.deleteAllById(ids);
     }
 
     public List<BudgetItems> findByAll() {
@@ -2400,6 +2464,13 @@ public class BudgetItemsService {
 
     @Transactional
     public void deleteBudgetItem(Long budgetItemId) {
+
+        if (budgetItemId == null) {
+            return;
+        }
+
+        procurementPlanRepository.detachBudgetItems(budgetItemId);
+        procurementBudgetItemGroupRepository.detachBudgetItems(budgetItemId);
         repository.deleteById(budgetItemId);
     }
 
@@ -2538,7 +2609,12 @@ public class BudgetItemsService {
             return 0;
         }
 
+        // List<Long> ids = repository.findIdsByBudgetAndCoacodeIn(budget, coas);
+
+        procurementPlanRepository.detachBudgetItems(ids);
+        procurementBudgetItemGroupRepository.detachBudgetItems(ids);
         return repository.deleteByIdIn(ids);
+        //repository.deleteAllById(ids);
     }
 
     @Transactional(readOnly = true)

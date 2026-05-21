@@ -211,6 +211,7 @@ public class BLODashboardView extends VerticalLayout {
         header.setWidthFull();
 
         HorizontalLayout headerContent = new HorizontalLayout();
+        headerContent.addClassName("blo-header-content");
         headerContent.setWidthFull();
         headerContent.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
         headerContent.setAlignItems(FlexComponent.Alignment.CENTER);
@@ -218,15 +219,22 @@ public class BLODashboardView extends VerticalLayout {
         headerContent.setSpacing(false);
 
         VerticalLayout leftSide = new VerticalLayout();
+        leftSide.addClassName("blo-header-left");
         leftSide.setSpacing(false);
         leftSide.setPadding(false);
         leftSide.setFlexGrow(1);
+
+        VerticalLayout titleGroup = new VerticalLayout();
+        titleGroup.addClassName("blo-header-title-group");
+        titleGroup.setSpacing(false);
+        titleGroup.setPadding(false);
 
         H1 title = new H1("Budget Liaison Officer Dashboard");
         title.addClassName("blo-title");
 
         Span subtitle = new Span("Comprehensive Budget, Approval & Performance Management");
         subtitle.addClassName("blo-subtitle");
+        titleGroup.add(title, subtitle);
 
         HorizontalLayout selectorsLayout = new HorizontalLayout();
         selectorsLayout.setAlignItems(FlexComponent.Alignment.CENTER);
@@ -282,9 +290,10 @@ public class BLODashboardView extends VerticalLayout {
         );
         selectorsLayout.setFlexGrow(1, departmentSelector);
 
-        leftSide.add(title, subtitle, selectorsLayout);
+        leftSide.add(titleGroup, selectorsLayout);
 
         HorizontalLayout rightSide = new HorizontalLayout();
+        rightSide.addClassName("blo-header-actions");
         rightSide.setAlignItems(FlexComponent.Alignment.CENTER);
         rightSide.setSpacing(true);
         rightSide.setPadding(false);
@@ -292,7 +301,7 @@ public class BLODashboardView extends VerticalLayout {
 
         Button refreshButton = new Button("Refresh", new Icon(VaadinIcon.REFRESH));
         refreshButton.addClassName("blo-refresh-button");
-        refreshButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
+        refreshButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
         refreshButton.addClickListener(e -> {
             refreshCurrentTab();
             showNotification("Data refreshed successfully", NotificationVariant.LUMO_SUCCESS);
@@ -300,17 +309,17 @@ public class BLODashboardView extends VerticalLayout {
 
         Button exportButton = new Button("Export PDF", new Icon(VaadinIcon.DOWNLOAD));
         exportButton.addClassName("blo-export-button");
-        exportButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+        exportButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_SMALL);
         exportButton.addClickListener(e -> generateBLOPDFReport());
 
         Button exportWordButton = new Button("Export Word", new Icon(VaadinIcon.DOWNLOAD));
         exportWordButton.addClassName("blo-export-button");
-        exportWordButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+        exportWordButton.addThemeVariants(ButtonVariant.LUMO_CONTRAST, ButtonVariant.LUMO_SMALL);
         exportWordButton.addClickListener(e -> generateBLOWordReport());
 
         Button alertsButton = new Button("Alerts", new Icon(VaadinIcon.BELL));
         alertsButton.addClassName("blo-alerts-button");
-        alertsButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+        alertsButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_SMALL);
         alertsButton.addClickListener(e
                 -> showNotification("Budget alerts panel coming soon", NotificationVariant.LUMO_CONTRAST)
         );
@@ -333,8 +342,10 @@ public class BLODashboardView extends VerticalLayout {
         //generalPhysicalPerformanceTab = new Tab(new Icon(VaadinIcon.CHART_GRID), new Span("General Physical Performance"));
 
         budgetTab.addClassName("nav-tab");
+        budgetTab.getElement().setAttribute("aria-label", "Budget Overview");
         //physicalPerformanceTab.addClassName("nav-tab");
         financialPerformanceTab.addClassName("nav-tab");
+        financialPerformanceTab.getElement().setAttribute("aria-label", "Financial Performance");
         //generalPhysicalPerformanceTab.addClassName("nav-tab");
 
         navigationTabs.add(
@@ -371,6 +382,7 @@ public class BLODashboardView extends VerticalLayout {
     private void createMainContent() {
         Div mainContent = new Div();
         mainContent.addClassName("blo-main-content");
+        mainContent.setWidthFull();
 
         contentContainer = new VerticalLayout();
         contentContainer.setWidthFull();
@@ -631,7 +643,7 @@ public class BLODashboardView extends VerticalLayout {
                 selectedQuarter
         );
 
-        wrapper.add(departmentOverview);
+        wrapper.add(title, subtitlePerf, departmentOverview);
         contentContainer.add(wrapper);
     }
 

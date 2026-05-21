@@ -231,6 +231,18 @@ public interface SALFLDGRepository extends JpaRepository<SALFLDG, String> {
             + "AND ANAL_T1 = (:analT1Values) ", nativeQuery = true)
     List<SALFLDGProjection> findByPeriodAndDepartmentExpenditures(
             @Param("period") Set<Integer> period, @Param("analT1Values") String analT1Values);
+    
+        @Query(value = "SELECT ACCNT_CODE AS accntCode, JRNAL_NO AS jrnalNo, JRNAL_LINE AS jrnalLine, PERIOD AS period, AMOUNT AS amount, DESCRIPTN AS descriptn, "
+            + "TRANS_DATETIME AS transDatetime, ANAL_T1 AS analT1 "
+            + "FROM URC_A_SALFLDG_View "
+            + "WHERE PERIOD IN :period AND (ACCNT_CODE LIKE '2%' OR ACCNT_CODE LIKE '3%') "
+            + "AND ACCNT_CODE NOT LIKE '321%' "
+            + "AND ACCNT_CODE NOT LIKE '314%' "
+            + "AND ACCNT_CODE NOT LIKE '231%' "
+            + "AND LEN(ACCNT_CODE) <= 6 "
+            + "AND ANAL_T1 = (:analT1Values) ", nativeQuery = true)
+    List<SALFLDGProjection> findByPeriodAndDepartmentExpenditures2(
+            @Param("period") Set<Integer> period, @Param("analT1Values") String analT1Values);
 
     @Query(value = "SELECT * FROM URC_A_SALFLDG_View "
             + "WHERE PERIOD IN :period "
