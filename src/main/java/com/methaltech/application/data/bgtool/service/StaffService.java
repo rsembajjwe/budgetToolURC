@@ -4,6 +4,7 @@ package com.methaltech.application.data.bgtool.service;
 import com.methaltech.application.data.bgtool.repository.StaffRepository;
 import com.methaltech.application.data.entity.bgtool.Staff;
 import java.math.BigDecimal;
+import java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,23 @@ public class StaffService {
 
     public List<Staff> getStaffByFinancialYear(String fy) {
         return staffRepository.findByFy(fy);
+    }
+
+    public List<Staff> listByFinancialYear(String fy) {
+        if (fy == null || fy.isBlank()) {
+            return Collections.emptyList();
+        }
+        return staffRepository.findByFyOrderByLnameAscFnameAsc(fy);
+    }
+
+    public List<Staff> searchByFinancialYear(String fy, String searchTerm) {
+        if (fy == null || fy.isBlank()) {
+            return Collections.emptyList();
+        }
+        if (searchTerm == null || searchTerm.isBlank()) {
+            return listByFinancialYear(fy);
+        }
+        return staffRepository.searchByFy(fy, searchTerm.trim());
     }
 
     public Staff getStaffById(int id) {
