@@ -1,22 +1,19 @@
 package com.methaltech.application.views.salary;
 
 import com.methaltech.application.data.UploadExamplesI18N;
-import com.methaltech.application.data.bgtool.service.BudgetItemsService;
 import com.methaltech.application.data.bgtool.service.BudgetService;
-import com.methaltech.application.data.bgtool.service.CoaService;
-import com.methaltech.application.data.bgtool.service.Coalevel1Service;
 import com.methaltech.application.data.bgtool.service.CurrencyService;
 import com.methaltech.application.data.bgtool.service.FreightVolumesService;
 import com.methaltech.application.data.bgtool.service.FundsourceService;
 import com.methaltech.application.data.bgtool.service.OrganisationService;
 import com.methaltech.application.data.bgtool.service.StaffService;
+import com.methaltech.application.data.bgtool.service.StaffSalaryBudgetService;
+import com.methaltech.application.data.bgtool.service.StaffSalaryBudgetService.SalaryBudgetRegenerationResult;
 import com.methaltech.application.data.bgtool.service.StaffSalaryService;
 import com.methaltech.application.data.bgtool.service.Urc_ActivitiesService;
 import com.methaltech.application.data.bgtool.service.UserService;
 import com.methaltech.application.data.entity.bgtool.Budget;
-import com.methaltech.application.data.entity.bgtool.BudgetItems;
 import com.methaltech.application.data.entity.bgtool.COA;
-import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.Currency;
 import com.methaltech.application.data.entity.bgtool.Fundsource;
 import com.methaltech.application.data.entity.bgtool.Organisation;
@@ -94,23 +91,18 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @Uses(Icon.class)
 public class staffSalaryView extends Div {
 
-    private record SalaryBudgetRegenerationResult(int salaryGradeRows, BigDecimal monthlyTotal) {
-    }
-
     private final FreightVolumesService sampleFreightVolumesService;
     private final BudgetService sampleBudgetService;
-    private final CoaService sampleCoaService;
     private ComboBox<Budget> comboBoxBudget = new ComboBox<>("Budget");
     private ComboBox<COA> comboBoxCOA = new ComboBox<>("Freight Route");
     private ComboBox<Urc_Activities> comboBoxUrc_Activities = new ComboBox("Activities");
     private Grid<StaffSalary> gridStaffSalary = new Grid<>(StaffSalary.class, false);
     private final CurrencyService sampleCurrencyService;
-    private final BudgetItemsService budgetItemsService;
     private final OrganisationService sampleOrganisationService;
-    private final BudgetItemsService sampleBudgetItemsService;
     private final Urc_ActivitiesService sampleUrc_ActivitiesService;
     private final StaffSalaryService sampleStaffSalaryService;
     private final StaffService staffService;
+    private final StaffSalaryBudgetService staffSalaryBudgetService;
 
     private final Binder<StaffSalary> binder = new BeanValidationBinder<>(StaffSalary.class);
     private ComboBox<UrcDeptSectionAnlDimbgt> comboBoxD_Section = new ComboBox<>("Cost Centre");
@@ -147,29 +139,25 @@ public class staffSalaryView extends Div {
     private AuthenticatedUser authenticatedUser;
     private final UserService userService;
     private User user;
-    private final Coalevel1Service coalevel1Service;
 
     private ComboBox<Fundsource> budgetItemfundSource = new ComboBox<>("Fund Source");
     private final FundsourceService sampleFundsourceService;
     private Upload upload;
 
-    public staffSalaryView(AuthenticatedUser authenticatedUser, FreightVolumesService sampleFreightVolumesService, BudgetService sampleBudgetService, CoaService sampleCoaService,
-            CurrencyService sampleCurrencyService, BudgetItemsService budgetItemsService,
-            OrganisationService sampleOrganisationService, UserService userService, BudgetItemsService sampleBudgetItemsService,
+    public staffSalaryView(AuthenticatedUser authenticatedUser, FreightVolumesService sampleFreightVolumesService, BudgetService sampleBudgetService,
+            CurrencyService sampleCurrencyService,
+            OrganisationService sampleOrganisationService, UserService userService,
             Urc_ActivitiesService sampleUrc_ActivitiesService, StaffSalaryService sampleStaffSalaryService,
-            StaffService staffService, Coalevel1Service coalevel1Service, FundsourceService sampleFundsourceService) {
+            StaffService staffService, StaffSalaryBudgetService staffSalaryBudgetService, FundsourceService sampleFundsourceService) {
         this.sampleFreightVolumesService = sampleFreightVolumesService;
         this.sampleBudgetService = sampleBudgetService;
-        this.sampleCoaService = sampleCoaService;
         this.sampleCurrencyService = sampleCurrencyService;
-        this.budgetItemsService = budgetItemsService;
         this.sampleOrganisationService = sampleOrganisationService;
         this.userService = userService;
-        this.sampleBudgetItemsService = sampleBudgetItemsService;
         this.sampleUrc_ActivitiesService = sampleUrc_ActivitiesService;
         this.sampleStaffSalaryService = sampleStaffSalaryService;
         this.staffService = staffService;
-        this.coalevel1Service = coalevel1Service;
+        this.staffSalaryBudgetService = staffSalaryBudgetService;
         this.sampleFundsourceService = sampleFundsourceService;
         setHeight("100%");
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
@@ -477,37 +465,11 @@ public class staffSalaryView extends Div {
     }
 
     public void deleteAllItemsalaryBudget() {
-        COA salary_wages = sampleCoaService.findByCodeAndBudget("211101", comboBoxBudget.getValue());
-        COA nssf = sampleCoaService.findByCodeAndBudget("212101", comboBoxBudget.getValue());
-        COA gratuity = sampleCoaService.findByCodeAndBudget("213004", comboBoxBudget.getValue());
-        COA workmancompesation = sampleCoaService.findByCodeAndBudget("213005", comboBoxBudget.getValue());
-
-        List<COA> coaList = new ArrayList();
-        coaList.add(salary_wages);
-        coaList.add(nssf);
-        coaList.add(gratuity);
-        coaList.add(workmancompesation);
-        int deleted = budgetItemsService.deleteByBudgetAndCoas(comboBoxBudget.getValue(), coaList);
-        sampleStaffSalaryService.deleteByBudget(comboBoxBudget.getValue());
-
-    }
-
-    private void deleteSelectedSalaryBudgetItems() {
-        COA salary_wages = sampleCoaService.findByCodeAndBudget("211101", comboBoxBudget.getValue());
-        COA nssf = sampleCoaService.findByCodeAndBudget("212101", comboBoxBudget.getValue());
-        COA gratuity = sampleCoaService.findByCodeAndBudget("213004", comboBoxBudget.getValue());
-        COA workmancompesation = sampleCoaService.findByCodeAndBudget("213005", comboBoxBudget.getValue());
-
-        List<COA> coaList = new ArrayList();
-        coaList.add(salary_wages);
-        coaList.add(nssf);
-        coaList.add(gratuity);
-        coaList.add(workmancompesation);
-        int deleted = budgetItemsService.deleteByBudgetAndCoasAndSalaryContext(
-                comboBoxBudget.getValue(), coaList, comboBoxD_Section.getValue(),
-                comboBoxOrganisation.getValue(), comboBoxUrc_Activities.getValue(),
-                budgetItemfundSource.getValue());
-
+        try {
+            staffSalaryBudgetService.deleteAllSalaryBudgetData(comboBoxBudget.getValue());
+        } catch (IllegalStateException ex) {
+            warningNotification(ex.getMessage());
+        }
     }
 
     private void importStaffFromMaster() {
@@ -868,7 +830,6 @@ public class staffSalaryView extends Div {
                 i++;
                 if (i > 1) {
                     StaffSalary info = new StaffSalary();
-                    BudgetItems budget = new BudgetItems();
 
                     handleCell(row, messages, info, i, 0, "Null Staff Code Value", (code) -> {
                         code.setCellType(CellType.STRING);
@@ -969,42 +930,20 @@ public class staffSalaryView extends Div {
     }
 
     private SalaryBudgetRegenerationResult regenerateSelectedSalaryBudgetItems(Budget budget) {
-        if (budget == null || !hasSelectedSalaryContext()) {
+        if (budget == null) {
             return new SalaryBudgetRegenerationResult(0, BigDecimal.ZERO);
         }
-
-        COA salaryWages = sampleCoaService.findByCodeAndBudget("211101", budget);
-        COA nssf = sampleCoaService.findByCodeAndBudget("212101", budget);
-        COA gratuity = sampleCoaService.findByCodeAndBudget("213004", budget);
-        COA workmanCompensation = sampleCoaService.findByCodeAndBudget("213005", budget);
-        Currency cur = sampleCurrencyService.findCurrenciesByCurrencyShortAndBudget("UGX", budget);
-        Coalevel1 coaLevel1 = coalevel1Service.findByCode(2);
-
-        if (salaryWages == null || nssf == null || gratuity == null || workmanCompensation == null || cur == null || coaLevel1 == null) {
-            warningNotification("Salary COA setup is incomplete for this budget.");
+        try {
+            return staffSalaryBudgetService.regenerateSelectedContext(
+                    budget,
+                    comboBoxD_Section.getValue(),
+                    comboBoxOrganisation.getValue(),
+                    comboBoxUrc_Activities.getValue(),
+                    budgetItemfundSource.getValue());
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            warningNotification(ex.getMessage());
             return new SalaryBudgetRegenerationResult(0, BigDecimal.ZERO);
         }
-
-        deleteSelectedSalaryBudgetItems();
-
-        List<StaffSalary> salaries = sampleStaffSalaryService.findByBudgetAndDeptUnitAndBudgetTypeAndActivity(
-                budget, comboBoxD_Section.getValue(), comboBoxOrganisation.getValue(), comboBoxUrc_Activities.getValue());
-        List<StaffSalary> aggregateSalaryByGrade = sampleStaffSalaryService.aggregateSalaryByGrade(salaries);
-        BigDecimal monthlyTotal = BigDecimal.ZERO;
-        for (StaffSalary a : aggregateSalaryByGrade) {
-            a.setBudget(budget);
-            BudgetItems salaryItem = createSalaryBudgetItem(a, salaryWages, cur, coaLevel1);
-            sampleBudgetItemsService.update(salaryItem);
-            monthlyTotal = monthlyTotal.add(a.getSalary());
-        }
-
-        if (monthlyTotal.compareTo(BigDecimal.ZERO) > 0) {
-            sampleBudgetItemsService.update(createBenefitBudgetItem(nssf, cur, coaLevel1, monthlyTotal, new BigDecimal("0.10")));
-            sampleBudgetItemsService.update(createBenefitBudgetItem(gratuity, cur, coaLevel1, monthlyTotal, new BigDecimal("0.25")));
-            sampleBudgetItemsService.update(createBenefitBudgetItem(workmanCompensation, cur, coaLevel1, monthlyTotal, new BigDecimal("0.03")));
-        }
-
-        return new SalaryBudgetRegenerationResult(aggregateSalaryByGrade.size(), monthlyTotal);
     }
 
     private void showSalaryBudgetRegenerationNotification(SalaryBudgetRegenerationResult result) {
@@ -1015,56 +954,6 @@ public class staffSalaryView extends Div {
     private String formatSalaryBudgetRegeneration(SalaryBudgetRegenerationResult result) {
         return "Generated " + result.salaryGradeRows() + " salary grade item(s); monthly salary total "
                 + decimalFormat.format(result.monthlyTotal()) + ".";
-    }
-
-    private BudgetItems createSalaryBudgetItem(StaffSalary salary, COA salaryWages, Currency cur, Coalevel1 coaLevel1) {
-        BudgetItems item = createBaseSalaryBudgetItem(salary.getFname() + " Salary", salaryWages, cur, coaLevel1);
-        item.setCost(salary.getSalary());
-        item.setQty(new BigDecimal("12"));
-        setMonthlyAmounts(item, salary.getSalary());
-        item.setGrade(salary.getGrade());
-        return item;
-    }
-
-    private BudgetItems createBenefitBudgetItem(COA coa, Currency cur, Coalevel1 coaLevel1,
-            BigDecimal monthlySalaryTotal, BigDecimal rate) {
-        BigDecimal monthlyAmount = monthlySalaryTotal.multiply(rate);
-        BudgetItems item = createBaseSalaryBudgetItem(coa.getName(), coa, cur, coaLevel1);
-        item.setCost(monthlyAmount);
-        item.setQty(new BigDecimal("12"));
-        setMonthlyAmounts(item, monthlyAmount);
-        return item;
-    }
-
-    private BudgetItems createBaseSalaryBudgetItem(String itemName, COA coa, Currency cur, Coalevel1 coaLevel1) {
-        BudgetItems item = new BudgetItems();
-        item.setItem(itemName);
-        item.setUnitMeasure("MONTH");
-        item.setCurrency(cur);
-        item.setBudget(comboBoxBudget.getValue());
-        item.setBudgetType(comboBoxOrganisation.getValue());
-        item.setCoacode(coa);
-        item.setDeptUnit(comboBoxD_Section.getValue());
-        item.setFundsource(budgetItemfundSource.getValue());
-        item.setActivity(comboBoxUrc_Activities.getValue());
-        item.setBcategory(coa.getCode());
-        item.setCoalevel1(coaLevel1);
-        return item;
-    }
-
-    private void setMonthlyAmounts(BudgetItems item, BigDecimal monthlyAmount) {
-        item.setJan(monthlyAmount);
-        item.setFeb(monthlyAmount);
-        item.setMar(monthlyAmount);
-        item.setApr(monthlyAmount);
-        item.setMay(monthlyAmount);
-        item.setJun(monthlyAmount);
-        item.setJul(monthlyAmount);
-        item.setAug(monthlyAmount);
-        item.setSep(monthlyAmount);
-        item.setOct(monthlyAmount);
-        item.setNov(monthlyAmount);
-        item.setDec(monthlyAmount);
     }
 
     private void handleNumericCell(Row row, List<errorMessages> messages, StaffSalary info, int rowIndex, int columnIndex, String errorMessage, CellHandler handler) {
