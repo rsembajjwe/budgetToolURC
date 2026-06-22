@@ -675,6 +675,10 @@ public class staffSalaryView extends Div {
         return !comboBoxBudget.isEmpty() && comboBoxBudget.getValue().isActive();
     }
 
+    private String selectedFinancialYear() {
+        return comboBoxBudget.isEmpty() ? "salary-budget-preview" : comboBoxBudget.getValue().getFinancialYear();
+    }
+
     private void updateSalaryContextActionState() {
         boolean enabled = isSelectedBudgetActive() && hasSelectedSalaryContext();
 
