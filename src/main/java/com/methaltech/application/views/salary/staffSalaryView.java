@@ -855,16 +855,80 @@ public class staffSalaryView extends Div {
                 .setHeader("Annual Diff").setAutoWidth(true);
         historyGrid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
         historyGrid.setHeight("420px");
-        historyGrid.setItems(salaryAdjustmentHistoryService.findByContext(comboBoxBudget.getValue(),
+        List<SalaryAdjustmentHistory> historyRows = salaryAdjustmentHistoryService.findByContext(comboBoxBudget.getValue(),
                 comboBoxD_Section.getValue(), comboBoxOrganisation.getValue(), comboBoxUrc_Activities.getValue(),
-                budgetItemfundSource.getValue()));
+                budgetItemfundSource.getValue());
+        historyGrid.setItems(historyRows);
+
+        Button download = new Button("Download Excel", event -> {
+            try {
+                byte[] data = generateSalaryAdjustmentHistoryWorkbook(historyRows);
+                triggerDownload("salary-adjustment-history-" + safeFileName(selectedFinancialYear()) + ".xlsx", data);
+            } catch (IOException ex) {
+                warningNotification("Unable to generate salary adjustment history: " + ex.getMessage());
+            }
+        });
+        download.setId("staff-salary-adjustment-history-download");
+        download.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
         Button close = new Button("Close", event -> dialog.close());
         close.setId("staff-salary-adjustment-history-close");
         close.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         dialog.add(historyGrid);
-        dialog.getFooter().add(close);
+        dialog.getFooter().add(download, close);
         dialog.open();
+    }
+
+    private byte[] generateSalaryAdjustmentHistoryWorkbook(List<SalaryAdjustmentHistory> historyRows) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Adjustment History");
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+
+            int rowIndex = 0;
+            rowIndex = writeContextRow(sheet, rowIndex++, "Financial Year", selectedFinancialYear());
+            rowIndex = writeContextRow(sheet, rowIndex++, "Cost Centre", comboBoxD_Section.getValue().getNAME());
+            rowIndex = writeContextRow(sheet, rowIndex++, "Budget Type", comboBoxOrganisation.getValue().getName());
+            rowIndex = writeContextRow(sheet, rowIndex++, "Activity", comboBoxUrc_Activities.getValue().getName());
+            rowIndex = writeContextRow(sheet, rowIndex++, "Fund Source", budgetItemfundSource.getValue().getFundsource());
+            rowIndex++;
+
+            Row header = sheet.createRow(rowIndex++);
+            String[] headers = {"Applied At", "Applied By", "Scope", "Type", "Grade", "Staff Code", "Staff Name",
+                "Value", "Staff Count", "Old Monthly", "New Monthly", "Monthly Diff", "Annual Diff"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = header.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            for (SalaryAdjustmentHistory history : historyRows) {
+                Row row = sheet.createRow(rowIndex++);
+                row.createCell(0).setCellValue(history.getAppliedAt() == null ? "" : history.getAppliedAt().toString());
+                row.createCell(1).setCellValue(valueOrEmpty(history.getAppliedBy()));
+                row.createCell(2).setCellValue(history.getScope() == null ? "" : history.getScope().name());
+                row.createCell(3).setCellValue(history.getAdjustmentType() == null ? "" : history.getAdjustmentType().name());
+                row.createCell(4).setCellValue(history.getGrade() == null ? "" : history.getGrade().name());
+                row.createCell(5).setCellValue(valueOrEmpty(history.getSelectedStaffCode()));
+                row.createCell(6).setCellValue(valueOrEmpty(history.getSelectedStaffName()));
+                writeAmountCell(row, 7, history.getAdjustmentValue());
+                row.createCell(8).setCellValue(history.getAffectedStaffCount());
+                writeAmountCell(row, 9, history.getOldMonthlyTotal());
+                writeAmountCell(row, 10, history.getNewMonthlyTotal());
+                writeAmountCell(row, 11, history.getMonthlyDifference());
+                writeAmountCell(row, 12, history.getAnnualDifference());
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+        }
     }
 
     private void refreshGradeCeilingGrid(Grid<SalaryGradeCeiling> ceilingGrid) {
@@ -965,6 +1029,16 @@ public class staffSalaryView extends Div {
         row.createCell(0).setCellValue(label);
         row.createCell(1).setCellValue(value == null ? "" : value);
         return rowIndex + 1;
+    }
+
+    private void writeAmountCell(Row row, int column, BigDecimal value) {
+        if (value != null) {
+            row.createCell(column).setCellValue(value.doubleValue());
+        }
+    }
+
+    private String valueOrEmpty(String value) {
+        return value == null ? "" : value;
     }
 
     private void triggerDownload(String fileName, byte[] data) {
