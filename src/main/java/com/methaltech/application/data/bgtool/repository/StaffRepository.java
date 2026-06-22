@@ -4,6 +4,7 @@ package com.methaltech.application.data.bgtool.repository;
 import com.methaltech.application.data.entity.bgtool.Staff;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +16,8 @@ public interface StaffRepository extends JpaRepository<Staff, Integer> {
     List<Staff> findByFy(String fy);
 
     List<Staff> findByFyOrderByLnameAscFnameAsc(String fy);
+
+    Optional<Staff> findFirstByFyAndCode(String fy, String code);
 
     @Query("""
         SELECT s FROM Staff s

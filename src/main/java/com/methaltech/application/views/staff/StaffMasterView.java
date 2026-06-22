@@ -7,6 +7,7 @@ import com.methaltech.application.data.entity.bgtool.Staff;
 import com.methaltech.application.views.MainLayout;
 import com.vaadin.flow.component.HtmlComponent;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -28,21 +29,49 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.upload.Upload;
+import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.StreamRegistration;
+import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.RolesAllowed;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.DataFormat;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.PageRequest;
 
 @PageTitle("Staff Master")
@@ -55,6 +84,11 @@ public class StaffMasterView extends Div {
         "EXEC 1", "EXEC 2", "RG 1", "RG 2", "RG 3", "RG 4",
         "RG 5", "RG 6", "RG 7", "RG 8", "RG 9"
     };
+    private static final List<String> STAFF_EXPORT_HEADERS = List.of(
+            "Financial Year", "Staff Code", "Last Name", "First Name", "Position", "Grade",
+            "Monthly Salary", "Email", "Telephone", "Mobile", "Contract", "Appointment Date",
+            "Departure Date", "Primary Address", "Address 2", "Next of Kin"
+    );
 
     private final BudgetService budgetService;
     private final StaffService staffService;
@@ -83,6 +117,9 @@ public class StaffMasterView extends Div {
     private final Button delete = new Button("Delete");
     private final Button cancel = new Button("Cancel");
     private final Button newStaff = new Button("New Staff");
+    private final Button downloadStaff = new Button("Download Excel", VaadinIcon.DOWNLOAD.create());
+    private final MemoryBuffer uploadBuffer = new MemoryBuffer();
+    private final Upload upload = new Upload(uploadBuffer);
     private final Footer footer = new Footer();
 
     private Staff selectedStaff;
@@ -211,7 +248,16 @@ public class StaffMasterView extends Div {
         delete.addThemeVariants(ButtonVariant.LUMO_ERROR);
         cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         newStaff.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        downloadStaff.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         delete.setEnabled(false);
+
+        upload.setAcceptedFileTypes(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                ".xlsx");
+        upload.setMaxFiles(1);
+        upload.setDropAllowed(false);
+        upload.setUploadButton(new Button("Upload Excel", VaadinIcon.UPLOAD.create()));
+        upload.addSucceededListener(event -> importStaffWorkbook(uploadBuffer.getInputStream()));
 
         searchField.setClearButtonVisible(true);
         searchField.setPrefixComponent(VaadinIcon.SEARCH.create());
@@ -229,12 +275,13 @@ public class StaffMasterView extends Div {
         });
         save.addClickListener(event -> saveStaff());
         delete.addClickListener(event -> confirmDelete());
+        downloadStaff.addClickListener(event -> downloadStaffWorkbook());
     }
 
     private HorizontalLayout createFilterLayout() {
         budget.setWidth("260px");
         searchField.setWidthFull();
-        HorizontalLayout filters = new HorizontalLayout(budget, searchField, newStaff);
+        HorizontalLayout filters = new HorizontalLayout(budget, searchField, newStaff, upload, downloadStaff);
         filters.setWidthFull();
         filters.setAlignItems(FlexComponent.Alignment.END);
         filters.expand(searchField);
@@ -319,6 +366,209 @@ public class StaffMasterView extends Div {
         dialog.open();
     }
 
+    private void importStaffWorkbook(InputStream inputStream) {
+        if (budget.isEmpty()) {
+            warningNotification("Select a financial year before uploading Staff Master.");
+            return;
+        }
+
+        String fy = selectedFinancialYear();
+        List<String> errors = new ArrayList<>();
+        List<Staff> staffToSave = new ArrayList<>();
+        Set<String> seenCodes = new HashSet<>();
+        DataFormatter formatter = new DataFormatter(Locale.US);
+
+        try (Workbook workbook = WorkbookFactory.create(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                Row row = sheet.getRow(rowIndex);
+                if (isBlankRow(row, formatter)) {
+                    continue;
+                }
+
+                Staff staff = parseStaffRow(row, formatter, fy, rowIndex + 1, errors, seenCodes);
+                if (staff != null) {
+                    staffToSave.add(staff);
+                }
+            }
+        } catch (IOException ex) {
+            warningNotification("Unable to read Staff Master spreadsheet: " + ex.getMessage());
+            return;
+        }
+
+        if (!errors.isEmpty()) {
+            warningNotification(formatImportErrors(errors));
+            return;
+        }
+
+        if (staffToSave.isEmpty()) {
+            warningNotification("No staff rows found in the spreadsheet.");
+            return;
+        }
+
+        staffService.saveStaff(staffToSave);
+        Notification.show("Imported " + staffToSave.size() + " staff records for " + fy + ".")
+                .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+        grid.deselectAll();
+        clearForm();
+        refreshGrid();
+    }
+
+    private Staff parseStaffRow(Row row, DataFormatter formatter, String selectedFy, int displayRow,
+            List<String> errors, Set<String> seenCodes) {
+        String rowFy = clean(cellText(row, 0, formatter));
+        String staffCode = clean(cellText(row, 1, formatter));
+        String lastName = clean(cellText(row, 2, formatter));
+        String firstName = clean(cellText(row, 3, formatter));
+        String staffGrade = normalizeGrade(cellText(row, 5, formatter));
+        BigDecimal monthlySalary = parseAmount(cellText(row, 6, formatter));
+
+        if (rowFy != null && !rowFy.equals(selectedFy)) {
+            errors.add("Row " + displayRow + ": financial year must match selected year " + selectedFy + ".");
+        }
+        if (staffCode == null) {
+            errors.add("Row " + displayRow + ": staff code is required.");
+        } else if (!seenCodes.add(staffCode.toUpperCase(Locale.ROOT))) {
+            errors.add("Row " + displayRow + ": duplicate staff code " + staffCode + " in spreadsheet.");
+        }
+        if (lastName == null) {
+            errors.add("Row " + displayRow + ": last name is required.");
+        }
+        if (firstName == null) {
+            errors.add("Row " + displayRow + ": first name is required.");
+        }
+        if (staffGrade == null) {
+            errors.add("Row " + displayRow + ": grade must be one of " + String.join(", ", GRADE_OPTIONS) + ".");
+        }
+        if (monthlySalary == null) {
+            errors.add("Row " + displayRow + ": monthly salary is required and must be numeric.");
+        }
+
+        Date appointmentDate = null;
+        Date departureDate = null;
+        try {
+            appointmentDate = parseDate(row.getCell(11), formatter);
+            departureDate = parseDate(row.getCell(12), formatter);
+        } catch (IllegalArgumentException ex) {
+            errors.add("Row " + displayRow + ": " + ex.getMessage());
+        }
+
+        if (!errorsForRow(errors, displayRow).isEmpty()) {
+            return null;
+        }
+
+        Optional<Staff> existing = staffService.findByFinancialYearAndCode(selectedFy, staffCode);
+        Staff staff = existing.orElseGet(Staff::new);
+        staff.setFy(selectedFy);
+        staff.setCode(staffCode);
+        staff.setLname(lastName);
+        staff.setFname(firstName);
+        staff.setPosition(clean(cellText(row, 4, formatter)));
+        staff.setGrade(staffGrade);
+        staff.setSalary(monthlySalary);
+        staff.setEmail(clean(cellText(row, 7, formatter)));
+        staff.setTel(clean(cellText(row, 8, formatter)));
+        staff.setMob(clean(cellText(row, 9, formatter)));
+        staff.setContract(clean(cellText(row, 10, formatter)));
+        staff.setAppointment(appointmentDate);
+        staff.setDeparture(departureDate);
+        staff.setAddress(clean(cellText(row, 13, formatter)));
+        staff.setAddress2(clean(cellText(row, 14, formatter)));
+        staff.setNextOfKin(clean(cellText(row, 15, formatter)));
+        return staff;
+    }
+
+    private void downloadStaffWorkbook() {
+        if (budget.isEmpty()) {
+            warningNotification("Select a financial year before downloading Staff Master.");
+            return;
+        }
+
+        String fy = selectedFinancialYear();
+        try {
+            byte[] data = generateStaffWorkbook(fy, staffService.listByFinancialYear(fy));
+            triggerDownload("staff-master-" + safeFileName(fy) + ".xlsx", data);
+        } catch (IOException ex) {
+            warningNotification("Unable to generate Staff Master spreadsheet: " + ex.getMessage());
+        }
+    }
+
+    private byte[] generateStaffWorkbook(String fy, List<Staff> staffRows) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Staff Master");
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+
+            CreationHelper creationHelper = workbook.getCreationHelper();
+            DataFormat dataFormat = creationHelper.createDataFormat();
+            CellStyle dateStyle = workbook.createCellStyle();
+            dateStyle.setDataFormat(dataFormat.getFormat("yyyy-mm-dd"));
+
+            Row header = sheet.createRow(0);
+            for (int i = 0; i < STAFF_EXPORT_HEADERS.size(); i++) {
+                Cell cell = header.createCell(i);
+                cell.setCellValue(STAFF_EXPORT_HEADERS.get(i));
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowIndex = 1;
+            for (Staff staff : staffRows) {
+                Row row = sheet.createRow(rowIndex++);
+                writeStaffRow(row, staff, fy, dateStyle);
+            }
+
+            for (int i = 0; i < STAFF_EXPORT_HEADERS.size(); i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    private void writeStaffRow(Row row, Staff staff, String fy, CellStyle dateStyle) {
+        row.createCell(0).setCellValue(fy);
+        row.createCell(1).setCellValue(valueOrEmpty(staff.getCode()));
+        row.createCell(2).setCellValue(valueOrEmpty(staff.getLname()));
+        row.createCell(3).setCellValue(valueOrEmpty(staff.getFname()));
+        row.createCell(4).setCellValue(valueOrEmpty(staff.getPosition()));
+        row.createCell(5).setCellValue(valueOrEmpty(staff.getGrade()));
+        if (staff.getSalary() != null) {
+            row.createCell(6).setCellValue(staff.getSalary().doubleValue());
+        }
+        row.createCell(7).setCellValue(valueOrEmpty(staff.getEmail()));
+        row.createCell(8).setCellValue(valueOrEmpty(staff.getTel()));
+        row.createCell(9).setCellValue(valueOrEmpty(staff.getMob()));
+        row.createCell(10).setCellValue(valueOrEmpty(staff.getContract()));
+        writeDateCell(row, 11, staff.getAppointment(), dateStyle);
+        writeDateCell(row, 12, staff.getDeparture(), dateStyle);
+        row.createCell(13).setCellValue(valueOrEmpty(staff.getAddress()));
+        row.createCell(14).setCellValue(valueOrEmpty(staff.getAddress2()));
+        row.createCell(15).setCellValue(valueOrEmpty(staff.getNextOfKin()));
+    }
+
+    private void writeDateCell(Row row, int column, Date date, CellStyle dateStyle) {
+        if (date == null) {
+            return;
+        }
+        Cell cell = row.createCell(column);
+        cell.setCellValue(date);
+        cell.setCellStyle(dateStyle);
+    }
+
+    private void triggerDownload(String fileName, byte[] data) {
+        StreamResource resource = new StreamResource(fileName, () -> new ByteArrayInputStream(data));
+        resource.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        resource.setCacheTime(0);
+
+        StreamRegistration registration = VaadinSession.getCurrent()
+                .getResourceRegistry()
+                .registerResource(resource);
+        UI.getCurrent().getPage().executeJs("window.location.href = $0;", registration.getResourceUri().toString());
+    }
+
     private void refreshGrid() {
         String fy = selectedFinancialYear();
         List<Staff> staff = staffService.searchByFinancialYear(fy, searchField.getValue());
@@ -365,6 +615,102 @@ public class StaffMasterView extends Div {
         String last = staff.getLname() == null ? "" : staff.getLname();
         String fullName = (first + " " + last).trim();
         return fullName.isEmpty() ? staff.getCode() : fullName;
+    }
+
+    private boolean isBlankRow(Row row, DataFormatter formatter) {
+        if (row == null) {
+            return true;
+        }
+        for (int i = 0; i < STAFF_EXPORT_HEADERS.size(); i++) {
+            if (clean(cellText(row, i, formatter)) != null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private String cellText(Row row, int column, DataFormatter formatter) {
+        if (row == null) {
+            return "";
+        }
+        Cell cell = row.getCell(column);
+        return cell == null ? "" : formatter.formatCellValue(cell).trim();
+    }
+
+    private String clean(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeGrade(String value) {
+        String cleaned = clean(value);
+        if (cleaned == null) {
+            return null;
+        }
+        String normalized = cleaned.toUpperCase(Locale.ROOT)
+                .replace("_", " ")
+                .replaceAll("\\s+", " ");
+        return Arrays.stream(GRADE_OPTIONS)
+                .filter(option -> option.equals(normalized))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private BigDecimal parseAmount(String value) {
+        String cleaned = clean(value);
+        if (cleaned == null) {
+            return null;
+        }
+        try {
+            return new BigDecimal(cleaned.replace(",", "").replace("UGX", "").trim());
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private Date parseDate(Cell cell, DataFormatter formatter) {
+        if (cell == null) {
+            return null;
+        }
+        if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+            return cell.getDateCellValue();
+        }
+        String value = clean(formatter.formatCellValue(cell));
+        if (value == null) {
+            return null;
+        }
+        try {
+            return toDate(LocalDate.parse(value));
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("dates must use yyyy-MM-dd format.");
+        }
+    }
+
+    private List<String> errorsForRow(List<String> errors, int displayRow) {
+        String prefix = "Row " + displayRow + ":";
+        return errors.stream()
+                .filter(error -> error.startsWith(prefix))
+                .toList();
+    }
+
+    private String formatImportErrors(List<String> errors) {
+        int maxErrors = Math.min(errors.size(), 8);
+        String message = String.join("; ", errors.subList(0, maxErrors));
+        if (errors.size() > maxErrors) {
+            message += "; and " + (errors.size() - maxErrors) + " more error(s).";
+        }
+        return message;
+    }
+
+    private String valueOrEmpty(String value) {
+        return value == null ? "" : value;
+    }
+
+    private String safeFileName(String value) {
+        return value == null ? "staff" : value.replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 
     private String formatAmount(BigDecimal amount) {
