@@ -11,7 +11,6 @@ import com.methaltech.application.data.bgtool.service.FundsourceService;
 import com.methaltech.application.data.bgtool.service.OrganisationService;
 import com.methaltech.application.data.bgtool.service.StaffService;
 import com.methaltech.application.data.bgtool.service.StaffSalaryService;
-import com.methaltech.application.data.bgtool.service.StockUnitMeasureService;
 import com.methaltech.application.data.bgtool.service.Urc_ActivitiesService;
 import com.methaltech.application.data.bgtool.service.UserService;
 import com.methaltech.application.data.entity.bgtool.Budget;
@@ -23,7 +22,6 @@ import com.methaltech.application.data.entity.bgtool.Fundsource;
 import com.methaltech.application.data.entity.bgtool.Organisation;
 import com.methaltech.application.data.entity.bgtool.Staff;
 import com.methaltech.application.data.entity.bgtool.StaffSalary;
-import com.methaltech.application.data.entity.bgtool.StockUnitMeasure;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import com.methaltech.application.data.entity.bgtool.User;
@@ -96,6 +94,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @Uses(Icon.class)
 public class staffSalaryView extends Div {
 
+    private record SalaryBudgetRegenerationResult(int salaryGradeRows, BigDecimal monthlyTotal) {
+    }
+
     private final FreightVolumesService sampleFreightVolumesService;
     private final BudgetService sampleBudgetService;
     private final CoaService sampleCoaService;
@@ -105,7 +106,6 @@ public class staffSalaryView extends Div {
     private Grid<StaffSalary> gridStaffSalary = new Grid<>(StaffSalary.class, false);
     private final CurrencyService sampleCurrencyService;
     private final BudgetItemsService budgetItemsService;
-    private final StockUnitMeasureService sampleStockUnitMeasureService;
     private final OrganisationService sampleOrganisationService;
     private final BudgetItemsService sampleBudgetItemsService;
     private final Urc_ActivitiesService sampleUrc_ActivitiesService;
@@ -154,7 +154,7 @@ public class staffSalaryView extends Div {
     private Upload upload;
 
     public staffSalaryView(AuthenticatedUser authenticatedUser, FreightVolumesService sampleFreightVolumesService, BudgetService sampleBudgetService, CoaService sampleCoaService,
-            CurrencyService sampleCurrencyService, BudgetItemsService budgetItemsService, StockUnitMeasureService sampleStockUnitMeasureService,
+            CurrencyService sampleCurrencyService, BudgetItemsService budgetItemsService,
             OrganisationService sampleOrganisationService, UserService userService, BudgetItemsService sampleBudgetItemsService,
             Urc_ActivitiesService sampleUrc_ActivitiesService, StaffSalaryService sampleStaffSalaryService,
             StaffService staffService, Coalevel1Service coalevel1Service, FundsourceService sampleFundsourceService) {
@@ -163,7 +163,6 @@ public class staffSalaryView extends Div {
         this.sampleCoaService = sampleCoaService;
         this.sampleCurrencyService = sampleCurrencyService;
         this.budgetItemsService = budgetItemsService;
-        this.sampleStockUnitMeasureService = sampleStockUnitMeasureService;
         this.sampleOrganisationService = sampleOrganisationService;
         this.userService = userService;
         this.sampleBudgetItemsService = sampleBudgetItemsService;
@@ -303,7 +302,7 @@ public class staffSalaryView extends Div {
 
                 deleteButton.addClickListener(es -> {
                     StaffSalary salary = gridStaffSalary.asSingleSelect().getValue();
-                    itemBudgetUpdate(comboBoxBudget.getValue(), salary);
+                    deleteStaffAndRegenerateSelectedSalaryBudgetItems(comboBoxBudget.getValue(), salary);
                     setSalaryGrid2();
                     clearForm();
                     dialog.close();
@@ -353,11 +352,9 @@ public class staffSalaryView extends Div {
                     && !lname.isEmpty() && !grade.isEmpty() && !salaryz.isEmpty()) {
 
                 StaffSalary salary = gridStaffSalary.asSingleSelect().getValue();
-                BudgetItems item;
                 if (salary == null) {
                     salary = new StaffSalary();
                 }
-// Update the fields of the freightVolume object with the form data
                 binder.writeBeanIfValid(salary);
 
                 salary.setFname(fname.getValue());
@@ -374,16 +371,14 @@ public class staffSalaryView extends Div {
                 salary.setBudgetType(comboBoxOrganisation.getValue());
                 salary.setActivity(comboBoxUrc_Activities.getValue());
                 salary.setDeptUnit(comboBoxD_Section.getValue());
-               StaffSalary save= sampleStaffSalaryService.saveStaffSalary(salary);
-                if(save!=null){
-                    System.out.println(save+" Saved");
-                }
-                itemBudgetSave(comboBoxBudget.getValue(), salary);
+                sampleStaffSalaryService.saveStaffSalary(salary);
+                SalaryBudgetRegenerationResult regenerationResult = regenerateSelectedSalaryBudgetItems(comboBoxBudget.getValue());
 
                 //setCOACombo(comboBoxBudget.getValue());
                 setSalaryGrid2();
 
                 clearForm();
+                showSalaryBudgetRegenerationNotification(regenerationResult);
             } else {
                 warningNotification("Select budget context and fill Staff Code, First Name, Last Name, Level and Salary.");
             }
@@ -481,289 +476,6 @@ public class staffSalaryView extends Div {
         return form;
     }
 
-    public void itemsalaryBudget(StaffSalary salarywage, Organisation org) {
-        StockUnitMeasure measure = sampleStockUnitMeasureService.getStockUnitMeasureByUnit("MONTH").get(0);
-        Currency cur = sampleCurrencyService.findCurrenciesByCurrencyShortAndBudget("UGX", comboBoxBudget.getValue());
-        COA salary_wages = sampleCoaService.findByCodeAndBudget("211101", comboBoxBudget.getValue());
-        COA nssf = sampleCoaService.findByCodeAndBudget("212101", comboBoxBudget.getValue());
-        COA gratuity = sampleCoaService.findByCodeAndBudget("213004", comboBoxBudget.getValue());
-        COA workmancompesation = sampleCoaService.findByCodeAndBudget("213005", comboBoxBudget.getValue());
-        Optional<BudgetItems> itemItem = sampleBudgetItemsService.getBudgetItemsByGradeAndBudget(salarywage.getGrade(), salarywage.getBudget());
-
-        Coalevel1 coa = coalevel1Service.findByCode(2);
-        BudgetItems item;
-        if (itemItem.isPresent()) {
-            item = itemItem.get();
-        } else {
-            item = null;
-        }
-        if (item != null) {
-
-            item.setItem(salarywage.getFname() + " Salary");
-            item.setCost(salarywage.getSalary());
-            item.setQty(new BigDecimal("12"));
-
-            item.setUnitMeasure("MONTH");
-
-            item.setCurrency(cur);
-            item.setBudget(salarywage.getBudget());
-            item.setBudgetType(org);
-            item.setCoacode(salary_wages);
-            item.setDeptUnit(comboBoxD_Section.getValue());
-            //item.setAnalcode(salarywage.getId());
-            item.setActivity(comboBoxUrc_Activities.getValue());
-            item.setBudgetType(comboBoxOrganisation.getValue());
-            item.setBcategory(salary_wages.getCode());
-            item.setFundsource(budgetItemfundSource.getValue());
-            item.setCoalevel1(coa);
-            item.setJan(salarywage.getSalary());
-            item.setFeb(salarywage.getSalary());
-            item.setMar(salarywage.getSalary());
-            item.setApr(salarywage.getSalary());
-            item.setMay(salarywage.getSalary());
-            item.setJun(salarywage.getSalary());
-            item.setJul(salarywage.getSalary());
-            item.setAug(salarywage.getSalary());
-            item.setSep(salarywage.getSalary());
-            item.setOct(salarywage.getSalary());
-            item.setNov(salarywage.getSalary());
-            item.setDec(salarywage.getSalary());
-            item.setGrade(salarywage.getGrade());
-        } else {
-            item = new BudgetItems();
-            item.setItem(salarywage.getFname() + " Salary");
-            item.setCost(salarywage.getSalary());
-            item.setQty(new BigDecimal("12"));
-
-            item.setUnitMeasure("MONTH");
-
-            item.setCurrency(cur);
-            item.setBudget(salarywage.getBudget());
-            item.setBudgetType(org);
-            item.setCoacode(salary_wages);
-            item.setDeptUnit(comboBoxD_Section.getValue());
-            item.setFundsource(budgetItemfundSource.getValue());
-            //item.setAnalcode(salarywage.getId());
-            item.setActivity(comboBoxUrc_Activities.getValue());
-            item.setBudgetType(comboBoxOrganisation.getValue());
-            item.setBcategory(salary_wages.getCode());
-            item.setCoalevel1(coa);
-            item.setJan(salarywage.getSalary());
-            item.setFeb(salarywage.getSalary());
-            item.setMar(salarywage.getSalary());
-            item.setApr(salarywage.getSalary());
-            item.setMay(salarywage.getSalary());
-            item.setJun(salarywage.getSalary());
-            item.setJul(salarywage.getSalary());
-            item.setAug(salarywage.getSalary());
-            item.setSep(salarywage.getSalary());
-            item.setOct(salarywage.getSalary());
-            item.setNov(salarywage.getSalary());
-            item.setDec(salarywage.getSalary());
-            item.setGrade(salarywage.getGrade());
-        }
-        if (item.getCost() != null || item.getCost() != BigDecimal.ZERO || item.getQty() != null || item.getQty() != BigDecimal.ZERO) {
-            BudgetItems saved = sampleBudgetItemsService.update(item);
-            if (saved != null) {
-                System.out.println(saved + " Saved");
-            } else {
-                System.out.println("Not " + saved);
-            }
-
-            BudgetItems nssfB = sampleBudgetItemsService.findBudgetAndCode(comboBoxBudget.getValue(), nssf);
-
-            if (nssfB != null) {
-                BudgetItems nssfs = sampleBudgetItemsService.sumIndividualMonthsBudgetAndCode(comboBoxBudget.getValue(), salary_wages);
-                nssfB.setItem(nssf.getName());
-                nssfB.setCost(calculateMonthSum(nssfs).multiply(new BigDecimal("0.1")));
-                nssfB.setQty(new BigDecimal("1"));
-                nssfB.setCurrency(cur);
-                nssfB.setBudget(salarywage.getBudget());
-                nssfB.setBudgetType(org);
-                nssfB.setCoacode(nssf);
-                nssfB.setDeptUnit(comboBoxD_Section.getValue());
-                nssfB.setUnitMeasure("MONTH");
-                //nssfB.setAnalcode(salarywage.getId());
-                nssfB.setActivity(comboBoxUrc_Activities.getValue());
-                nssfB.setBudgetType(comboBoxOrganisation.getValue());
-                nssfB.setFundsource(budgetItemfundSource.getValue());
-                nssfB.setBcategory(nssf.getCode());
-                nssfB.setCoalevel1(coa);
-                nssfB.setJan(nssfs.getJan().multiply(new BigDecimal("0.1")));
-                nssfB.setFeb(nssfs.getFeb().multiply(new BigDecimal("0.1")));
-                nssfB.setMar(nssfs.getMar().multiply(new BigDecimal("0.1")));
-                nssfB.setApr(nssfs.getApr().multiply(new BigDecimal("0.1")));
-                nssfB.setMay(nssfs.getMay().multiply(new BigDecimal("0.1")));
-                nssfB.setJun(nssfs.getJun().multiply(new BigDecimal("0.1")));
-                nssfB.setJul(nssfs.getJul().multiply(new BigDecimal("0.1")));
-                nssfB.setAug(nssfs.getAug().multiply(new BigDecimal("0.1")));
-                nssfB.setSep(nssfs.getSep().multiply(new BigDecimal("0.1")));
-                nssfB.setOct(nssfs.getOct().multiply(new BigDecimal("0.1")));
-                nssfB.setNov(nssfs.getNov().multiply(new BigDecimal("0.1")));
-                nssfB.setDec(nssfs.getDec().multiply(new BigDecimal("0.1")));
-            } else {
-                nssfB = new BudgetItems();
-                nssfB.setItem(nssf.getName());
-                nssfB.setCost(salarywage.getSalary().multiply(new BigDecimal("0.1")));
-                nssfB.setQty(new BigDecimal("12"));
-                nssfB.setCurrency(cur);
-                nssfB.setBudget(salarywage.getBudget());
-                nssfB.setBudgetType(org);
-                nssfB.setCoacode(nssf);
-                nssfB.setDeptUnit(comboBoxD_Section.getValue());
-                nssfB.setUnitMeasure("MONTH");
-                //nssfB.setAnalcode(salarywage.getId());
-                nssfB.setActivity(comboBoxUrc_Activities.getValue());
-                nssfB.setFundsource(budgetItemfundSource.getValue());
-                nssfB.setBudgetType(comboBoxOrganisation.getValue());
-                nssfB.setBcategory(nssf.getCode());
-                nssfB.setCoalevel1(coa);
-                nssfB.setJan(salarywage.getSalary().multiply(new BigDecimal("0.1")));
-                nssfB.setFeb(salarywage.getSalary().multiply(new BigDecimal("0.1")));
-                nssfB.setMar(salarywage.getSalary().multiply(new BigDecimal("0.1")));
-                nssfB.setApr(salarywage.getSalary().multiply(new BigDecimal("0.1")));
-                nssfB.setMay(salarywage.getSalary().multiply(new BigDecimal("0.1")));
-                nssfB.setJun(salarywage.getSalary().multiply(new BigDecimal("0.1")));
-                nssfB.setJul(salarywage.getSalary().multiply(new BigDecimal("0.1")));
-                nssfB.setAug(salarywage.getSalary().multiply(new BigDecimal("0.1")));
-                nssfB.setSep(salarywage.getSalary().multiply(new BigDecimal("0.1")));
-                nssfB.setOct(salarywage.getSalary().multiply(new BigDecimal("0.1")));
-                nssfB.setNov(salarywage.getSalary().multiply(new BigDecimal("0.1")));
-                nssfB.setDec(salarywage.getSalary().multiply(new BigDecimal("0.1")));
-            }
-            sampleBudgetItemsService.update(nssfB);
-            BudgetItems nssfG = sampleBudgetItemsService.findBudgetAndCode(comboBoxBudget.getValue(), gratuity);
-
-            if (nssfG != null) {
-                BudgetItems grauityAmount = sampleBudgetItemsService.sumIndividualMonthsBudgetAndCode(comboBoxBudget.getValue(), salary_wages);
-                nssfG.setItem(gratuity.getName());
-                nssfG.setCost(calculateMonthSum(grauityAmount).multiply(new BigDecimal("0.25")));
-                nssfG.setQty(new BigDecimal("1"));
-                nssfG.setUnitMeasure("MONTH");
-                nssfG.setCurrency(cur);
-                nssfG.setBudget(salarywage.getBudget());
-                nssfG.setBudgetType(org);
-                nssfG.setCoacode(gratuity);
-                nssfG.setDeptUnit(comboBoxD_Section.getValue());
-                nssfG.setDeptUnit(comboBoxD_Section.getValue());
-                //nssfG.setAnalcode(salarywage.getId());
-                nssfG.setActivity(comboBoxUrc_Activities.getValue());
-                nssfG.setBudgetType(comboBoxOrganisation.getValue());
-                nssfG.setFundsource(budgetItemfundSource.getValue());
-                nssfG.setBcategory(gratuity.getCode());
-                nssfG.setCoalevel1(coa);
-                nssfG.setJan(grauityAmount.getJan().multiply(new BigDecimal("0.25")));
-                nssfG.setFeb(grauityAmount.getFeb().multiply(new BigDecimal("0.25")));
-                nssfG.setMar(grauityAmount.getMar().multiply(new BigDecimal("0.25")));
-                nssfG.setApr(grauityAmount.getApr().multiply(new BigDecimal("0.25")));
-                nssfG.setMay(grauityAmount.getMay().multiply(new BigDecimal("0.25")));
-                nssfG.setJun(grauityAmount.getJun().multiply(new BigDecimal("0.25")));
-                nssfG.setJul(grauityAmount.getJul().multiply(new BigDecimal("0.25")));
-                nssfG.setAug(grauityAmount.getAug().multiply(new BigDecimal("0.25")));
-                nssfG.setSep(grauityAmount.getSep().multiply(new BigDecimal("0.25")));
-                nssfG.setOct(grauityAmount.getOct().multiply(new BigDecimal("0.25")));
-                nssfG.setNov(grauityAmount.getNov().multiply(new BigDecimal("0.25")));
-                nssfG.setDec(grauityAmount.getDec().multiply(new BigDecimal("0.25")));
-            } else {
-                nssfG = new BudgetItems();
-                nssfG.setItem(gratuity.getName());
-                nssfG.setCost(salarywage.getSalary().multiply(new BigDecimal("0.25")));
-                nssfG.setQty(new BigDecimal("12"));
-                nssfG.setUnitMeasure("MONTH");
-                nssfG.setCurrency(cur);
-                nssfG.setBudget(salarywage.getBudget());
-                nssfG.setBudgetType(org);
-                nssfG.setCoacode(gratuity);
-                nssfG.setDeptUnit(comboBoxD_Section.getValue());
-                nssfG.setDeptUnit(comboBoxD_Section.getValue());
-                // nssfG.setAnalcode(salarywage.getId());
-                nssfG.setActivity(comboBoxUrc_Activities.getValue());
-                nssfG.setBudgetType(comboBoxOrganisation.getValue());
-                nssfG.setFundsource(budgetItemfundSource.getValue());
-                nssfG.setBcategory(gratuity.getCode());
-                nssfG.setCoalevel1(coa);
-                nssfG.setJan(salarywage.getSalary().multiply(new BigDecimal("0.25")));
-                nssfG.setFeb(salarywage.getSalary().multiply(new BigDecimal("0.25")));
-                nssfG.setMar(salarywage.getSalary().multiply(new BigDecimal("0.25")));
-                nssfG.setApr(salarywage.getSalary().multiply(new BigDecimal("0.25")));
-                nssfG.setMay(salarywage.getSalary().multiply(new BigDecimal("0.25")));
-                nssfG.setJun(salarywage.getSalary().multiply(new BigDecimal("0.25")));
-                nssfG.setJul(salarywage.getSalary().multiply(new BigDecimal("0.25")));
-                nssfG.setAug(salarywage.getSalary().multiply(new BigDecimal("0.25")));
-                nssfG.setSep(salarywage.getSalary().multiply(new BigDecimal("0.25")));
-                nssfG.setOct(salarywage.getSalary().multiply(new BigDecimal("0.25")));
-                nssfG.setNov(salarywage.getSalary().multiply(new BigDecimal("0.25")));
-                nssfG.setDec(salarywage.getSalary().multiply(new BigDecimal("0.25")));
-            }
-            sampleBudgetItemsService.update(nssfG);
-            BudgetItems nssfW = sampleBudgetItemsService.findBudgetAndCode(comboBoxBudget.getValue(), workmancompesation);
-
-            if (nssfW != null) {
-                BudgetItems grauityAmount = sampleBudgetItemsService.sumIndividualMonthsBudgetAndCode(comboBoxBudget.getValue(), salary_wages);
-                nssfW.setItem(workmancompesation.getName());
-                nssfW.setCost(calculateMonthSum(grauityAmount).multiply(new BigDecimal("0.03")));
-                nssfW.setQty(new BigDecimal("1"));
-                nssfW.setUnitMeasure("MONTH");
-                nssfW.setCurrency(cur);
-                nssfW.setBudget(salarywage.getBudget());
-                nssfW.setBudgetType(org);
-                nssfW.setCoalevel1(coa);
-                nssfW.setCoacode(workmancompesation);
-                nssfW.setDeptUnit(comboBoxD_Section.getValue());
-                nssfW.setDeptUnit(comboBoxD_Section.getValue());
-                // nssfW.setAnalcode(salarywage.getId());
-                nssfW.setActivity(comboBoxUrc_Activities.getValue());
-                nssfW.setBudgetType(comboBoxOrganisation.getValue());
-                nssfW.setFundsource(budgetItemfundSource.getValue());
-                nssfW.setBcategory(workmancompesation.getCode());
-                nssfW.setJan(grauityAmount.getJan().multiply(new BigDecimal("0.03")));
-                nssfW.setFeb(grauityAmount.getFeb().multiply(new BigDecimal("0.03")));
-                nssfW.setMar(grauityAmount.getMar().multiply(new BigDecimal("0.03")));
-                nssfW.setApr(grauityAmount.getApr().multiply(new BigDecimal("0.03")));
-                nssfW.setMay(grauityAmount.getMay().multiply(new BigDecimal("0.03")));
-                nssfW.setJun(grauityAmount.getJun().multiply(new BigDecimal("0.03")));
-                nssfW.setJul(grauityAmount.getJul().multiply(new BigDecimal("0.03")));
-                nssfW.setAug(grauityAmount.getAug().multiply(new BigDecimal("0.03")));
-                nssfW.setSep(grauityAmount.getSep().multiply(new BigDecimal("0.03")));
-                nssfW.setOct(grauityAmount.getOct().multiply(new BigDecimal("0.03")));
-                nssfW.setNov(grauityAmount.getNov().multiply(new BigDecimal("0.03")));
-                nssfW.setDec(grauityAmount.getDec().multiply(new BigDecimal("0.03")));
-            } else {
-                nssfW = new BudgetItems();
-                nssfW.setItem(workmancompesation.getName());
-                nssfW.setCost(salarywage.getSalary().multiply(new BigDecimal("0.03")));
-                nssfW.setQty(new BigDecimal("12"));
-                nssfW.setCoalevel1(coa);
-                nssfW.setUnitMeasure("MONTH");
-                nssfW.setCurrency(cur);
-                nssfW.setBudget(salarywage.getBudget());
-                nssfW.setBudgetType(org);
-                nssfW.setCoacode(workmancompesation);
-                nssfW.setDeptUnit(comboBoxD_Section.getValue());
-                nssfW.setDeptUnit(comboBoxD_Section.getValue());
-                // nssfW.setAnalcode(salarywage.getId());
-                nssfW.setActivity(comboBoxUrc_Activities.getValue());
-                nssfW.setBudgetType(comboBoxOrganisation.getValue());
-                nssfW.setFundsource(budgetItemfundSource.getValue());
-                nssfW.setBcategory(workmancompesation.getCode());
-                nssfW.setJan(salarywage.getSalary().multiply(new BigDecimal("0.03")));
-                nssfW.setFeb(salarywage.getSalary().multiply(new BigDecimal("0.03")));
-                nssfW.setMar(salarywage.getSalary().multiply(new BigDecimal("0.03")));
-                nssfW.setApr(salarywage.getSalary().multiply(new BigDecimal("0.03")));
-                nssfW.setMay(salarywage.getSalary().multiply(new BigDecimal("0.03")));
-                nssfW.setJun(salarywage.getSalary().multiply(new BigDecimal("0.03")));
-                nssfW.setJul(salarywage.getSalary().multiply(new BigDecimal("0.03")));
-                nssfW.setAug(salarywage.getSalary().multiply(new BigDecimal("0.03")));
-                nssfW.setSep(salarywage.getSalary().multiply(new BigDecimal("0.03")));
-                nssfW.setOct(salarywage.getSalary().multiply(new BigDecimal("0.03")));
-                nssfW.setNov(salarywage.getSalary().multiply(new BigDecimal("0.03")));
-                nssfW.setDec(salarywage.getSalary().multiply(new BigDecimal("0.03")));
-            }
-            sampleBudgetItemsService.update(nssfW);
-        }
-
-    }
-
     public void deleteAllItemsalaryBudget() {
         COA salary_wages = sampleCoaService.findByCodeAndBudget("211101", comboBoxBudget.getValue());
         COA nssf = sampleCoaService.findByCodeAndBudget("212101", comboBoxBudget.getValue());
@@ -780,7 +492,7 @@ public class staffSalaryView extends Div {
 
     }
 
-    public void deleteAllItemsalaryBudgetOnly() {
+    private void deleteSelectedSalaryBudgetItems() {
         COA salary_wages = sampleCoaService.findByCodeAndBudget("211101", comboBoxBudget.getValue());
         COA nssf = sampleCoaService.findByCodeAndBudget("212101", comboBoxBudget.getValue());
         COA gratuity = sampleCoaService.findByCodeAndBudget("213004", comboBoxBudget.getValue());
@@ -795,113 +507,6 @@ public class staffSalaryView extends Div {
                 comboBoxBudget.getValue(), coaList, comboBoxD_Section.getValue(),
                 comboBoxOrganisation.getValue(), comboBoxUrc_Activities.getValue(),
                 budgetItemfundSource.getValue());
-
-    }
-
-    public void deleteItemsalaryBudget() {
-        StockUnitMeasure measure = sampleStockUnitMeasureService.getStockUnitMeasureByUnit("MONTH").get(0);
-        Currency cur = sampleCurrencyService.findCurrenciesByCurrencyShortAndBudget("UGX", comboBoxBudget.getValue());
-        COA salary_wages = sampleCoaService.findByCodeAndBudget("211101", comboBoxBudget.getValue());
-        COA nssf = sampleCoaService.findByCodeAndBudget("212101", comboBoxBudget.getValue());
-        COA gratuity = sampleCoaService.findByCodeAndBudget("213004", comboBoxBudget.getValue());
-        COA workmancompesation = sampleCoaService.findByCodeAndBudget("213005", comboBoxBudget.getValue());
-        Coalevel1 coa = coalevel1Service.findByCode(2);
-
-        BudgetItems nssfB = sampleBudgetItemsService.findBudgetAndCode(comboBoxBudget.getValue(), nssf);
-
-        if (nssfB != null) {
-            BudgetItems nssfs = sampleBudgetItemsService.sumIndividualMonthsBudgetAndCode(comboBoxBudget.getValue(), salary_wages);
-            nssfB.setItem(nssf.getName());
-            nssfB.setCost(calculateMonthSum(nssfs).multiply(new BigDecimal("0.1")));
-            nssfB.setQty(new BigDecimal("1"));
-            nssfB.setCurrency(cur);
-            nssfB.setBudget(comboBoxBudget.getValue());
-            nssfB.setCoacode(nssf);
-            nssfB.setDeptUnit(comboBoxD_Section.getValue());
-            nssfB.setUnitMeasure("MONTH");
-            //nssfB.setAnalcode(salarywage.getId());
-            nssfB.setActivity(comboBoxUrc_Activities.getValue());
-            nssfB.setBudgetType(comboBoxOrganisation.getValue());
-            nssfB.setBcategory(nssf.getCode());
-            nssfB.setCoalevel1(coa);
-            nssfB.setJan(nssfs.getJan().multiply(new BigDecimal("0.1")));
-            nssfB.setFeb(nssfs.getFeb().multiply(new BigDecimal("0.1")));
-            nssfB.setMar(nssfs.getMar().multiply(new BigDecimal("0.1")));
-            nssfB.setApr(nssfs.getApr().multiply(new BigDecimal("0.1")));
-            nssfB.setMay(nssfs.getMay().multiply(new BigDecimal("0.1")));
-            nssfB.setJun(nssfs.getJun().multiply(new BigDecimal("0.1")));
-            nssfB.setJul(nssfs.getJul().multiply(new BigDecimal("0.1")));
-            nssfB.setAug(nssfs.getAug().multiply(new BigDecimal("0.1")));
-            nssfB.setSep(nssfs.getSep().multiply(new BigDecimal("0.1")));
-            nssfB.setOct(nssfs.getOct().multiply(new BigDecimal("0.1")));
-            nssfB.setNov(nssfs.getNov().multiply(new BigDecimal("0.1")));
-            nssfB.setDec(nssfs.getDec().multiply(new BigDecimal("0.1")));
-        }
-        sampleBudgetItemsService.update(nssfB);
-        BudgetItems nssfG = sampleBudgetItemsService.findBudgetAndCode(comboBoxBudget.getValue(), gratuity);
-
-        if (nssfG != null) {
-            BudgetItems grauityAmount = sampleBudgetItemsService.sumIndividualMonthsBudgetAndCode(comboBoxBudget.getValue(), salary_wages);
-            nssfG.setItem(gratuity.getName());
-            nssfG.setCost(calculateMonthSum(grauityAmount).multiply(new BigDecimal("0.25")));
-            nssfG.setQty(new BigDecimal("1"));
-            nssfG.setUnitMeasure("MONTH");
-            nssfG.setCurrency(cur);
-            nssfG.setBudget(comboBoxBudget.getValue());
-            nssfG.setCoacode(gratuity);
-            nssfG.setDeptUnit(comboBoxD_Section.getValue());
-            nssfG.setDeptUnit(comboBoxD_Section.getValue());
-            //nssfG.setAnalcode(salarywage.getId());
-            nssfG.setActivity(comboBoxUrc_Activities.getValue());
-            nssfG.setBudgetType(comboBoxOrganisation.getValue());
-            nssfG.setBcategory(gratuity.getCode());
-            nssfG.setCoalevel1(coa);
-            nssfG.setJan(grauityAmount.getJan().multiply(new BigDecimal("0.25")));
-            nssfG.setFeb(grauityAmount.getFeb().multiply(new BigDecimal("0.25")));
-            nssfG.setMar(grauityAmount.getMar().multiply(new BigDecimal("0.25")));
-            nssfG.setApr(grauityAmount.getApr().multiply(new BigDecimal("0.25")));
-            nssfG.setMay(grauityAmount.getMay().multiply(new BigDecimal("0.25")));
-            nssfG.setJun(grauityAmount.getJun().multiply(new BigDecimal("0.25")));
-            nssfG.setJul(grauityAmount.getJul().multiply(new BigDecimal("0.25")));
-            nssfG.setAug(grauityAmount.getAug().multiply(new BigDecimal("0.25")));
-            nssfG.setSep(grauityAmount.getSep().multiply(new BigDecimal("0.25")));
-            nssfG.setOct(grauityAmount.getOct().multiply(new BigDecimal("0.25")));
-            nssfG.setNov(grauityAmount.getNov().multiply(new BigDecimal("0.25")));
-            nssfG.setDec(grauityAmount.getDec().multiply(new BigDecimal("0.25")));
-        }
-        sampleBudgetItemsService.update(nssfG);
-        BudgetItems nssfW = sampleBudgetItemsService.findBudgetAndCode(comboBoxBudget.getValue(), workmancompesation);
-
-        if (nssfW != null) {
-            BudgetItems grauityAmount = sampleBudgetItemsService.sumIndividualMonthsBudgetAndCode(comboBoxBudget.getValue(), salary_wages);
-            nssfW.setItem(workmancompesation.getName());
-            nssfW.setCost(calculateMonthSum(grauityAmount).multiply(new BigDecimal("0.03")));
-            nssfW.setQty(new BigDecimal("1"));
-            nssfW.setUnitMeasure("MONTH");
-            nssfW.setCurrency(cur);
-            nssfW.setBudget(comboBoxBudget.getValue());
-            nssfW.setCoalevel1(coa);
-            nssfW.setCoacode(workmancompesation);
-            nssfW.setDeptUnit(comboBoxD_Section.getValue());
-            nssfW.setDeptUnit(comboBoxD_Section.getValue());
-            // nssfW.setAnalcode(salarywage.getId());
-            nssfW.setActivity(comboBoxUrc_Activities.getValue());
-            nssfW.setBudgetType(comboBoxOrganisation.getValue());
-            nssfW.setBcategory(workmancompesation.getCode());
-            nssfW.setJan(grauityAmount.getJan().multiply(new BigDecimal("0.03")));
-            nssfW.setFeb(grauityAmount.getFeb().multiply(new BigDecimal("0.03")));
-            nssfW.setMar(grauityAmount.getMar().multiply(new BigDecimal("0.03")));
-            nssfW.setApr(grauityAmount.getApr().multiply(new BigDecimal("0.03")));
-            nssfW.setMay(grauityAmount.getMay().multiply(new BigDecimal("0.03")));
-            nssfW.setJun(grauityAmount.getJun().multiply(new BigDecimal("0.03")));
-            nssfW.setJul(grauityAmount.getJul().multiply(new BigDecimal("0.03")));
-            nssfW.setAug(grauityAmount.getAug().multiply(new BigDecimal("0.03")));
-            nssfW.setSep(grauityAmount.getSep().multiply(new BigDecimal("0.03")));
-            nssfW.setOct(grauityAmount.getOct().multiply(new BigDecimal("0.03")));
-            nssfW.setNov(grauityAmount.getNov().multiply(new BigDecimal("0.03")));
-            nssfW.setDec(grauityAmount.getDec().multiply(new BigDecimal("0.03")));
-        }
-        sampleBudgetItemsService.update(nssfW);
 
     }
 
@@ -950,12 +555,13 @@ public class staffSalaryView extends Div {
         }
 
         sampleStaffSalaryService.saveStaffSalary(salariesToSave);
-        itemBudgetSave(budget, null);
+        SalaryBudgetRegenerationResult regenerationResult = regenerateSelectedSalaryBudgetItems(budget);
         setSalaryGrid2();
         clearForm();
 
         Notification notification = Notification.show("Loaded Staff Master: " + created
-                + " created, " + updated + " updated, " + skipped + " skipped.");
+                + " created, " + updated + " updated, " + skipped + " skipped. "
+                + formatSalaryBudgetRegeneration(regenerationResult));
         notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
     }
 
@@ -1135,26 +741,6 @@ public class staffSalaryView extends Div {
         BigDecimal total = BigDecimal.ZERO;
 
         return total;
-    }
-
-    public BigDecimal calculateMonthSum(BudgetItems budget) {
-        BigDecimal sum = BigDecimal.ZERO; // Initialize sum to zero
-
-        // Add up the values of all the month fields
-        sum = sum.add(budget.getJan());
-        sum = sum.add(budget.getFeb());
-        sum = sum.add(budget.getMar());
-        sum = sum.add(budget.getApr());
-        sum = sum.add(budget.getMay());
-        sum = sum.add(budget.getJun());
-        sum = sum.add(budget.getJul());
-        sum = sum.add(budget.getAug());
-        sum = sum.add(budget.getSep());
-        sum = sum.add(budget.getOct());
-        sum = sum.add(budget.getNov());
-        sum = sum.add(budget.getDec());
-
-        return sum;
     }
 
     public Notification warningNotification(String error) {
@@ -1362,10 +948,11 @@ public class staffSalaryView extends Div {
             }
             if (messages.isEmpty()) {
                 sampleStaffSalaryService.saveStaffSalary(listStaffSalary);
-                itemBudgetSave(comboBoxBudget.getValue(), null);
+                SalaryBudgetRegenerationResult regenerationResult = regenerateSelectedSalaryBudgetItems(comboBoxBudget.getValue());
                 if (!comboBoxBudget.isEmpty()) {
                     setSalaryGrid2();
                 }
+                showSalaryBudgetRegenerationNotification(regenerationResult);
             } else {
                 warningNotification(messages);
             }
@@ -1375,18 +962,15 @@ public class staffSalaryView extends Div {
         }
     }
 
-    public void itemBudgetUpdate(Budget budget, StaffSalary staff) {
+    private void deleteStaffAndRegenerateSelectedSalaryBudgetItems(Budget budget, StaffSalary staff) {
         sampleStaffSalaryService.deleteBystaff(staff);
-        regenerateSelectedSalaryBudgetItems(budget);
+        SalaryBudgetRegenerationResult regenerationResult = regenerateSelectedSalaryBudgetItems(budget);
+        showSalaryBudgetRegenerationNotification(regenerationResult);
     }
 
-    public void itemBudgetSave(Budget budget, StaffSalary staff) {
-        regenerateSelectedSalaryBudgetItems(budget);
-    }
-
-    private int regenerateSelectedSalaryBudgetItems(Budget budget) {
+    private SalaryBudgetRegenerationResult regenerateSelectedSalaryBudgetItems(Budget budget) {
         if (budget == null || !hasSelectedSalaryContext()) {
-            return 0;
+            return new SalaryBudgetRegenerationResult(0, BigDecimal.ZERO);
         }
 
         COA salaryWages = sampleCoaService.findByCodeAndBudget("211101", budget);
@@ -1398,10 +982,10 @@ public class staffSalaryView extends Div {
 
         if (salaryWages == null || nssf == null || gratuity == null || workmanCompensation == null || cur == null || coaLevel1 == null) {
             warningNotification("Salary COA setup is incomplete for this budget.");
-            return 0;
+            return new SalaryBudgetRegenerationResult(0, BigDecimal.ZERO);
         }
 
-        deleteAllItemsalaryBudgetOnly();
+        deleteSelectedSalaryBudgetItems();
 
         List<StaffSalary> salaries = sampleStaffSalaryService.findByBudgetAndDeptUnitAndBudgetTypeAndActivity(
                 budget, comboBoxD_Section.getValue(), comboBoxOrganisation.getValue(), comboBoxUrc_Activities.getValue());
@@ -1420,7 +1004,17 @@ public class staffSalaryView extends Div {
             sampleBudgetItemsService.update(createBenefitBudgetItem(workmanCompensation, cur, coaLevel1, monthlyTotal, new BigDecimal("0.03")));
         }
 
-        return aggregateSalaryByGrade.size();
+        return new SalaryBudgetRegenerationResult(aggregateSalaryByGrade.size(), monthlyTotal);
+    }
+
+    private void showSalaryBudgetRegenerationNotification(SalaryBudgetRegenerationResult result) {
+        Notification notification = Notification.show(formatSalaryBudgetRegeneration(result));
+        notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+    }
+
+    private String formatSalaryBudgetRegeneration(SalaryBudgetRegenerationResult result) {
+        return "Generated " + result.salaryGradeRows() + " salary grade item(s); monthly salary total "
+                + decimalFormat.format(result.monthlyTotal()) + ".";
     }
 
     private BudgetItems createSalaryBudgetItem(StaffSalary salary, COA salaryWages, Currency cur, Coalevel1 coaLevel1) {
