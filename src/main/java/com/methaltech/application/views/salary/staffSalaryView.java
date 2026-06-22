@@ -540,7 +540,7 @@ public class staffSalaryView extends Div {
         save.setEnabled(enabled);
         loadStaffMaster.setEnabled(enabled);
         if (upload != null) {
-            upload.setEnabled(enabled);
+            upload.setVisible(enabled);
             upload.getElement().setProperty("title", enabled
                     ? "Upload salary rows for the selected salary context."
                     : "Select Budget, Cost Centre, Budget Type, Activity and Fund Source first.");
