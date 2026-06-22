@@ -10,6 +10,7 @@ import com.methaltech.application.data.bgtool.service.CurrencyService;
 import com.methaltech.application.data.bgtool.service.FreightVolumesService;
 import com.methaltech.application.data.bgtool.service.FundsourceService;
 import com.methaltech.application.data.bgtool.service.OrganisationService;
+import com.methaltech.application.data.bgtool.service.SalaryAdjustmentHistoryService;
 import com.methaltech.application.data.bgtool.service.SalaryGradeCeilingService;
 import com.methaltech.application.data.bgtool.service.StaffService;
 import com.methaltech.application.data.bgtool.service.StaffSalaryAdjustmentService;
@@ -27,6 +28,7 @@ import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.Currency;
 import com.methaltech.application.data.entity.bgtool.Fundsource;
 import com.methaltech.application.data.entity.bgtool.Organisation;
+import com.methaltech.application.data.entity.bgtool.SalaryAdjustmentHistory;
 import com.methaltech.application.data.entity.bgtool.SalaryGradeCeiling;
 import com.methaltech.application.data.entity.bgtool.Staff;
 import com.methaltech.application.data.entity.bgtool.StaffSalary;
@@ -125,6 +127,7 @@ public class staffSalaryView extends Div {
     private final StaffSalaryBudgetService staffSalaryBudgetService;
     private final StaffSalaryAdjustmentService staffSalaryAdjustmentService;
     private final SalaryGradeCeilingService salaryGradeCeilingService;
+    private final SalaryAdjustmentHistoryService salaryAdjustmentHistoryService;
 
     private final Binder<StaffSalary> binder = new BeanValidationBinder<>(StaffSalary.class);
     private ComboBox<UrcDeptSectionAnlDimbgt> comboBoxD_Section = new ComboBox<>("Cost Centre");
@@ -156,6 +159,7 @@ public class staffSalaryView extends Div {
     private Button previewSalaryBudget = new Button("Preview Salary Budget");
     private Button adjustSalaries = new Button("Adjust Salaries");
     private Button manageGradeCeilings = new Button("Grade Ceilings");
+    private Button adjustmentHistory = new Button("Adjustment History");
     Span span = new Span();
     private Span salaryContextHint = new Span("Select Budget, Cost Centre, Budget Type, Activity and Fund Source to enable salary import actions.");
 
@@ -177,7 +181,7 @@ public class staffSalaryView extends Div {
             Urc_ActivitiesService sampleUrc_ActivitiesService, StaffSalaryService sampleStaffSalaryService,
             StaffService staffService, StaffSalaryBudgetService staffSalaryBudgetService,
             StaffSalaryAdjustmentService staffSalaryAdjustmentService, SalaryGradeCeilingService salaryGradeCeilingService,
-            FundsourceService sampleFundsourceService) {
+            SalaryAdjustmentHistoryService salaryAdjustmentHistoryService, FundsourceService sampleFundsourceService) {
         this.sampleFreightVolumesService = sampleFreightVolumesService;
         this.sampleBudgetService = sampleBudgetService;
         this.sampleCurrencyService = sampleCurrencyService;
@@ -189,6 +193,7 @@ public class staffSalaryView extends Div {
         this.staffSalaryBudgetService = staffSalaryBudgetService;
         this.staffSalaryAdjustmentService = staffSalaryAdjustmentService;
         this.salaryGradeCeilingService = salaryGradeCeilingService;
+        this.salaryAdjustmentHistoryService = salaryAdjustmentHistoryService;
         this.sampleFundsourceService = sampleFundsourceService;
         setHeight("100%");
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
@@ -286,6 +291,7 @@ public class staffSalaryView extends Div {
         previewSalaryBudget.setId("staff-salary-preview-budget");
         adjustSalaries.setId("staff-salary-adjust");
         manageGradeCeilings.setId("staff-salary-grade-ceilings");
+        adjustmentHistory.setId("staff-salary-adjustment-history");
         salaryContextHint.setId("staff-salary-context-hint");
 
         code.setHelperText("Required for duplicate-safe salary imports.");
@@ -450,6 +456,7 @@ public class staffSalaryView extends Div {
         previewSalaryBudget.addClickListener(event -> previewSelectedSalaryBudget());
         adjustSalaries.addClickListener(event -> openSalaryAdjustmentDialog());
         manageGradeCeilings.addClickListener(event -> openGradeCeilingDialog());
+        adjustmentHistory.addClickListener(event -> openAdjustmentHistoryDialog());
     }
 
     public void setSalaryGrid() {
@@ -530,7 +537,8 @@ public class staffSalaryView extends Div {
     public FormLayout volumesDetails() {
         FormLayout form = new FormLayout();
         HorizontalLayout ho = new HorizontalLayout();
-        ho.add(save, delete, deleteAll, loadStaffMaster, previewSalaryBudget, adjustSalaries, manageGradeCeilings, cancel);
+        ho.add(save, delete, deleteAll, loadStaffMaster, previewSalaryBudget, adjustSalaries,
+                manageGradeCeilings, adjustmentHistory, cancel);
         form.add(code, fname, lname, email, tel, mob, position, grade, Address,
                 Address2, nextofkin,
                 salaryz, ho
@@ -735,7 +743,7 @@ public class staffSalaryView extends Div {
                 SalaryAdjustmentPreview applied = staffSalaryAdjustmentService.apply(comboBoxBudget.getValue(),
                         comboBoxD_Section.getValue(), comboBoxOrganisation.getValue(), comboBoxUrc_Activities.getValue(),
                         budgetItemfundSource.getValue(), scope.getValue(), type.getValue(), adjustmentGrade.getValue(),
-                        selectedStaffSalaryId(), adjustmentValue.getValue());
+                        selectedStaffSalaryId(), adjustmentValue.getValue(), currentAdjustmentUser());
                 SalaryBudgetRegenerationResult regenerationResult = regenerateSelectedSalaryBudgetItems(comboBoxBudget.getValue());
                 setSalaryGrid2();
                 dialog.close();
@@ -811,6 +819,54 @@ public class staffSalaryView extends Div {
         dialog.open();
     }
 
+    private void openAdjustmentHistoryDialog() {
+        if (!hasSelectedSalaryContext()) {
+            warningNotification("Select Budget, Cost Centre, Budget Type, Activity and Fund Source before viewing adjustment history.");
+            return;
+        }
+
+        Dialog dialog = new Dialog();
+        dialog.setId("staff-salary-adjustment-history-dialog");
+        dialog.setHeaderTitle("Salary Adjustment History");
+        dialog.setWidth("1100px");
+
+        Grid<SalaryAdjustmentHistory> historyGrid = new Grid<>(SalaryAdjustmentHistory.class, false);
+        historyGrid.setId("staff-salary-adjustment-history-grid");
+        historyGrid.addColumn(history -> history.getAppliedAt() == null ? "" : history.getAppliedAt().toString())
+                .setHeader("Applied At").setAutoWidth(true);
+        historyGrid.addColumn(SalaryAdjustmentHistory::getAppliedBy).setHeader("Applied By").setAutoWidth(true);
+        historyGrid.addColumn(history -> history.getScope() == null ? "" : history.getScope().name())
+                .setHeader("Scope").setAutoWidth(true);
+        historyGrid.addColumn(history -> history.getAdjustmentType() == null ? "" : history.getAdjustmentType().name())
+                .setHeader("Type").setAutoWidth(true);
+        historyGrid.addColumn(history -> history.getGrade() == null ? "" : history.getGrade().name())
+                .setHeader("Grade").setAutoWidth(true);
+        historyGrid.addColumn(SalaryAdjustmentHistory::getSelectedStaffCode).setHeader("Staff Code").setAutoWidth(true);
+        historyGrid.addColumn(history -> decimalFormat.format(history.getAdjustmentValue()))
+                .setHeader("Value").setAutoWidth(true);
+        historyGrid.addColumn(SalaryAdjustmentHistory::getAffectedStaffCount).setHeader("Staff Count").setAutoWidth(true);
+        historyGrid.addColumn(history -> decimalFormat.format(history.getOldMonthlyTotal()))
+                .setHeader("Old Monthly").setAutoWidth(true);
+        historyGrid.addColumn(history -> decimalFormat.format(history.getNewMonthlyTotal()))
+                .setHeader("New Monthly").setAutoWidth(true);
+        historyGrid.addColumn(history -> decimalFormat.format(history.getMonthlyDifference()))
+                .setHeader("Monthly Diff").setAutoWidth(true);
+        historyGrid.addColumn(history -> decimalFormat.format(history.getAnnualDifference()))
+                .setHeader("Annual Diff").setAutoWidth(true);
+        historyGrid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
+        historyGrid.setHeight("420px");
+        historyGrid.setItems(salaryAdjustmentHistoryService.findByContext(comboBoxBudget.getValue(),
+                comboBoxD_Section.getValue(), comboBoxOrganisation.getValue(), comboBoxUrc_Activities.getValue(),
+                budgetItemfundSource.getValue()));
+
+        Button close = new Button("Close", event -> dialog.close());
+        close.setId("staff-salary-adjustment-history-close");
+        close.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        dialog.add(historyGrid);
+        dialog.getFooter().add(close);
+        dialog.open();
+    }
+
     private void refreshGradeCeilingGrid(Grid<SalaryGradeCeiling> ceilingGrid) {
         ceilingGrid.setItems(salaryGradeCeilingService.findByContext(comboBoxBudget.getValue(),
                 comboBoxD_Section.getValue(), comboBoxOrganisation.getValue(), comboBoxUrc_Activities.getValue(),
@@ -820,6 +876,18 @@ public class staffSalaryView extends Div {
     private Long selectedStaffSalaryId() {
         StaffSalary selected = gridStaffSalary.asSingleSelect().getValue();
         return selected == null ? null : selected.getId();
+    }
+
+    private String currentAdjustmentUser() {
+        if (user == null) {
+            return "UNKNOWN";
+        }
+        if (user.getEmail() != null && !user.getEmail().isBlank()) {
+            return user.getEmail();
+        }
+        String fullName = ((user.getFirstName() == null ? "" : user.getFirstName()) + " "
+                + (user.getLastName() == null ? "" : user.getLastName())).trim();
+        return fullName.isBlank() ? "UNKNOWN" : fullName;
     }
 
     private String formatSalaryAdjustmentPreview(SalaryAdjustmentPreview preview) {
@@ -938,6 +1006,7 @@ public class staffSalaryView extends Div {
         previewSalaryBudget.setEnabled(enabled);
         adjustSalaries.setEnabled(enabled);
         manageGradeCeilings.setEnabled(enabled);
+        adjustmentHistory.setEnabled(enabled);
         if (upload != null) {
             upload.setVisible(enabled);
             upload.getElement().setProperty("title", enabled
@@ -955,6 +1024,9 @@ public class staffSalaryView extends Div {
                 : "Select Budget, Cost Centre, Budget Type, Activity and Fund Source first.");
         manageGradeCeilings.getElement().setProperty("title", enabled
                 ? "Set salary ceilings by grade for the selected context."
+                : "Select Budget, Cost Centre, Budget Type, Activity and Fund Source first.");
+        adjustmentHistory.getElement().setProperty("title", enabled
+                ? "View salary adjustment history for the selected context."
                 : "Select Budget, Cost Centre, Budget Type, Activity and Fund Source first.");
 
         if (enabled) {

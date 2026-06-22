@@ -27,6 +27,8 @@ class StaffSalaryAdjustmentServiceTest {
 
     @Mock
     private StaffSalaryService staffSalaryService;
+    @Mock
+    private SalaryAdjustmentHistoryService salaryAdjustmentHistoryService;
 
     private StaffSalaryAdjustmentService service;
     private Budget budget;
@@ -37,7 +39,7 @@ class StaffSalaryAdjustmentServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new StaffSalaryAdjustmentService(staffSalaryService);
+        service = new StaffSalaryAdjustmentService(staffSalaryService, salaryAdjustmentHistoryService);
         budget = new Budget();
         deptUnit = new UrcDeptSectionAnlDimbgt();
         budgetType = new Organisation();
@@ -73,7 +75,7 @@ class StaffSalaryAdjustmentServiceTest {
 
         service.apply(budget, deptUnit, budgetType, activity, fundsource,
                 SalaryAdjustmentScope.SELECTED_STAFF, SalaryAdjustmentType.FIXED_AMOUNT,
-                null, 10L, new BigDecimal("250"));
+                null, 10L, new BigDecimal("250"), "hr@example.com");
 
         ArgumentCaptor<List<StaffSalary>> captor = ArgumentCaptor.forClass(List.class);
         verify(staffSalaryService).saveStaffSalary(captor.capture());
@@ -81,6 +83,12 @@ class StaffSalaryAdjustmentServiceTest {
         assertThat(captor.getValue().get(0).getId()).isEqualTo(10L);
         assertThat(captor.getValue().get(0).getSalary()).isEqualByComparingTo("5250");
         assertThat(other.getSalary()).isEqualByComparingTo("7000");
+        verify(salaryAdjustmentHistoryService).record(
+                budget, deptUnit, budgetType, activity, fundsource,
+                SalaryAdjustmentScope.SELECTED_STAFF, SalaryAdjustmentType.FIXED_AMOUNT,
+                null, 10L, "S10", "Staff 10", new BigDecimal("250"), 1,
+                new BigDecimal("5000"), new BigDecimal("5250"), new BigDecimal("250"),
+                new BigDecimal("3000"), "hr@example.com");
     }
 
     private StaffSalary staffSalary(Long id, salaryScale grade, String salary) {

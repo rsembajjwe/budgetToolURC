@@ -22,9 +22,12 @@ public class StaffSalaryAdjustmentService {
     private static final BigDecimal MONTHS_IN_YEAR = new BigDecimal("12");
 
     private final StaffSalaryService staffSalaryService;
+    private final SalaryAdjustmentHistoryService salaryAdjustmentHistoryService;
 
-    public StaffSalaryAdjustmentService(StaffSalaryService staffSalaryService) {
+    public StaffSalaryAdjustmentService(StaffSalaryService staffSalaryService,
+            SalaryAdjustmentHistoryService salaryAdjustmentHistoryService) {
         this.staffSalaryService = staffSalaryService;
+        this.salaryAdjustmentHistoryService = salaryAdjustmentHistoryService;
     }
 
     @Transactional(readOnly = true)
@@ -59,6 +62,15 @@ public class StaffSalaryAdjustmentService {
             Organisation budgetType, Urc_Activities activity, Fundsource fundsource,
             SalaryAdjustmentScope scope, SalaryAdjustmentType type, salaryScale grade,
             Long selectedStaffSalaryId, BigDecimal value) {
+        return apply(budget, deptUnit, budgetType, activity, fundsource, scope, type, grade,
+                selectedStaffSalaryId, value, "SYSTEM");
+    }
+
+    @Transactional
+    public SalaryAdjustmentPreview apply(Budget budget, UrcDeptSectionAnlDimbgt deptUnit,
+            Organisation budgetType, Urc_Activities activity, Fundsource fundsource,
+            SalaryAdjustmentScope scope, SalaryAdjustmentType type, salaryScale grade,
+            Long selectedStaffSalaryId, BigDecimal value, String appliedBy) {
         SalaryAdjustmentPreview preview = preview(budget, deptUnit, budgetType, activity, fundsource,
                 scope, type, grade, selectedStaffSalaryId, value);
         List<StaffSalary> salaries = matchingSalaries(budget, deptUnit, budgetType, activity, fundsource,
@@ -67,7 +79,24 @@ public class StaffSalaryAdjustmentService {
             salary.setSalary(adjustedSalary(zeroIfNull(salary.getSalary()), type, value));
         }
         staffSalaryService.saveStaffSalary(salaries);
+        recordHistory(budget, deptUnit, budgetType, activity, fundsource, scope, type, grade,
+                selectedStaffSalaryId, value, appliedBy, preview);
         return preview;
+    }
+
+    private void recordHistory(Budget budget, UrcDeptSectionAnlDimbgt deptUnit, Organisation budgetType,
+            Urc_Activities activity, Fundsource fundsource, SalaryAdjustmentScope scope, SalaryAdjustmentType type,
+            salaryScale grade, Long selectedStaffSalaryId, BigDecimal value, String appliedBy,
+            SalaryAdjustmentPreview preview) {
+        SalaryAdjustmentPreviewRow selectedStaff = preview.rows().size() == 1
+                ? preview.rows().get(0)
+                : null;
+        salaryAdjustmentHistoryService.record(budget, deptUnit, budgetType, activity, fundsource,
+                scope, type, grade, selectedStaffSalaryId,
+                selectedStaff == null ? null : selectedStaff.staffCode(),
+                selectedStaff == null ? null : selectedStaff.staffName(),
+                value, preview.rows().size(), preview.oldMonthlyTotal(), preview.newMonthlyTotal(),
+                preview.monthlyDifference(), preview.annualDifference(), appliedBy);
     }
 
     private List<StaffSalary> matchingSalaries(Budget budget, UrcDeptSectionAnlDimbgt deptUnit,
