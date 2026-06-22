@@ -15,9 +15,11 @@ import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.Currency;
 import com.methaltech.application.data.entity.bgtool.Fundsource;
 import com.methaltech.application.data.entity.bgtool.Organisation;
+import com.methaltech.application.data.entity.bgtool.SalaryGradeCeiling;
 import com.methaltech.application.data.entity.bgtool.StaffSalary;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
+import com.methaltech.application.data.SalaryGradeCeilingType;
 import com.methaltech.application.data.salaryScale;
 import java.math.BigDecimal;
 import java.util.List;
@@ -46,6 +48,8 @@ class StaffSalaryBudgetServiceTest {
     private BudgetItemsService budgetItemsService;
     @Mock
     private StaffSalaryService staffSalaryService;
+    @Mock
+    private SalaryGradeCeilingService salaryGradeCeilingService;
 
     private StaffSalaryBudgetService service;
     private Budget budget;
@@ -63,7 +67,7 @@ class StaffSalaryBudgetServiceTest {
     @BeforeEach
     void setUp() {
         service = new StaffSalaryBudgetService(coaService, currencyService, coalevel1Service,
-                budgetItemsService, staffSalaryService);
+                budgetItemsService, staffSalaryService, salaryGradeCeilingService);
         budget = new Budget();
         deptUnit = new UrcDeptSectionAnlDimbgt();
         budgetType = new Organisation();
@@ -154,6 +158,8 @@ class StaffSalaryBudgetServiceTest {
         when(staffSalaryService.findByBudgetAndDeptUnitAndBudgetTypeAndActivity(
                 budget, deptUnit, budgetType, activity)).thenReturn(salaries);
         when(staffSalaryService.aggregateSalaryByGrade(salaries)).thenCallRealMethod();
+        when(salaryGradeCeilingService.findByContext(budget, deptUnit, budgetType, activity, fundsource))
+                .thenReturn(List.of(ceiling(salaryScale.RG_2, SalaryGradeCeilingType.GRADE_TOTAL, "1000")));
 
         StaffSalaryBudgetService.SalaryBudgetPreview preview = service.previewSelectedContext(
                 budget, deptUnit, budgetType, activity, fundsource);
@@ -165,6 +171,16 @@ class StaffSalaryBudgetServiceTest {
                 .filteredOn(row -> "Salary".equals(row.category()))
                 .extracting(StaffSalaryBudgetService.SalaryBudgetPreviewRow::grade)
                 .containsExactlyInAnyOrder(salaryScale.RG_2, salaryScale.EXEC_2);
+        assertThat(preview.rows())
+                .filteredOn(row -> salaryScale.RG_2.equals(row.grade()))
+                .singleElement()
+                .satisfies(row -> {
+                    assertThat(row.staffCount()).isEqualTo(1);
+                    assertThat(row.ceilingType()).isEqualTo(SalaryGradeCeilingType.GRADE_TOTAL.name());
+                    assertThat(row.monthlyCeiling()).isEqualByComparingTo("1000");
+                    assertThat(row.monthlyVariance()).isEqualByComparingTo("500");
+                    assertThat(row.ceilingStatus()).isEqualTo("Over");
+                });
         assertThat(preview.rows())
                 .filteredOn(row -> NSSF_CODE.equals(row.accountCode()))
                 .singleElement()
@@ -218,6 +234,14 @@ class StaffSalaryBudgetServiceTest {
         staffSalary.setGrade(grade);
         staffSalary.setSalary(new BigDecimal(salary));
         return staffSalary;
+    }
+
+    private SalaryGradeCeiling ceiling(salaryScale grade, SalaryGradeCeilingType type, String monthlyCeiling) {
+        SalaryGradeCeiling ceiling = new SalaryGradeCeiling();
+        ceiling.setGrade(grade);
+        ceiling.setCeilingType(type);
+        ceiling.setMonthlyCeiling(new BigDecimal(monthlyCeiling));
+        return ceiling;
     }
 
     private BudgetItems findByCoa(List<BudgetItems> items, COA coa) {

@@ -1,12 +1,19 @@
 package com.methaltech.application.views.salary;
 
 import com.methaltech.application.data.UploadExamplesI18N;
+import com.methaltech.application.data.SalaryAdjustmentScope;
+import com.methaltech.application.data.SalaryAdjustmentType;
+import com.methaltech.application.data.SalaryGradeCeilingType;
 import com.methaltech.application.data.bgtool.service.BudgetService;
 import com.methaltech.application.data.bgtool.service.CurrencyService;
 import com.methaltech.application.data.bgtool.service.FreightVolumesService;
 import com.methaltech.application.data.bgtool.service.FundsourceService;
 import com.methaltech.application.data.bgtool.service.OrganisationService;
+import com.methaltech.application.data.bgtool.service.SalaryGradeCeilingService;
 import com.methaltech.application.data.bgtool.service.StaffService;
+import com.methaltech.application.data.bgtool.service.StaffSalaryAdjustmentService;
+import com.methaltech.application.data.bgtool.service.StaffSalaryAdjustmentService.SalaryAdjustmentPreview;
+import com.methaltech.application.data.bgtool.service.StaffSalaryAdjustmentService.SalaryAdjustmentPreviewRow;
 import com.methaltech.application.data.bgtool.service.StaffSalaryBudgetService;
 import com.methaltech.application.data.bgtool.service.StaffSalaryBudgetService.SalaryBudgetPreview;
 import com.methaltech.application.data.bgtool.service.StaffSalaryBudgetService.SalaryBudgetPreviewRow;
@@ -19,6 +26,7 @@ import com.methaltech.application.data.entity.bgtool.COA;
 import com.methaltech.application.data.entity.bgtool.Currency;
 import com.methaltech.application.data.entity.bgtool.Fundsource;
 import com.methaltech.application.data.entity.bgtool.Organisation;
+import com.methaltech.application.data.entity.bgtool.SalaryGradeCeiling;
 import com.methaltech.application.data.entity.bgtool.Staff;
 import com.methaltech.application.data.entity.bgtool.StaffSalary;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
@@ -114,6 +122,8 @@ public class staffSalaryView extends Div {
     private final StaffSalaryService sampleStaffSalaryService;
     private final StaffService staffService;
     private final StaffSalaryBudgetService staffSalaryBudgetService;
+    private final StaffSalaryAdjustmentService staffSalaryAdjustmentService;
+    private final SalaryGradeCeilingService salaryGradeCeilingService;
 
     private final Binder<StaffSalary> binder = new BeanValidationBinder<>(StaffSalary.class);
     private ComboBox<UrcDeptSectionAnlDimbgt> comboBoxD_Section = new ComboBox<>("Cost Centre");
@@ -142,6 +152,8 @@ public class staffSalaryView extends Div {
     private Button cancel = new Button("Cancel");
     private Button loadStaffMaster = new Button("Load Staff Master");
     private Button previewSalaryBudget = new Button("Preview Salary Budget");
+    private Button adjustSalaries = new Button("Adjust Salaries");
+    private Button manageGradeCeilings = new Button("Grade Ceilings");
     Span span = new Span();
     private Span salaryContextHint = new Span("Select Budget, Cost Centre, Budget Type, Activity and Fund Source to enable salary import actions.");
 
@@ -161,7 +173,9 @@ public class staffSalaryView extends Div {
             CurrencyService sampleCurrencyService,
             OrganisationService sampleOrganisationService, UserService userService,
             Urc_ActivitiesService sampleUrc_ActivitiesService, StaffSalaryService sampleStaffSalaryService,
-            StaffService staffService, StaffSalaryBudgetService staffSalaryBudgetService, FundsourceService sampleFundsourceService) {
+            StaffService staffService, StaffSalaryBudgetService staffSalaryBudgetService,
+            StaffSalaryAdjustmentService staffSalaryAdjustmentService, SalaryGradeCeilingService salaryGradeCeilingService,
+            FundsourceService sampleFundsourceService) {
         this.sampleFreightVolumesService = sampleFreightVolumesService;
         this.sampleBudgetService = sampleBudgetService;
         this.sampleCurrencyService = sampleCurrencyService;
@@ -171,6 +185,8 @@ public class staffSalaryView extends Div {
         this.sampleStaffSalaryService = sampleStaffSalaryService;
         this.staffService = staffService;
         this.staffSalaryBudgetService = staffSalaryBudgetService;
+        this.staffSalaryAdjustmentService = staffSalaryAdjustmentService;
+        this.salaryGradeCeilingService = salaryGradeCeilingService;
         this.sampleFundsourceService = sampleFundsourceService;
         setHeight("100%");
         Image image2 = new Image("images/ugflagstrip.png", "Strip");
@@ -262,6 +278,8 @@ public class staffSalaryView extends Div {
         cancel.setId("staff-salary-cancel");
         loadStaffMaster.setId("staff-salary-load-master");
         previewSalaryBudget.setId("staff-salary-preview-budget");
+        adjustSalaries.setId("staff-salary-adjust");
+        manageGradeCeilings.setId("staff-salary-grade-ceilings");
         salaryContextHint.setId("staff-salary-context-hint");
 
         code.setHelperText("Required for duplicate-safe salary imports.");
@@ -424,6 +442,8 @@ public class staffSalaryView extends Div {
         cancel.addClickListener(event -> cancel());
         loadStaffMaster.addClickListener(event -> importStaffFromMaster());
         previewSalaryBudget.addClickListener(event -> previewSelectedSalaryBudget());
+        adjustSalaries.addClickListener(event -> openSalaryAdjustmentDialog());
+        manageGradeCeilings.addClickListener(event -> openGradeCeilingDialog());
     }
 
     public void setSalaryGrid() {
@@ -504,7 +524,7 @@ public class staffSalaryView extends Div {
     public FormLayout volumesDetails() {
         FormLayout form = new FormLayout();
         HorizontalLayout ho = new HorizontalLayout();
-        ho.add(save, delete, deleteAll, loadStaffMaster, previewSalaryBudget, cancel);
+        ho.add(save, delete, deleteAll, loadStaffMaster, previewSalaryBudget, adjustSalaries, manageGradeCeilings, cancel);
         form.add(code, fname, lname, email, tel, mob, position, grade, Address,
                 Address2, nextofkin,
                 salaryz, ho
@@ -608,8 +628,13 @@ public class staffSalaryView extends Div {
         previewGrid.addColumn(SalaryBudgetPreviewRow::accountCode).setHeader("Account").setAutoWidth(true);
         previewGrid.addColumn(SalaryBudgetPreviewRow::item).setHeader("Item").setAutoWidth(true);
         previewGrid.addColumn(row -> row.grade() == null ? "" : row.grade().name()).setHeader("Grade").setAutoWidth(true);
+        previewGrid.addColumn(row -> row.staffCount() == null ? "" : row.staffCount().toString()).setHeader("Staff Count").setAutoWidth(true);
         previewGrid.addColumn(row -> decimalFormat.format(row.monthlyAmount())).setHeader("Monthly").setAutoWidth(true);
         previewGrid.addColumn(row -> decimalFormat.format(row.annualAmount())).setHeader("Annual").setAutoWidth(true);
+        previewGrid.addColumn(row -> row.ceilingType() == null ? "" : row.ceilingType()).setHeader("Ceiling Type").setAutoWidth(true);
+        previewGrid.addColumn(row -> row.monthlyCeiling() == null ? "" : decimalFormat.format(row.monthlyCeiling())).setHeader("Ceiling").setAutoWidth(true);
+        previewGrid.addColumn(row -> row.monthlyVariance() == null ? "" : decimalFormat.format(row.monthlyVariance())).setHeader("Variance").setAutoWidth(true);
+        previewGrid.addColumn(SalaryBudgetPreviewRow::ceilingStatus).setHeader("Status").setAutoWidth(true);
         previewGrid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
         previewGrid.setItems(preview.rows());
         previewGrid.setHeight("360px");
@@ -637,6 +662,167 @@ public class staffSalaryView extends Div {
         dialog.open();
     }
 
+    private void openSalaryAdjustmentDialog() {
+        if (!hasSelectedSalaryContext()) {
+            warningNotification("Select Budget, Cost Centre, Budget Type, Activity and Fund Source before adjusting salaries.");
+            return;
+        }
+
+        Dialog dialog = new Dialog();
+        dialog.setId("staff-salary-adjust-dialog");
+        dialog.setHeaderTitle("Adjust Salaries");
+        dialog.setWidth("980px");
+
+        ComboBox<SalaryAdjustmentScope> scope = new ComboBox<>("Adjustment Scope");
+        scope.setId("staff-salary-adjust-scope");
+        scope.setItems(SalaryAdjustmentScope.ALL_STAFF, SalaryAdjustmentScope.BY_GRADE, SalaryAdjustmentScope.SELECTED_STAFF);
+        scope.setValue(SalaryAdjustmentScope.ALL_STAFF);
+
+        ComboBox<SalaryAdjustmentType> type = new ComboBox<>("Adjustment Type");
+        type.setId("staff-salary-adjust-type");
+        type.setItems(SalaryAdjustmentType.PERCENTAGE, SalaryAdjustmentType.FIXED_AMOUNT, SalaryAdjustmentType.SET_SALARY);
+        type.setValue(SalaryAdjustmentType.PERCENTAGE);
+
+        ComboBox<salaryScale> adjustmentGrade = new ComboBox<>("Grade");
+        adjustmentGrade.setId("staff-salary-adjust-grade");
+        adjustmentGrade.setItems(salaryScale.EXEC_1, salaryScale.EXEC_2, salaryScale.RG_1, salaryScale.RG_2,
+                salaryScale.RG_3, salaryScale.RG_4, salaryScale.RG_5, salaryScale.RG_6, salaryScale.RG_7,
+                salaryScale.RG_8, salaryScale.RG_9);
+        adjustmentGrade.setHelperText("Required only for By Grade adjustments.");
+
+        BigDecimalField adjustmentValue = new BigDecimalField("Adjustment Value");
+        adjustmentValue.setId("staff-salary-adjust-value");
+        adjustmentValue.setHelperText("Percentage uses %, Fixed adds amount, Set Salary replaces monthly salary.");
+
+        Grid<SalaryAdjustmentPreviewRow> previewGrid = new Grid<>(SalaryAdjustmentPreviewRow.class, false);
+        previewGrid.setId("staff-salary-adjust-preview-grid");
+        previewGrid.addColumn(SalaryAdjustmentPreviewRow::staffCode).setHeader("Staff Code").setAutoWidth(true);
+        previewGrid.addColumn(SalaryAdjustmentPreviewRow::staffName).setHeader("Staff").setAutoWidth(true);
+        previewGrid.addColumn(row -> row.grade() == null ? "" : row.grade().name()).setHeader("Grade").setAutoWidth(true);
+        previewGrid.addColumn(row -> decimalFormat.format(row.oldMonthlySalary())).setHeader("Old Monthly").setAutoWidth(true);
+        previewGrid.addColumn(row -> decimalFormat.format(row.newMonthlySalary())).setHeader("New Monthly").setAutoWidth(true);
+        previewGrid.addColumn(row -> decimalFormat.format(row.monthlyDifference())).setHeader("Monthly Diff").setAutoWidth(true);
+        previewGrid.addColumn(row -> decimalFormat.format(row.annualDifference())).setHeader("Annual Diff").setAutoWidth(true);
+        previewGrid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
+        previewGrid.setHeight("320px");
+
+        Span totals = new Span("Preview an adjustment to see impact.");
+        totals.getElement().getThemeList().add("badge");
+
+        Button preview = new Button("Preview Adjustment", event -> {
+            try {
+                SalaryAdjustmentPreview adjustmentPreview = staffSalaryAdjustmentService.preview(comboBoxBudget.getValue(),
+                        comboBoxD_Section.getValue(), comboBoxOrganisation.getValue(), comboBoxUrc_Activities.getValue(),
+                        budgetItemfundSource.getValue(), scope.getValue(), type.getValue(), adjustmentGrade.getValue(),
+                        selectedStaffSalaryId(), adjustmentValue.getValue());
+                previewGrid.setItems(adjustmentPreview.rows());
+                totals.setText(formatSalaryAdjustmentPreview(adjustmentPreview));
+            } catch (IllegalArgumentException ex) {
+                warningNotification(ex.getMessage());
+            }
+        });
+        preview.setId("staff-salary-adjust-preview");
+
+        Button apply = new Button("Apply Adjustment", event -> {
+            try {
+                SalaryAdjustmentPreview applied = staffSalaryAdjustmentService.apply(comboBoxBudget.getValue(),
+                        comboBoxD_Section.getValue(), comboBoxOrganisation.getValue(), comboBoxUrc_Activities.getValue(),
+                        budgetItemfundSource.getValue(), scope.getValue(), type.getValue(), adjustmentGrade.getValue(),
+                        selectedStaffSalaryId(), adjustmentValue.getValue());
+                SalaryBudgetRegenerationResult regenerationResult = regenerateSelectedSalaryBudgetItems(comboBoxBudget.getValue());
+                setSalaryGrid2();
+                dialog.close();
+                Notification notification = Notification.show(formatSalaryAdjustmentPreview(applied) + " "
+                        + formatSalaryBudgetRegeneration(regenerationResult));
+                notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            } catch (IllegalArgumentException ex) {
+                warningNotification(ex.getMessage());
+            }
+        });
+        apply.setId("staff-salary-adjust-apply");
+        apply.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button close = new Button("Close", event -> dialog.close());
+        close.setId("staff-salary-adjust-close");
+
+        FormLayout controls = new FormLayout(scope, type, adjustmentGrade, adjustmentValue);
+        controls.setResponsiveSteps(new ResponsiveStep("0", 1), new ResponsiveStep("520px", 4));
+        dialog.add(new VerticalLayout(controls, totals, previewGrid));
+        dialog.getFooter().add(preview, apply, close);
+        dialog.open();
+    }
+
+    private void openGradeCeilingDialog() {
+        if (!hasSelectedSalaryContext()) {
+            warningNotification("Select Budget, Cost Centre, Budget Type, Activity and Fund Source before setting grade ceilings.");
+            return;
+        }
+
+        Dialog dialog = new Dialog();
+        dialog.setId("staff-salary-ceiling-dialog");
+        dialog.setHeaderTitle("Grade Salary Ceilings");
+        dialog.setWidth("760px");
+
+        Grid<SalaryGradeCeiling> ceilingGrid = new Grid<>(SalaryGradeCeiling.class, false);
+        ceilingGrid.setId("staff-salary-ceiling-grid");
+        ceilingGrid.addColumn(ceiling -> ceiling.getGrade() == null ? "" : ceiling.getGrade().name()).setHeader("Grade").setAutoWidth(true);
+        ceilingGrid.addColumn(ceiling -> ceiling.getCeilingType() == null ? "" : ceiling.getCeilingType().name()).setHeader("Ceiling Type").setAutoWidth(true);
+        ceilingGrid.addColumn(ceiling -> decimalFormat.format(ceiling.getMonthlyCeiling())).setHeader("Monthly Ceiling").setAutoWidth(true);
+        refreshGradeCeilingGrid(ceilingGrid);
+
+        ComboBox<salaryScale> ceilingGrade = new ComboBox<>("Grade");
+        ceilingGrade.setId("staff-salary-ceiling-grade");
+        ceilingGrade.setItems(salaryScale.EXEC_1, salaryScale.EXEC_2, salaryScale.RG_1, salaryScale.RG_2,
+                salaryScale.RG_3, salaryScale.RG_4, salaryScale.RG_5, salaryScale.RG_6, salaryScale.RG_7,
+                salaryScale.RG_8, salaryScale.RG_9);
+        ComboBox<SalaryGradeCeilingType> ceilingType = new ComboBox<>("Ceiling Type");
+        ceilingType.setId("staff-salary-ceiling-type");
+        ceilingType.setItems(SalaryGradeCeilingType.PER_STAFF, SalaryGradeCeilingType.GRADE_TOTAL);
+        BigDecimalField monthlyCeiling = new BigDecimalField("Monthly Ceiling");
+        monthlyCeiling.setId("staff-salary-ceiling-monthly");
+
+        Button saveCeiling = new Button("Save Ceiling", event -> {
+            try {
+                salaryGradeCeilingService.saveOrUpdate(comboBoxBudget.getValue(), comboBoxD_Section.getValue(),
+                        comboBoxOrganisation.getValue(), comboBoxUrc_Activities.getValue(), budgetItemfundSource.getValue(),
+                        ceilingGrade.getValue(), ceilingType.getValue(), monthlyCeiling.getValue());
+                refreshGradeCeilingGrid(ceilingGrid);
+                Notification.show("Salary grade ceiling saved.").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            } catch (IllegalArgumentException ex) {
+                warningNotification(ex.getMessage());
+            }
+        });
+        saveCeiling.setId("staff-salary-ceiling-save");
+        saveCeiling.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button close = new Button("Close", event -> dialog.close());
+        close.setId("staff-salary-ceiling-close");
+        FormLayout controls = new FormLayout(ceilingGrade, ceilingType, monthlyCeiling);
+        controls.setResponsiveSteps(new ResponsiveStep("0", 1), new ResponsiveStep("520px", 3));
+        dialog.add(new VerticalLayout(controls, ceilingGrid));
+        dialog.getFooter().add(saveCeiling, close);
+        dialog.open();
+    }
+
+    private void refreshGradeCeilingGrid(Grid<SalaryGradeCeiling> ceilingGrid) {
+        ceilingGrid.setItems(salaryGradeCeilingService.findByContext(comboBoxBudget.getValue(),
+                comboBoxD_Section.getValue(), comboBoxOrganisation.getValue(), comboBoxUrc_Activities.getValue(),
+                budgetItemfundSource.getValue()));
+    }
+
+    private Long selectedStaffSalaryId() {
+        StaffSalary selected = gridStaffSalary.asSingleSelect().getValue();
+        return selected == null ? null : selected.getId();
+    }
+
+    private String formatSalaryAdjustmentPreview(SalaryAdjustmentPreview preview) {
+        return "Adjusted " + preview.rows().size() + " staff; monthly total "
+                + decimalFormat.format(preview.oldMonthlyTotal()) + " -> "
+                + decimalFormat.format(preview.newMonthlyTotal()) + " (diff "
+                + decimalFormat.format(preview.monthlyDifference()) + ", annual diff "
+                + decimalFormat.format(preview.annualDifference()) + ").";
+    }
+
     private byte[] generateSalaryBudgetPreviewWorkbook(SalaryBudgetPreview preview) throws IOException {
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Salary Budget Preview");
@@ -655,7 +841,8 @@ public class staffSalaryView extends Div {
             rowIndex++;
 
             Row header = sheet.createRow(rowIndex++);
-            String[] headers = {"Type", "Account", "Item", "Grade", "Monthly", "Annual"};
+            String[] headers = {"Type", "Account", "Item", "Grade", "Staff Count", "Monthly", "Annual",
+                "Ceiling Type", "Ceiling", "Variance", "Status"};
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = header.createCell(i);
                 cell.setCellValue(headers[i]);
@@ -668,15 +855,26 @@ public class staffSalaryView extends Div {
                 row.createCell(1).setCellValue(previewRow.accountCode());
                 row.createCell(2).setCellValue(previewRow.item());
                 row.createCell(3).setCellValue(previewRow.grade() == null ? "" : previewRow.grade().name());
-                row.createCell(4).setCellValue(previewRow.monthlyAmount().doubleValue());
-                row.createCell(5).setCellValue(previewRow.annualAmount().doubleValue());
+                if (previewRow.staffCount() != null) {
+                    row.createCell(4).setCellValue(previewRow.staffCount());
+                }
+                row.createCell(5).setCellValue(previewRow.monthlyAmount().doubleValue());
+                row.createCell(6).setCellValue(previewRow.annualAmount().doubleValue());
+                row.createCell(7).setCellValue(previewRow.ceilingType() == null ? "" : previewRow.ceilingType());
+                if (previewRow.monthlyCeiling() != null) {
+                    row.createCell(8).setCellValue(previewRow.monthlyCeiling().doubleValue());
+                }
+                if (previewRow.monthlyVariance() != null) {
+                    row.createCell(9).setCellValue(previewRow.monthlyVariance().doubleValue());
+                }
+                row.createCell(10).setCellValue(previewRow.ceilingStatus());
             }
 
             rowIndex++;
             Row totalRow = sheet.createRow(rowIndex);
             totalRow.createCell(3).setCellValue("Totals");
-            totalRow.createCell(4).setCellValue(preview.monthlyTotal().doubleValue());
-            totalRow.createCell(5).setCellValue(preview.annualTotal().doubleValue());
+            totalRow.createCell(5).setCellValue(preview.monthlyTotal().doubleValue());
+            totalRow.createCell(6).setCellValue(preview.annualTotal().doubleValue());
 
             for (int i = 0; i < headers.length; i++) {
                 sheet.autoSizeColumn(i);
@@ -731,6 +929,8 @@ public class staffSalaryView extends Div {
         save.setEnabled(enabled);
         loadStaffMaster.setEnabled(enabled);
         previewSalaryBudget.setEnabled(enabled);
+        adjustSalaries.setEnabled(enabled);
+        manageGradeCeilings.setEnabled(enabled);
         if (upload != null) {
             upload.setVisible(enabled);
             upload.getElement().setProperty("title", enabled
@@ -742,6 +942,12 @@ public class staffSalaryView extends Div {
                 : "Select Budget, Cost Centre, Budget Type, Activity and Fund Source first.");
         previewSalaryBudget.getElement().setProperty("title", enabled
                 ? "Preview salary budget rows for the selected context."
+                : "Select Budget, Cost Centre, Budget Type, Activity and Fund Source first.");
+        adjustSalaries.getElement().setProperty("title", enabled
+                ? "Preview and apply salary adjustments for the selected context."
+                : "Select Budget, Cost Centre, Budget Type, Activity and Fund Source first.");
+        manageGradeCeilings.getElement().setProperty("title", enabled
+                ? "Set salary ceilings by grade for the selected context."
                 : "Select Budget, Cost Centre, Budget Type, Activity and Fund Source first.");
 
         if (enabled) {

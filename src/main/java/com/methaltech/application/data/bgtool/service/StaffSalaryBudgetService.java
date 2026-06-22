@@ -7,9 +7,11 @@ import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.Currency;
 import com.methaltech.application.data.entity.bgtool.Fundsource;
 import com.methaltech.application.data.entity.bgtool.Organisation;
+import com.methaltech.application.data.entity.bgtool.SalaryGradeCeiling;
 import com.methaltech.application.data.entity.bgtool.StaffSalary;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
+import com.methaltech.application.data.SalaryGradeCeilingType;
 import com.methaltech.application.data.salaryScale;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -34,15 +36,17 @@ public class StaffSalaryBudgetService {
     private final Coalevel1Service coalevel1Service;
     private final BudgetItemsService budgetItemsService;
     private final StaffSalaryService staffSalaryService;
+    private final SalaryGradeCeilingService salaryGradeCeilingService;
 
     public StaffSalaryBudgetService(CoaService coaService, CurrencyService currencyService,
             Coalevel1Service coalevel1Service, BudgetItemsService budgetItemsService,
-            StaffSalaryService staffSalaryService) {
+            StaffSalaryService staffSalaryService, SalaryGradeCeilingService salaryGradeCeilingService) {
         this.coaService = coaService;
         this.currencyService = currencyService;
         this.coalevel1Service = coalevel1Service;
         this.budgetItemsService = budgetItemsService;
         this.staffSalaryService = staffSalaryService;
+        this.salaryGradeCeilingService = salaryGradeCeilingService;
     }
 
     @Transactional
@@ -90,14 +94,20 @@ public class StaffSalaryBudgetService {
         List<StaffSalary> salaries = staffSalaryService.findByBudgetAndDeptUnitAndBudgetTypeAndActivity(
                 budget, deptUnit, budgetType, activity);
         List<StaffSalary> aggregateSalaryByGrade = staffSalaryService.aggregateSalaryByGrade(salaries);
+        List<SalaryGradeCeiling> ceilings = salaryGradeCeilingService.findByContext(
+                budget, deptUnit, budgetType, activity, fundsource);
 
         List<SalaryBudgetPreviewRow> rows = new ArrayList<>();
         BigDecimal monthlyTotal = BigDecimal.ZERO;
         for (StaffSalary aggregate : aggregateSalaryByGrade) {
             BigDecimal monthlyAmount = aggregate.getSalary();
+            GradeSalaryStats stats = gradeSalaryStats(salaries, aggregate.getGrade());
+            CeilingComparison ceilingComparison = compareCeiling(ceilings, aggregate.getGrade(), monthlyAmount, stats.staffCount());
             rows.add(new SalaryBudgetPreviewRow("Salary", setup.salaryWages().getCode(),
                     aggregate.getFname() + " Salary", aggregate.getGrade(), monthlyAmount,
-                    annualAmount(monthlyAmount)));
+                    annualAmount(monthlyAmount), stats.staffCount(), ceilingComparison.ceilingType(),
+                    ceilingComparison.monthlyCeiling(), ceilingComparison.monthlyVariance(),
+                    ceilingComparison.status()));
             monthlyTotal = monthlyTotal.add(monthlyAmount);
         }
 
@@ -216,11 +226,47 @@ public class StaffSalaryBudgetService {
             BigDecimal monthlySalaryTotal, BigDecimal rate) {
         BigDecimal monthlyAmount = monthlySalaryTotal.multiply(rate);
         rows.add(new SalaryBudgetPreviewRow(category, coa.getCode(), coa.getName(), null, monthlyAmount,
-                annualAmount(monthlyAmount)));
+                annualAmount(monthlyAmount), null, null, null, null, ""));
     }
 
     private BigDecimal annualAmount(BigDecimal monthlyAmount) {
         return monthlyAmount.multiply(MONTHS_IN_YEAR);
+    }
+
+    private GradeSalaryStats gradeSalaryStats(List<StaffSalary> salaries, salaryScale grade) {
+        List<StaffSalary> gradeSalaries = salaries.stream()
+                .filter(salary -> grade != null && grade.equals(salary.getGrade()))
+                .toList();
+        BigDecimal maxMonthlySalary = gradeSalaries.stream()
+                .map(StaffSalary::getSalary)
+                .filter(salary -> salary != null)
+                .max(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO);
+        return new GradeSalaryStats(gradeSalaries.size(), maxMonthlySalary);
+    }
+
+    private CeilingComparison compareCeiling(List<SalaryGradeCeiling> ceilings, salaryScale grade,
+            BigDecimal monthlyAmount, int staffCount) {
+        SalaryGradeCeiling ceiling = ceilings.stream()
+                .filter(item -> grade != null && grade.equals(item.getGrade()))
+                .filter(item -> item.getCeilingType() == SalaryGradeCeilingType.GRADE_TOTAL)
+                .findFirst()
+                .orElseGet(() -> ceilings.stream()
+                .filter(item -> grade != null && grade.equals(item.getGrade()))
+                .filter(item -> item.getCeilingType() == SalaryGradeCeilingType.PER_STAFF)
+                .findFirst()
+                .orElse(null));
+
+        if (ceiling == null || ceiling.getMonthlyCeiling() == null) {
+            return new CeilingComparison(null, null, null, "No Ceiling");
+        }
+
+        BigDecimal effectiveCeiling = ceiling.getCeilingType() == SalaryGradeCeilingType.PER_STAFF
+                ? ceiling.getMonthlyCeiling().multiply(new BigDecimal(staffCount))
+                : ceiling.getMonthlyCeiling();
+        BigDecimal variance = monthlyAmount.subtract(effectiveCeiling);
+        return new CeilingComparison(ceiling.getCeilingType().name(), effectiveCeiling, variance,
+                variance.compareTo(BigDecimal.ZERO) > 0 ? "Over" : "OK");
     }
 
     public record SalaryBudgetRegenerationResult(int salaryGradeRows, BigDecimal monthlyTotal) {
@@ -231,7 +277,15 @@ public class StaffSalaryBudgetService {
     }
 
     public record SalaryBudgetPreviewRow(String category, String accountCode, String item, salaryScale grade,
-            BigDecimal monthlyAmount, BigDecimal annualAmount) {
+            BigDecimal monthlyAmount, BigDecimal annualAmount, Integer staffCount, String ceilingType,
+            BigDecimal monthlyCeiling, BigDecimal monthlyVariance, String ceilingStatus) {
+    }
+
+    private record GradeSalaryStats(int staffCount, BigDecimal maxMonthlySalary) {
+    }
+
+    private record CeilingComparison(String ceilingType, BigDecimal monthlyCeiling, BigDecimal monthlyVariance,
+            String status) {
     }
 
     private record SalaryBudgetSetup(COA salaryWages, COA nssf, COA gratuity, COA workmanCompensation,
