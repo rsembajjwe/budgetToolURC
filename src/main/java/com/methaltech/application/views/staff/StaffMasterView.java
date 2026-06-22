@@ -41,6 +41,7 @@ import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import org.springframework.data.domain.PageRequest;
 
@@ -320,18 +321,19 @@ public class StaffMasterView extends Div {
 
     private void refreshGrid() {
         String fy = selectedFinancialYear();
-        grid.setItems(staffService.searchByFinancialYear(fy, searchField.getValue()));
-        updateFooter(fy);
+        List<Staff> staff = staffService.searchByFinancialYear(fy, searchField.getValue());
+        grid.setItems(staff);
+        updateFooter(fy, staff);
     }
 
-    private void updateFooter(String fy) {
+    private void updateFooter(String fy, List<Staff> staff) {
         footer.removeAll();
         if (fy == null) {
             footer.add(new Text("Select a financial year to view staff."));
             return;
         }
 
-        BigDecimal monthly = staffService.searchByFinancialYear(fy, searchField.getValue()).stream()
+        BigDecimal monthly = staff.stream()
                 .map(Staff::getSalary)
                 .filter(value -> value != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -346,7 +348,7 @@ public class StaffMasterView extends Div {
 
     private void clearForm() {
         selectedStaff = null;
-        binder.readBean(null);
+        binder.readBean(new Staff());
         delete.setEnabled(false);
     }
 
