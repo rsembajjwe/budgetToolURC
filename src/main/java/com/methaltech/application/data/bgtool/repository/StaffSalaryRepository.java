@@ -7,6 +7,7 @@ import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 public interface StaffSalaryRepository extends JpaRepository<StaffSalary, Long> {
 
     List<StaffSalary> findByBudget(Budget budget);
+
+    Optional<StaffSalary> findFirstByBudgetAndCode(Budget budget, String code);
 
     @Modifying
     @Transactional

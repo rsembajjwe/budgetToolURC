@@ -9,6 +9,7 @@ import com.methaltech.application.data.bgtool.service.CurrencyService;
 import com.methaltech.application.data.bgtool.service.FreightVolumesService;
 import com.methaltech.application.data.bgtool.service.FundsourceService;
 import com.methaltech.application.data.bgtool.service.OrganisationService;
+import com.methaltech.application.data.bgtool.service.StaffService;
 import com.methaltech.application.data.bgtool.service.StaffSalaryService;
 import com.methaltech.application.data.bgtool.service.StockUnitMeasureService;
 import com.methaltech.application.data.bgtool.service.Urc_ActivitiesService;
@@ -20,6 +21,7 @@ import com.methaltech.application.data.entity.bgtool.Coalevel1;
 import com.methaltech.application.data.entity.bgtool.Currency;
 import com.methaltech.application.data.entity.bgtool.Fundsource;
 import com.methaltech.application.data.entity.bgtool.Organisation;
+import com.methaltech.application.data.entity.bgtool.Staff;
 import com.methaltech.application.data.entity.bgtool.StaffSalary;
 import com.methaltech.application.data.entity.bgtool.StockUnitMeasure;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
@@ -74,9 +76,11 @@ import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
@@ -106,6 +110,7 @@ public class staffSalaryView extends Div {
     private final BudgetItemsService sampleBudgetItemsService;
     private final Urc_ActivitiesService sampleUrc_ActivitiesService;
     private final StaffSalaryService sampleStaffSalaryService;
+    private final StaffService staffService;
 
     private final Binder<StaffSalary> binder = new BeanValidationBinder<>(StaffSalary.class);
     private ComboBox<UrcDeptSectionAnlDimbgt> comboBoxD_Section = new ComboBox<>("Cost Centre");
@@ -132,6 +137,7 @@ public class staffSalaryView extends Div {
     private Button delete = new Button("Delete");
     private Button deleteAll = new Button("Delete All");
     private Button cancel = new Button("Cancel");
+    private Button loadStaffMaster = new Button("Load Staff Master");
     Span span = new Span();
 
     SplitLayout splitLayout = new SplitLayout();
@@ -151,7 +157,7 @@ public class staffSalaryView extends Div {
             CurrencyService sampleCurrencyService, BudgetItemsService budgetItemsService, StockUnitMeasureService sampleStockUnitMeasureService,
             OrganisationService sampleOrganisationService, UserService userService, BudgetItemsService sampleBudgetItemsService,
             Urc_ActivitiesService sampleUrc_ActivitiesService, StaffSalaryService sampleStaffSalaryService,
-            Coalevel1Service coalevel1Service, FundsourceService sampleFundsourceService) {
+            StaffService staffService, Coalevel1Service coalevel1Service, FundsourceService sampleFundsourceService) {
         this.sampleFreightVolumesService = sampleFreightVolumesService;
         this.sampleBudgetService = sampleBudgetService;
         this.sampleCoaService = sampleCoaService;
@@ -163,6 +169,7 @@ public class staffSalaryView extends Div {
         this.sampleBudgetItemsService = sampleBudgetItemsService;
         this.sampleUrc_ActivitiesService = sampleUrc_ActivitiesService;
         this.sampleStaffSalaryService = sampleStaffSalaryService;
+        this.staffService = staffService;
         this.coalevel1Service = coalevel1Service;
         this.sampleFundsourceService = sampleFundsourceService;
         setHeight("100%");
@@ -226,12 +233,31 @@ public class staffSalaryView extends Div {
                 .stream());
         comboBoxBudget.setItemLabelGenerator(Budget::getFinancialYear);
         comboBoxBudget.addValueChangeListener(e -> {
+            if (e.getValue() == null) {
+                save.setEnabled(false);
+                cancel.setEnabled(false);
+                delete.setEnabled(false);
+                deleteAll.setEnabled(false);
+                loadStaffMaster.setEnabled(false);
+                if (upload != null) {
+                    upload.setVisible(false);
+                }
+                return;
+            }
             if (!e.getValue().isActive()) {
                 save.setEnabled(false);
                 cancel.setEnabled(false);
                 delete.setEnabled(false);
                 deleteAll.setEnabled(false);
+                loadStaffMaster.setEnabled(false);
                 upload.setVisible(false);
+            } else {
+                save.setEnabled(true);
+                cancel.setEnabled(true);
+                delete.setEnabled(true);
+                deleteAll.setEnabled(true);
+                loadStaffMaster.setEnabled(true);
+                upload.setVisible(true);
             }
             budgetItemfundSource.setItems(sampleFundsourceService.findFundsourcesByBudget(e.getValue()));
             setSalaryGrid2();
@@ -323,7 +349,8 @@ public class staffSalaryView extends Div {
 
         save.addClickListener(event -> {
 
-            if (!comboBoxBudget.isEmpty() && !fname.isEmpty() && !salaryz.isEmpty()) {
+            if (hasSelectedSalaryContext() && !code.isEmpty() && !fname.isEmpty()
+                    && !lname.isEmpty() && !grade.isEmpty() && !salaryz.isEmpty()) {
 
                 StaffSalary salary = gridStaffSalary.asSingleSelect().getValue();
                 BudgetItems item;
@@ -358,11 +385,12 @@ public class staffSalaryView extends Div {
 
                 clearForm();
             } else {
-                warningNotification("Empty Values");
+                warningNotification("Select budget context and fill Staff Code, First Name, Last Name, Level and Salary.");
             }
 
         });
         cancel.addClickListener(event -> cancel());
+        loadStaffMaster.addClickListener(event -> importStaffFromMaster());
     }
 
     public void setSalaryGrid() {
@@ -443,7 +471,7 @@ public class staffSalaryView extends Div {
     public FormLayout volumesDetails() {
         FormLayout form = new FormLayout();
         HorizontalLayout ho = new HorizontalLayout();
-        ho.add(save, delete, deleteAll, cancel);
+        ho.add(save, delete, deleteAll, loadStaffMaster, cancel);
         form.add(code, fname, lname, email, tel, mob, position, grade, Address,
                 Address2, nextofkin,
                 salaryz, ho
@@ -874,6 +902,100 @@ public class staffSalaryView extends Div {
 
     }
 
+    private void importStaffFromMaster() {
+        if (!hasSelectedSalaryContext()) {
+            warningNotification("Select Budget, Cost Centre, Budget Type, Activity and Fund Source before loading Staff Master.");
+            return;
+        }
+
+        Budget budget = comboBoxBudget.getValue();
+        List<Staff> masterStaff = staffService.listByFinancialYear(budget.getFinancialYear());
+        if (masterStaff.isEmpty()) {
+            warningNotification("No Staff Master records found for " + budget.getFinancialYear() + ".");
+            return;
+        }
+
+        List<StaffSalary> salariesToSave = new ArrayList<>();
+        Set<String> importedCodes = new HashSet<>();
+        int created = 0;
+        int updated = 0;
+        int skipped = 0;
+
+        for (Staff staff : masterStaff) {
+            String staffCode = clean(staff.getCode());
+            salaryScale staffGrade = GetScale(staff.getGrade());
+            if (staffCode == null || staff.getSalary() == null || staffGrade == null || !importedCodes.add(staffCode)) {
+                skipped++;
+                continue;
+            }
+
+            Optional<StaffSalary> existingSalary = sampleStaffSalaryService.findByBudgetAndCode(budget, staffCode);
+            StaffSalary salary = existingSalary.orElseGet(StaffSalary::new);
+            if (existingSalary.isPresent()) {
+                updated++;
+            } else {
+                created++;
+            }
+
+            copyStaffToSalary(staff, salary, staffGrade);
+            salariesToSave.add(salary);
+        }
+
+        if (salariesToSave.isEmpty()) {
+            warningNotification("No valid Staff Master rows were loaded. Check staff code, grade and salary values.");
+            return;
+        }
+
+        sampleStaffSalaryService.saveStaffSalary(salariesToSave);
+        itemBudgetSave(budget, null);
+        setSalaryGrid2();
+        clearForm();
+
+        Notification notification = Notification.show("Loaded Staff Master: " + created
+                + " created, " + updated + " updated, " + skipped + " skipped.");
+        notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+    }
+
+    private boolean hasSelectedSalaryContext() {
+        return !comboBoxBudget.isEmpty()
+                && !comboBoxD_Section.isEmpty()
+                && !comboBoxOrganisation.isEmpty()
+                && !comboBoxUrc_Activities.isEmpty()
+                && !budgetItemfundSource.isEmpty();
+    }
+
+    private void copyStaffToSalary(Staff staff, StaffSalary salary, salaryScale staffGrade) {
+        salary.setCode(clean(staff.getCode()));
+        salary.setFname(clean(staff.getFname()));
+        salary.setLname(clean(staff.getLname()));
+        salary.setTel(clean(staff.getTel()));
+        salary.setMob(clean(staff.getMob()));
+        salary.setAddress(clean(staff.getAddress()));
+        salary.setAddress2(clean(staff.getAddress2()));
+        salary.setNextofkin(clean(staff.getNextOfKin()));
+        salary.setEmail(clean(staff.getEmail()));
+        salary.setPosition(clean(staff.getPosition()));
+        salary.setContract(clean(staff.getContract()));
+        salary.setGrade(staffGrade);
+        salary.setSalary(staff.getSalary());
+        applySelectedSalaryContext(salary);
+    }
+
+    private void applySelectedSalaryContext(StaffSalary salary) {
+        salary.setBudget(comboBoxBudget.getValue());
+        salary.setDeptUnit(comboBoxD_Section.getValue());
+        salary.setBudgetType(comboBoxOrganisation.getValue());
+        salary.setActivity(comboBoxUrc_Activities.getValue());
+    }
+
+    private String clean(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
     public void setStaffData(StaffSalary slaries) {
         this.salaries = slaries;
         binder.setBean(slaries);
@@ -940,13 +1062,13 @@ public class staffSalaryView extends Div {
             upload.setVisible(true);
         }
         upload.addSucceededListener(event -> {
-            if (!comboBoxBudget.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxUrc_Activities.isEmpty()) {
+            if (hasSelectedSalaryContext()) {
                 String fileName = event.getFileName();
                 InputStream inputStream = buffer.getInputStream(fileName);
                 //System.out.println("Uploaded");
                 extractStaffSalaryFromCell2(inputStream);
             } else {
-                Notification.show("Select all the required parameters");
+                Notification.show("Select Budget, Cost Centre, Budget Type, Activity and Fund Source");
             }
 
         });
@@ -1054,33 +1176,40 @@ public class staffSalaryView extends Div {
     }
 
     public salaryScale GetScale(String s) {
-        salaryScale ba = null;
-
-        if (s.equals("RG 1")) {
-            ba = salaryScale.RG_1;
-        } else if (s.equals("RG 2")) {
-            ba = salaryScale.RG_2;
-        } else if (s.equals("RG 3")) {
-            ba = salaryScale.RG_3;
-        } else if (s.equals("RG 4")) {
-            ba = salaryScale.RG_4;
-        } else if (s.equals("RG 5")) {
-            ba = salaryScale.RG_5;
-        } else if (s.equals("RG 6")) {
-            ba = salaryScale.RG_6;
-        } else if (s.equals("RG 7")) {
-            ba = salaryScale.RG_7;
-        } else if (s.equals("RG 8")) {
-            ba = salaryScale.RG_8;
-        } else if (s.equals("RG 9")) {
-            ba = salaryScale.RG_9;
-        } else if (s.equals("EXEC 1")) {
-            ba = salaryScale.EXEC_1;
-        } else if (s.equals("EXEC 2")) {
-            ba = salaryScale.EXEC_2;
+        if (s == null) {
+            return null;
         }
 
-        return ba;
+        String normalized = s.trim()
+                .toUpperCase(Locale.ROOT)
+                .replace("_", " ")
+                .replaceAll("\\s+", " ");
+
+        if (normalized.equals("RG 1")) {
+            return salaryScale.RG_1;
+        } else if (normalized.equals("RG 2")) {
+            return salaryScale.RG_2;
+        } else if (normalized.equals("RG 3")) {
+            return salaryScale.RG_3;
+        } else if (normalized.equals("RG 4")) {
+            return salaryScale.RG_4;
+        } else if (normalized.equals("RG 5")) {
+            return salaryScale.RG_5;
+        } else if (normalized.equals("RG 6")) {
+            return salaryScale.RG_6;
+        } else if (normalized.equals("RG 7")) {
+            return salaryScale.RG_7;
+        } else if (normalized.equals("RG 8")) {
+            return salaryScale.RG_8;
+        } else if (normalized.equals("RG 9")) {
+            return salaryScale.RG_9;
+        } else if (normalized.equals("EXEC 1")) {
+            return salaryScale.EXEC_1;
+        } else if (normalized.equals("EXEC 2")) {
+            return salaryScale.EXEC_2;
+        }
+
+        return null;
     }
 
     public void setDetails(StaffSalary s) {
@@ -1224,21 +1353,13 @@ public class staffSalaryView extends Div {
 
                     });
 
+                    applySelectedSalaryContext(info);
                     listStaffSalary.add(info);
                 }
             }
             if (messages.isEmpty()) {
-                int x = 0;
                 sampleStaffSalaryService.saveStaffSalary(listStaffSalary);
-                List<StaffSalary> aggregateSalaryByGrade = sampleStaffSalaryService.aggregateSalaryByGrade(listStaffSalary);
-                for (StaffSalary a : aggregateSalaryByGrade) {
-                    x++;
-                    a.setBudget(comboBoxBudget.getValue());
-                    itemsalaryBudget(a, comboBoxOrganisation.getValue());
-                    /*                    if (sampleStaffSalaryService.saveStaffSalary(a) != null) {
-                    itemsalaryBudget(a, comboBoxOrganisation.getValue());
-                    }*/
-                }
+                itemBudgetSave(comboBoxBudget.getValue(), null);
                 if (!comboBoxBudget.isEmpty()) {
                     setSalaryGrid2();
                 }
@@ -1289,7 +1410,7 @@ public class staffSalaryView extends Div {
                 handleNumericError(messages, rowIndex, columnIndex, errorMessage);
             }
         } else {
-
+            handleNumericError(messages, rowIndex, columnIndex, errorMessage);
         }
     }
 
