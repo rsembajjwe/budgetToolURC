@@ -131,6 +131,7 @@ public class staffSalaryView extends Div {
     private Button cancel = new Button("Cancel");
     private Button loadStaffMaster = new Button("Load Staff Master");
     Span span = new Span();
+    private Span salaryContextHint = new Span("Select Budget, Cost Centre, Budget Type, Activity and Fund Source to enable salary import actions.");
 
     SplitLayout splitLayout = new SplitLayout();
     DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US); // Use US locale for consistent formatting
@@ -222,29 +223,18 @@ public class staffSalaryView extends Div {
         comboBoxBudget.addValueChangeListener(e -> {
             if (e.getValue() == null) {
                 save.setEnabled(false);
-                cancel.setEnabled(false);
                 delete.setEnabled(false);
                 deleteAll.setEnabled(false);
-                loadStaffMaster.setEnabled(false);
-                if (upload != null) {
-                    upload.setVisible(false);
-                }
+                updateSalaryContextActionState();
                 return;
             }
             if (!e.getValue().isActive()) {
                 save.setEnabled(false);
-                cancel.setEnabled(false);
                 delete.setEnabled(false);
                 deleteAll.setEnabled(false);
-                loadStaffMaster.setEnabled(false);
-                upload.setVisible(false);
             } else {
-                save.setEnabled(true);
-                cancel.setEnabled(true);
                 delete.setEnabled(true);
                 deleteAll.setEnabled(true);
-                loadStaffMaster.setEnabled(true);
-                upload.setVisible(true);
             }
             budgetItemfundSource.setItems(sampleFundsourceService.findFundsourcesByBudget(e.getValue()));
             setSalaryGrid2();
@@ -254,6 +244,7 @@ public class staffSalaryView extends Div {
             }
 
             comboBoxOrganisation.setItems(sampleOrganisationService.getOrganisationsByBudget(comboBoxBudget.getValue()));
+            updateSalaryContextActionState();
         });
         comboBoxD_Section.addValueChangeListener(e -> {
             try {
@@ -261,6 +252,7 @@ public class staffSalaryView extends Div {
                     comboBoxUrc_Activities.setItems(sampleUrc_ActivitiesService.findByDeptSectionAndBudget(comboBoxD_Section.getValue(), comboBoxBudget.getValue()));
                     //setSalaryGrid();
                 }
+                updateSalaryContextActionState();
             } catch (Exception ex) {
                 ex.printStackTrace();
                 Notification.show(ex.getMessage());
@@ -270,10 +262,13 @@ public class staffSalaryView extends Div {
 
         comboBoxUrc_Activities.addValueChangeListener(e -> {
             // setSalaryGrid();
+            updateSalaryContextActionState();
         });
         comboBoxOrganisation.addValueChangeListener(e -> {
             // setSalaryGrid();
+            updateSalaryContextActionState();
         });
+        budgetItemfundSource.addValueChangeListener(e -> updateSalaryContextActionState());
         delete.addClickListener(e -> {
             if (!gridStaffSalary.asSingleSelect().isEmpty()) {
                 Dialog dialog = new Dialog();
@@ -535,6 +530,36 @@ public class staffSalaryView extends Div {
                 && !budgetItemfundSource.isEmpty();
     }
 
+    private boolean isSelectedBudgetActive() {
+        return !comboBoxBudget.isEmpty() && comboBoxBudget.getValue().isActive();
+    }
+
+    private void updateSalaryContextActionState() {
+        boolean enabled = isSelectedBudgetActive() && hasSelectedSalaryContext();
+
+        save.setEnabled(enabled);
+        loadStaffMaster.setEnabled(enabled);
+        if (upload != null) {
+            upload.setEnabled(enabled);
+            upload.getElement().setProperty("title", enabled
+                    ? "Upload salary rows for the selected salary context."
+                    : "Select Budget, Cost Centre, Budget Type, Activity and Fund Source first.");
+        }
+        loadStaffMaster.getElement().setProperty("title", enabled
+                ? "Load Staff Master rows into the selected salary context."
+                : "Select Budget, Cost Centre, Budget Type, Activity and Fund Source first.");
+
+        if (enabled) {
+            salaryContextHint.setText("Salary import actions are enabled for the selected context.");
+            salaryContextHint.getElement().getThemeList().remove("badge error");
+            salaryContextHint.getElement().getThemeList().add("badge success");
+        } else {
+            salaryContextHint.setText("Select Budget, Cost Centre, Budget Type, Activity and Fund Source to enable salary import actions.");
+            salaryContextHint.getElement().getThemeList().remove("badge success");
+            salaryContextHint.getElement().getThemeList().add("badge error");
+        }
+    }
+
     private void copyStaffToSalary(Staff staff, StaffSalary salary, salaryScale staffGrade) {
         salary.setCode(clean(staff.getCode()));
         salary.setFname(clean(staff.getFname()));
@@ -627,11 +652,6 @@ public class staffSalaryView extends Div {
                 "Provide the file in one of the supported formats (.xls, .xlsx, .csv).");
         upload.setI18n(i18n);
         upload.setVisible(true);
-        if (!comboBoxBudget.isEmpty() && !comboBoxOrganisation.isEmpty() && !comboBoxD_Section.isEmpty() && !comboBoxUrc_Activities.isEmpty()) {
-
-        } else {
-            upload.setVisible(true);
-        }
         upload.addSucceededListener(event -> {
             if (hasSelectedSalaryContext()) {
                 String fileName = event.getFileName();
@@ -644,7 +664,10 @@ public class staffSalaryView extends Div {
 
         });
         FormLayout formLayout = new FormLayout();
-        formLayout.add(comboBoxBudget, comboBoxD_Section, comboBoxOrganisation, comboBoxUrc_Activities, budgetItemfundSource, upload);
+        salaryContextHint.getElement().getThemeList().add("badge error");
+        formLayout.add(comboBoxBudget, comboBoxD_Section, comboBoxOrganisation, comboBoxUrc_Activities,
+                budgetItemfundSource, upload, salaryContextHint);
+        formLayout.setColspan(salaryContextHint, 4);
         formLayout.setResponsiveSteps(
                 // Use one column by default
                 new ResponsiveStep("0", 1),
@@ -667,6 +690,7 @@ public class staffSalaryView extends Div {
         splitLayout.addToPrimary(gridStaffSalary, footer);
         splitLayout.addToSecondary(volumesDetails());
         lay.add(hor, formLayout, splitLayout);
+        updateSalaryContextActionState();
 
         return lay;
     }
