@@ -8,6 +8,8 @@ import com.methaltech.application.data.bgtool.service.FundsourceService;
 import com.methaltech.application.data.bgtool.service.OrganisationService;
 import com.methaltech.application.data.bgtool.service.StaffService;
 import com.methaltech.application.data.bgtool.service.StaffSalaryBudgetService;
+import com.methaltech.application.data.bgtool.service.StaffSalaryBudgetService.SalaryBudgetPreview;
+import com.methaltech.application.data.bgtool.service.StaffSalaryBudgetService.SalaryBudgetPreviewRow;
 import com.methaltech.application.data.bgtool.service.StaffSalaryBudgetService.SalaryBudgetRegenerationResult;
 import com.methaltech.application.data.bgtool.service.StaffSalaryService;
 import com.methaltech.application.data.bgtool.service.Urc_ActivitiesService;
@@ -130,6 +132,7 @@ public class staffSalaryView extends Div {
     private Button deleteAll = new Button("Delete All");
     private Button cancel = new Button("Cancel");
     private Button loadStaffMaster = new Button("Load Staff Master");
+    private Button previewSalaryBudget = new Button("Preview Salary Budget");
     Span span = new Span();
     private Span salaryContextHint = new Span("Select Budget, Cost Centre, Budget Type, Activity and Fund Source to enable salary import actions.");
 
@@ -369,6 +372,7 @@ public class staffSalaryView extends Div {
         });
         cancel.addClickListener(event -> cancel());
         loadStaffMaster.addClickListener(event -> importStaffFromMaster());
+        previewSalaryBudget.addClickListener(event -> previewSelectedSalaryBudget());
     }
 
     public void setSalaryGrid() {
@@ -449,7 +453,7 @@ public class staffSalaryView extends Div {
     public FormLayout volumesDetails() {
         FormLayout form = new FormLayout();
         HorizontalLayout ho = new HorizontalLayout();
-        ho.add(save, delete, deleteAll, loadStaffMaster, cancel);
+        ho.add(save, delete, deleteAll, loadStaffMaster, previewSalaryBudget, cancel);
         form.add(code, fname, lname, email, tel, mob, position, grade, Address,
                 Address2, nextofkin,
                 salaryz, ho
@@ -522,6 +526,52 @@ public class staffSalaryView extends Div {
         notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
     }
 
+    private void previewSelectedSalaryBudget() {
+        if (!hasSelectedSalaryContext()) {
+            warningNotification("Select Budget, Cost Centre, Budget Type, Activity and Fund Source before previewing salary budget.");
+            return;
+        }
+
+        try {
+            SalaryBudgetPreview preview = staffSalaryBudgetService.previewSelectedContext(
+                    comboBoxBudget.getValue(),
+                    comboBoxD_Section.getValue(),
+                    comboBoxOrganisation.getValue(),
+                    comboBoxUrc_Activities.getValue(),
+                    budgetItemfundSource.getValue());
+            showSalaryBudgetPreviewDialog(preview);
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            warningNotification(ex.getMessage());
+        }
+    }
+
+    private void showSalaryBudgetPreviewDialog(SalaryBudgetPreview preview) {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Salary Budget Preview");
+        dialog.setWidth("900px");
+
+        Grid<SalaryBudgetPreviewRow> previewGrid = new Grid<>(SalaryBudgetPreviewRow.class, false);
+        previewGrid.addColumn(SalaryBudgetPreviewRow::category).setHeader("Type").setAutoWidth(true);
+        previewGrid.addColumn(SalaryBudgetPreviewRow::accountCode).setHeader("Account").setAutoWidth(true);
+        previewGrid.addColumn(SalaryBudgetPreviewRow::item).setHeader("Item").setAutoWidth(true);
+        previewGrid.addColumn(row -> row.grade() == null ? "" : row.grade().name()).setHeader("Grade").setAutoWidth(true);
+        previewGrid.addColumn(row -> decimalFormat.format(row.monthlyAmount())).setHeader("Monthly").setAutoWidth(true);
+        previewGrid.addColumn(row -> decimalFormat.format(row.annualAmount())).setHeader("Annual").setAutoWidth(true);
+        previewGrid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
+        previewGrid.setItems(preview.rows());
+        previewGrid.setHeight("360px");
+
+        Span total = new Span("Monthly total: " + decimalFormat.format(preview.monthlyTotal())
+                + " | Annual total: " + decimalFormat.format(preview.annualTotal()));
+        total.getElement().getThemeList().add("badge success");
+
+        Button close = new Button("Close", event -> dialog.close());
+        close.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        dialog.add(new VerticalLayout(total, previewGrid));
+        dialog.getFooter().add(close);
+        dialog.open();
+    }
+
     private boolean hasSelectedSalaryContext() {
         return !comboBoxBudget.isEmpty()
                 && !comboBoxD_Section.isEmpty()
@@ -539,6 +589,7 @@ public class staffSalaryView extends Div {
 
         save.setEnabled(enabled);
         loadStaffMaster.setEnabled(enabled);
+        previewSalaryBudget.setEnabled(enabled);
         if (upload != null) {
             upload.setVisible(enabled);
             upload.getElement().setProperty("title", enabled
@@ -547,6 +598,9 @@ public class staffSalaryView extends Div {
         }
         loadStaffMaster.getElement().setProperty("title", enabled
                 ? "Load Staff Master rows into the selected salary context."
+                : "Select Budget, Cost Centre, Budget Type, Activity and Fund Source first.");
+        previewSalaryBudget.getElement().setProperty("title", enabled
+                ? "Preview salary budget rows for the selected context."
                 : "Select Budget, Cost Centre, Budget Type, Activity and Fund Source first.");
 
         if (enabled) {

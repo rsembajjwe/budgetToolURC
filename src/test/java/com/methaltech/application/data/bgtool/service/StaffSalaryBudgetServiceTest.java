@@ -145,6 +145,48 @@ class StaffSalaryBudgetServiceTest {
     }
 
     @Test
+    void previewSelectedContextReturnsSalaryAndBenefitRowsWithoutWritingBudgetItems() {
+        stubSalarySetup();
+        List<StaffSalary> salaries = List.of(
+                staffSalary(salaryScale.RG_2, "1500"),
+                staffSalary(salaryScale.EXEC_2, "4500")
+        );
+        when(staffSalaryService.findByBudgetAndDeptUnitAndBudgetTypeAndActivity(
+                budget, deptUnit, budgetType, activity)).thenReturn(salaries);
+        when(staffSalaryService.aggregateSalaryByGrade(salaries)).thenCallRealMethod();
+
+        StaffSalaryBudgetService.SalaryBudgetPreview preview = service.previewSelectedContext(
+                budget, deptUnit, budgetType, activity, fundsource);
+
+        assertThat(preview.monthlyTotal()).isEqualByComparingTo("6000");
+        assertThat(preview.annualTotal()).isEqualByComparingTo("72000");
+        assertThat(preview.rows()).hasSize(5);
+        assertThat(preview.rows())
+                .filteredOn(row -> "Salary".equals(row.category()))
+                .extracting(StaffSalaryBudgetService.SalaryBudgetPreviewRow::grade)
+                .containsExactlyInAnyOrder(salaryScale.RG_2, salaryScale.EXEC_2);
+        assertThat(preview.rows())
+                .filteredOn(row -> NSSF_CODE.equals(row.accountCode()))
+                .singleElement()
+                .satisfies(row -> {
+                    assertThat(row.monthlyAmount()).isEqualByComparingTo("600.00");
+                    assertThat(row.annualAmount()).isEqualByComparingTo("7200.00");
+                });
+        assertThat(preview.rows())
+                .filteredOn(row -> GRATUITY_CODE.equals(row.accountCode()))
+                .singleElement()
+                .satisfies(row -> assertThat(row.monthlyAmount()).isEqualByComparingTo("1500.00"));
+        assertThat(preview.rows())
+                .filteredOn(row -> WORKMAN_COMPENSATION_CODE.equals(row.accountCode()))
+                .singleElement()
+                .satisfies(row -> assertThat(row.monthlyAmount()).isEqualByComparingTo("180.00"));
+
+        verify(budgetItemsService, never()).deleteByBudgetAndCoasAndSalaryContext(
+                any(), any(), any(), any(), any(), any());
+        verify(budgetItemsService, never()).update(any(BudgetItems.class));
+    }
+
+    @Test
     void deleteAllSalaryBudgetDataDeletesSalaryCoasAndStaffSalaries() {
         stubSalarySetup();
 

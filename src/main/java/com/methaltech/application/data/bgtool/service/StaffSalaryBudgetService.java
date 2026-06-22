@@ -10,6 +10,7 @@ import com.methaltech.application.data.entity.bgtool.Organisation;
 import com.methaltech.application.data.entity.bgtool.StaffSalary;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
+import com.methaltech.application.data.salaryScale;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,6 +78,37 @@ public class StaffSalaryBudgetService {
         }
 
         return new SalaryBudgetRegenerationResult(aggregateSalaryByGrade.size(), monthlyTotal);
+    }
+
+    @Transactional(readOnly = true)
+    public SalaryBudgetPreview previewSelectedContext(Budget budget,
+            UrcDeptSectionAnlDimbgt deptUnit, Organisation budgetType, Urc_Activities activity,
+            Fundsource fundsource) {
+        validateContext(budget, deptUnit, budgetType, activity, fundsource);
+
+        SalaryBudgetSetup setup = loadSalaryBudgetSetup(budget);
+        List<StaffSalary> salaries = staffSalaryService.findByBudgetAndDeptUnitAndBudgetTypeAndActivity(
+                budget, deptUnit, budgetType, activity);
+        List<StaffSalary> aggregateSalaryByGrade = staffSalaryService.aggregateSalaryByGrade(salaries);
+
+        List<SalaryBudgetPreviewRow> rows = new ArrayList<>();
+        BigDecimal monthlyTotal = BigDecimal.ZERO;
+        for (StaffSalary aggregate : aggregateSalaryByGrade) {
+            BigDecimal monthlyAmount = aggregate.getSalary();
+            rows.add(new SalaryBudgetPreviewRow("Salary", setup.salaryWages().getCode(),
+                    aggregate.getFname() + " Salary", aggregate.getGrade(), monthlyAmount,
+                    annualAmount(monthlyAmount)));
+            monthlyTotal = monthlyTotal.add(monthlyAmount);
+        }
+
+        if (monthlyTotal.compareTo(BigDecimal.ZERO) > 0) {
+            addBenefitPreview(rows, setup.nssf(), "NSSF", monthlyTotal, NSSF_RATE);
+            addBenefitPreview(rows, setup.gratuity(), "Gratuity", monthlyTotal, GRATUITY_RATE);
+            addBenefitPreview(rows, setup.workmanCompensation(), "Workman Compensation", monthlyTotal,
+                    WORKMAN_COMPENSATION_RATE);
+        }
+
+        return new SalaryBudgetPreview(rows, monthlyTotal, annualAmount(monthlyTotal));
     }
 
     @Transactional
@@ -180,7 +212,26 @@ public class StaffSalaryBudgetService {
         item.setDec(monthlyAmount);
     }
 
+    private void addBenefitPreview(List<SalaryBudgetPreviewRow> rows, COA coa, String category,
+            BigDecimal monthlySalaryTotal, BigDecimal rate) {
+        BigDecimal monthlyAmount = monthlySalaryTotal.multiply(rate);
+        rows.add(new SalaryBudgetPreviewRow(category, coa.getCode(), coa.getName(), null, monthlyAmount,
+                annualAmount(monthlyAmount)));
+    }
+
+    private BigDecimal annualAmount(BigDecimal monthlyAmount) {
+        return monthlyAmount.multiply(MONTHS_IN_YEAR);
+    }
+
     public record SalaryBudgetRegenerationResult(int salaryGradeRows, BigDecimal monthlyTotal) {
+    }
+
+    public record SalaryBudgetPreview(List<SalaryBudgetPreviewRow> rows, BigDecimal monthlyTotal,
+            BigDecimal annualTotal) {
+    }
+
+    public record SalaryBudgetPreviewRow(String category, String accountCode, String item, salaryScale grade,
+            BigDecimal monthlyAmount, BigDecimal annualAmount) {
     }
 
     private record SalaryBudgetSetup(COA salaryWages, COA nssf, COA gratuity, COA workmanCompensation,
