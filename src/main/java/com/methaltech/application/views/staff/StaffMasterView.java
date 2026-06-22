@@ -330,6 +330,12 @@ public class StaffMasterView extends Div {
         try {
             binder.writeBean(staff);
             staff.setFy(budget.getValue().getFinancialYear());
+            staff.setCode(clean(staff.getCode()));
+            if (hasDuplicateStaffCode(staff)) {
+                warningNotification("Staff code \"" + staff.getCode()
+                        + "\" already exists for " + staff.getFy() + ".");
+                return;
+            }
             staffService.saveStaff(staff);
             Notification.show("Staff details saved.").addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             grid.deselectAll();
@@ -514,9 +520,13 @@ public class StaffMasterView extends Div {
             }
 
             int rowIndex = 1;
-            for (Staff staff : staffRows) {
-                Row row = sheet.createRow(rowIndex++);
-                writeStaffRow(row, staff, fy, dateStyle);
+            if (staffRows.isEmpty()) {
+                writeSampleStaffRow(sheet.createRow(rowIndex), fy, dateStyle);
+            } else {
+                for (Staff staff : staffRows) {
+                    Row row = sheet.createRow(rowIndex++);
+                    writeStaffRow(row, staff, fy, dateStyle);
+                }
             }
 
             for (int i = 0; i < STAFF_EXPORT_HEADERS.size(); i++) {
@@ -547,6 +557,23 @@ public class StaffMasterView extends Div {
         row.createCell(13).setCellValue(valueOrEmpty(staff.getAddress()));
         row.createCell(14).setCellValue(valueOrEmpty(staff.getAddress2()));
         row.createCell(15).setCellValue(valueOrEmpty(staff.getNextOfKin()));
+    }
+
+    private void writeSampleStaffRow(Row row, String fy, CellStyle dateStyle) {
+        row.createCell(0).setCellValue(fy);
+        row.createCell(1).setCellValue("STF001");
+        row.createCell(2).setCellValue("Doe");
+        row.createCell(3).setCellValue("Jane");
+        row.createCell(4).setCellValue("Accountant");
+        row.createCell(5).setCellValue("RG 5");
+        row.createCell(6).setCellValue(2500000);
+        row.createCell(7).setCellValue("jane.doe@example.com");
+        row.createCell(8).setCellValue("0414000000");
+        row.createCell(9).setCellValue("0772000000");
+        row.createCell(10).setCellValue("Permanent");
+        writeDateCell(row, 11, toDate(LocalDate.now()), dateStyle);
+        row.createCell(13).setCellValue("Primary address");
+        row.createCell(15).setCellValue("Next of kin");
     }
 
     private void writeDateCell(Row row, int column, Date date, CellStyle dateStyle) {
@@ -608,6 +635,18 @@ public class StaffMasterView extends Div {
             field.setRequiredIndicatorVisible(true);
             field.setClearButtonVisible(true);
         }
+    }
+
+    private boolean hasDuplicateStaffCode(Staff staff) {
+        String fy = staff.getFy();
+        String staffCode = clean(staff.getCode());
+        if (fy == null || staffCode == null) {
+            return false;
+        }
+
+        return staffService.findByFinancialYearAndCode(fy, staffCode)
+                .filter(existing -> existing.getId() != staff.getId())
+                .isPresent();
     }
 
     private String staffName(Staff staff) {
