@@ -791,7 +791,10 @@ public class staffSalaryView extends Div {
         coaList.add(nssf);
         coaList.add(gratuity);
         coaList.add(workmancompesation);
-        int deleted = budgetItemsService.deleteByBudgetAndCoas(comboBoxBudget.getValue(), coaList);
+        int deleted = budgetItemsService.deleteByBudgetAndCoasAndSalaryContext(
+                comboBoxBudget.getValue(), coaList, comboBoxD_Section.getValue(),
+                comboBoxOrganisation.getValue(), comboBoxUrc_Activities.getValue(),
+                budgetItemfundSource.getValue());
 
     }
 
@@ -1374,24 +1377,100 @@ public class staffSalaryView extends Div {
 
     public void itemBudgetUpdate(Budget budget, StaffSalary staff) {
         sampleStaffSalaryService.deleteBystaff(staff);
-        deleteAllItemsalaryBudgetOnly();
-        List<StaffSalary> salaries = sampleStaffSalaryService.findByBudget(budget);
-        List<StaffSalary> aggregateSalaryByGrade = sampleStaffSalaryService.aggregateSalaryByGrade(salaries);
-        for (StaffSalary a : aggregateSalaryByGrade) {
-            a.setBudget(budget);
-            itemsalaryBudget(a, comboBoxOrganisation.getValue());
-
-        }
+        regenerateSelectedSalaryBudgetItems(budget);
     }
-        public void itemBudgetSave(Budget budget, StaffSalary staff) {
+
+    public void itemBudgetSave(Budget budget, StaffSalary staff) {
+        regenerateSelectedSalaryBudgetItems(budget);
+    }
+
+    private int regenerateSelectedSalaryBudgetItems(Budget budget) {
+        if (budget == null || !hasSelectedSalaryContext()) {
+            return 0;
+        }
+
+        COA salaryWages = sampleCoaService.findByCodeAndBudget("211101", budget);
+        COA nssf = sampleCoaService.findByCodeAndBudget("212101", budget);
+        COA gratuity = sampleCoaService.findByCodeAndBudget("213004", budget);
+        COA workmanCompensation = sampleCoaService.findByCodeAndBudget("213005", budget);
+        Currency cur = sampleCurrencyService.findCurrenciesByCurrencyShortAndBudget("UGX", budget);
+        Coalevel1 coaLevel1 = coalevel1Service.findByCode(2);
+
+        if (salaryWages == null || nssf == null || gratuity == null || workmanCompensation == null || cur == null || coaLevel1 == null) {
+            warningNotification("Salary COA setup is incomplete for this budget.");
+            return 0;
+        }
+
         deleteAllItemsalaryBudgetOnly();
-        List<StaffSalary> salaries = sampleStaffSalaryService.findByBudget(budget);
+
+        List<StaffSalary> salaries = sampleStaffSalaryService.findByBudgetAndDeptUnitAndBudgetTypeAndActivity(
+                budget, comboBoxD_Section.getValue(), comboBoxOrganisation.getValue(), comboBoxUrc_Activities.getValue());
         List<StaffSalary> aggregateSalaryByGrade = sampleStaffSalaryService.aggregateSalaryByGrade(salaries);
+        BigDecimal monthlyTotal = BigDecimal.ZERO;
         for (StaffSalary a : aggregateSalaryByGrade) {
             a.setBudget(budget);
-            itemsalaryBudget(a, comboBoxOrganisation.getValue());
-
+            BudgetItems salaryItem = createSalaryBudgetItem(a, salaryWages, cur, coaLevel1);
+            sampleBudgetItemsService.update(salaryItem);
+            monthlyTotal = monthlyTotal.add(a.getSalary());
         }
+
+        if (monthlyTotal.compareTo(BigDecimal.ZERO) > 0) {
+            sampleBudgetItemsService.update(createBenefitBudgetItem(nssf, cur, coaLevel1, monthlyTotal, new BigDecimal("0.10")));
+            sampleBudgetItemsService.update(createBenefitBudgetItem(gratuity, cur, coaLevel1, monthlyTotal, new BigDecimal("0.25")));
+            sampleBudgetItemsService.update(createBenefitBudgetItem(workmanCompensation, cur, coaLevel1, monthlyTotal, new BigDecimal("0.03")));
+        }
+
+        return aggregateSalaryByGrade.size();
+    }
+
+    private BudgetItems createSalaryBudgetItem(StaffSalary salary, COA salaryWages, Currency cur, Coalevel1 coaLevel1) {
+        BudgetItems item = createBaseSalaryBudgetItem(salary.getFname() + " Salary", salaryWages, cur, coaLevel1);
+        item.setCost(salary.getSalary());
+        item.setQty(new BigDecimal("12"));
+        setMonthlyAmounts(item, salary.getSalary());
+        item.setGrade(salary.getGrade());
+        return item;
+    }
+
+    private BudgetItems createBenefitBudgetItem(COA coa, Currency cur, Coalevel1 coaLevel1,
+            BigDecimal monthlySalaryTotal, BigDecimal rate) {
+        BigDecimal monthlyAmount = monthlySalaryTotal.multiply(rate);
+        BudgetItems item = createBaseSalaryBudgetItem(coa.getName(), coa, cur, coaLevel1);
+        item.setCost(monthlyAmount);
+        item.setQty(new BigDecimal("12"));
+        setMonthlyAmounts(item, monthlyAmount);
+        return item;
+    }
+
+    private BudgetItems createBaseSalaryBudgetItem(String itemName, COA coa, Currency cur, Coalevel1 coaLevel1) {
+        BudgetItems item = new BudgetItems();
+        item.setItem(itemName);
+        item.setUnitMeasure("MONTH");
+        item.setCurrency(cur);
+        item.setBudget(comboBoxBudget.getValue());
+        item.setBudgetType(comboBoxOrganisation.getValue());
+        item.setCoacode(coa);
+        item.setDeptUnit(comboBoxD_Section.getValue());
+        item.setFundsource(budgetItemfundSource.getValue());
+        item.setActivity(comboBoxUrc_Activities.getValue());
+        item.setBcategory(coa.getCode());
+        item.setCoalevel1(coaLevel1);
+        return item;
+    }
+
+    private void setMonthlyAmounts(BudgetItems item, BigDecimal monthlyAmount) {
+        item.setJan(monthlyAmount);
+        item.setFeb(monthlyAmount);
+        item.setMar(monthlyAmount);
+        item.setApr(monthlyAmount);
+        item.setMay(monthlyAmount);
+        item.setJun(monthlyAmount);
+        item.setJul(monthlyAmount);
+        item.setAug(monthlyAmount);
+        item.setSep(monthlyAmount);
+        item.setOct(monthlyAmount);
+        item.setNov(monthlyAmount);
+        item.setDec(monthlyAmount);
     }
 
     private void handleNumericCell(Row row, List<errorMessages> messages, StaffSalary info, int rowIndex, int columnIndex, String errorMessage, CellHandler handler) {
