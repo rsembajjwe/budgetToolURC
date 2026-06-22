@@ -29,6 +29,7 @@ import com.methaltech.application.views.procurementplan.ProcurementCOASettingVie
 import com.methaltech.application.views.procurementplan.ProcurementPlanView;
 import com.methaltech.application.views.requisition.BLORequisitionView;
 import com.methaltech.application.views.salary.staffSalaryView;
+import com.methaltech.application.views.staff.StaffMasterView;
 import com.methaltech.application.views.structure.structureView;
 import com.methaltech.application.views.users.SystemSettingsView;
 import com.methaltech.application.views.users.UserView;
@@ -208,6 +209,12 @@ public class MainLayout extends AppLayout {
 
         if (accessChecker.hasAccess(freightVolumeView.class)) {
             SideNavItem item = new SideNavItem("Freight Volume Reports", freightVolumeView.class, VaadinIcon.TRUCK.create());
+            item.addClassName("menu-item");
+            nav.addItem(item);
+        }
+
+        if (accessChecker.hasAccess(StaffMasterView.class)) {
+            SideNavItem item = new SideNavItem("Staff Master", StaffMasterView.class, VaadinIcon.USERS.create());
             item.addClassName("menu-item");
             nav.addItem(item);
         }

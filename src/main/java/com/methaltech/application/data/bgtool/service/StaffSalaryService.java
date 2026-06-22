@@ -9,6 +9,7 @@ import com.methaltech.application.data.entity.bgtool.Urc_Activities;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,13 @@ public class StaffSalaryService {
 
     public List<StaffSalary> findByBudget(Budget budget) {
         return staffSalaryRepository.findByBudget(budget);
+    }
+
+    public Optional<StaffSalary> findByBudgetAndCode(Budget budget, String code) {
+        if (budget == null || code == null || code.isBlank()) {
+            return Optional.empty();
+        }
+        return staffSalaryRepository.findFirstByBudgetAndCode(budget, code.trim());
     }
 
     public List<StaffSalary> findByBudgetAndDeptUnitAndBudgetTypeAndActivity(Budget budget,
@@ -78,7 +86,7 @@ public class StaffSalaryService {
         }
 
         return salaries.stream()
-                .filter(s -> s.getGrade() != null)
+                .filter(s -> s.getGrade() != null && s.getSalary() != null)
                 .collect(Collectors.groupingBy(
                         StaffSalary::getGrade,
                         Collectors.mapping(

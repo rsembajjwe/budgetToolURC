@@ -2617,6 +2617,33 @@ public class BudgetItemsService {
         //repository.deleteAllById(ids);
     }
 
+    @Transactional
+    public int deleteByBudgetAndCoasAndSalaryContext(Budget budget, List<COA> coas,
+            UrcDeptSectionAnlDimbgt deptUnit, Organisation budgetType, Urc_Activities activity,
+            Fundsource fundsource) {
+
+        Objects.requireNonNull(budget, "Budget must not be null");
+        Objects.requireNonNull(deptUnit, "Cost centre must not be null");
+        Objects.requireNonNull(budgetType, "Budget type must not be null");
+        Objects.requireNonNull(activity, "Activity must not be null");
+        Objects.requireNonNull(fundsource, "Fund source must not be null");
+
+        if (coas == null || coas.isEmpty()) {
+            return 0;
+        }
+
+        List<Long> ids = repository.findIdsByBudgetAndCoacodeInAndSalaryContext(
+                budget, coas, deptUnit, budgetType, activity, fundsource);
+
+        if (ids.isEmpty()) {
+            return 0;
+        }
+
+        procurementPlanRepository.detachBudgetItems(ids);
+        procurementBudgetItemGroupRepository.detachBudgetItems(ids);
+        return repository.deleteByIdIn(ids);
+    }
+
     @Transactional(readOnly = true)
     public BigDecimal getMonthlyTotalByCoa(Budget budget, COA coa) {
         BigDecimal total = repository.getTotalByBudgetAndCoa(budget, coa);

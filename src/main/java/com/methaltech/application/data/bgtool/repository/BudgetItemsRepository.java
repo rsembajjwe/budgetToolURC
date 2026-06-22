@@ -2025,6 +2025,25 @@ WHERE b.budget = :budget
             @Param("coas") List<COA> coas
     );
 
+    @Query("""
+        SELECT b.id
+        FROM BudgetItems b
+        WHERE b.budget = :budget
+          AND b.coacode IN :coas
+          AND b.deptUnit = :deptUnit
+          AND b.budgetType = :budgetType
+          AND b.activity = :activity
+          AND b.fundsource = :fundsource
+    """)
+    List<Long> findIdsByBudgetAndCoacodeInAndSalaryContext(
+            @Param("budget") Budget budget,
+            @Param("coas") List<COA> coas,
+            @Param("deptUnit") UrcDeptSectionAnlDimbgt deptUnit,
+            @Param("budgetType") Organisation budgetType,
+            @Param("activity") Urc_Activities activity,
+            @Param("fundsource") Fundsource fundsource
+    );
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
         DELETE FROM BudgetItems b
