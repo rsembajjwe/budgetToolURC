@@ -30,6 +30,7 @@ import com.methaltech.application.security.AuthenticatedUser;
 import com.methaltech.application.views.MainLayout;
 import com.vaadin.flow.component.HtmlComponent;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.grid.Grid;
@@ -37,6 +38,9 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.StreamRegistration;
+import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.RolesAllowed;
 import org.springframework.data.domain.PageRequest;
@@ -67,6 +71,8 @@ import com.vaadin.flow.component.upload.receivers.MultiFileMemoryBuffer;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.NumberRenderer;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -79,11 +85,14 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -565,11 +574,93 @@ public class staffSalaryView extends Div {
                 + " | Annual total: " + decimalFormat.format(preview.annualTotal()));
         total.getElement().getThemeList().add("badge success");
 
+        Button download = new Button("Download Excel", event -> {
+            try {
+                byte[] data = generateSalaryBudgetPreviewWorkbook(preview);
+                triggerDownload("salary-budget-preview-" + safeFileName(selectedFinancialYear()) + ".xlsx", data);
+            } catch (IOException ex) {
+                warningNotification("Unable to generate salary budget preview: " + ex.getMessage());
+            }
+        });
+        download.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
         Button close = new Button("Close", event -> dialog.close());
         close.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         dialog.add(new VerticalLayout(total, previewGrid));
-        dialog.getFooter().add(close);
+        dialog.getFooter().add(download, close);
         dialog.open();
+    }
+
+    private byte[] generateSalaryBudgetPreviewWorkbook(SalaryBudgetPreview preview) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Salary Budget Preview");
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+
+            int rowIndex = 0;
+            rowIndex = writeContextRow(sheet, rowIndex++, "Financial Year", selectedFinancialYear());
+            rowIndex = writeContextRow(sheet, rowIndex++, "Cost Centre", comboBoxD_Section.getValue().getNAME());
+            rowIndex = writeContextRow(sheet, rowIndex++, "Budget Type", comboBoxOrganisation.getValue().getName());
+            rowIndex = writeContextRow(sheet, rowIndex++, "Activity", comboBoxUrc_Activities.getValue().getName());
+            rowIndex = writeContextRow(sheet, rowIndex++, "Fund Source", budgetItemfundSource.getValue().getFundsource());
+            rowIndex++;
+
+            Row header = sheet.createRow(rowIndex++);
+            String[] headers = {"Type", "Account", "Item", "Grade", "Monthly", "Annual"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = header.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            for (SalaryBudgetPreviewRow previewRow : preview.rows()) {
+                Row row = sheet.createRow(rowIndex++);
+                row.createCell(0).setCellValue(previewRow.category());
+                row.createCell(1).setCellValue(previewRow.accountCode());
+                row.createCell(2).setCellValue(previewRow.item());
+                row.createCell(3).setCellValue(previewRow.grade() == null ? "" : previewRow.grade().name());
+                row.createCell(4).setCellValue(previewRow.monthlyAmount().doubleValue());
+                row.createCell(5).setCellValue(previewRow.annualAmount().doubleValue());
+            }
+
+            rowIndex++;
+            Row totalRow = sheet.createRow(rowIndex);
+            totalRow.createCell(3).setCellValue("Totals");
+            totalRow.createCell(4).setCellValue(preview.monthlyTotal().doubleValue());
+            totalRow.createCell(5).setCellValue(preview.annualTotal().doubleValue());
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    private int writeContextRow(Sheet sheet, int rowIndex, String label, String value) {
+        Row row = sheet.createRow(rowIndex);
+        row.createCell(0).setCellValue(label);
+        row.createCell(1).setCellValue(value == null ? "" : value);
+        return rowIndex + 1;
+    }
+
+    private void triggerDownload(String fileName, byte[] data) {
+        StreamResource resource = new StreamResource(fileName, () -> new ByteArrayInputStream(data));
+        resource.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        resource.setCacheTime(0);
+
+        StreamRegistration registration = VaadinSession.getCurrent()
+                .getResourceRegistry()
+                .registerResource(resource);
+        UI.getCurrent().getPage().executeJs("window.location.href = $0;", registration.getResourceUri().toString());
+    }
+
+    private String safeFileName(String value) {
+        return value == null ? "salary-budget-preview" : value.replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 
     private boolean hasSelectedSalaryContext() {
