@@ -192,6 +192,7 @@ public class staffSalaryView extends Div {
         comboBoxUrc_Activities.setItemLabelGenerator(Urc_Activities::getName);
 
         comboBoxOrganisation.setItemLabelGenerator(Organisation::getName);
+        configureWorkflowLabelsAndTestHooks();
         TabSheet tabSheet = new TabSheet();
         tabSheet.add("Staff Salary", detailsPanel());
         tabSheet.add("Staff Salary Reports", secondPanel());
@@ -225,6 +226,47 @@ public class staffSalaryView extends Div {
         setFreightVolumeGridDetails();
         add(tabSheet);
 
+    }
+
+    private void configureWorkflowLabelsAndTestHooks() {
+        comboBoxBudget.setId("staff-salary-budget");
+        comboBoxBudget.setLabel("Financial Year / Budget");
+        comboBoxBudget.setHelperText("Select the financial year salary budget will be generated into.");
+        comboBoxD_Section.setId("staff-salary-cost-centre");
+        comboBoxD_Section.setHelperText("Required: cost centre receiving the salary budget lines.");
+        comboBoxOrganisation.setId("staff-salary-budget-type");
+        comboBoxOrganisation.setHelperText("Required: budget type for generated salary budget items.");
+        comboBoxUrc_Activities.setId("staff-salary-activity");
+        comboBoxUrc_Activities.setLabel("Activity");
+        comboBoxUrc_Activities.setHelperText("Required: activity for generated salary budget items.");
+        budgetItemfundSource.setId("staff-salary-fund-source");
+        budgetItemfundSource.setHelperText("Required: fund source for generated salary budget items.");
+
+        gridStaffSalary.setId("staff-salary-grid");
+        code.setId("staff-salary-code");
+        fname.setId("staff-salary-first-name");
+        lname.setId("staff-salary-last-name");
+        email.setId("staff-salary-email");
+        tel.setId("staff-salary-telephone");
+        mob.setId("staff-salary-mobile");
+        position.setId("staff-salary-position");
+        grade.setId("staff-salary-grade");
+        salaryz.setId("staff-salary-monthly-salary");
+        Address.setId("staff-salary-address");
+        Address2.setId("staff-salary-address-2");
+        nextofkin.setId("staff-salary-next-of-kin");
+
+        save.setId("staff-salary-save");
+        delete.setId("staff-salary-delete");
+        deleteAll.setId("staff-salary-delete-all");
+        cancel.setId("staff-salary-cancel");
+        loadStaffMaster.setId("staff-salary-load-master");
+        previewSalaryBudget.setId("staff-salary-preview-budget");
+        salaryContextHint.setId("staff-salary-context-hint");
+
+        code.setHelperText("Required for duplicate-safe salary imports.");
+        grade.setHelperText("Required for grade-based salary budget aggregation.");
+        salaryz.setHelperText("Monthly salary used for all 12 generated months.");
     }
 
     public void setBudgetCombo() {
@@ -556,10 +598,12 @@ public class staffSalaryView extends Div {
 
     private void showSalaryBudgetPreviewDialog(SalaryBudgetPreview preview) {
         Dialog dialog = new Dialog();
+        dialog.setId("staff-salary-preview-dialog");
         dialog.setHeaderTitle("Salary Budget Preview");
         dialog.setWidth("900px");
 
         Grid<SalaryBudgetPreviewRow> previewGrid = new Grid<>(SalaryBudgetPreviewRow.class, false);
+        previewGrid.setId("staff-salary-preview-grid");
         previewGrid.addColumn(SalaryBudgetPreviewRow::category).setHeader("Type").setAutoWidth(true);
         previewGrid.addColumn(SalaryBudgetPreviewRow::accountCode).setHeader("Account").setAutoWidth(true);
         previewGrid.addColumn(SalaryBudgetPreviewRow::item).setHeader("Item").setAutoWidth(true);
@@ -582,9 +626,11 @@ public class staffSalaryView extends Div {
                 warningNotification("Unable to generate salary budget preview: " + ex.getMessage());
             }
         });
+        download.setId("staff-salary-preview-download");
         download.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
         Button close = new Button("Close", event -> dialog.close());
+        close.setId("staff-salary-preview-close");
         close.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         dialog.add(new VerticalLayout(total, previewGrid));
         dialog.getFooter().add(download, close);
@@ -789,6 +835,7 @@ public class staffSalaryView extends Div {
         });*/
         MultiFileMemoryBuffer buffer = new MultiFileMemoryBuffer();
         upload = new Upload(buffer);
+        upload.setId("staff-salary-upload");
         upload.setAcceptedFileTypes(
                 // Microsoft Excel (OpenXML, .xlsx)
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -813,6 +860,7 @@ public class staffSalaryView extends Div {
 
         });
         FormLayout formLayout = new FormLayout();
+        formLayout.setId("staff-salary-context-form");
         salaryContextHint.getElement().getThemeList().add("badge error");
         formLayout.add(comboBoxBudget, comboBoxD_Section, comboBoxOrganisation, comboBoxUrc_Activities,
                 budgetItemfundSource, upload, salaryContextHint);
