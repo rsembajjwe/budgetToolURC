@@ -3,6 +3,7 @@ package com.methaltech.application.views.salary;
 import com.methaltech.application.data.UploadExamplesI18N;
 import com.methaltech.application.data.SalaryAdjustmentScope;
 import com.methaltech.application.data.SalaryAdjustmentType;
+import com.methaltech.application.data.SalaryCeilingEnforcementMode;
 import com.methaltech.application.data.SalaryGradeCeilingType;
 import com.methaltech.application.data.bgtool.service.BudgetService;
 import com.methaltech.application.data.bgtool.service.CurrencyService;
@@ -129,6 +130,7 @@ public class staffSalaryView extends Div {
     private ComboBox<UrcDeptSectionAnlDimbgt> comboBoxD_Section = new ComboBox<>("Cost Centre");
     private ComboBox<Currency> currencyComboBox = new ComboBox("Currency");
     private ComboBox<Organisation> comboBoxOrganisation = new ComboBox<>("Budget Type");
+    private ComboBox<SalaryCeilingEnforcementMode> ceilingEnforcementMode = new ComboBox<>("Ceiling Enforcement");
     private StaffSalary salaries;
 
     private TextField fname = new TextField("First Name");
@@ -208,6 +210,8 @@ public class staffSalaryView extends Div {
         comboBoxUrc_Activities.setItemLabelGenerator(Urc_Activities::getName);
 
         comboBoxOrganisation.setItemLabelGenerator(Organisation::getName);
+        ceilingEnforcementMode.setItems(SalaryCeilingEnforcementMode.SOFT, SalaryCeilingEnforcementMode.HARD);
+        ceilingEnforcementMode.setValue(SalaryCeilingEnforcementMode.SOFT);
         configureWorkflowLabelsAndTestHooks();
         TabSheet tabSheet = new TabSheet();
         tabSheet.add("Staff Salary", detailsPanel());
@@ -257,6 +261,8 @@ public class staffSalaryView extends Div {
         comboBoxUrc_Activities.setHelperText("Required: activity for generated salary budget items.");
         budgetItemfundSource.setId("staff-salary-fund-source");
         budgetItemfundSource.setHelperText("Required: fund source for generated salary budget items.");
+        ceilingEnforcementMode.setId("staff-salary-ceiling-enforcement");
+        ceilingEnforcementMode.setHelperText("Soft warns when over ceiling; Hard blocks generation.");
 
         gridStaffSalary.setId("staff-salary-grid");
         code.setId("staff-salary-code");
@@ -640,7 +646,8 @@ public class staffSalaryView extends Div {
         previewGrid.setHeight("360px");
 
         Span total = new Span("Monthly total: " + decimalFormat.format(preview.monthlyTotal())
-                + " | Annual total: " + decimalFormat.format(preview.annualTotal()));
+                + " | Annual total: " + decimalFormat.format(preview.annualTotal())
+                + " | Over ceiling grades: " + preview.overCeilingRows());
         total.getElement().getThemeList().add("badge success");
 
         Button download = new Button("Download Excel", event -> {
@@ -1069,7 +1076,7 @@ public class staffSalaryView extends Div {
         formLayout.setId("staff-salary-context-form");
         salaryContextHint.getElement().getThemeList().add("badge error");
         formLayout.add(comboBoxBudget, comboBoxD_Section, comboBoxOrganisation, comboBoxUrc_Activities,
-                budgetItemfundSource, upload, salaryContextHint);
+                budgetItemfundSource, ceilingEnforcementMode, upload, salaryContextHint);
         formLayout.setColspan(salaryContextHint, 4);
         formLayout.setResponsiveSteps(
                 // Use one column by default
@@ -1358,7 +1365,7 @@ public class staffSalaryView extends Div {
 
     private SalaryBudgetRegenerationResult regenerateSelectedSalaryBudgetItems(Budget budget) {
         if (budget == null) {
-            return new SalaryBudgetRegenerationResult(0, BigDecimal.ZERO);
+            return new SalaryBudgetRegenerationResult(0, BigDecimal.ZERO, 0);
         }
         try {
             return staffSalaryBudgetService.regenerateSelectedContext(
@@ -1366,10 +1373,11 @@ public class staffSalaryView extends Div {
                     comboBoxD_Section.getValue(),
                     comboBoxOrganisation.getValue(),
                     comboBoxUrc_Activities.getValue(),
-                    budgetItemfundSource.getValue());
+                    budgetItemfundSource.getValue(),
+                    ceilingEnforcementMode.getValue());
         } catch (IllegalArgumentException | IllegalStateException ex) {
             warningNotification(ex.getMessage());
-            return new SalaryBudgetRegenerationResult(0, BigDecimal.ZERO);
+            return new SalaryBudgetRegenerationResult(0, BigDecimal.ZERO, 0);
         }
     }
 
@@ -1379,8 +1387,12 @@ public class staffSalaryView extends Div {
     }
 
     private String formatSalaryBudgetRegeneration(SalaryBudgetRegenerationResult result) {
-        return "Generated " + result.salaryGradeRows() + " salary grade item(s); monthly salary total "
+        String message = "Generated " + result.salaryGradeRows() + " salary grade item(s); monthly salary total "
                 + decimalFormat.format(result.monthlyTotal()) + ".";
+        if (result.overCeilingRows() > 0) {
+            message += " Warning: " + result.overCeilingRows() + " grade(s) are over ceiling.";
+        }
+        return message;
     }
 
     private void handleNumericCell(Row row, List<errorMessages> messages, StaffSalary info, int rowIndex, int columnIndex, String errorMessage, CellHandler handler) {

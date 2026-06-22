@@ -1,5 +1,7 @@
 package com.methaltech.application.data.bgtool.service;
 
+import com.methaltech.application.data.SalaryCeilingEnforcementMode;
+import com.methaltech.application.data.SalaryGradeCeilingType;
 import com.methaltech.application.data.entity.bgtool.Budget;
 import com.methaltech.application.data.entity.bgtool.BudgetItems;
 import com.methaltech.application.data.entity.bgtool.COA;
@@ -11,10 +13,10 @@ import com.methaltech.application.data.entity.bgtool.SalaryGradeCeiling;
 import com.methaltech.application.data.entity.bgtool.StaffSalary;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
-import com.methaltech.application.data.SalaryGradeCeilingType;
 import com.methaltech.application.data.salaryScale;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,7 +55,22 @@ public class StaffSalaryBudgetService {
     public SalaryBudgetRegenerationResult regenerateSelectedContext(Budget budget,
             UrcDeptSectionAnlDimbgt deptUnit, Organisation budgetType, Urc_Activities activity,
             Fundsource fundsource) {
+        return regenerateSelectedContext(budget, deptUnit, budgetType, activity, fundsource,
+                SalaryCeilingEnforcementMode.SOFT);
+    }
+
+    @Transactional
+    public SalaryBudgetRegenerationResult regenerateSelectedContext(Budget budget,
+            UrcDeptSectionAnlDimbgt deptUnit, Organisation budgetType, Urc_Activities activity,
+            Fundsource fundsource, SalaryCeilingEnforcementMode enforcementMode) {
         validateContext(budget, deptUnit, budgetType, activity, fundsource);
+
+        SalaryBudgetPreview preview = previewSelectedContext(budget, deptUnit, budgetType, activity, fundsource);
+        int overCeilingRows = preview.overCeilingRows();
+        if (enforcementMode == SalaryCeilingEnforcementMode.HARD && overCeilingRows > 0) {
+            throw new IllegalStateException("Salary budget exceeds grade ceiling for " + overCeilingRows
+                    + " grade(s). Switch to Soft enforcement or adjust salaries/ceilings before generating.");
+        }
 
         SalaryBudgetSetup setup = loadSalaryBudgetSetup(budget);
         deleteSelectedSalaryBudgetItems(budget, deptUnit, budgetType, activity, fundsource, setup.salaryCoas());
@@ -81,7 +98,7 @@ public class StaffSalaryBudgetService {
                     activity, fundsource));
         }
 
-        return new SalaryBudgetRegenerationResult(aggregateSalaryByGrade.size(), monthlyTotal);
+        return new SalaryBudgetRegenerationResult(aggregateSalaryByGrade.size(), monthlyTotal, overCeilingRows);
     }
 
     @Transactional(readOnly = true)
@@ -96,6 +113,9 @@ public class StaffSalaryBudgetService {
         List<StaffSalary> aggregateSalaryByGrade = staffSalaryService.aggregateSalaryByGrade(salaries);
         List<SalaryGradeCeiling> ceilings = salaryGradeCeilingService.findByContext(
                 budget, deptUnit, budgetType, activity, fundsource);
+        if (ceilings == null) {
+            ceilings = Collections.emptyList();
+        }
 
         List<SalaryBudgetPreviewRow> rows = new ArrayList<>();
         BigDecimal monthlyTotal = BigDecimal.ZERO;
@@ -118,7 +138,7 @@ public class StaffSalaryBudgetService {
                     WORKMAN_COMPENSATION_RATE);
         }
 
-        return new SalaryBudgetPreview(rows, monthlyTotal, annualAmount(monthlyTotal));
+        return new SalaryBudgetPreview(rows, monthlyTotal, annualAmount(monthlyTotal), countOverCeilingRows(rows));
     }
 
     @Transactional
@@ -233,6 +253,12 @@ public class StaffSalaryBudgetService {
         return monthlyAmount.multiply(MONTHS_IN_YEAR);
     }
 
+    private int countOverCeilingRows(List<SalaryBudgetPreviewRow> rows) {
+        return (int) rows.stream()
+                .filter(row -> "Over".equals(row.ceilingStatus()))
+                .count();
+    }
+
     private GradeSalaryStats gradeSalaryStats(List<StaffSalary> salaries, salaryScale grade) {
         List<StaffSalary> gradeSalaries = salaries.stream()
                 .filter(salary -> grade != null && grade.equals(salary.getGrade()))
@@ -269,11 +295,11 @@ public class StaffSalaryBudgetService {
                 variance.compareTo(BigDecimal.ZERO) > 0 ? "Over" : "OK");
     }
 
-    public record SalaryBudgetRegenerationResult(int salaryGradeRows, BigDecimal monthlyTotal) {
+    public record SalaryBudgetRegenerationResult(int salaryGradeRows, BigDecimal monthlyTotal, int overCeilingRows) {
     }
 
     public record SalaryBudgetPreview(List<SalaryBudgetPreviewRow> rows, BigDecimal monthlyTotal,
-            BigDecimal annualTotal) {
+            BigDecimal annualTotal, int overCeilingRows) {
     }
 
     public record SalaryBudgetPreviewRow(String category, String accountCode, String item, salaryScale grade,

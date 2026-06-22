@@ -19,6 +19,7 @@ import com.methaltech.application.data.entity.bgtool.SalaryGradeCeiling;
 import com.methaltech.application.data.entity.bgtool.StaffSalary;
 import com.methaltech.application.data.entity.bgtool.UrcDeptSectionAnlDimbgt;
 import com.methaltech.application.data.entity.bgtool.Urc_Activities;
+import com.methaltech.application.data.SalaryCeilingEnforcementMode;
 import com.methaltech.application.data.SalaryGradeCeilingType;
 import com.methaltech.application.data.salaryScale;
 import java.math.BigDecimal;
@@ -99,6 +100,7 @@ class StaffSalaryBudgetServiceTest {
 
         assertThat(result.salaryGradeRows()).isEqualTo(2);
         assertThat(result.monthlyTotal()).isEqualByComparingTo("8000");
+        assertThat(result.overCeilingRows()).isZero();
         verify(budgetItemsService).deleteByBudgetAndCoasAndSalaryContext(
                 eq(budget), eq(List.of(salaryWages, nssf, gratuity, workmanCompensation)),
                 eq(deptUnit), eq(budgetType), eq(activity), eq(fundsource));
@@ -166,6 +168,7 @@ class StaffSalaryBudgetServiceTest {
 
         assertThat(preview.monthlyTotal()).isEqualByComparingTo("6000");
         assertThat(preview.annualTotal()).isEqualByComparingTo("72000");
+        assertThat(preview.overCeilingRows()).isEqualTo(1);
         assertThat(preview.rows()).hasSize(5);
         assertThat(preview.rows())
                 .filteredOn(row -> "Salary".equals(row.category()))
@@ -200,6 +203,48 @@ class StaffSalaryBudgetServiceTest {
         verify(budgetItemsService, never()).deleteByBudgetAndCoasAndSalaryContext(
                 any(), any(), any(), any(), any(), any());
         verify(budgetItemsService, never()).update(any(BudgetItems.class));
+    }
+
+    @Test
+    void hardCeilingEnforcementBlocksGenerationWhenAnyGradeIsOverCeiling() {
+        stubSalarySetup();
+        List<StaffSalary> salaries = List.of(staffSalary(salaryScale.RG_2, "1500"));
+        when(staffSalaryService.findByBudgetAndDeptUnitAndBudgetTypeAndActivity(
+                budget, deptUnit, budgetType, activity)).thenReturn(salaries);
+        when(staffSalaryService.aggregateSalaryByGrade(salaries)).thenCallRealMethod();
+        when(salaryGradeCeilingService.findByContext(budget, deptUnit, budgetType, activity, fundsource))
+                .thenReturn(List.of(ceiling(salaryScale.RG_2, SalaryGradeCeilingType.GRADE_TOTAL, "1000")));
+
+        assertThatThrownBy(() -> service.regenerateSelectedContext(
+                budget, deptUnit, budgetType, activity, fundsource, SalaryCeilingEnforcementMode.HARD))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("exceeds grade ceiling");
+
+        verify(budgetItemsService, never()).deleteByBudgetAndCoasAndSalaryContext(
+                any(), any(), any(), any(), any(), any());
+        verify(budgetItemsService, never()).update(any(BudgetItems.class));
+    }
+
+    @Test
+    void softCeilingEnforcementAllowsGenerationAndReportsOverCeilingRows() {
+        stubSalarySetup();
+        List<StaffSalary> salaries = List.of(staffSalary(salaryScale.RG_2, "1500"));
+        when(staffSalaryService.findByBudgetAndDeptUnitAndBudgetTypeAndActivity(
+                budget, deptUnit, budgetType, activity)).thenReturn(salaries);
+        when(staffSalaryService.aggregateSalaryByGrade(salaries)).thenCallRealMethod();
+        when(salaryGradeCeilingService.findByContext(budget, deptUnit, budgetType, activity, fundsource))
+                .thenReturn(List.of(ceiling(salaryScale.RG_2, SalaryGradeCeilingType.GRADE_TOTAL, "1000")));
+        when(budgetItemsService.update(any(BudgetItems.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        StaffSalaryBudgetService.SalaryBudgetRegenerationResult result = service.regenerateSelectedContext(
+                budget, deptUnit, budgetType, activity, fundsource, SalaryCeilingEnforcementMode.SOFT);
+
+        assertThat(result.salaryGradeRows()).isEqualTo(1);
+        assertThat(result.overCeilingRows()).isEqualTo(1);
+        verify(budgetItemsService).deleteByBudgetAndCoasAndSalaryContext(
+                eq(budget), eq(List.of(salaryWages, nssf, gratuity, workmanCompensation)),
+                eq(deptUnit), eq(budgetType), eq(activity), eq(fundsource));
+        verify(budgetItemsService, org.mockito.Mockito.times(4)).update(any(BudgetItems.class));
     }
 
     @Test
